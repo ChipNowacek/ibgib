@@ -37,7 +37,8 @@ defmodule IbGib.Mixfile do
   # Type "mix help deps" for more examples and options
   defp deps do
     [
-      {:random_gib, in_umbrella: true}
+      {:random_gib, in_umbrella: true},
+      {:poison, "~> 2.1"}
     ]
   end
 end
