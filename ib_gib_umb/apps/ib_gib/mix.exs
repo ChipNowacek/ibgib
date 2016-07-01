@@ -18,7 +18,7 @@ defmodule IbGib.Mixfile do
   #
   # Type "mix help compile.app" for more information
   def application do
-    [applications: [:logger, :random_gib],
+    [applications: [:logger, :random_gib, :poison],
      mod: {IbGib, []}]
   end
 

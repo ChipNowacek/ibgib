@@ -1,5 +1,6 @@
 defmodule IbGib.Expression.Supervisor do
   use Supervisor
+  require Logger
 
   def start_link do
     Supervisor.start_link(__MODULE__, :ok, name: IbGib.Expression.Supervisor)
@@ -25,6 +26,17 @@ defmodule IbGib.Expression.Supervisor do
   Start a blank expression process.
   """
   def start_expression() do
-    Supervisor.start_child(IbGib.Expression.Supervisor, [])
+    args = []
+    start(args)
+  end
+
+  def start_expression({:fork, fork_transform}) when is_map(fork_transform) do
+    Logger.debug "#{inspect(fork_transform)}"
+    args = [{:fork, fork_transform}]
+    start(args)
+  end
+
+  defp start(args) do
+    Supervisor.start_child(IbGib.Expression.Supervisor, args)
   end
 end

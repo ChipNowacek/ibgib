@@ -1,18 +1,25 @@
 defmodule IbGibTest do
   use ExUnit.Case
+  alias IbGib.{Expression, TransformFactory}
+  require Logger
   doctest IbGib
+  doctest IbGib.TransformFactory
+
 
   test "create expression, from scratch, root Thing" do
-    result = IbGib.Expression.Supervisor.start_expression()
-    inspect result
+    {result, _expression} = Expression.Supervisor.start_expression()
+    assert result === :ok
+  end
+
+  test "create expression, from scratch, fork transform instance" do
+    transform_map = TransformFactory.fork()
+    {result, _transform_instance} = Expression.Supervisor.start_expression({:fork, transform_map})
+    assert result === :ok
   end
 
   test "create expression, from scratch, text Thing" do
     flunk("not implemented")
-    # fork_transform = IbGib.TransformFactory.
   end
-
-
 
   test "create expression, from scratch, text instance Thing" do
     flunk("not implemented")
@@ -25,6 +32,4 @@ defmodule IbGibTest do
   test "create expression, from scratch, hello world instance Thing with hello world text Thing" do
     flunk("not implemented")
   end
-
-
 end

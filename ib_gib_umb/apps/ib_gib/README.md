@@ -94,9 +94,44 @@ end
 ```
 
 So this is where it gets interesting. We will need to first create a new
-process (obviously). We will need to create a fork transform instance that is
+process. We will need to create a fork transform instance that is
 itself a fork of the root fork transform Thing. Once we create this transform,
 we will need to have the expression express that it, thus applying the fork.
 
-All of this sounds too much for a single test. So, we'll make some more unit-y
-tests.
+All of this sounds too much for a single test. So, we'll need to break it down
+a bit.
+
+But first, a note on the overall design of the system: Everything, meaning
+every "Thing", will be a process. For some simple transforms, like a bare fork
+transform, this could conceivably be overkill. But transforms will need to be
+managed insofar as caching is concerned when transforms with large sizes of
+data are involved, like a possible image or video file.
+
+With that in mind, let's write a test for creating a fork transform "instance",
+i.e. a process.
+
+```
+test "create expression, from scratch, fork transform instance" do
+  flunk("not implemented")
+end
+```
+
+In order to create the fork transform instance, I've first created
+[`IbGib.TransformFactory`](lib/ib_gib/transform_factory.ex) and added a
+`fork/1` factory function. This function
+accepts a single optional argument for the fork: `dest_ib`. We use this if we
+want to control the `ib` "id" of the Thing being "created" with the fork.
+The "id" `ib` of the fork transform itself will be a hash using `dest_ib`..
+
+However this only creates the map that contains the minimal fork transform
+information, and it does not create the instance _process_.
+
+To do that, we need the `Expression.Supervisor` to start the expression, but
+as we have it right now, there is nothing tracking the pid of the expression.
+What we need, or at least what I am working towards, is associating each
+version of each Thing to its own process. This means that each process should
+be an "immutable" process identified uniquely by its `ib` + `gib` fields.
+
+This design has **extremely** interesting implications, but that returns us to
+wacky conceptual abstractedness, so I'll leave it for another time. For now,
+let's keep going with the mechanics.
