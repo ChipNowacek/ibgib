@@ -266,4 +266,5 @@ actual code that will "replay" ib_gib histories, as well as generate new paths.
 Now with that minor introduction out of the way, let's jump into some quick
 code! (wah wah wah...)
 
-to be cont'd...
+Seriously, if you want to see a hello world, check out my readme for the brand
+spankin' new incarnation of ibGib.
