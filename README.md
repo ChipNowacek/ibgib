@@ -4,6 +4,15 @@ Infinite logic takes some getting used to, and this won't make sense and will se
 
 Don't Panic.
 
+## before diving in...why give a s**t about this library?
+
+I mean...I don't even have the guts to spell out the word "shit"?! Oh wait...
+yes, I do but not arbitrarily. And my answer to anyone reading this?
+
+I don't fucking know. (That will be the end of the cursing.)
+
+Here is a quick list run-down to get you to ...
+
 ## things, ids, transforms, ib, gib, and ib_gib - oh my
 
 ib_gib is about Life, the Universe, and Everything. As such, we are putting a

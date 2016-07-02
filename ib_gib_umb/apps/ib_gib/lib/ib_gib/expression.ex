@@ -5,12 +5,12 @@ defmodule IbGib.Expression do
   # ----------------------------------------------------------------------------
   # Constructors
   # ----------------------------------------------------------------------------
-  def start_link() do
-    GenServer.start_link(__MODULE__, :ib)
+  def start_link({ib, gib}) do
+    GenServer.start_link(__MODULE__, {ib, gib})
   end
 
-  def init(:ib) do
-    {:ok, %{ib: :ib}}
+  def init({ib, gib}) do
+    {:ok, %{ib: ib, gib: gib}}
   end
 
   def start_link({:fork, fork_transform}) when is_map(fork_transform) do

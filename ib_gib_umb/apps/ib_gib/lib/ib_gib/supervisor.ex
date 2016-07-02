@@ -7,9 +7,10 @@ defmodule IbGib.Supervisor do
 
   def init(:ok) do
     children = [
-      supervisor(IbGib.Expression.Supervisor, [])
+      supervisor(IbGib.Expression.Supervisor, []),
+      supervisor(IbGib.Expression.Registry, [])
     ]
 
-    supervise(children, strategy: :one_for_one)
+    supervise(children, strategy: :one_for_all)
   end
 end
