@@ -9,9 +9,40 @@ Don't Panic.
 I mean...I don't even have the guts to spell out the word "shit"?! Oh wait...
 yes, I do but not arbitrarily. And my answer to anyone reading this?
 
-I don't fucking know. (That will be the end of the cursing.)
+I don't friggin know. Ridiculously quick run down of me and ib:
 
-Here is a quick list run-down to get you to ...
+* Me
+  * Back in the day, used to be "smart", 800 math sat, 36 math act, 5th place
+    state math tournament, 5 Physics C, 4 Physics B, 5 Calc AB, 0 homework,
+  * Number 1 in the world on silly Xbox Live Brain Challenge game.
+  * Started college as a sophomore, ended college as a sophomore.
+  * Never could stomach philosophy, but I ate up books like Chaos; Virus of the Mind; Goedel, Escher, Bach; Relativity Visualized; Brian Green books; Lee Smolin books; etc.
+  * So yes, layman, but doesn't matter. I can follow the math but disagree with
+    fundamental approaches in all of these and other types of axiomatic systems.
+  * Slowly and painfully developed ibGib's living logic over almost 20 years.
+  * So no credibility...just me and my logic.
+* You
+  * Would require an actual obsession to understand.
+  * Would have to concede some of the assumptions of axiomatic systems.
+  * Would require an open mind.
+* ibGib
+  * The only accurate statement that describes ibGib is ibGib.
+  * Originally born from an [acronym](https://github.com/ibgib/ibgib/wiki/acronym) 15-ish years ago: i believe God is being.
+  * Is built around the idea that eschews "theorem proving" as it is currently
+    conceived.
+  * Embraces thinking of logic in terms of itself (ibGib) as "the" fundamental
+    "unit" of existence, with itself as its only "axiom", which is a more
+    precise statement than would be immediately apparent.
+
+I figure this probably sounds like a bunch of bs, which is why I don't usually
+talk or write about it. But I'm cooped up in my house because I freak out now
+when I go out, and I'm growing weary and so am looking for others looking for
+a fundamentally new (and old) approach to logic. So, you can read more on my
+[wiki](https://github.com/ibgib/ibgib/wiki) that I'm starting. Or if you want
+to take a more active approach, either through discussion or actual code
+contribution, hit me up by ([creating a new issue](https://github.com/ibgib/ibgib/issues)).
+
+And now, on to actual code...
 
 ## things, ids, transforms, ib, gib, and ib_gib - oh my
 
