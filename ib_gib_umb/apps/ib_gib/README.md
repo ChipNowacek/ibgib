@@ -1,6 +1,7 @@
 # IbGib
 
-For abstract and heady conceptual material, read [ibgib's readme](https://github.com/ibgib/ibgib/blob/master/README.md).
+For abstract and heady conceptual material, read [ibgib's readme](https://github.com/ibgib/ibgib/blob/master/README.md) or check out our 
+[wiki](https://github.com/ibgib/ibgib/wiki).
 
 ## Installation
 
