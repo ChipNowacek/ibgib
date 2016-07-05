@@ -11,7 +11,7 @@ defmodule IbGib.Expression.Supervisor do
       # `:permanent` always restarted
       # `:temporary` not restarted
       # `:transient` restarted on abnormal shutdown
-      worker(IbGib.Expression, args, restart: :transient)
+      worker(IbGib.Expression, [], restart: :transient)
     ]
 
     supervise(children, strategy: :simple_one_for_one)

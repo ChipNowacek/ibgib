@@ -8,11 +8,6 @@ defmodule IbGib.Expression do
   def start_link({ib, gib}) do
     GenServer.start_link(__MODULE__, {ib, gib})
   end
-
-  def init({ib, gib}) do
-    {:ok, %{ib: ib, gib: gib}}
-  end
-
   def start_link({:fork, fork_transform}) when is_map(fork_transform) do
     Logger.debug "{:fork, fork_transform}"
 
@@ -20,6 +15,9 @@ defmodule IbGib.Expression do
     GenServer.start_link(__MODULE__, {:fork, fork_transform})
   end
 
+  def init({ib, gib}) do
+    {:ok, %{ib: ib, gib: gib}}
+  end
   def init({:fork, fork_transform}) do
     Logger.debug "{:fork, fork_transform}"
 
