@@ -69,9 +69,11 @@ defmodule IbGib.Expression.Registry do
     case get_process_impl(expressions, expr_ib_gib) do
       {:ok, pid} ->
         # Already exists.
+        Logger.debug "expr_ib_gib (#{expr_ib_gib}) already exists"
         {:reply, :ok, {expressions, refs}}
       {:error, _reason} ->
         # Doesn't exist, so register it
+        Logger.debug "expr_ib_gib (#{expr_ib_gib}) does not exist. registering..."
         ref = Process.monitor(expr_pid)
         refs = Map.put(refs, ref, expr_ib_gib)
         expressions = Map.put(expressions, expr_ib_gib, expr_pid)
@@ -110,9 +112,10 @@ defmodule IbGib.Expression.Registry do
   end
 
   defp get_process_impl(expressions, expr_ib_gib) do
+    Logger.debug "expr_ib_gib: #{expr_ib_gib}"
     case Map.fetch(expressions, expr_ib_gib) do
       {:ok, value} -> {:ok, value}
-      {:error} -> {:error, "not found"}
+      :error -> {:error, :not_found}
     end
   end
 
