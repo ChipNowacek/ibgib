@@ -100,9 +100,9 @@ defmodule IbGib.Expression.Registry do
   """
   def handle_info({:DOWN, ref, :process, _pid, _reason}, {expressions, refs}) do
     {expr_ib_gib, refs} = Map.pop(refs, ref)
-    Logger.debug "Removed ref: #{ref}"
+    Logger.debug "Removed ref: #{inspect ref}"
     {expr_pid, expressions} = Map.pop(expressions, expr_ib_gib)
-    Logger.debug "Removing expr_pid: #{expr_pid}"
+    Logger.debug "Removing expr_pid: #{inspect expr_pid}"
     # :ets.delete(expressions, expression)
     {:noreply, {expressions, refs}}
   end
@@ -123,11 +123,9 @@ defmodule IbGib.Expression.Registry do
     if Map.has_key?(expressions, expr_ib_gib) do
       {:noreply, {expressions, refs}}
     else
-      # {:ok, pid} = KV.Bucket.start_link
-      {:ok, pid} = KV.Bucket.Supervisor.start_bucket
-      ref = Process.monitor(pid)
+      ref = Process.monitor(expr_pid)
       refs = Map.put(refs, ref, expr_ib_gib)
-      expressions = Map.put(expressions, expr_ib_gib, pid)
+      expressions = Map.put(expressions, expr_ib_gib, expr_pid)
       {:noreply, {expressions, refs}}
     end
 
