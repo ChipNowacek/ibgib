@@ -1,0 +1,86 @@
+defmodule IbGib.Cache do
+  use GenServer
+  require Logger
+
+  @srv_name IbGib.Cache
+  @cache_table_name IbGib.Cache
+
+  # ----------------------------------------------------------------------------
+  # Constructors
+  # ----------------------------------------------------------------------------
+
+  @doc """
+  Starts the registry.
+  `registry_name` is the name of this registry process, not the expression
+  processes that this registry will be tracking.
+  """
+  @spec start_link(atom()) :: {:ok, pid()} | :ignore | {:error, {:already_started, pid()} | term()}
+  def start_link(name \\ @srv_name) when is_atom(name) do
+    Logger.debug ("name: #{name}")
+    GenServer.start_link(__MODULE__, name, [name: name])
+  end
+
+  # ----------------------------------------------------------------------------
+  # Client API
+  # ----------------------------------------------------------------------------
+
+  @doc """
+  Registers the given expression ib_gib identifier `expr_ib_gib` with
+  `value` process.
+
+  Returns :ok
+  """
+  def put(key, value, name \\ @srv_name) do
+    GenServer.call(name, {:put, {key, value}})
+  end
+
+  @doc """
+  Gets the `value` associated with the given `key` if it has been stored.
+
+  Returns {:ok, value} or {:error, reason}
+  """
+  def get(key, name \\ @srv_name) do
+    GenServer.call(name, {:get, {key, name}})
+  end
+
+
+  # ----------------------------------------------------------------------------
+  # Server Callbacks
+  # ----------------------------------------------------------------------------
+
+  def init(srv_name) do
+    Logger.debug "srv_name: #{srv_name}"
+
+    items = :ets.new(srv_name, [:named_table, read_concurrency: true])
+
+    # mapped by strings, and ets.new requires an atom.
+    # All of the advice says string->atom is bad.
+
+    {:ok, {items}}
+  end
+
+  def handle_call({:put, {key, value}}, _from, {items}) do
+    Logger.debug "inspect items: #{inspect items}"
+
+    put_impl(items, key, value)
+    {:reply, :ok, {items}}
+  end
+  def handle_call({:get, {key, name}}, _from, {items}) do
+    Logger.debug "inspect items: #{inspect items}"
+
+    {:reply, get_impl(items, key), {items}}
+  end
+
+  defp get_impl(items, key) do
+    Logger.debug "key: #{key}"
+    case :ets.lookup(items, key) do
+      [{^key, value}] -> {:ok, value}
+      [] -> {:error, :not_found}
+    end
+  end
+
+  defp put_impl(items, key, value) do
+    Logger.debug "key: #{key}, value: #{inspect value}"
+    :ets.insert(items, {key, value})
+  end
+end

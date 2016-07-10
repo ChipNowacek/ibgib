@@ -11,6 +11,7 @@ defmodule IbGib.Expression.Supervisor do
       # `:permanent` always restarted
       # `:temporary` not restarted
       # `:transient` restarted on abnormal shutdown
+      # Empty args, because args are passed when `start_child` is called.
       worker(IbGib.Expression, [], restart: :transient)
     ]
 
@@ -26,7 +27,7 @@ defmodule IbGib.Expression.Supervisor do
   Start a blank expression process.
   """
   def start_expression() do
-    args = []
+    args = [{"ib", "gib"}]
     start(args)
   end
 

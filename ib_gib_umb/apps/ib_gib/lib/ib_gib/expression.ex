@@ -14,6 +14,9 @@ defmodule IbGib.Expression do
     GenServer.start_link(__MODULE__, {:ib_gib, ib, gib})
   end
 
+  # ----------------------------------------------------------------------------
+  # Inits
+  # ----------------------------------------------------------------------------
   def init({:fork, fork_transform}) do
     Logger.debug "{:fork, fork_transform}"
 
@@ -22,7 +25,6 @@ defmodule IbGib.Expression do
   def init({:ib_gib, ib, gib}) do
     {:ok, %{ib: ib, gib: gib}}
   end
-
 
   # ----------------------------------------------------------------------------
   # Client API

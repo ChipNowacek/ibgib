@@ -13,7 +13,7 @@ defmodule IbGib.Expression.Registry do
   processes that this registry will be tracking.
   """
   def start_link(name \\ @registry_name) do
-    Logger.debug ("name: #{name}")
+    # Logger.debug ("name: #{name}")
     GenServer.start_link(__MODULE__, name, [name: name])
   end
 
@@ -47,7 +47,7 @@ defmodule IbGib.Expression.Registry do
   # ----------------------------------------------------------------------------
 
   def init(srv_name) do
-    Logger.debug "srv_name: #{srv_name}"
+    # Logger.debug "srv_name: #{srv_name}"
 
     # `expressions` maps expr_ib_gib to expression pid
     expressions = %{}

@@ -61,38 +61,38 @@ defmodule IbGib.Expression.RegistryTest do
   end
 
 
-    @tag :capture_log
-    test "register, kill process, get process should fail", %{test_name: test_name} do
-      # Logger.debug "#{inspect test_name}"
-      result = IbGib.Expression.Registry.start_link(test_name)
+  @tag :capture_log
+  test "register, kill process, get process should fail", %{test_name: test_name} do
+    # Logger.debug "#{inspect test_name}"
+    result = IbGib.Expression.Registry.start_link(test_name)
 
-      {:ok, pid} = IbGib.Expression.start_link({"ib", "gib"})
+    {:ok, pid} = IbGib.Expression.start_link({"ib", "gib"})
 
-      Logger.debug "unlinking pid: #{inspect pid}"
-      Process.unlink(pid)
-      Logger.debug "unlinked pid: #{inspect pid}"
+    Logger.debug "unlinking pid: #{inspect pid}"
+    Process.unlink(pid)
+    Logger.debug "unlinked pid: #{inspect pid}"
 
-      register_result = IbGib.Expression.Registry.register("ib_gib", pid, test_name)
+    register_result = IbGib.Expression.Registry.register("ib_gib", pid, test_name)
 
-      assert register_result === :ok
+    assert register_result === :ok
 
-      Logger.debug "killing pid"
-      Process.exit(pid, :kill)
-      Logger.debug "killed pid"
+    Logger.debug "killing pid"
+    Process.exit(pid, :kill)
+    Logger.debug "killed pid"
 
-      # Register a dummy to ensure that the registry has processed the
-      # handle_info
-      {:ok, pid_dummy} = IbGib.Expression.start_link({"ib", "gibdummy"})
-      register_result = IbGib.Expression.Registry.register("ib_gibdummy", pid_dummy, test_name)
+    # Register a dummy to ensure that the registry has processed the
+    # handle_info
+    {:ok, pid_dummy} = IbGib.Expression.start_link({"ib", "gibdummy"})
+    register_result = IbGib.Expression.Registry.register("ib_gibdummy", pid_dummy, test_name)
 
 
-      {get_result, get_term} = IbGib.Expression.Registry.get_process("ib_gib", test_name)
+    {get_result, get_term} = IbGib.Expression.Registry.get_process("ib_gib", test_name)
 
-      assert get_result === :error
-      assert get_term === :not_found
+    assert get_result === :error
+    assert get_term === :not_found
 
-      Logger.debug "get_term: #{inspect get_term}"
-    end
+    Logger.debug "get_term: #{inspect get_term}"
+  end
 
   @tag :capture_log
   test "get unregistered process should fail", %{test_name: test_name} do
