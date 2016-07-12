@@ -10,9 +10,7 @@ defmodule IbGib.Cache do
   # ----------------------------------------------------------------------------
 
   @doc """
-  Starts the registry.
-  `registry_name` is the name of this registry process, not the expression
-  processes that this registry will be tracking.
+  Starts the cache.
   """
   @spec start_link(atom()) :: {:ok, pid()} | :ignore | {:error, {:already_started, pid()} | term()}
   def start_link(name \\ @srv_name) when is_atom(name) do
@@ -25,12 +23,11 @@ defmodule IbGib.Cache do
   # ----------------------------------------------------------------------------
 
   @doc """
-  Registers the given expression ib_gib identifier `expr_ib_gib` with
-  `value` process.
+  Inserts/replaces the given `key` with the given `value`.
 
   Returns :ok
   """
-  def put(key, value, name \\ @srv_name) do
+  def put(key, value, name \\ @srv_name) when is_bitstring(key) do
     GenServer.call(name, {:put, {key, value}})
   end
 
@@ -48,13 +45,10 @@ defmodule IbGib.Cache do
   # Server Callbacks
   # ----------------------------------------------------------------------------
 
-  def init(srv_name) do
+  def init(srv_name) when is_atom(srv_name) do
     Logger.debug "srv_name: #{srv_name}"
 
     items = :ets.new(srv_name, [:named_table, read_concurrency: true])
-
-    # mapped by strings, and ets.new requires an atom.
-    # All of the advice says string->atom is bad.
 
     {:ok, {items}}
   end
@@ -81,6 +75,6 @@ defmodule IbGib.Cache do
 
   defp put_impl(items, key, value) do
     Logger.debug "key: #{key}, value: #{inspect value}"
-    :ets.insert(items, {key, value})
+    :ets.insert_new(items, {key, value})
   end
 end

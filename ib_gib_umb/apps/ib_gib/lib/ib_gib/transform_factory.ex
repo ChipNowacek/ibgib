@@ -1,47 +1,20 @@
 defmodule IbGib.TransformFactory do
+  alias IbGib.Helper
 
-  @spec fork(String.t) :: map
-  def fork(dest_ib \\ new_id) do
-    data = %{dest_ib: dest_ib}
-    ib = hash(data)
+  @doc """
+  Creates a fork with source ib of "ib" and dest_ib of given `dest_ib`.
+  """
+  @spec fork(String.t, String.t) :: map
+  def fork(src_ib_gib \\ "ib|gib", dest_ib \\ Helper.new_id) do
+
+    data = %{src_ib_gib: src_ib_gib, dest_ib: dest_ib}
+    gib = Helper.hash(data)
     %{
-      ib: ib,
-      gib: "fork",
-      ib_gib: ["ib_gib", "ib_fork"],
+      ib: "fork",
+      gib: gib,
+      ib_gib: ["ib_gib", "fork_gib"],
       data: data
     }
   end
 
-  def new_id() do
-    RandomGib.Get.some_letters(30)
-  end
-
-  @doc ~S"""
-   Encodes `map` into json and then creates a unique hash.
-
-  ## Examples
-
-    iex> IbGib.TransformFactory.hash(%{"a" => "a here", "b" => "b here too"})
-    "0AB8246B11E174B2A4A65F0D8AA50BB4CDF712C48BD8C532F57D1703F3404F33"
-
-  """
-  @spec hash(map) :: String.t
-  def hash(map) when is_map(map) do
-    {:ok, json} = Poison.encode(map)
-    hash(json)
-  end
-
-  @doc ~S"""
-   Encodes `s` into json and then creates a unique hash.
-
-  ## Examples
-
-    iex> IbGib.TransformFactory.hash("oijwfensdfjoIEFas283e7NISWEFJOIwe98wefj")
-    "9BDE0A867929A62CA07A4BB5CC21F8E5BBBE388BA477B0E5FCB4B9B74294268F"
-
-  """
-  @spec hash(String.t) :: String.t
-  def hash(s) when is_bitstring(s) do
-    :crypto.hash(:sha256, s) |> Base.encode16
-  end
 end
