@@ -34,7 +34,7 @@ defmodule IbGib.Expression.RegistryTest do
     # Logger.debug "#{inspect test_name}"
     result = IbGib.Expression.Registry.start_link(test_name)
 
-    {:ok, pid} = IbGib.Expression.start_link({"ib", "gib"})
+    {:ok, pid} = IbGib.Expression.start_link({:ib_gib, {"ib", "gib"}})
 
     register_result = IbGib.Expression.Registry.register("ib_gib", pid, test_name)
 
@@ -46,7 +46,7 @@ defmodule IbGib.Expression.RegistryTest do
     # Logger.debug "#{inspect test_name}"
     result = IbGib.Expression.Registry.start_link(test_name)
 
-    {:ok, pid} = IbGib.Expression.start_link({"ib", "gib"})
+    {:ok, pid} = IbGib.Expression.start_link({:ib_gib, {"ib", "gib"}})
 
     register_result = IbGib.Expression.Registry.register("ib_gib", pid, test_name)
 
@@ -66,7 +66,7 @@ defmodule IbGib.Expression.RegistryTest do
     # Logger.debug "#{inspect test_name}"
     result = IbGib.Expression.Registry.start_link(test_name)
 
-    {:ok, pid} = IbGib.Expression.start_link({"ib", "gib"})
+    {:ok, pid} = IbGib.Expression.start_link({:ib_gib, {"ib", "gib"}})
 
     Logger.debug "unlinking pid: #{inspect pid}"
     Process.unlink(pid)
@@ -82,8 +82,7 @@ defmodule IbGib.Expression.RegistryTest do
 
     # Register a dummy to ensure that the registry has processed the
     # handle_info
-    {:ok, pid_dummy} = IbGib.Expression.start_link({"ib", "gibdummy"})
-    register_result = IbGib.Expression.Registry.register("ib_gibdummy", pid_dummy, test_name)
+    dummy_register_result = IbGib.Expression.Registry.register("ib_gib", pid, test_name)
 
 
     {get_result, get_term} = IbGib.Expression.Registry.get_process("ib_gib", test_name)
@@ -99,7 +98,7 @@ defmodule IbGib.Expression.RegistryTest do
     # Logger.debug "#{inspect test_name}"
     result = IbGib.Expression.Registry.start_link(test_name)
 
-    {:ok, pid} = IbGib.Expression.start_link({"ib", "gib"})
+    {:ok, pid} = IbGib.Expression.start_link({:ib_gib, {"ib", "gib"}})
 
     {get_result, get_term} = IbGib.Expression.Registry.get_process("ib_gib", test_name)
 

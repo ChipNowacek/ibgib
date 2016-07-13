@@ -2,6 +2,10 @@ defmodule IbGib.Expression.Supervisor do
   use Supervisor
   require Logger
 
+  alias IbGib.{Helper, Expression.Registry}
+
+  @delim "^"
+
   def start_link do
     Supervisor.start_link(__MODULE__, :ok, name: IbGib.Expression.Supervisor)
   end
@@ -24,30 +28,27 @@ defmodule IbGib.Expression.Supervisor do
   # ----------------------------------------------------------------------------
 
   @doc """
-  Start an `IbGib.Expression` process from a pre-existing ib|gib that has
+  Start an `IbGib.Expression` process from a pre-existing ib^gib that has
   already been expressed and is in storage.
 
-  Returns {:ok, expr_pid}. If the expression for the given `ib|gib` already
+  Returns {:ok, expr_pid}. If the expression for the given `ib^gib` already
   has an existing process/pid, then it will return that. Otherwise, it will
   create a new process, load it from storage, register it with the process
   registry and return that process' pid.
   """
-  def start_expression(expr_ib_gib \\ "ib|gib") when is_bitstring(expr_ib_gib) do
-    ib_gib = String.split(expr_ib_gib, "|", parts: 2)
+  def start_expression(expr_ib_gib \\ "ib#{@delim}gib") when is_bitstring(expr_ib_gib) do
+    ib_gib = String.split(expr_ib_gib, @delim, parts: 2)
     Logger.debug "ib_gib: #{inspect ib_gib}"
 
-    args = [{:ib_gib, {Enum.at(ib_gib, 0), Enum.at(ib_gib, 1)}}]
 
-    {get_result, expr_pid} = IbGib.Expression.Registry.get_process(expr_ib_gib)
+    {get_result, expr_pid} = Registry.get_process(expr_ib_gib)
     if (get_result === :ok) do
       Logger.debug "already started expr: #{expr_ib_gib}"
       {:ok, expr_pid}
     else
-      Logger.debug "Existing expression process not found in registry. Going to start a new expression process. start args: #{inspect args}"
-      with {:ok, expr_pid} <- Supervisor.start_child(IbGib.Expression.Supervisor, args),
-        :ok <- IbGib.Expression.Registry.register(expr_ib_gib, expr_pid),
-        do: {:ok, expr_pid}
+      args = [{:ib_gib, {Enum.at(ib_gib, 0), Enum.at(ib_gib, 1)}}]
 
+      start(args)
       # result = Supervisor.start_child(IbGib.Expression.Supervisor, args)
       # Logger.debug "start_child result: #{inspect result}"
       # case result do
@@ -62,21 +63,20 @@ defmodule IbGib.Expression.Supervisor do
       # end
     end
   end
-
   def start_expression({ib, gib}) when is_bitstring(ib) and is_bitstring(gib) do
-    start_expression(ib <> "|" <> gib)
+    start_expression(Helper.get_ib_gib!(ib, gib))
   end
   def start_expression({a, b}) when is_map(a) and is_map(b) do
-    args = [{:combine, {a, b}}]
     Logger.debug "combining two ib"
-    if (b[:ib] === "fork" and b[:gib] !== "gib") do
-      # We are applying a fork transform.
+    args = [{:combine, {a, b}}]
+    start(args)
+  end
 
-      :ok
-    else
-      :error
-    end
+  defp start(args) do
+    Logger.debug "Existing expression process not found in registry. Going to start a new expression process. start args: #{inspect args}"
 
+    with {:ok, expr_pid} <- Supervisor.start_child(IbGib.Expression.Supervisor, args),
+      do: {:ok, expr_pid}
   end
   # def start_expression(:fork, fork_transform) when is_map(fork_transform) do
   #   Logger.debug "#{inspect(fork_transform)}"

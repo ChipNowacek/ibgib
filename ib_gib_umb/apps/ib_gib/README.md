@@ -1,6 +1,6 @@
 # IbGib
 
-For abstract and heady conceptual material, read [ibgib's readme](https://github.com/ibgib/ibgib/blob/master/README.md) or check out our 
+For abstract and heady conceptual material, read [ibgib's readme](https://github.com/ibgib/ibgib/blob/master/README.md) or check out our
 [wiki](https://github.com/ibgib/ibgib/wiki).
 
 ## Installation
@@ -119,8 +119,8 @@ end
 
 In order to create the fork transform instance, I've first created
 [`IbGib.TransformFactory`](lib/ib_gib/transform_factory.ex) and added a
-`fork/1` factory function. This function
-accepts a single optional argument for the fork: `dest_ib`. We use this if we
+`fork/2` factory function. This function
+accepts two arguments: `src_ib` and `dest_ib`. We use this if we
 want to control the `ib` "id" of the Thing being "created" with the fork.
 The "id" `ib` of the fork transform itself will be a hash using `dest_ib`..
 

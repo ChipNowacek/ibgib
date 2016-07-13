@@ -1,13 +1,15 @@
 defmodule IbGib.Helper do
+  @delim "^"
+
   @spec get_ib_gib(String.t, String.t) :: {:ok, String.t} | {:error, String.t}
   def get_ib_gib(ib, gib) when is_bitstring(ib) and is_bitstring(gib) do
-    {:ok, ib <> "|" <> gib}
+    {:ok, ib <> @delim <> gib}
   end
   def get_ib_gib(ib, gib) do
     {:error, "ib and gib are not both bitstrings."}
   end
 
-  @spec get_ib_gib(String.t, String.t) :: String.t
+  @spec get_ib_gib!(String.t, String.t) :: String.t
   def get_ib_gib!(ib, gib) do
     case get_ib_gib(ib, gib) do
       {:ok, result} -> result
@@ -20,6 +22,26 @@ defmodule IbGib.Helper do
     RandomGib.Get.some_letters(30)
   end
 
+
+  @spec hash(String.t, list(String.t), map) :: String.t
+  def hash(ib, ib_gib_history, data \\ %{}) when
+      is_bitstring(ib) and
+      is_list(ib_gib_history) and
+      is_map(data) do
+    ib_hash = hash(ib)
+    history_hash = hash(ib_gib_history)
+    data_hash = hash(data)
+
+    hash(ib_hash <> history_hash <> data_hash)
+  end
+
+
+  @spec hash(list(String.t)) :: String.t
+  def hash(list) when is_list(list) do
+    [head | tail] = list
+    aggregate = List.foldl(tail, head, fn(x, acc) -> acc <> "," <> x end)
+    hash(aggregate)
+  end
   @doc ~S"""
    Encodes `map` into json and then creates a unique hash.
 
@@ -34,7 +56,6 @@ defmodule IbGib.Helper do
     {:ok, json} = Poison.encode(map)
     hash(json)
   end
-
   @doc ~S"""
    Encodes `s` into json and then creates a unique hash.
 

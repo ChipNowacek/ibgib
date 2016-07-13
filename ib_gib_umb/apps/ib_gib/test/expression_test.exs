@@ -3,6 +3,8 @@ defmodule IbGib.ExpressionTest do
   alias IbGib.{Expression, TransformFactory}
   require Logger
 
+  @delim "^"
+
   @tag :capture_log
   test "create expression, from scratch, root Thing" do
     {result, _expression} = Expression.Supervisor.start_expression()
@@ -14,12 +16,12 @@ defmodule IbGib.ExpressionTest do
     {result, expr_pid} = Expression.Supervisor.start_expression()
     assert result === :ok
 
-    {get_result, get_expr_pid} = Expression.Registry.get_process("ib|gib")
+    {get_result, get_expr_pid} = Expression.Registry.get_process("ib#{@delim}gib")
     assert get_result === :ok
     assert get_expr_pid === expr_pid
   end
 
-  # @tag :capture_log
+  @tag :capture_log
   test "create expression, from scratch, root Thing, fork" do
     {result, expr_pid} = Expression.Supervisor.start_expression()
     assert result === :ok
