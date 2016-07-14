@@ -39,6 +39,7 @@ defmodule IbGib.Expression do
   # Inits
   # ----------------------------------------------------------------------------
   def init({:ib_gib, {ib, gib}}) when is_bitstring(ib) and is_bitstring(gib) do
+    Logger.metadata([x: :ib_gib])
     info =
       if ib === "ib" and gib === "gib" do
         Logger.debug "initializing ib_gib root expression."
@@ -61,55 +62,114 @@ defmodule IbGib.Expression do
     end
   end
   def init({:combine, {a, b}}) when is_map(a) and is_map(b) do
-    if (b[:ib] === "fork" and b[:gib] !== "gib") do
-      # We are applying a fork transform.
-      Logger.debug "applying fork b to ib_gib a.\na: #{inspect a}\nb: #{inspect b}\n"
-      Logger.debug "a[:ib_gib_history]: #{inspect a[:ib_gib_history]}"
-      fork_data = b[:data]
+    Logger.metadata([x: :combine])
+    cond do
+      b[:ib] === "fork" and b[:gib] !== "gib" ->
+        combine_fork(a, b)
+      b[:ib] === "mut8" and b[:gib] !== "gib" ->
+        combine_mut8(a, b)
+      true ->
+        err_msg = "unknown combination: a: #{inspect a}, b: #{inspect b}"
+        Logger.error err_msg
+        {:error, err_msg}
+    end
+  end
 
-      # We're going to borrow `a` as our own info for the new thing. We're just
-      # going to change its `ib`, `gib`, and `ib_gib_history`.
+  defp combine_fork(a, b) do
+    # We are applying a fork transform.
+    Logger.debug "applying fork b to ib_gib a.\na: #{inspect a}\nb: #{inspect b}\n"
+    Logger.debug "a[:ib_gib_history]: #{inspect a[:ib_gib_history]}"
+    fork_data = b[:data]
 
-      # We take the ib directly from the fork's `dest_ib`.
-      Logger.debug "Setting a[:ib]... fork_data: #{inspect fork_data}"
-      ib = fork_data[:dest_ib]
-      a = Map.put(a, :ib, ib)
-      Logger.debug "a: #{inspect a}"
+    # We're going to borrow `a` as our own info for the new thing. We're just
+    # going to change its `ib`, `gib`, and `ib_gib_history`.
 
-      # We add the fork itself to the `ib_gib_history`.
-      Logger.debug "Setting a[:ib_gib_history] to include fork that we're applying..."
-      b_ib_gib = Helper.get_ib_gib!(b[:ib], b[:gib])
-      a_history = a[:ib_gib_history]
-      ib_gib_history = a_history ++ [b_ib_gib]
-      Logger.debug "ib_gib_history: #{inspect ib_gib_history}"
-      a = Map.put(a, :ib_gib_history, ib_gib_history)
-      Logger.debug "History set. new a[:ib_gib_history]: #{inspect a[:ib_gib_history]}"
+    # We take the ib directly from the fork's `dest_ib`.
+    Logger.debug "Setting a[:ib]... fork_data: #{inspect fork_data}"
+    ib = fork_data[:dest_ib]
+    a = Map.put(a, :ib, ib)
+    Logger.debug "a: #{inspect a}"
 
-      data = Map.get(a, :data, %{})
-      Logger.debug "data: #{inspect data}"
-      a = Map.put(a, :data, data)
+    # We add the fork itself to the `ib_gib_history`.
+    Logger.debug "Setting a[:ib_gib_history] to include fork that we're applying..."
+    b_ib_gib = Helper.get_ib_gib!(b[:ib], b[:gib])
+    a_history = a[:ib_gib_history]
+    ib_gib_history = a_history ++ [b_ib_gib]
+    Logger.debug "ib_gib_history: #{inspect ib_gib_history}"
+    a = Map.put(a, :ib_gib_history, ib_gib_history)
+    Logger.debug "History set. new a[:ib_gib_history]: #{inspect a[:ib_gib_history]}"
 
-      # Now we calculate the new hash and set it to `:gib`.
-      gib = Helper.hash(ib, ib_gib_history, data)
-      Logger.debug "gib: #{gib}"
-      a = Map.put(a, :gib, gib)
+    data = Map.get(a, :data, %{})
+    Logger.debug "data: #{inspect data}"
+    a = Map.put(a, :data, data)
 
-      Logger.debug "a[:gib] set to gib: #{gib}"
+    # Now we calculate the new hash and set it to `:gib`.
+    gib = Helper.hash(ib, ib_gib_history, data)
+    Logger.debug "gib: #{gib}"
+    a = Map.put(a, :gib, gib)
 
-      ib_gib = Helper.get_ib_gib!(ib, gib)
-      register_result = IbGib.Expression.Registry.register(ib_gib, self)
+    Logger.debug "a[:gib] set to gib: #{gib}"
 
-      if (register_result === :ok) do
-        Logger.debug "Registered ok. info: #{inspect a}"
-        {:ok, %{:info => a}}
-      else
-        Logger.error "Register expression error: #{inspect register_result}"
-        {:error, register_result}
-      end
+    on_new_expression_completed(ib, gib, a)
+  end
+
+  defp combine_mut8(a, b) do
+    # We are applying a mut8 transform.
+    Logger.debug "applying mut8 b to ib_gib a.\na: #{inspect a}\nb: #{inspect b}\n"
+    Logger.debug "a[:ib_gib_history]: #{inspect a[:ib_gib_history]}"
+    # b_data = b[:data]
+
+    # We're going to borrow `a` as our own info for the new thing. We're just
+    # going to change its `gib`, and `ib_gib_history`, and its `data` since it's
+    # a mut8 transform.
+
+    # the ib stays the same
+    ib = a[:ib]
+    Logger.debug "retaining ib. a[:ib]...: #{ib}"
+
+    # We add the mut8 itself to the `ib_gib_history`.
+    Logger.debug "Setting a[:ib_gib_history] to include mut8 that we're applying..."
+    b_ib_gib = Helper.get_ib_gib!(b[:ib], b[:gib])
+    a_history = a[:ib_gib_history]
+    ib_gib_history = a_history ++ [b_ib_gib]
+    Logger.debug "ib_gib_history: #{inspect ib_gib_history}"
+    a = Map.put(a, :ib_gib_history, ib_gib_history)
+    Logger.debug "History set. new a[:ib_gib_history]: #{inspect a[:ib_gib_history]}"
+
+    a_data = Map.get(a, :data, %{})
+    b_data = Map.get(b, :data, %{})
+    # Adds/Overrides anything in `a_data` with `b_data`
+    merged_data = Map.merge(a_data, b_data[:new_data])
+
+    Logger.debug "merged data: #{inspect merged_data}"
+    a = Map.put(a, :data, merged_data)
+
+    # Now we calculate the new hash and set it to `:gib`.
+    gib = Helper.hash(ib, ib_gib_history, merged_data)
+    Logger.debug "gib: #{gib}"
+    a = Map.put(a, :gib, gib)
+
+    Logger.debug "a[:gib] set to gib: #{gib}"
+
+    on_new_expression_completed(ib, gib, a)
+  end
+
+  defp on_new_expression_completed(ib, gib, info) do
+    Logger.debug "saving and registering new expression. info: #{inspect info}"
+
+    ib_gib = Helper.get_ib_gib!(ib, gib)
+
+    result =
+      with :ok <- IbGib.Data.save(info),
+           :ok <- IbGib.Expression.Registry.register(ib_gib, self),
+        do: :ok
+
+    if (result === :ok) do
+      Logger.debug "Saved and registered ok. info: #{inspect info}"
+      {:ok, %{:info => info}}
     else
-      err_msg = "unknown combination: a: #{inspect a}, b: #{inspect b}"
-      Logger.error err_msg
-      {:error, err_msg}
+      Logger.error "Save/Register error: #{inspect result}"
+      {:error, result}
     end
   end
 
@@ -126,12 +186,39 @@ defmodule IbGib.Expression do
     GenServer.call(expr_pid, {:meet, other_expr_pid})
   end
 
+  @doc """
+  Creates a fork of this expression process, saves it, creates a new,
+  registered expression process with the fork. All internal `data` is
+  copied in the fork process.
+
+  Returns the new forked process' pid or an error.
+  """
   def fork(expr_pid) when is_pid(expr_pid) do
     GenServer.call(expr_pid, :fork)
+  end
+  def fork!(expr_pid) when is_pid(expr_pid) do
+    case fork(expr_pid) do
+      {:ok, new_pid} -> new_pid
+      {:error, reason} -> raise "#{inspect reason}"
+    end
+  end
+
+  def mut8(expr_pid, new_data) when is_pid(expr_pid) and is_map(new_data) do
+    GenServer.call(expr_pid, {:mut8, new_data})
+  end
+  def mut8!(expr_pid, new_data) when is_pid(expr_pid) and is_map(new_data) do
+    case mut8(expr_pid, new_data) do
+      {:ok, new_pid} -> new_pid
+      {:error, reason} -> raise "#{inspect reason}"
+    end
   end
 
   def get_info(expr_pid) when is_pid(expr_pid) do
     GenServer.call(expr_pid, :get_info)
+  end
+  def get_info!(expr_pid) when is_pid(expr_pid) do
+    {:ok, result} = GenServer.call(expr_pid, :get_info)
+    result
   end
 
   # ----------------------------------------------------------------------------
@@ -139,10 +226,12 @@ defmodule IbGib.Expression do
   # ----------------------------------------------------------------------------
 
   def handle_call({:meet, other_expr_pid}, _from, state) do
+    Logger.metadata([x: :meet])
     Logger.debug ":ib_gib"
     {:reply, meet_impl(other_expr_pid, state), state}
   end
   def handle_call(:fork, _from, state) do
+    Logger.metadata([x: :fork])
     Logger.debug "state: #{inspect state}"
     info = state[:info]
     Logger.debug "info: #{inspect info}"
@@ -166,19 +255,46 @@ defmodule IbGib.Expression do
     meet_result = meet_impl(fork, state)
     Logger.debug "meet_result: #{inspect meet_result}"
 
-    {:reply, :ok, state}
+    {:reply, meet_result, state}
+  end
+  def handle_call({:mut8, new_data}, _from, state) do
+    Logger.metadata([x: :mut8])
+    Logger.debug "state: #{inspect state}"
+    info = state[:info]
+    Logger.debug "info: #{inspect info}"
+    ib = info[:ib]
+    gib = info[:gib]
+    Logger.debug "ib: #{inspect ib}"
+
+    # 1. Create transform
+    mut8_info = TransformFactory.mut8(Helper.get_ib_gib!(ib, gib), new_data)
+    Logger.debug "mut8_info: #{inspect mut8_info}"
+
+    # 2. Save transform
+    IbGib.Data.save(mut8_info)
+
+    # 3. Create instance process of mut8
+    Logger.debug "mut8 saved. Now trying to create mut8 transform expression process"
+    {:ok, mut8} = IbGib.Expression.Supervisor.start_expression({mut8_info[:ib], mut8_info[:gib]})
+
+    # 4. Apply transform
+    Logger.debug "will ib_gib the mut8..."
+    meet_result = meet_impl(mut8, state)
+    Logger.debug "meet_result: #{inspect meet_result}"
+
+    {:reply, meet_result, state}
   end
   def handle_call(:get_info, _from, state) do
-    {:reply, state[:info], state}
+    Logger.metadata([x: :get_info])
+    {:reply, {:ok, state[:info]}, state}
   end
 
   defp meet_impl(other_expr_pid, state) when is_pid(other_expr_pid) and is_map(state) do
     Logger.debug "state: #{inspect state}"
     Logger.debug "other_expr_pid: #{inspect other_expr_pid}"
 
-    other_info = get_info(other_expr_pid)
+    {:ok, other_info} = get_info(other_expr_pid)
     Logger.debug "other_info: #{inspect other_info}"
     IbGib.Expression.Supervisor.start_expression({state[:info], other_info})
   end
-
 end

@@ -63,8 +63,8 @@ defmodule IbGib.Expression.Registry do
   end
 
   def handle_call({:register, {expr_ib_gib, expr_pid}}, _from, {expressions, refs}) do
-    Logger.debug "inspect expressions: #{inspect expressions}"
-    Logger.debug "inspect refs: #{inspect refs}"
+    # Logger.debug "inspect expressions: #{inspect expressions}"
+    # Logger.debug "inspect refs: #{inspect refs}"
 
     case get_process_impl(expressions, expr_ib_gib) do
       {:ok, pid} ->
@@ -81,8 +81,8 @@ defmodule IbGib.Expression.Registry do
     end
   end
   def handle_call({:get_process, {expr_ib_gib}}, _from, {expressions, refs}) do
-    Logger.debug "inspect expressions: #{inspect expressions}"
-    Logger.debug "inspect refs: #{inspect refs}"
+    # Logger.debug "inspect expressions: #{inspect expressions}"
+    # Logger.debug "inspect refs: #{inspect refs}"
 
     {:reply, get_process_impl(expressions, expr_ib_gib), {expressions, refs}}
 

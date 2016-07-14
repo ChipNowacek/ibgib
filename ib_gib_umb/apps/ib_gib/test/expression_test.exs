@@ -1,6 +1,6 @@
 defmodule IbGib.ExpressionTest do
   use ExUnit.Case
-  alias IbGib.{Expression, TransformFactory}
+  alias IbGib.{Expression, TransformFactory, Helper}
   require Logger
 
   @delim "^"
@@ -26,7 +26,34 @@ defmodule IbGib.ExpressionTest do
     {result, expr_pid} = Expression.Supervisor.start_expression()
     assert result === :ok
 
-    fork_result = Expression.fork(expr_pid)
+    {fork_result, new_forked_pid} = Expression.fork(expr_pid)
+    assert fork_result === :ok
+    assert is_pid(new_forked_pid)
+
+    Logger.debug "fork_result: #{fork_result}, new_forked_pid: #{inspect new_forked_pid}"
+  end
+
+  # @tag :capture_log
+  test "create expression, from scratch, root Thing, fork, mut8" do
+    {result, expr_pid} = Expression.Supervisor.start_expression()
+    assert result === :ok
+
+    {fork_result, new_forked_pid} = Expression.fork(expr_pid)
+    assert fork_result === :ok
+    assert is_pid(new_forked_pid)
+
+    Logger.debug "fork_result: #{fork_result}, new_forked_pid: #{inspect new_forked_pid}"
+
+    forked_info = Expression.get_info!(new_forked_pid)
+    Logger.debug "forked_info: #{inspect forked_info}"
+
+    forked_ib_gib = Helper.get_ib_gib!(forked_info[:ib], forked_info[:gib])
+    Logger.debug "forked_ib_gib: #{forked_ib_gib}"
+
+    {mut8_result, new_mut8_pid} = Expression.mut8(new_forked_pid, %{"name" => "text"})
+
+    mut8d_info = Expression.get_info!(new_mut8_pid)
+    Logger.debug "mut8d_info: #{inspect mut8d_info}"
   end
 
   # test "create expression, from scratch, fork transform instance" do

@@ -56,8 +56,7 @@ defmodule IbGib.Cache do
   def handle_call({:put, {key, value}}, _from, {items}) do
     Logger.debug "inspect items: #{inspect items}"
 
-    put_impl(items, key, value)
-    {:reply, :ok, {items}}
+    {:reply, put_impl(items, key, value), {items}}
   end
   def handle_call({:get, {key, name}}, _from, {items}) do
     Logger.debug "inspect items: #{inspect items}"
@@ -74,7 +73,8 @@ defmodule IbGib.Cache do
   end
 
   defp put_impl(items, key, value) do
-    Logger.debug "key: #{key}, value: #{inspect value}"
+    Logger.debug "key: #{key}\nvalue: #{inspect value}"
     :ets.insert_new(items, {key, value})
+    :ok
   end
 end
