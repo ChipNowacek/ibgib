@@ -32,24 +32,24 @@ defmodule IbGib.CacheTest do
   test "start cache, put value", %{test_name: test_name} do
     _result = IbGib.Cache.start_link(test_name)
 
-    key = "some_key"
+    key = "key_#{test_name}"
     value = %{"abc" => 12345}
 
     put_result = IbGib.Cache.put(key, value, test_name)
 
-    assert put_result === :ok
+    assert put_result === {:ok, :ok}
   end
 
   @tag :capture_log
   test "start cache, put value, get value", %{test_name: test_name} do
     _result = IbGib.Cache.start_link(test_name)
 
-    key = "some_key"
+    key = "key_#{test_name}"
     value = %{"abc" => 12345}
 
     put_result = IbGib.Cache.put(key, value, test_name)
 
-    assert put_result === :ok
+    assert put_result === {:ok, :ok}
 
     {get_result, get_value} = IbGib.Cache.get(key, test_name)
 
@@ -58,25 +58,25 @@ defmodule IbGib.CacheTest do
   end
 
   @tag :capture_log
-  test "dont start cache, put value", %{test_name: _test_name} do
+  test "dont start cache, put value", %{test_name: test_name} do
     # result = IbGib.Cache.start_link(test_name)
 
-    key = "some_key"
+    key = "key_#{test_name}"
     value = %{"abc" => 12345}
 
     put_result = IbGib.Cache.put(key, value)
 
-    assert put_result === :ok
+    assert put_result === {:ok, :ok}
   end
 
   @tag :capture_log
-  test "dont start cache, put value, get value", %{test_name: _test_name} do
-    key = "some_key"
+  test "dont start cache, put value, get value", %{test_name: test_name} do
+    key = "some_key#{test_name}"
     value = %{"abc" => 12345}
 
     put_result = IbGib.Cache.put(key, value)
 
-    assert put_result === :ok
+    assert put_result === {:ok, :ok}
 
     {get_result, get_value} = IbGib.Cache.get(key)
 

@@ -74,7 +74,12 @@ defmodule IbGib.Cache do
 
   defp put_impl(items, key, value) do
     Logger.debug "key: #{key}\nvalue: #{inspect value}"
-    :ets.insert_new(items, {key, value})
-    :ok
+    insert_result = :ets.insert_new(items, {key, value})
+    if (insert_result) do
+      {:ok, :ok}
+    else
+      Logger.warn "Attempted to insert duplicate key in cache. key: #{key}"
+      {:error, :already}
+    end
   end
 end

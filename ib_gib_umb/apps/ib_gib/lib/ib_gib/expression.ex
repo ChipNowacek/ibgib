@@ -160,7 +160,7 @@ defmodule IbGib.Expression do
     ib_gib = Helper.get_ib_gib!(ib, gib)
 
     result =
-      with :ok <- IbGib.Data.save(info),
+      with {:ok, :ok} <- IbGib.Data.save(info),
            :ok <- IbGib.Expression.Registry.register(ib_gib, self),
         do: :ok
 
@@ -193,11 +193,11 @@ defmodule IbGib.Expression do
 
   Returns the new forked process' pid or an error.
   """
-  def fork(expr_pid) when is_pid(expr_pid) do
-    GenServer.call(expr_pid, :fork)
+  def fork(expr_pid, dest_ib \\ Helper.new_id) when is_pid(expr_pid) and is_bitstring(dest_ib) do
+    GenServer.call(expr_pid, {:fork, dest_ib})
   end
-  def fork!(expr_pid) when is_pid(expr_pid) do
-    case fork(expr_pid) do
+  def fork!(expr_pid, dest_ib \\ Helper.new_id) when is_pid(expr_pid) and is_bitstring(dest_ib) do
+    case fork(expr_pid, dest_ib) do
       {:ok, new_pid} -> new_pid
       {:error, reason} -> raise "#{inspect reason}"
     end
@@ -230,7 +230,7 @@ defmodule IbGib.Expression do
     Logger.debug ":ib_gib"
     {:reply, meet_impl(other_expr_pid, state), state}
   end
-  def handle_call(:fork, _from, state) do
+  def handle_call({:fork, dest_ib}, _from, state) do
     Logger.metadata([x: :fork])
     Logger.debug "state: #{inspect state}"
     info = state[:info]
@@ -240,7 +240,7 @@ defmodule IbGib.Expression do
     Logger.debug "ib: #{inspect ib}"
 
     # 1. Create transform
-    fork_info = TransformFactory.fork(Helper.get_ib_gib!(ib, gib))
+    fork_info = TransformFactory.fork(Helper.get_ib_gib!(ib, gib), dest_ib)
     Logger.debug "fork_info: #{inspect fork_info}"
 
     # 2. Save transform
