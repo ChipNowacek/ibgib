@@ -46,7 +46,10 @@ defmodule IbGib.Expression do
         %{
           :ib => ib,
           :gib => gib,
-          :relations => %{"history" => ["ib#{@delim}gib"]},
+          :relations => %{
+            "history" => ["ib#{@delim}gib"]#,
+            # "ancestor" => ["ib#{@delim}gib"],
+            },
           :data => %{}
         }
       else
@@ -91,15 +94,16 @@ defmodule IbGib.Expression do
     Logger.debug "a: #{inspect a}"
 
     # We add the fork itself to the `relations` `history`.
-    {:ok, a, new_relations} = add_b_to_history(a, b)
-    Logger.debug "History set. new_relations: #{inspect new_relations}\nNew a (should include new relations history): #{inspect a}"
+    a = a |> add_relation("history", b)
+    Logger.debug "fork_data[:src_ib_gib]: #{fork_data[:src_ib_gib]}"
+    a = a |> add_relation("ancestor", fork_data[:src_ib_gib])
 
     data = Map.get(a, :data, %{})
     Logger.debug "data: #{inspect data}"
     a = Map.put(a, :data, data)
 
     # Now we calculate the new hash and set it to `:gib`.
-    gib = Helper.hash(ib, new_relations, data)
+    gib = Helper.hash(ib, a[:relations], data)
     Logger.debug "gib: #{gib}"
     a = Map.put(a, :gib, gib)
 
@@ -123,8 +127,8 @@ defmodule IbGib.Expression do
     Logger.debug "retaining ib. a[:ib]...: #{ib}"
 
     # We add the mut8 itself to the `relations`.
-    {:ok, a, new_relations} = add_b_to_history(a, b)
-    Logger.debug "History set. new_relations: #{inspect new_relations}\nNew a (should include new relations history): #{inspect a}"
+    a = a |> add_relation("history", b)
+    # {:ok, a, new_relations} = add_b_to_history(a, b)
 
     a_data = Map.get(a, :data, %{})
     b_data = Map.get(b, :data, %{})
@@ -135,7 +139,7 @@ defmodule IbGib.Expression do
     a = Map.put(a, :data, merged_data)
 
     # Now we calculate the new hash and set it to `:gib`.
-    gib = Helper.hash(ib, new_relations, merged_data)
+    gib = Helper.hash(ib, a[:relations], merged_data)
     Logger.debug "gib: #{gib}"
     a = Map.put(a, :gib, gib)
 
@@ -144,18 +148,35 @@ defmodule IbGib.Expression do
     on_new_expression_completed(ib, gib, a)
   end
 
-  defp add_b_to_history(a, b) do
-    Logger.debug "Setting a[:relations][\"history\"] to include mut8 that we're applying..."
-    b_ib_gib = Helper.get_ib_gib!(b[:ib], b[:gib])
+  defp add_relation(a, relation_name, b) when is_map(a) and is_bitstring(relation_name) and is_bitstring(b) do
+    Logger.debug "Adding relation #{relation_name} to a. a[:relations]: #{inspect a[:relations]}"
     a_relations = a[:relations]
-    a_history = a_relations["history"]
-    new_history = a_history ++ [b_ib_gib]
 
-    Logger.debug "new_history: #{inspect new_history}"
-    new_relations = Map.put(a_relations, "history", new_history)
-    new_a = Map.put(a, :relations, new_relations)
-    {:ok, new_a, new_relations}
+    relation = Map.get(a_relations, relation_name, [])
+    new_relation = relation ++ [b]
+
+    new_a_relations = Map.put(a_relations, relation_name, new_relation)
+    new_a = Map.put(a, :relations, new_a_relations)
+    Logger.debug "Added relation #{relation_name} to a. a[:relations]: #{inspect a[:relations]}"
+    new_a
   end
+  defp add_relation(a, relation_name, b) when is_map(a) and is_bitstring(relation_name) and is_map(b) do
+    b_ib_gib = Helper.get_ib_gib!(b[:ib], b[:gib])
+    add_relation(a, relation_name, b_ib_gib)
+  end
+
+  # defp add_b_to_history(a, b) do
+  #   Logger.debug "Setting a[:relations][\"history\"] to include mut8 that we're applying..."
+  #   b_ib_gib = Helper.get_ib_gib!(b[:ib], b[:gib])
+  #   a_relations = a[:relations]
+  #   a_history = a_relations["history"]
+  #   new_history = a_history ++ [b_ib_gib]
+  #
+  #   Logger.debug "new_history: #{inspect new_history}"
+  #   new_relations = Map.put(a_relations, "history", new_history)
+  #   new_a = Map.put(a, :relations, new_relations)
+  #   {:ok, new_a, new_relations}
+  # end
 
   defp on_new_expression_completed(ib, gib, info) do
     Logger.debug "saving and registering new expression. info: #{inspect info}"

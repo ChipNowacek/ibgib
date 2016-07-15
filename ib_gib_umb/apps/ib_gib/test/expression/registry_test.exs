@@ -19,12 +19,12 @@ defmodule IbGib.Expression.RegistryTest do
 
   @tag :capture_log
   test "start registry twice should fail", %{test_name: test_name} do
-    name = "some_name"
-    {result1, term1} = IbGib.Expression.Registry.start_link(test_name)
+    # name = "some_name"
+    {result1, _term1} = IbGib.Expression.Registry.start_link(test_name)
     Logger.debug inspect("result1: #{result1}")
     assert result1 === :ok
 
-    {result2, term2}  = IbGib.Expression.Registry.start_link(test_name)
+    {result2, _term2}  = IbGib.Expression.Registry.start_link(test_name)
     Logger.debug inspect("result2: #{result2}")
     assert result2 === :error
   end
@@ -32,7 +32,7 @@ defmodule IbGib.Expression.RegistryTest do
   @tag :capture_log
   test "register process", %{test_name: test_name} do
     # Logger.debug "#{inspect test_name}"
-    result = IbGib.Expression.Registry.start_link(test_name)
+    _result = IbGib.Expression.Registry.start_link(test_name)
 
     {:ok, pid} = IbGib.Expression.start_link({:ib_gib, {"ib", "gib"}})
 
@@ -44,7 +44,7 @@ defmodule IbGib.Expression.RegistryTest do
   @tag :capture_log
   test "register then get process", %{test_name: test_name} do
     # Logger.debug "#{inspect test_name}"
-    result = IbGib.Expression.Registry.start_link(test_name)
+    _result = IbGib.Expression.Registry.start_link(test_name)
 
     {:ok, pid} = IbGib.Expression.start_link({:ib_gib, {"ib", "gib"}})
 
@@ -64,7 +64,7 @@ defmodule IbGib.Expression.RegistryTest do
   @tag :capture_log
   test "register, kill process, get process should fail", %{test_name: test_name} do
     # Logger.debug "#{inspect test_name}"
-    result = IbGib.Expression.Registry.start_link(test_name)
+    _result = IbGib.Expression.Registry.start_link(test_name)
 
     {:ok, pid} = IbGib.Expression.start_link({:ib_gib, {"ib", "gib"}})
 
@@ -82,7 +82,7 @@ defmodule IbGib.Expression.RegistryTest do
 
     # Register a dummy to ensure that the registry has processed the
     # handle_info
-    dummy_register_result = IbGib.Expression.Registry.register("ib_gib", pid, test_name)
+    _dummy_register_result = IbGib.Expression.Registry.register("ib_gib", pid, test_name)
 
 
     {get_result, get_term} = IbGib.Expression.Registry.get_process("ib_gib", test_name)
@@ -96,9 +96,9 @@ defmodule IbGib.Expression.RegistryTest do
   @tag :capture_log
   test "get unregistered process should fail", %{test_name: test_name} do
     # Logger.debug "#{inspect test_name}"
-    result = IbGib.Expression.Registry.start_link(test_name)
+    _result = IbGib.Expression.Registry.start_link(test_name)
 
-    {:ok, pid} = IbGib.Expression.start_link({:ib_gib, {"ib", "gib"}})
+    {:ok, _pid} = IbGib.Expression.start_link({:ib_gib, {"ib", "gib"}})
 
     {get_result, get_term} = IbGib.Expression.Registry.get_process("ib_gib", test_name)
 

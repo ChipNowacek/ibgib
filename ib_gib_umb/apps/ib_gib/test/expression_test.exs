@@ -1,6 +1,6 @@
 defmodule IbGib.ExpressionTest do
   use ExUnit.Case
-  alias IbGib.{Expression, TransformFactory, Helper}
+  alias IbGib.{Expression, Helper}
   require Logger
 
   @delim "^"
@@ -21,7 +21,7 @@ defmodule IbGib.ExpressionTest do
     assert get_expr_pid === expr_pid
   end
 
-  # @tag :capture_log
+  @tag :capture_log
   test "create expression, from scratch, root Thing, fork" do
     {result, expr_pid} = Expression.Supervisor.start_expression()
     assert result === :ok
@@ -53,6 +53,8 @@ defmodule IbGib.ExpressionTest do
     prop = "prop_name"
     prop_value = "prop value yo"
     {mut8_result, new_mut8_pid} = Expression.mut8(new_forked_pid, %{prop => prop_value})
+
+    assert mut8_result === :ok
 
     mut8d_info = Expression.get_info!(new_mut8_pid)
     Logger.debug "mut8d_info: #{inspect mut8d_info}"
@@ -162,7 +164,7 @@ defmodule IbGib.ExpressionTest do
     assert fork_result_b === :error
   end
 
-  # @tag :capture_log
+  @tag :capture_log
   test "create text, create instance from text" do
     # Pids are essentially references to objects. So that is why I'm going to_
     # start changing some of the _pid variables to the actual "instance" itself.
