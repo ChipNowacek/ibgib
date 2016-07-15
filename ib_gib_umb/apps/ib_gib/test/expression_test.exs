@@ -21,7 +21,7 @@ defmodule IbGib.ExpressionTest do
     assert get_expr_pid === expr_pid
   end
 
-  @tag :capture_log
+  # @tag :capture_log
   test "create expression, from scratch, root Thing, fork" do
     {result, expr_pid} = Expression.Supervisor.start_expression()
     assert result === :ok
@@ -204,10 +204,6 @@ defmodule IbGib.ExpressionTest do
     Logger.debug "text_instance_ib_gib: #{text_instance_ib_gib}\ntext_ib_gib: #{text_ib_gib}"
 
     assert text_instance_ib_gib !== text_ib_gib
-
-    # So even if two ib_gib things have the same `dest_ib`, if they fork
-    # different `ib_gib` sources, then their histories will be different and
-    # they will produce different output `ib_gib` - same `ib`, different `gib`.
   end
   #
   # test "create expression, from scratch, hello world Thing" do

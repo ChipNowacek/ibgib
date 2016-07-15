@@ -46,7 +46,7 @@ defmodule IbGib.Expression do
         %{
           :ib => ib,
           :gib => gib,
-          :ib_gib_history => ["ib#{@delim}gib"],
+          :relations => %{"history" => ["ib#{@delim}gib"]},
           :data => %{}
         }
       else
@@ -78,11 +78,11 @@ defmodule IbGib.Expression do
   defp combine_fork(a, b) do
     # We are applying a fork transform.
     Logger.debug "applying fork b to ib_gib a.\na: #{inspect a}\nb: #{inspect b}\n"
-    Logger.debug "a[:ib_gib_history]: #{inspect a[:ib_gib_history]}"
+    Logger.debug "a[:relations]: #{inspect a[:relations]}"
     fork_data = b[:data]
 
     # We're going to borrow `a` as our own info for the new thing. We're just
-    # going to change its `ib`, `gib`, and `ib_gib_history`.
+    # going to change its `ib`, `gib`, and `relations`.
 
     # We take the ib directly from the fork's `dest_ib`.
     Logger.debug "Setting a[:ib]... fork_data: #{inspect fork_data}"
@@ -90,21 +90,16 @@ defmodule IbGib.Expression do
     a = Map.put(a, :ib, ib)
     Logger.debug "a: #{inspect a}"
 
-    # We add the fork itself to the `ib_gib_history`.
-    Logger.debug "Setting a[:ib_gib_history] to include fork that we're applying..."
-    b_ib_gib = Helper.get_ib_gib!(b[:ib], b[:gib])
-    a_history = a[:ib_gib_history]
-    ib_gib_history = a_history ++ [b_ib_gib]
-    Logger.debug "ib_gib_history: #{inspect ib_gib_history}"
-    a = Map.put(a, :ib_gib_history, ib_gib_history)
-    Logger.debug "History set. new a[:ib_gib_history]: #{inspect a[:ib_gib_history]}"
+    # We add the fork itself to the `relations` `history`.
+    {:ok, a, new_relations} = add_b_to_history(a, b)
+    Logger.debug "History set. new_relations: #{inspect new_relations}\nNew a (should include new relations history): #{inspect a}"
 
     data = Map.get(a, :data, %{})
     Logger.debug "data: #{inspect data}"
     a = Map.put(a, :data, data)
 
     # Now we calculate the new hash and set it to `:gib`.
-    gib = Helper.hash(ib, ib_gib_history, data)
+    gib = Helper.hash(ib, new_relations, data)
     Logger.debug "gib: #{gib}"
     a = Map.put(a, :gib, gib)
 
@@ -116,25 +111,20 @@ defmodule IbGib.Expression do
   defp combine_mut8(a, b) do
     # We are applying a mut8 transform.
     Logger.debug "applying mut8 b to ib_gib a.\na: #{inspect a}\nb: #{inspect b}\n"
-    Logger.debug "a[:ib_gib_history]: #{inspect a[:ib_gib_history]}"
+    Logger.debug "a[:relations]: #{inspect a[:relations]}"
     # b_data = b[:data]
 
     # We're going to borrow `a` as our own info for the new thing. We're just
-    # going to change its `gib`, and `ib_gib_history`, and its `data` since it's
+    # going to change its `gib`, and `relations`, and its `data` since it's
     # a mut8 transform.
 
     # the ib stays the same
     ib = a[:ib]
     Logger.debug "retaining ib. a[:ib]...: #{ib}"
 
-    # We add the mut8 itself to the `ib_gib_history`.
-    Logger.debug "Setting a[:ib_gib_history] to include mut8 that we're applying..."
-    b_ib_gib = Helper.get_ib_gib!(b[:ib], b[:gib])
-    a_history = a[:ib_gib_history]
-    ib_gib_history = a_history ++ [b_ib_gib]
-    Logger.debug "ib_gib_history: #{inspect ib_gib_history}"
-    a = Map.put(a, :ib_gib_history, ib_gib_history)
-    Logger.debug "History set. new a[:ib_gib_history]: #{inspect a[:ib_gib_history]}"
+    # We add the mut8 itself to the `relations`.
+    {:ok, a, new_relations} = add_b_to_history(a, b)
+    Logger.debug "History set. new_relations: #{inspect new_relations}\nNew a (should include new relations history): #{inspect a}"
 
     a_data = Map.get(a, :data, %{})
     b_data = Map.get(b, :data, %{})
@@ -145,13 +135,26 @@ defmodule IbGib.Expression do
     a = Map.put(a, :data, merged_data)
 
     # Now we calculate the new hash and set it to `:gib`.
-    gib = Helper.hash(ib, ib_gib_history, merged_data)
+    gib = Helper.hash(ib, new_relations, merged_data)
     Logger.debug "gib: #{gib}"
     a = Map.put(a, :gib, gib)
 
     Logger.debug "a[:gib] set to gib: #{gib}"
 
     on_new_expression_completed(ib, gib, a)
+  end
+
+  defp add_b_to_history(a, b) do
+    Logger.debug "Setting a[:relations][\"history\"] to include mut8 that we're applying..."
+    b_ib_gib = Helper.get_ib_gib!(b[:ib], b[:gib])
+    a_relations = a[:relations]
+    a_history = a_relations["history"]
+    new_history = a_history ++ [b_ib_gib]
+
+    Logger.debug "new_history: #{inspect new_history}"
+    new_relations = Map.put(a_relations, "history", new_history)
+    new_a = Map.put(a, :relations, new_relations)
+    {:ok, new_a, new_relations}
   end
 
   defp on_new_expression_completed(ib, gib, info) do
@@ -212,6 +215,16 @@ defmodule IbGib.Expression do
       {:error, reason} -> raise "#{inspect reason}"
     end
   end
+
+  # def merge(expr_pid, new_data) when is_pid(expr_pid) and is_map(new_data) do
+  #   GenServer.call(expr_pid, {:merge, new_data})
+  # end
+  # def merge!(expr_pid, new_data) when is_pid(expr_pid) and is_map(new_data) do
+  #   case merge(expr_pid, new_data) do
+  #     {:ok, new_pid} -> new_pid
+  #     {:error, reason} -> raise "#{inspect reason}"
+  #   end
+  # end
 
   def get_info(expr_pid) when is_pid(expr_pid) do
     GenServer.call(expr_pid, :get_info)
@@ -284,6 +297,33 @@ defmodule IbGib.Expression do
 
     {:reply, meet_result, state}
   end
+  # def handle_call({:merge, new_data}, _from, state) do
+  #   Logger.metadata([x: :merge])
+  #   Logger.debug "state: #{inspect state}"
+  #   info = state[:info]
+  #   Logger.debug "info: #{inspect info}"
+  #   ib = info[:ib]
+  #   gib = info[:gib]
+  #   Logger.debug "ib: #{inspect ib}"
+  #
+  #   # 1. Create transform
+  #   merge_info = TransformFactory.merge(Helper.get_ib_gib!(ib, gib), new_data)
+  #   Logger.debug "merge_info: #{inspect merge_info}"
+  #
+  #   # 2. Save transform
+  #   IbGib.Data.save(merge_info)
+  #
+  #   # 3. Create instance process of merge
+  #   Logger.debug "merge saved. Now trying to create merge transform expression process"
+  #   {:ok, merge} = IbGib.Expression.Supervisor.start_expression({merge_info[:ib], merge_info[:gib]})
+  #
+  #   # 4. Apply transform
+  #   Logger.debug "will ib_gib the merge..."
+  #   meet_result = meet_impl(merge, state)
+  #   Logger.debug "meet_result: #{inspect meet_result}"
+  #
+  #   {:reply, meet_result, state}
+  # end
   def handle_call(:get_info, _from, state) do
     Logger.metadata([x: :get_info])
     {:reply, {:ok, state[:info]}, state}

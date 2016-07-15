@@ -23,25 +23,37 @@ defmodule IbGib.Helper do
   end
 
 
-  @spec hash(String.t, list(String.t), map) :: String.t
-  def hash(ib, ib_gib_history, data \\ %{}) when
+  @spec hash(String.t, map, map) :: String.t
+  def hash(ib, relations, data \\ %{}) when
       is_bitstring(ib) and
-      is_list(ib_gib_history) and
+      is_map(relations) and
       is_map(data) do
     ib_hash = hash(ib)
-    history_hash = hash(ib_gib_history)
+    relations_hash = hash(relations)
     data_hash = hash(data)
 
-    hash(ib_hash <> history_hash <> data_hash)
+    hash(ib_hash <> relations_hash <> data_hash)
   end
 
+  # @spec hash(String.t, list(String.t), map) :: String.t
+  # def hash(ib, ib_gib_history, data \\ %{}) when
+  #     is_bitstring(ib) and
+  #     is_list(ib_gib_history) and
+  #     is_map(data) do
+  #   ib_hash = hash(ib)
+  #   history_hash = hash(ib_gib_history)
+  #   data_hash = hash(data)
+  #
+  #   hash(ib_hash <> history_hash <> data_hash)
+  # end
 
-  @spec hash(list(String.t)) :: String.t
-  def hash(list) when is_list(list) do
-    [head | tail] = list
-    aggregate = List.foldl(tail, head, fn(x, acc) -> acc <> "," <> x end)
-    hash(aggregate)
-  end
+
+  # @spec hash(list(String.t)) :: String.t
+  # def hash(list) when is_list(list) do
+  #   [head | tail] = list
+  #   aggregate = List.foldl(tail, head, fn(x, acc) -> acc <> "," <> x end)
+  #   hash(aggregate)
+  # end
   @doc ~S"""
    Encodes `map` into json and then creates a unique hash.
 
