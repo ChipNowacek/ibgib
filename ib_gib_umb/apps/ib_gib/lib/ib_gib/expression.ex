@@ -16,7 +16,7 @@ defmodule IbGib.Expression do
       `ib_gib` that has already been persisted. the `ib` and `gib` uniquely
       identify something in time.
 
-    {:combine, {a, b}} - Use this to create a new ib_gib, usually when applying
+    {:apply, {a, b}} - Use this to create a new ib_gib, usually when applying
       a transform ib_gib `b` to some other ib_gib `a`.
   """
   def start_link(args)
@@ -27,10 +27,10 @@ defmodule IbGib.Expression do
     Logger.debug "start_link result: #{inspect result}"
     result
   end
-  def start_link({:combine, {a, b}}) when is_map(a) and is_map(b) do
+  def start_link({:apply, {a, b}}) when is_map(a) and is_map(b) do
     # expr_id = Helper.new_id |> String.downcase
     Logger.debug "{a, b}: {#{inspect a}, #{inspect b}}"
-    result = GenServer.start_link(__MODULE__, {:combine, {a, b}})
+    result = GenServer.start_link(__MODULE__, {:apply, {a, b}})
     Logger.debug "start_link result: #{inspect result}"
     result
   end
@@ -64,13 +64,13 @@ defmodule IbGib.Expression do
       {:error, register_result}
     end
   end
-  def init({:combine, {a, b}}) when is_map(a) and is_map(b) do
-    Logger.metadata([x: :combine])
+  def init({:apply, {a, b}}) when is_map(a) and is_map(b) do
+    Logger.metadata([x: :apply])
     cond do
       b[:ib] === "fork" and b[:gib] !== "gib" ->
-        combine_fork(a, b)
+        apply_fork(a, b)
       b[:ib] === "mut8" and b[:gib] !== "gib" ->
-        combine_mut8(a, b)
+        apply_mut8(a, b)
       true ->
         err_msg = "unknown combination: a: #{inspect a}, b: #{inspect b}"
         Logger.error err_msg
@@ -78,7 +78,7 @@ defmodule IbGib.Expression do
     end
   end
 
-  defp combine_fork(a, b) do
+  defp apply_fork(a, b) do
     # We are applying a fork transform.
     Logger.debug "applying fork b to ib_gib a.\na: #{inspect a}\nb: #{inspect b}\n"
     Logger.debug "a[:relations]: #{inspect a[:relations]}"
@@ -112,11 +112,10 @@ defmodule IbGib.Expression do
     on_new_expression_completed(ib, gib, a)
   end
 
-  defp combine_mut8(a, b) do
+  defp apply_mut8(a, b) do
     # We are applying a mut8 transform.
     Logger.debug "applying mut8 b to ib_gib a.\na: #{inspect a}\nb: #{inspect b}\n"
     Logger.debug "a[:relations]: #{inspect a[:relations]}"
-    # b_data = b[:data]
 
     # We're going to borrow `a` as our own info for the new thing. We're just
     # going to change its `gib`, and `relations`, and its `data` since it's
@@ -128,7 +127,6 @@ defmodule IbGib.Expression do
 
     # We add the mut8 itself to the `relations`.
     a = a |> add_relation("history", b)
-    # {:ok, a, new_relations} = add_b_to_history(a, b)
 
     a_data = Map.get(a, :data, %{})
     b_data = Map.get(b, :data, %{})
@@ -165,19 +163,6 @@ defmodule IbGib.Expression do
     add_relation(a, relation_name, b_ib_gib)
   end
 
-  # defp add_b_to_history(a, b) do
-  #   Logger.debug "Setting a[:relations][\"history\"] to include mut8 that we're applying..."
-  #   b_ib_gib = Helper.get_ib_gib!(b[:ib], b[:gib])
-  #   a_relations = a[:relations]
-  #   a_history = a_relations["history"]
-  #   new_history = a_history ++ [b_ib_gib]
-  #
-  #   Logger.debug "new_history: #{inspect new_history}"
-  #   new_relations = Map.put(a_relations, "history", new_history)
-  #   new_a = Map.put(a, :relations, new_relations)
-  #   {:ok, new_a, new_relations}
-  # end
-
   defp on_new_expression_completed(ib, gib, info) do
     Logger.debug "saving and registering new expression. info: #{inspect info}"
 
@@ -203,11 +188,11 @@ defmodule IbGib.Expression do
 
 
   @doc """
-  "Combines" two expression processes. This is usually going to be "apply
+  "applys" two expression processes. This is usually going to be "apply
   transform".
   """
-  def meet(expr_pid, other_expr_pid) when is_pid(expr_pid) and is_pid(other_expr_pid) do
-    GenServer.call(expr_pid, {:meet, other_expr_pid})
+  def contact(this_pid, that_pid) when is_pid(this_pid) and is_pid(that_pid) do
+    GenServer.call(this_pid, {:contact, that_pid})
   end
 
   @doc """
@@ -259,10 +244,10 @@ defmodule IbGib.Expression do
   # Server
   # ----------------------------------------------------------------------------
 
-  def handle_call({:meet, other_expr_pid}, _from, state) do
-    Logger.metadata([x: :meet])
+  def handle_call({:contact, other_expr_pid}, _from, state) do
+    Logger.metadata([x: :contact])
     Logger.debug ":ib_gib"
-    {:reply, meet_impl(other_expr_pid, state), state}
+    {:reply, contact_impl(other_expr_pid, state), state}
   end
   def handle_call({:fork, dest_ib}, _from, state) do
     Logger.metadata([x: :fork])
@@ -286,10 +271,10 @@ defmodule IbGib.Expression do
 
     # 4. Apply transform
     Logger.debug "will ib_gib the fork..."
-    meet_result = meet_impl(fork, state)
-    Logger.debug "meet_result: #{inspect meet_result}"
+    contact_result = contact_impl(fork, state)
+    Logger.debug "contact_result: #{inspect contact_result}"
 
-    {:reply, meet_result, state}
+    {:reply, contact_result, state}
   end
   def handle_call({:mut8, new_data}, _from, state) do
     Logger.metadata([x: :mut8])
@@ -313,10 +298,10 @@ defmodule IbGib.Expression do
 
     # 4. Apply transform
     Logger.debug "will ib_gib the mut8..."
-    meet_result = meet_impl(mut8, state)
-    Logger.debug "meet_result: #{inspect meet_result}"
+    contact_result = contact_impl(mut8, state)
+    Logger.debug "contact_result: #{inspect contact_result}"
 
-    {:reply, meet_result, state}
+    {:reply, contact_result, state}
   end
   # def handle_call({:merge, new_data}, _from, state) do
   #   Logger.metadata([x: :merge])
@@ -340,21 +325,21 @@ defmodule IbGib.Expression do
   #
   #   # 4. Apply transform
   #   Logger.debug "will ib_gib the merge..."
-  #   meet_result = meet_impl(merge, state)
-  #   Logger.debug "meet_result: #{inspect meet_result}"
+  #   contact_result = contact_impl(merge, state)
+  #   Logger.debug "contact_result: #{inspect contact_result}"
   #
-  #   {:reply, meet_result, state}
+  #   {:reply, contact_result, state}
   # end
   def handle_call(:get_info, _from, state) do
     Logger.metadata([x: :get_info])
     {:reply, {:ok, state[:info]}, state}
   end
 
-  defp meet_impl(other_expr_pid, state) when is_pid(other_expr_pid) and is_map(state) do
+  defp contact_impl(other_pid, state) when is_pid(other_pid) and is_map(state) do
     Logger.debug "state: #{inspect state}"
-    Logger.debug "other_expr_pid: #{inspect other_expr_pid}"
+    Logger.debug "other_expr_pid: #{inspect other_pid}"
 
-    {:ok, other_info} = get_info(other_expr_pid)
+    {:ok, other_info} = get_info(other_pid)
     Logger.debug "other_info: #{inspect other_info}"
     IbGib.Expression.Supervisor.start_expression({state[:info], other_info})
   end

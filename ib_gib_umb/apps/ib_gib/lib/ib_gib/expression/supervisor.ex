@@ -68,7 +68,7 @@ defmodule IbGib.Expression.Supervisor do
   end
   def start_expression({a, b}) when is_map(a) and is_map(b) do
     Logger.debug "combining two ib"
-    args = [{:combine, {a, b}}]
+    args = [{:apply, {a, b}}]
     start(args)
   end
 
