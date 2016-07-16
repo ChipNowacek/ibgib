@@ -71,6 +71,8 @@ defmodule IbGib.Expression do
         apply_fork(a, b)
       b[:ib] === "mut8" and b[:gib] !== "gib" ->
         apply_mut8(a, b)
+      b[:ib] === "rel8" and b[:gib] !== "gib" ->
+        apply_rel8(a, b)
       true ->
         err_msg = "unknown combination: a: #{inspect a}, b: #{inspect b}"
         Logger.error err_msg
@@ -146,7 +148,52 @@ defmodule IbGib.Expression do
     on_new_expression_completed(ib, gib, a)
   end
 
-  defp add_relation(a, relation_name, b) when is_map(a) and is_bitstring(relation_name) and is_bitstring(b) do
+  defp apply_rel8(a, b) do
+    # We are applying a rel8 transform.
+    Logger.debug "applying rel8 b to ib_gib a.\na: #{inspect a}\nb: #{inspect b}\n"
+    Logger.debug "a[:relations]: #{inspect a[:relations]}"
+
+    # We add the rel8 transform to the history.
+    a = a |> add_relation("history", b)
+
+    # We need to know if we are source or destination of this rel8n.
+    src_ib_gib = b[:data][:src_ib_gib]
+    dest_ib_gib = b[:data][:dest_ib_gib]
+
+    # Retaining ib because is a rel8 transform
+    a_ib_gib = Helper.get_ib_gib!(a[:ib], a[:gib])
+
+    {new_relations, other_ib_gib} =
+      if (a_ib_gib === src_ib_gib) do
+        {b[:data][:src_rel8ns], dest_ib_gib}
+      else
+        {b[:data][:dest_rel8ns], src_ib_gib}
+      end
+    Logger.debug "new_relations: #{inspect new_relations}, other_ib_gib: #{other_ib_gib}"
+    new_a_relations =
+      Enum.reduce(new_relations, a[:relations], fn(x, acc) ->
+        if Map.has_key?(acc, x) and !Enum.member?(acc[x], other_ib_gib) do
+          # We already have the key, so append it to the end of the list
+          Map.put(acc, x, acc[x] ++ [other_ib_gib])
+        else
+          Map.put_new(acc, x, [other_ib_gib])
+        end
+      end)
+    a = Map.put(a, :relations, new_a_relations)
+    Logger.debug "new a: #{inspect a}"
+
+    # Now we calculate the new hash and set it to `:gib`.
+    ib = a[:ib]
+    new_gib = Helper.hash(ib, a[:relations], a[:data])
+    Logger.debug "new_gib: #{new_gib}"
+    a = Map.put(a, :gib, new_gib)
+
+    Logger.debug "a[:gib] set to gib: #{a[:gib]}"
+
+    on_new_expression_completed(ib, new_gib, a)
+  end
+
+  defp add_relation(a, {relation_name, b}) when is_map(a) and is_bitstring(relation_name) and is_bitstring(b) do
     Logger.debug "Adding relation #{relation_name} to a. a[:relations]: #{inspect a[:relations]}"
     a_relations = a[:relations]
 
@@ -186,7 +233,6 @@ defmodule IbGib.Expression do
   # Client API
   # ----------------------------------------------------------------------------
 
-
   @doc """
   "applys" two expression processes. This is usually going to be "apply
   transform".
@@ -205,19 +251,52 @@ defmodule IbGib.Expression do
   def fork(expr_pid, dest_ib \\ Helper.new_id) when is_pid(expr_pid) and is_bitstring(dest_ib) do
     GenServer.call(expr_pid, {:fork, dest_ib})
   end
-  def fork!(expr_pid, dest_ib \\ Helper.new_id) when is_pid(expr_pid) and is_bitstring(dest_ib) do
+
+  @doc """
+  Bang version of `fork/2`.
+  """
+  def fork!(expr_pid, dest_ib \\ Helper.new_id)
+    when is_pid(expr_pid) and is_bitstring(dest_ib) do
     case fork(expr_pid, dest_ib) do
       {:ok, new_pid} -> new_pid
       {:error, reason} -> raise "#{inspect reason}"
     end
   end
 
+
   def mut8(expr_pid, new_data) when is_pid(expr_pid) and is_map(new_data) do
     GenServer.call(expr_pid, {:mut8, new_data})
   end
-  def mut8!(expr_pid, new_data) when is_pid(expr_pid) and is_map(new_data) do
+
+  @doc """
+  Bang version of `mut8/2`.
+  """
+  def mut8!(expr_pid, new_data)
+    when is_pid(expr_pid) and is_map(new_data) do
     case mut8(expr_pid, new_data) do
       {:ok, new_pid} -> new_pid
+      {:error, reason} -> raise "#{inspect reason}"
+    end
+  end
+
+  @default_rel8ns ["rel8d"]
+
+  def rel8(expr_pid, other_pid, src_rel8ns \\ @default_rel8ns, dest_rel8ns \\ @default_rel8ns)
+    when is_pid(expr_pid) and is_pid(other_pid) and expr_pid !== other_pid and
+         is_list(src_rel8ns) and length(src_rel8ns) >= 1 and
+         is_list(dest_rel8ns) and length(dest_rel8ns) >= 1  do
+    GenServer.call(expr_pid, {:rel8, other_pid, src_rel8ns, dest_rel8ns})
+  end
+
+  @doc """
+  Bang version of `rel8/4`.
+  """
+  def rel8!(expr_pid, other_pid, src_rel8ns \\ @default_rel8ns, dest_rel8ns \\ @default_rel8ns)
+    when is_pid(expr_pid) and is_pid(other_pid) and expr_pid !== other_pid and
+         is_list(src_rel8ns) and length(src_rel8ns) >= 1 and
+         is_list(dest_rel8ns) and length(dest_rel8ns) >= 1  do
+    case rel8(expr_pid, other_pid, src_rel8ns, dest_rel8ns) do
+      {:ok, {new_expr_pid, new_other_pid}} -> {new_expr_pid, new_other_pid}
       {:error, reason} -> raise "#{inspect reason}"
     end
   end
@@ -235,6 +314,10 @@ defmodule IbGib.Expression do
   def get_info(expr_pid) when is_pid(expr_pid) do
     GenServer.call(expr_pid, :get_info)
   end
+
+  @doc """
+  Bang version of `get_info/1`.
+  """
   def get_info!(expr_pid) when is_pid(expr_pid) do
     {:ok, result} = GenServer.call(expr_pid, :get_info)
     result
@@ -303,33 +386,33 @@ defmodule IbGib.Expression do
 
     {:reply, contact_result, state}
   end
-  # def handle_call({:merge, new_data}, _from, state) do
-  #   Logger.metadata([x: :merge])
-  #   Logger.debug "state: #{inspect state}"
-  #   info = state[:info]
-  #   Logger.debug "info: #{inspect info}"
-  #   ib = info[:ib]
-  #   gib = info[:gib]
-  #   Logger.debug "ib: #{inspect ib}"
-  #
-  #   # 1. Create transform
-  #   merge_info = TransformFactory.merge(Helper.get_ib_gib!(ib, gib), new_data)
-  #   Logger.debug "merge_info: #{inspect merge_info}"
-  #
-  #   # 2. Save transform
-  #   IbGib.Data.save(merge_info)
-  #
-  #   # 3. Create instance process of merge
-  #   Logger.debug "merge saved. Now trying to create merge transform expression process"
-  #   {:ok, merge} = IbGib.Expression.Supervisor.start_expression({merge_info[:ib], merge_info[:gib]})
-  #
-  #   # 4. Apply transform
-  #   Logger.debug "will ib_gib the merge..."
-  #   contact_result = contact_impl(merge, state)
-  #   Logger.debug "contact_result: #{inspect contact_result}"
-  #
-  #   {:reply, contact_result, state}
-  # end
+  def handle_call({:rel8, other_pid, src_rel8ns, dest_rel8ns}, _from, state) do
+    Logger.metadata([x: :rel8])
+    Logger.debug "state: #{inspect state}"
+    info = state[:info]
+    Logger.debug "info: #{inspect info}"
+
+    # 1. Create transform
+    this_ib_gib = Helper.get_ib_gib!(info[:ib], info[:gib])
+    other_info = IbGib.Expression.get_info!(other_pid)
+    other_ib_gib = Helper.get_ib_gib!(other_info[:ib], other_info[:gib])
+    rel8_info = this_ib_gib |> TransformFactory.rel8(other_ib_gib, src_rel8ns, dest_rel8ns)
+    Logger.debug "rel8_info: #{inspect rel8_info}"
+
+    # 2. Save transform
+    IbGib.Data.save(rel8_info)
+
+    # 3. Create instance process of rel8
+    Logger.debug "rel8 saved. Now trying to create rel8 transform expression process"
+    {:ok, rel8} = IbGib.Expression.Supervisor.start_expression({rel8_info[:ib], rel8_info[:gib]})
+
+    # 4. Apply transform to both this and other
+    Logger.debug "will ib_gib the rel8..."
+    {:ok, new_this} = contact_impl(rel8, state)
+    {:ok, new_other} = other_pid |> IbGib.Expression.contact(rel8)
+
+    {:reply, {:ok, {new_this, new_other}}, state}
+  end
   def handle_call(:get_info, _from, state) do
     Logger.metadata([x: :get_info])
     {:reply, {:ok, state[:info]}, state}

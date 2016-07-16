@@ -210,7 +210,7 @@ defmodule IbGib.ExpressionTest do
 
 
   @tag :capture_log
-  test "hello world then fork instance, text then fork instance, merge" do
+  test "hello world then fork instance, text then fork instance, relate" do
 
     {:ok, root} = Expression.Supervisor.start_expression()
 
@@ -238,7 +238,8 @@ defmodule IbGib.ExpressionTest do
     # text_instance_info = text_instance |> Expression.get_info!
     # text_instance_ib_gib = Helper.get_ib_gib!(text_instance_info[:ib], text_instance_info[:gib])
 
-
+    {:ok, hw_instance, text_instance} =
+      hw_instance |> Expression.rel8(text_instance)
   end
   #
   # test "create expression, from scratch, hello world instance Thing with hello world text Thing" do

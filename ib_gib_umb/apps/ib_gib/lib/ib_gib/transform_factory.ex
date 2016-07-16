@@ -3,6 +3,7 @@ defmodule IbGib.TransformFactory do
 
   @delim "^"
 
+
   @doc """
   Creates a fork with source `src_ib_gib` and dest_ib of given `dest_ib`. In
   most cases, no `dest_ib` need be specified, so it will just create a new
@@ -36,6 +37,37 @@ defmodule IbGib.TransformFactory do
       "history" => ["ib#{@delim}gib", "mut8#{@delim}gib"]
     }
     data = %{src_ib_gib: src_ib_gib, new_data: new_data}
+    gib = Helper.hash(ib, relations, data)
+    %{
+      ib: ib,
+      gib: gib,
+      relations: relations,
+      data: data
+    }
+  end
+
+  @default_rel8ns ["rel8d"]
+
+  @doc """
+  Creates a rel8 transform that will rel8 the given `src_ib_gib` to the given
+  `dest_ib_gib` according to details in given `how` map.
+
+  It is expecting `how` to include at least keys called src_rel8n and dest_rel8n
+  which describe `how` the `src_ib_gib` is related to the `dest_ib_gib`.
+  `src_rel8n` will add a relation to the src with this name of the rel8n, and
+  `dest-rel8n` will add a relation to the dest.
+  """
+  @spec rel8(String.t, String.t, list(String.t), list(String.t)) :: map
+  def rel8(src_ib_gib, dest_ib_gib, src_rel8ns \\ @default_rel8ns, dest_rel8ns \\ @default_rel8ns)
+    when is_bitstring(src_ib_gib) and is_bitstring(dest_ib_gib) and
+         src_ib_gib !== dest_ib_gib and
+         is_list(src_rel8ns) and length(src_rel8ns) >= 1 and
+         is_list(dest_rel8ns) and length(dest_rel8ns) >= 1  do
+    ib = "rel8"
+    relations = %{
+      "history" => ["ib#{@delim}gib", "rel8#{@delim}gib"]
+    }
+    data = %{src_ib_gib: src_ib_gib, dest_ib_gib: dest_ib_gib, src_rel8ns: src_rel8ns, dest_rel8ns: dest_rel8ns}
     gib = Helper.hash(ib, relations, data)
     %{
       ib: ib,
