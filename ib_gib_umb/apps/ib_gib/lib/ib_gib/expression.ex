@@ -193,7 +193,7 @@ defmodule IbGib.Expression do
     on_new_expression_completed(ib, new_gib, a)
   end
 
-  defp add_relation(a, {relation_name, b}) when is_map(a) and is_bitstring(relation_name) and is_bitstring(b) do
+  defp add_relation(a, relation_name, b) when is_map(a) and is_bitstring(relation_name) and is_bitstring(b) do
     Logger.debug "Adding relation #{relation_name} to a. a[:relations]: #{inspect a[:relations]}"
     a_relations = a[:relations]
 
@@ -388,9 +388,9 @@ defmodule IbGib.Expression do
   end
   def handle_call({:rel8, other_pid, src_rel8ns, dest_rel8ns}, _from, state) do
     Logger.metadata([x: :rel8])
-    Logger.debug "state: #{inspect state}"
+    Logger.debug "_state_: #{inspect state}"
     info = state[:info]
-    Logger.debug "info: #{inspect info}"
+    Logger.debug "_info_: #{inspect info}"
 
     # 1. Create transform
     this_ib_gib = Helper.get_ib_gib!(info[:ib], info[:gib])
@@ -407,9 +407,12 @@ defmodule IbGib.Expression do
     {:ok, rel8} = IbGib.Expression.Supervisor.start_expression({rel8_info[:ib], rel8_info[:gib]})
 
     # 4. Apply transform to both this and other
-    Logger.debug "will ib_gib the rel8..."
+    Logger.warn "rel8 transform expression process created. Now will apply rel8 transform to this expression to create a new this..."
     {:ok, new_this} = contact_impl(rel8, state)
+    Logger.warn "application successful. new_this: #{inspect new_this}"
+    Logger.warn "Now will apply rel8 to the dest_ib_gib expression..."
     {:ok, new_other} = other_pid |> IbGib.Expression.contact(rel8)
+    Logger.warn "application successful. new_other: #{inspect new_other}"
 
     {:reply, {:ok, {new_this, new_other}}, state}
   end
