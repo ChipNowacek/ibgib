@@ -497,8 +497,8 @@ defmodule IbGib.Expression do
     # I think when we instance, we're just going to keep the same ib. It will
     # of course create a new gib hash. I think this is what we want to do...
     # I'm not sure!
-    fork_dest_ib = info[:ib]
-    # fork_dest_ib = Helper.new_id
+    # fork_dest_ib = info[:ib]
+    fork_dest_ib = Helper.new_id
     {:ok, instance} = fork_impl(fork_dest_ib, state)
     Logger.debug "instance: #{inspect instance}"
     {:ok, {new_this, new_instance}} =

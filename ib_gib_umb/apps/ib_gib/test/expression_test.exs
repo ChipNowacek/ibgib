@@ -432,7 +432,25 @@ defmodule IbGib.ExpressionTest do
     Logger.debug "a: #{inspect a}\na_info: #{inspect a_info}\na_ib_gib: #{a_ib_gib}"
 
     Logger.warn "gonna instance"
-    # result = a |> Expression.instance
-    Logger.debug "result: #{inspect a |> Expression.instance}"
+    {:ok, {new_a, a_instance}} = a |> Expression.instance
+    Logger.debug "a: #{inspect a}\n\nnew_a: #{inspect new_a}\ninstance: #{inspect a_instance}"
+
+    new_a_info = new_a |> Expression.get_info!
+    a_instance_info = a_instance |> Expression.get_info!
+
+    new_a_ib_gib = Helper.get_ib_gib!(new_a_info[:ib], new_a_info[:ib])
+    a_instance_ib_gib = Helper.get_ib_gib!(a_instance_info[:ib], a_instance_info[:gib])
+
+    Logger.debug "Infos\na: #{inspect a_info}\nnew_a: #{inspect new_a_info}\ninstance: #{inspect a_instance_info}"
+
+    Logger.debug "new_a_info[:relations][\"instance\"]: #{inspect new_a_info[:relations]["instance"]}"
+    Logger.debug "a_instance_ib_gib: #{inspect a_instance_ib_gib}"
+
+    assert(
+      new_a_info[:relations]["instance"]
+      |> Enum.map(&(String.split(&1, @delim) |> Enum.at(0)))
+      |> Enum.member?(a_instance_info[:ib])
+    )
+    assert a_instance_info[:relations]["instance_of"] |> Enum.member?(a_ib_gib)
   end
 end
