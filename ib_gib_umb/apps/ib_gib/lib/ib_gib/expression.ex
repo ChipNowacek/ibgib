@@ -301,15 +301,35 @@ defmodule IbGib.Expression do
     end
   end
 
-  # def merge(expr_pid, new_data) when is_pid(expr_pid) and is_map(new_data) do
-  #   GenServer.call(expr_pid, {:merge, new_data})
-  # end
-  # def merge!(expr_pid, new_data) when is_pid(expr_pid) and is_map(new_data) do
-  #   case merge(expr_pid, new_data) do
-  #     {:ok, new_pid} -> new_pid
-  #     {:error, reason} -> raise "#{inspect reason}"
-  #   end
-  # end
+  @doc """
+  `gib` versions of `fork`, `mut8`, and `rel8` both perform the relevant
+  operation and return the info as well as the ib_gib of the new thing.
+  """
+  def gib(expr_pid, :fork, dest_ib) do
+    next = expr_pid |> fork!(dest_ib)
+    next_info = next |> IbGib.Expression.get_info!
+    next_ib_gib = Helper.get_ib_gib!(next_info[:ib], next_info[:gib])
+    {:ok, {next, next_info, next_ib_gib}}
+  end
+  def gib(expr_pid, :mut8, new_data) do
+    next = expr_pid |> mut8!(new_data)
+    next_info = next |> IbGib.Expression.get_info!
+    next_ib_gib = Helper.get_ib_gib!(next_info[:ib], next_info[:gib])
+    {:ok, {next, next_info, next_ib_gib}}
+  end
+
+  def gib(expr_pid, :rel8, other_pid, src_rel8ns \\ @default_rel8ns, dest_rel8ns \\ @default_rel8ns) do
+    {next, next_other} = IbGib.Expression.rel8!(expr_pid, other_pid, src_rel8ns, dest_rel8ns)
+    next_info = next |> IbGib.Expression.get_info!
+    next_other_info = next_other |> IbGib.Expression.get_info!
+    next_ib_gib = Helper.get_ib_gib!(next_info[:ib], next_info[:gib])
+    next_other_ib_gib = Helper.get_ib_gib!(next_other_info[:ib], next_other_info[:gib])
+    {
+      :ok,
+      {next, next_info, next_ib_gib},
+      {next_other, next_other_info, next_other_ib_gib}
+    }
+  end
 
   def get_info(expr_pid) when is_pid(expr_pid) do
     GenServer.call(expr_pid, :get_info)
