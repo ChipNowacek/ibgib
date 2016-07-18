@@ -61,13 +61,19 @@ defmodule IbGib.TransformFactory do
   def rel8(src_ib_gib, dest_ib_gib, src_rel8ns \\ @default_rel8ns, dest_rel8ns \\ @default_rel8ns)
     when is_bitstring(src_ib_gib) and is_bitstring(dest_ib_gib) and
          src_ib_gib !== dest_ib_gib and
+         src_ib_gib !== "ib#{@delim}gib" and dest_ib_gib !== "ib#{@delim}gib" and
          is_list(src_rel8ns) and length(src_rel8ns) >= 1 and
          is_list(dest_rel8ns) and length(dest_rel8ns) >= 1  do
     ib = "rel8"
     relations = %{
       "history" => ["ib#{@delim}gib", "rel8#{@delim}gib"]
     }
-    data = %{src_ib_gib: src_ib_gib, dest_ib_gib: dest_ib_gib, src_rel8ns: src_rel8ns, dest_rel8ns: dest_rel8ns}
+    data = %{
+      src_ib_gib: src_ib_gib,
+      dest_ib_gib: dest_ib_gib,
+      src_rel8ns: src_rel8ns |> Enum.concat(@default_rel8ns) |> Enum.uniq,
+      dest_rel8ns: dest_rel8ns |> Enum.concat(@default_rel8ns) |> Enum.uniq
+    }
     gib = Helper.hash(ib, relations, data)
     %{
       ib: ib,

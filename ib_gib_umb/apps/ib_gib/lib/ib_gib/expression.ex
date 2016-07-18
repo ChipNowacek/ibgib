@@ -407,12 +407,12 @@ defmodule IbGib.Expression do
     {:ok, rel8} = IbGib.Expression.Supervisor.start_expression({rel8_info[:ib], rel8_info[:gib]})
 
     # 4. Apply transform to both this and other
-    Logger.warn "rel8 transform expression process created. Now will apply rel8 transform to this expression to create a new this..."
+    Logger.debug "rel8 transform expression process created. Now will apply rel8 transform to this expression to create a new this..."
     {:ok, new_this} = contact_impl(rel8, state)
-    Logger.warn "application successful. new_this: #{inspect new_this}"
-    Logger.warn "Now will apply rel8 to the dest_ib_gib expression..."
+    Logger.debug "application successful. new_this: #{inspect new_this}"
+    Logger.debug "Now will apply rel8 to the dest_ib_gib expression..."
     {:ok, new_other} = other_pid |> IbGib.Expression.contact(rel8)
-    Logger.warn "application successful. new_other: #{inspect new_other}"
+    Logger.debug "application successful. new_other: #{inspect new_other}"
 
     {:reply, {:ok, {new_this, new_other}}, state}
   end
