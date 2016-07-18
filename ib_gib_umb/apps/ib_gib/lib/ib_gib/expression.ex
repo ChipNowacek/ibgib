@@ -241,6 +241,10 @@ defmodule IbGib.Expression do
     GenServer.call(this_pid, {:contact, that_pid})
   end
 
+  # ----------------------------------------------------------------------------
+  # Core Transforms
+  # ----------------------------------------------------------------------------
+
   @doc """
   Creates a fork of this expression process, saves it, creates a new,
   registered expression process with the fork. All internal `data` is
@@ -248,6 +252,7 @@ defmodule IbGib.Expression do
 
   Returns the new forked process' pid or an error.
   """
+  @spec fork(pid, String.t) :: {:ok, pid} | {:error, any}
   def fork(expr_pid, dest_ib \\ Helper.new_id) when is_pid(expr_pid) and is_bitstring(dest_ib) do
     GenServer.call(expr_pid, {:fork, dest_ib})
   end
@@ -255,6 +260,7 @@ defmodule IbGib.Expression do
   @doc """
   Bang version of `fork/2`.
   """
+  @spec fork!(pid, String.t) :: pid | any
   def fork!(expr_pid, dest_ib \\ Helper.new_id)
     when is_pid(expr_pid) and is_bitstring(dest_ib) do
     case fork(expr_pid, dest_ib) do
@@ -263,7 +269,11 @@ defmodule IbGib.Expression do
     end
   end
 
-
+  @doc """
+  Mut8s given `expr_pid` internal `data` map, merging given `new_data` into
+  it. Any keys in `new_data` will override any existing keys in `data`.
+  """
+  @spec mut8(pid, map) :: {:ok, pid} | {:error, any}
   def mut8(expr_pid, new_data) when is_pid(expr_pid) and is_map(new_data) do
     GenServer.call(expr_pid, {:mut8, new_data})
   end
@@ -271,6 +281,7 @@ defmodule IbGib.Expression do
   @doc """
   Bang version of `mut8/2`.
   """
+  @spec mut8(pid, map) :: pid | any
   def mut8!(expr_pid, new_data)
     when is_pid(expr_pid) and is_map(new_data) do
     case mut8(expr_pid, new_data) do
@@ -281,6 +292,7 @@ defmodule IbGib.Expression do
 
   @default_rel8ns ["rel8d"]
 
+  @spec rel8(pid, pid, list(String.t), list(String.t)) :: {:ok, {pid, pid}} | {:error, any}
   def rel8(expr_pid, other_pid, src_rel8ns \\ @default_rel8ns, dest_rel8ns \\ @default_rel8ns)
     when is_pid(expr_pid) and is_pid(other_pid) and expr_pid !== other_pid and
          is_list(src_rel8ns) and length(src_rel8ns) >= 1 and
@@ -291,6 +303,7 @@ defmodule IbGib.Expression do
   @doc """
   Bang version of `rel8/4`.
   """
+  @spec rel8(pid, pid, list(String.t), list(String.t)) :: {pid, pid} | any
   def rel8!(expr_pid, other_pid, src_rel8ns \\ @default_rel8ns, dest_rel8ns \\ @default_rel8ns)
     when is_pid(expr_pid) and is_pid(other_pid) and expr_pid !== other_pid and
          is_list(src_rel8ns) and length(src_rel8ns) >= 1 and
@@ -300,6 +313,37 @@ defmodule IbGib.Expression do
       {:error, reason} -> raise "#{inspect reason}"
     end
   end
+
+  # ----------------------------------------------------------------------------
+  #
+  # ----------------------------------------------------------------------------
+
+    @doc """
+    Forks the given `expr_pid`, and then relates the new forked expression to
+    `expr_pid`.
+
+    Returns a new version of the given `expr_pid` and the new forked expression.
+    E.g. {pid_a0} returns {pid_a1, pid_a_instance)
+    """
+    @spec instance(pid) :: {:ok, {pid, pid}} | {:error, any}
+    def instance(expr_pid) when is_pid(expr_pid) do
+      GenServer.call(expr_pid, :instance)
+    end
+
+    @doc """
+    Bang version of `instance/1`.
+    """
+    @spec instance(pid) :: {:ok, {pid, pid}} | {:error, any}
+    def instance!(expr_pid) when is_pid(expr_pid) do
+      case instance(expr_pid) do
+        {:ok, {new_expr_pid, instance_pid}} -> {new_expr_pid, instance_pid}
+        {:error, reason} -> raise "#{inspect reason}"
+      end
+    end
+
+  # ----------------------------------------------------------------------------
+  # Gib Versions _(return additional information)_
+  # ----------------------------------------------------------------------------
 
   @doc """
   `gib` versions of `fork`, `mut8`, and `rel8` both perform the relevant
@@ -353,31 +397,7 @@ defmodule IbGib.Expression do
     {:reply, contact_impl(other_expr_pid, state), state}
   end
   def handle_call({:fork, dest_ib}, _from, state) do
-    Logger.metadata([x: :fork])
-    Logger.debug "state: #{inspect state}"
-    info = state[:info]
-    Logger.debug "info: #{inspect info}"
-    ib = info[:ib]
-    gib = info[:gib]
-    Logger.debug "ib: #{inspect ib}"
-
-    # 1. Create transform
-    fork_info = TransformFactory.fork(Helper.get_ib_gib!(ib, gib), dest_ib)
-    Logger.debug "fork_info: #{inspect fork_info}"
-
-    # 2. Save transform
-    IbGib.Data.save(fork_info)
-
-    # 3. Create instance process of fork
-    Logger.debug "fork saved. Now trying to create fork transform expression process"
-    {:ok, fork} = IbGib.Expression.Supervisor.start_expression({fork_info[:ib], fork_info[:gib]})
-
-    # 4. Apply transform
-    Logger.debug "will ib_gib the fork..."
-    contact_result = contact_impl(fork, state)
-    Logger.debug "contact_result: #{inspect contact_result}"
-
-    {:reply, contact_result, state}
+    {:reply, fork_impl(dest_ib, state), state}
   end
   def handle_call({:mut8, new_data}, _from, state) do
     Logger.metadata([x: :mut8])
@@ -407,10 +427,44 @@ defmodule IbGib.Expression do
     {:reply, contact_result, state}
   end
   def handle_call({:rel8, other_pid, src_rel8ns, dest_rel8ns}, _from, state) do
-    Logger.metadata([x: :rel8])
+    {:ok, {new_this, new_other}} =
+      rel8_impl(other_pid, src_rel8ns, dest_rel8ns, state)
+    {:reply, {:ok, {new_this, new_other}}, state}
+  end
+  def handle_call(:instance, _from, state) do
+    {:reply, instance_impl(state), state}
+  end
+  def handle_call(:get_info, _from, state) do
+    Logger.metadata([x: :get_info])
+    {:reply, {:ok, state[:info]}, state}
+  end
+
+  defp fork_impl(dest_ib, state) do
+    Logger.debug "state: #{inspect state}"
+    info = state[:info]
+    ib = info[:ib]
+    gib = info[:gib]
+
+    # 1. Create transform
+    fork_info = TransformFactory.fork(Helper.get_ib_gib!(ib, gib), dest_ib)
+    Logger.debug "fork_info: #{inspect fork_info}"
+
+    # 2. Save transform
+    IbGib.Data.save(fork_info)
+
+    # 3. Create instance process of fork
+    Logger.debug "fork saved. Now trying to create fork transform expression process"
+    {:ok, fork} = IbGib.Expression.Supervisor.start_expression({fork_info[:ib], fork_info[:gib]})
+
+    # 4. Apply transform
+    contact_result = contact_impl(fork, state)
+    Logger.debug "contact_result: #{inspect contact_result}"
+    contact_result
+  end
+
+  defp rel8_impl(other_pid, src_rel8ns, dest_rel8ns, state) do
     Logger.debug "_state_: #{inspect state}"
     info = state[:info]
-    Logger.debug "_info_: #{inspect info}"
 
     # 1. Create transform
     this_ib_gib = Helper.get_ib_gib!(info[:ib], info[:gib])
@@ -433,12 +487,24 @@ defmodule IbGib.Expression do
     Logger.debug "Now will apply rel8 to the dest_ib_gib expression..."
     {:ok, new_other} = other_pid |> IbGib.Expression.contact(rel8)
     Logger.debug "application successful. new_other: #{inspect new_other}"
-
-    {:reply, {:ok, {new_this, new_other}}, state}
+    {:ok, {new_this, new_other}}
   end
-  def handle_call(:get_info, _from, state) do
-    Logger.metadata([x: :get_info])
-    {:reply, {:ok, state[:info]}, state}
+
+  defp instance_impl(state) do
+    Logger.debug "_state_: #{inspect state}"
+    info = state[:info]
+
+    # I think when we instance, we're just going to keep the same ib. It will
+    # of course create a new gib hash. I think this is what we want to do...
+    # I'm not sure!
+    fork_dest_ib = info[:ib]
+    # fork_dest_ib = Helper.new_id
+    {:ok, instance} = fork_impl(fork_dest_ib, state)
+    Logger.debug "instance: #{inspect instance}"
+    {:ok, {new_this, new_instance}} =
+      rel8_impl(instance, ["instance"], ["instance_of"], state)
+    Logger.debug "new_this: #{inspect new_this}\nnew_instance: #{inspect new_instance}"
+    {:ok, {new_this, new_instance}}
   end
 
   defp contact_impl(other_pid, state) when is_pid(other_pid) and is_map(state) do

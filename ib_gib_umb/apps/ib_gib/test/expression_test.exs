@@ -422,4 +422,17 @@ defmodule IbGib.ExpressionTest do
     assert new_a_ib_gib === Helper.get_ib_gib!(new_a_info[:ib], new_a_info[:gib])
     assert new_b_ib_gib === Helper.get_ib_gib!(new_b_info[:ib], new_b_info[:gib])
   end
+
+  test "instance via instance function" do
+    {:ok, root} = Expression.Supervisor.start_expression()
+
+    # Randomized to keep unit tests from overlapping.
+    a_ib = "a_#{RandomGib.Get.some_letters(5)}"
+    {:ok, {a, a_info, a_ib_gib}} = root |> Expression.gib(:fork, a_ib)
+    Logger.debug "a: #{inspect a}\na_info: #{inspect a_info}\na_ib_gib: #{a_ib_gib}"
+
+    Logger.warn "gonna instance"
+    # result = a |> Expression.instance
+    Logger.debug "result: #{inspect a |> Expression.instance}"
+  end
 end
