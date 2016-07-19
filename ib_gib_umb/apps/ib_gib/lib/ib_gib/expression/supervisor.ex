@@ -16,7 +16,7 @@ defmodule IbGib.Expression.Supervisor do
       # `:temporary` not restarted
       # `:transient` restarted on abnormal shutdown
       # Empty args, because args are passed when `start_child` is called.
-      worker(IbGib.Expression, [], restart: :transient)
+      worker(IbGib.Expression, [], restart: :temporary)
     ]
 
     supervise(children, strategy: :simple_one_for_one)
