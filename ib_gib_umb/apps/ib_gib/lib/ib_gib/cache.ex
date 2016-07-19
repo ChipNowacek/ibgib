@@ -14,7 +14,7 @@ defmodule IbGib.Cache do
   """
   @spec start_link(atom()) :: {:ok, pid()} | :ignore | {:error, {:already_started, pid()} | term()}
   def start_link(name \\ @srv_name) when is_atom(name) do
-    Logger.debug ("name: #{name}")
+    # Logger.debug ("name: #{name}")
     GenServer.start_link(__MODULE__, name, [name: name])
   end
 
@@ -46,7 +46,7 @@ defmodule IbGib.Cache do
   # ----------------------------------------------------------------------------
 
   def init(srv_name) when is_atom(srv_name) do
-    Logger.debug "srv_name: #{srv_name}"
+    # Logger.debug "srv_name: #{srv_name}"
 
     items = :ets.new(srv_name, [:named_table, read_concurrency: true])
 
