@@ -325,17 +325,17 @@ defmodule IbGib.Expression do
     Returns a new version of the given `expr_pid` and the new forked expression.
     E.g. {pid_a0} returns {pid_a1, pid_a_instance)
     """
-    @spec instance(pid) :: {:ok, {pid, pid}} | {:error, any}
-    def instance(expr_pid) when is_pid(expr_pid) do
-      GenServer.call(expr_pid, :instance)
+    @spec instance(pid, String.t) :: {:ok, {pid, pid}} | {:error, any}
+    def instance(expr_pid, dest_ib \\ Helper.new_id) when is_pid(expr_pid) and is_bitstring(dest_ib) do
+      GenServer.call(expr_pid, {:instance, dest_ib})
     end
 
     @doc """
     Bang version of `instance/1`.
     """
-    @spec instance(pid) :: {:ok, {pid, pid}} | {:error, any}
-    def instance!(expr_pid) when is_pid(expr_pid) do
-      case instance(expr_pid) do
+    @spec instance!(pid, String.t) :: {pid, pid} | any
+    def instance!(expr_pid, dest_ib \\ Helper.new_id) when is_pid(expr_pid) and is_bitstring(dest_ib) do
+      case instance(expr_pid, dest_ib) do
         {:ok, {new_expr_pid, instance_pid}} -> {new_expr_pid, instance_pid}
         {:error, reason} -> raise "#{inspect reason}"
       end
@@ -431,8 +431,9 @@ defmodule IbGib.Expression do
       rel8_impl(other_pid, src_rel8ns, dest_rel8ns, state)
     {:reply, {:ok, {new_this, new_other}}, state}
   end
-  def handle_call(:instance, _from, state) do
-    {:reply, instance_impl(state), state}
+  def handle_call({:instance, dest_ib}, _from, state) do
+    Logger.warn "dest_ib: #{dest_ib}"
+    {:reply, instance_impl(dest_ib, state), state}
   end
   def handle_call(:get_info, _from, state) do
     Logger.metadata([x: :get_info])
@@ -490,16 +491,17 @@ defmodule IbGib.Expression do
     {:ok, {new_this, new_other}}
   end
 
-  defp instance_impl(state) do
+  defp instance_impl(dest_ib, state) do
     Logger.debug "_state_: #{inspect state}"
+    Logger.warn "dest_ib: #{dest_ib}"
     info = state[:info]
 
     # I think when we instance, we're just going to keep the same ib. It will
     # of course create a new gib hash. I think this is what we want to do...
     # I'm not sure!
     # fork_dest_ib = info[:ib]
-    fork_dest_ib = Helper.new_id
-    {:ok, instance} = fork_impl(fork_dest_ib, state)
+    # fork_dest_ib = Helper.new_id
+    {:ok, instance} = fork_impl(dest_ib, state)
     Logger.debug "instance: #{inspect instance}"
     {:ok, {new_this, new_instance}} =
       rel8_impl(instance, ["instance"], ["instance_of"], state)

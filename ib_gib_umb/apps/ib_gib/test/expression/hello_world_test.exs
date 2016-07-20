@@ -159,4 +159,38 @@ defmodule IbGib.Expression.HelloWorldTest do
     Logger.debug "text_instance_info: #{inspect text_instance_info}"
   end
 
+  test "hello world with user owner" do
+    {:ok, root} = Expression.Supervisor.start_expression
+
+    hw = root |> fork!("Hello World")
+    hw_info = hw |> get_info!
+    Logger.warn "hw_info: #{inspect hw_info}"
+
+    user = root |> fork!("user")
+    user_info = user |> get_info!
+    Logger.warn "user_info: #{inspect user_info}"
+
+    {user, bob} = user |> instance!("bob")
+    bob_info = bob |> get_info!
+    Logger.warn "bob_info: #{inspect bob_info}"
+  end
+
+  test "playground" do
+    {:ok, root} = Expression.Supervisor.start_expression
+
+    hw = root |> fork!
+    hw_info = hw |> get_info!
+    Logger.warn "hw_info: #{inspect hw_info}"
+
+    hw_info[:relations]["history"] |> Enum.each(fn (ig) ->
+        Logger.info "ig: #{ig}"
+        {:ok, ig_pid} = Expression.Supervisor.start_expression(ig)
+        ig_info = ig_pid |> Expression.get_info!
+        Logger.info "ig_info: #{inspect ig_info}"
+      end)
+
+    # {hw, hwi} = hw |> instance!
+    # hwi_info = hwi |> get_info!
+    # Logger.warn "hwi_info: #{inspect hwi_info}"
+  end
 end
