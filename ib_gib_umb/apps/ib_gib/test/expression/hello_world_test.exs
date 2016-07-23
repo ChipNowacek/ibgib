@@ -164,14 +164,21 @@ defmodule IbGib.Expression.HelloWorldTest do
 
     hw = root |> fork!("Hello World")
     hw_info = hw |> get_info!
-    Logger.warn "hw_info: #{inspect hw_info}"
 
     user = root |> fork!("user")
     user_info = user |> get_info!
-    Logger.warn "user_info: #{inspect user_info}"
 
     {user, bob} = user |> instance!("bob")
     bob_info = bob |> get_info!
+    Logger.warn "hw_info: #{inspect hw_info}"
+    Logger.warn "user_info: #{inspect user_info}"
+    Logger.warn "bob_info: #{inspect bob_info}"
+
+    {hw, bob} = hw |> rel8!(bob, ["owner"], ["owner_of"])
+
+    hw_info = hw |> get_info!
+    bob_info = bob |> get_info!
+    Logger.warn "hw_info: #{inspect hw_info}"
     Logger.warn "bob_info: #{inspect bob_info}"
   end
 
