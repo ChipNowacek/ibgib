@@ -8,15 +8,16 @@ defmodule IbGib.Expression.LifecycleTest do
 
   @tag :capture_log
   test "Many forks" do
-    {:ok, root} = IbGib.Expression.Supervisor.start_expression()
-
-    a = root |> fork!
-    Logger.configure(level: :info)
     # I lower this for regular unit tests. I change it to a big number if I
     # want to see if it can handle a bunch of processes. Each iteration here
     # will create the transform process and the end result process, so it will
     # double the number in the range.
-    1..100 |> Enum.each(&(a |> fork!("ib_#{&1}")))
+    test_count = 100
+    {:ok, root} = IbGib.Expression.Supervisor.start_expression()
+
+    a = root |> fork!
+    Logger.configure(level: :info)
+    1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}")))
     Logger.configure(level: :debug)
   end
 
