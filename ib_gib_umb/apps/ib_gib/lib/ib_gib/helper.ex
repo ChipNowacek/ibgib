@@ -5,7 +5,7 @@ defmodule IbGib.Helper do
   def get_ib_gib(ib, gib) when is_bitstring(ib) and is_bitstring(gib) do
     {:ok, ib <> @delim <> gib}
   end
-  def get_ib_gib(ib, gib) do
+  def get_ib_gib(_ib, _gib) do
     {:error, "ib and gib are not both bitstrings."}
   end
 
