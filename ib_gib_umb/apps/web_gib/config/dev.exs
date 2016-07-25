@@ -53,4 +53,4 @@ config :web_gib, WebGib.Repo,
   #   * So the terminal can be used for something else.
   #
   # To psql into the container.
-  # `docker run -it --rm --link postgres-ctr:postgres postgres psql -d hello_phoenix_dev -h postgres -U postgres`
+  # `docker run -it --rm --link postgres-ctr:postgres postgres psql -d web_gib_dev -h postgres -U postgres`
