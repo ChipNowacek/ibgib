@@ -65,33 +65,14 @@ defmodule IbGib.Expression.Registry do
   def handle_call({:register, {expr_ib_gib, expr_pid}}, _from, {expressions, refs}) do
     # Logger.debug "inspect expressions: #{inspect expressions}"
     # Logger.debug "inspect refs: #{inspect refs}"
-
-    case get_process_impl(expressions, expr_ib_gib) do
-      {:ok, pid} ->
-        # Already exists.
-        Logger.debug "expr_ib_gib (#{expr_ib_gib}) already exists"
-        {:reply, :ok, {expressions, refs}}
-      {:error, _reason} ->
-        # Doesn't exist, so register it
-        Logger.debug "expr_ib_gib (#{expr_ib_gib}) does not exist. registering..."
-        ref = Process.monitor(expr_pid)
-        refs = Map.put(refs, ref, expr_ib_gib)
-        expressions = Map.put(expressions, expr_ib_gib, expr_pid)
-        {:reply, :ok, {expressions, refs}}
-    end
+    {:ok, {expressions, refs}} = register_impl(expressions, expr_ib_gib, expr_pid, refs)
+    {:reply, :ok, {expressions, refs}}
   end
   def handle_call({:get_process, {expr_ib_gib}}, _from, {expressions, refs}) do
     # Logger.debug "inspect expressions: #{inspect expressions}"
     # Logger.debug "inspect refs: #{inspect refs}"
 
     {:reply, get_process_impl(expressions, expr_ib_gib), {expressions, refs}}
-
-    # case get_process_impl(expressions, expr_ib_gib) do
-    #   {:ok, pid} ->
-    #     {:reply, {:ok, pid}, {expressions, refs}}
-    #   {:error, reason} ->
-    #     {:reply, {:error, reason}, {expressions, refs}}
-    # end
   end
 
   @doc """
@@ -119,15 +100,19 @@ defmodule IbGib.Expression.Registry do
     end
   end
 
-  defp register_impl(expressions, expr_ib_gib, expr_pid) do
-    if Map.has_key?(expressions, expr_ib_gib) do
-      {:noreply, {expressions, refs}}
-    else
-      ref = Process.monitor(expr_pid)
-      refs = Map.put(refs, ref, expr_ib_gib)
-      expressions = Map.put(expressions, expr_ib_gib, expr_pid)
-      {:noreply, {expressions, refs}}
+  defp register_impl(expressions, expr_ib_gib, expr_pid, refs) do
+    case get_process_impl(expressions, expr_ib_gib) do
+      {:ok, pid} ->
+        # Already exists.
+        Logger.debug "expr_ib_gib (#{expr_ib_gib}) already exists"
+        {:ok, {expressions, refs}}
+      {:error, _reason} ->
+        # Doesn't exist, so register it
+        Logger.debug "expr_ib_gib (#{expr_ib_gib}) does not exist. registering..."
+        ref = Process.monitor(expr_pid)
+        refs = Map.put(refs, ref, expr_ib_gib)
+        expressions = Map.put(expressions, expr_ib_gib, expr_pid)
+        {:ok, {expressions, refs}}
     end
-
   end
 end
