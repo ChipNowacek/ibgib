@@ -36,7 +36,8 @@ defmodule IbGib.Expression.Supervisor do
   create a new process, load it from storage, register it with the process
   registry and return that process' pid.
   """
-  def start_expression(expr_ib_gib \\ "ib#{@delim}gib") when is_bitstring(expr_ib_gib) do
+  def start_expression(args \\ "ib#{@delim}gib")
+  def start_expression(expr_ib_gib) when is_bitstring(expr_ib_gib) do
     ib_gib = String.split(expr_ib_gib, @delim, parts: 2)
     Logger.debug "ib_gib: #{inspect ib_gib}"
 
