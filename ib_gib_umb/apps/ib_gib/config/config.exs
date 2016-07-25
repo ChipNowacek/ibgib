@@ -8,6 +8,11 @@ use Mix.Config
 # if you want to provide default values for your application for
 # 3rd-party users, it should be done in your "mix.exs" file.
 
+# General application configuration
+config :ib_gib,
+  ecto_repos: [IbGib.Data.Repo]
+
+
 # You can configure for your application as:
 #
 #     config :random_gib, key: :value
@@ -20,6 +25,10 @@ use Mix.Config
 #
 #     config :logger, level: :info
 #
+
+config :logger, :console,
+  format: "\n[$time $level] $levelpad$metadata\n$message\n",
+  metadata: [:line, :module, :function, :x]
 
 # It is also possible to import configuration files, relative to this
 # directory. For example, you can emulate configuration per environment
