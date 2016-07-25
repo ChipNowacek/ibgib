@@ -1,6 +1,7 @@
 defmodule WebGib.Router do
   use WebGib.Web, :router
 
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
