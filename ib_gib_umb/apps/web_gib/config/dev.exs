@@ -34,14 +34,14 @@ config :logger, :console, format: "[$level] $message\n"
 # config :phoenix, :stacktrace_depth, 20
 
 # Configure your database
-config :web_gib, WebGib.Repo,
-  adapter: Ecto.Adapters.Postgres,
-  username: "postgres",
-  password: "postgres",
-  database: "web_gib_dev",
-  hostname: "172.17.0.2",
-  port: 5432,
-  pool_size: 10
+# config :web_gib, WebGib.Repo,
+#   adapter: Ecto.Adapters.Postgres,
+#   username: "postgres",
+#   password: "postgres",
+#   database: "web_gib_dev",
+#   hostname: "172.17.0.2",
+#   port: 5432,
+#   pool_size: 10
 
   # Docker Stuff
 

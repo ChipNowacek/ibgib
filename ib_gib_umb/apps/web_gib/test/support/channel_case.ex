@@ -20,10 +20,10 @@ defmodule WebGib.ChannelCase do
       # Import conveniences for testing with channels
       use Phoenix.ChannelTest
 
-      alias WebGib.Repo
-      import Ecto
-      import Ecto.Changeset
-      import Ecto.Query
+      # alias WebGib.Repo
+      # import Ecto
+      # import Ecto.Changeset
+      # import Ecto.Query
 
 
       # The default endpoint for testing
@@ -32,11 +32,11 @@ defmodule WebGib.ChannelCase do
   end
 
   setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(WebGib.Repo)
-
-    unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(WebGib.Repo, {:shared, self()})
-    end
+    # :ok = Ecto.Adapters.SQL.Sandbox.checkout(WebGib.Repo)
+    #
+    # unless tags[:async] do
+    #   Ecto.Adapters.SQL.Sandbox.mode(WebGib.Repo, {:shared, self()})
+    # end
 
     :ok
   end
