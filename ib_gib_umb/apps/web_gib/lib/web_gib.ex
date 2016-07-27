@@ -9,7 +9,7 @@ defmodule WebGib do
     # Define workers and child supervisors to be supervised
     children = [
       # Start the Ecto repository
-      # supervisor(WebGib.Repo, []),
+      supervisor(WebGib.Repo, []),
       # Start the endpoint when the application starts
       supervisor(WebGib.Endpoint, []),
       # Start your own worker by calling: WebGib.Worker.start_link(arg1, arg2, arg3)

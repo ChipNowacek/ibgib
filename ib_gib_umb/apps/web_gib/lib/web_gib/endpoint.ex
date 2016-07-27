@@ -38,6 +38,5 @@ defmodule WebGib.Endpoint do
     key: "_web_gib_key",
     signing_salt: "/EWwmO80"
 
-
   plug WebGib.Router
 end

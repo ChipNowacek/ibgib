@@ -8,5 +8,5 @@
 </div>
 
 <div>
-  <%= button("+", to: "/?src_ib_gib=\"ib^gib\"&action=fork") %>
+  <%= button("+", to: "/?action=fork&src_ib_gib=ib^gib") %>
 </div>

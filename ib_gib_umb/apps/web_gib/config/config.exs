@@ -6,8 +6,8 @@
 use Mix.Config
 
 # General application configuration
-# config :web_gib,
-#   ecto_repos: [WebGib.Repo]
+config :web_gib,
+  ecto_repos: [WebGib.Repo]
 
 # Configures the endpoint
 config :web_gib, WebGib.Endpoint,
@@ -19,8 +19,11 @@ config :web_gib, WebGib.Endpoint,
 
 # Configures Elixir's Logger
 config :logger, :console,
-  format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id]
+  format: "\n[$time $level] $levelpad$metadata\n$message\n",
+  metadata: [:request_id, :line, :module, :function, :x]
+# config :logger, :console,
+#   format: "$time $metadata[$level] $message\n",
+#   metadata: [:request_id]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

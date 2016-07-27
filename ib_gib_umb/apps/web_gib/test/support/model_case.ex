@@ -16,21 +16,21 @@ defmodule WebGib.ModelCase do
 
   using do
     quote do
-      # alias WebGib.Repo
-      #
-      # import Ecto
-      # import Ecto.Changeset
-      # import Ecto.Query
+      alias WebGib.Repo
+
+      import Ecto
+      import Ecto.Changeset
+      import Ecto.Query
       import WebGib.ModelCase
     end
   end
 
   setup tags do
-    # :ok = Ecto.Adapters.SQL.Sandbox.checkout(WebGib.Repo)
-    #
-    # unless tags[:async] do
-    #   Ecto.Adapters.SQL.Sandbox.mode(WebGib.Repo, {:shared, self()})
-    # end
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(WebGib.Repo)
+
+    unless tags[:async] do
+      Ecto.Adapters.SQL.Sandbox.mode(WebGib.Repo, {:shared, self()})
+    end
 
     :ok
   end

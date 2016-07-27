@@ -10,14 +10,14 @@ config :web_gib, WebGib.Endpoint,
 config :logger, level: :debug
 
 # Configure your database
-# config :web_gib, WebGib.Repo,
-#   adapter: Ecto.Adapters.Postgres,
-#   username: "postgres",
-#   password: "postgres",
-#   database: "web_gib_test",
-#   hostname: "172.17.0.2",
-#   port: 5432,
-#   pool: Ecto.Adapters.SQL.Sandbox
+config :web_gib, WebGib.Repo,
+  adapter: Ecto.Adapters.Postgres,
+  username: "postgres",
+  password: "postgres",
+  database: "web_gib_test",
+  hostname: "172.17.0.2",
+  port: 5432,
+  pool: Ecto.Adapters.SQL.Sandbox
 
   # To create the postgres container
   # `docker run --name postgres-ctr -e [POSTGRES_USER=postgres,POSTGRES_PASSWORD=postgres,POSTGRES_DB=web_gib_test] -d postgres`

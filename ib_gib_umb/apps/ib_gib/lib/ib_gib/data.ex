@@ -8,6 +8,7 @@ defmodule IbGib.Data do
   end
 
   def save!(info) when is_map(info) do
+    Logger.warn "info: #{inspect info}"
     case save(info) do
       {:ok, :ok} -> :ok
       {:error, :already} ->
