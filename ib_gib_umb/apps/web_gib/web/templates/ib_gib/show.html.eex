@@ -1,6 +1,12 @@
 <div>
-  <p>ib: <%= @ib %></p>
-  <p>gib: <%= @gib %></p>
+  <!-- <p>ib: <%= @ib %></p>
+  <p>gib: <%= @gib %></p> -->
+  <div>
+    <!-- <p>shared</p> -->
+    <% ib = @ib %>
+    <% gib = @gib %>
+    <%= render WebGib.SharedView, "ib_gib.html", [ib: ib, gib: gib] %>
+  </div>
   <%= for item <- test_list do %>
     <p>
       <a href="<%= ib_gib_path(@conn, :show, item) %>">

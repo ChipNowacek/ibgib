@@ -1,0 +1,3 @@
+<!-- The at symbol gets the value out of the assigns map. -->
+<p>ib: <%= @ib %></p>
+<p>gib: <%= @gib %></p>
