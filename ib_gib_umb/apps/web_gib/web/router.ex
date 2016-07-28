@@ -1,5 +1,6 @@
 defmodule WebGib.Router do
   use WebGib.Web, :router
+  use Phoenix.Socket
 
 
   pipeline :browser do
@@ -25,5 +26,9 @@ defmodule WebGib.Router do
   # Other scopes may use custom stacks.
   # scope "/api", WebGib do
   #   pipe_through :api
+  # end
+
+  # socket "/ws", WebGib do
+  #   channel "rooms:*", RoomChannel
   # end
 end
