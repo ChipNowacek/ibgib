@@ -1,7 +1,7 @@
 defmodule WebGib.Endpoint do
   use Phoenix.Endpoint, otp_app: :web_gib
 
-  socket "/socket", WebGib.UserSocket
+  # socket "/ibgib-socket", WebGib.IbGibSocket
 
   # Serve at "/" the static files from "priv/static" directory.
   #

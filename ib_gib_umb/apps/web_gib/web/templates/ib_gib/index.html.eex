@@ -1,0 +1,14 @@
+<div>
+  <p>Yo. IbGib.</p>
+  <%= for item <- test_list do %>
+    <p>
+      <a href="<%= ib_gib_path(@conn, :show, item) %>">
+        item: <%= item %>
+      </a>
+    </p>
+  <% end %>
+
+</div>
+<!-- <div>
+  <%= button("+", to: "/?action=fork&src_ib_gib=ib^gib") %>
+</div> -->

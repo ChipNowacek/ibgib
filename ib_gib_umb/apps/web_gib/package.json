@@ -1,4 +1,6 @@
 {
+  "name": "web_gib",
+  "version": "0.0.1",
   "repository": {},
   "license": "MIT",
   "scripts": {
@@ -7,6 +9,7 @@
   },
   "dependencies": {
     "phoenix": "file:../../deps/phoenix",
+    "phoenix-socket": "^1.1.3",
     "phoenix_html": "file:../../deps/phoenix_html"
   },
   "devDependencies": {

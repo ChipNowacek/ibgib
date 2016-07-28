@@ -2,22 +2,17 @@
   <h2><%= gettext "Welcome to %{name} 8~/", name: "ibGib" %></h2>
   <p class="lead">ib. Gib. ibGib.</p>
 
-  <!-- <%= for item <- test_list do %>
-    <p><%= link(item, to: "/", method: "get") %></p>
-  <% end %> -->
+  <%= for item <- test_list do %>
+    <!-- <p><%= link(item, to: "/ibgib", method: "get") %></p> -->
+    <p>
+      <a href="<%= ib_gib_path(@conn, :show, item) %>">
+        <%= item %>
+      </a>
+    </p>
+
+  <% end %>
 </div>
 
 <div>
   <%= button("+", to: "/?action=fork&src_ib_gib=ib^gib") %>
-</div>
-
-<div id="messages" class="container">
-</div>
-
-<div id="footer ib-chat-input">
-  <div class="input-group ib-user-name">
-    <span class="input-group-addon">@</span>
-    <input id="username" type="text" class="form-control" placeholder="username">
-  </div><!-- /input-group -->
-  <input id="message-input" class="form-control ib-message" />
 </div>

@@ -2,6 +2,6 @@ defmodule WebGib.PageView do
   use WebGib.Web, :view
 
   def test_list do
-    ["one", 2, :tres]
+    ["one", "two", "three^threegib"]
   end
 end

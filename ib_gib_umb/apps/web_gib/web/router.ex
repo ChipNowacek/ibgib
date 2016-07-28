@@ -9,7 +9,7 @@ defmodule WebGib.Router do
     plug :fetch_flash
     plug :protect_from_forgery
     plug :put_secure_browser_headers
-    plug WebGib.Plugs.IbGibDefaults
+    # plug WebGib.Plugs.IbGibDefaults
   end
 
   pipeline :api do
@@ -21,6 +21,9 @@ defmodule WebGib.Router do
 
     get "/", PageController, :index
     post "/", PageController, :index
+
+    get "/ibgib", IbGibController, :index
+    get "/ibgib/:ib_or_ib_gib", IbGibController, :show
   end
 
   # Other scopes may use custom stacks.
