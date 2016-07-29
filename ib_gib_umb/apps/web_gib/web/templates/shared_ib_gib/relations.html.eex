@@ -1,0 +1,5 @@
+<%= if Enum.count(@thing_relations) > 0 do %>
+  <p>Relations: <%= inspect @thing_relations %></p>
+<% else %>
+  <p>Relations: [no relations?]</p>
+<% end %>

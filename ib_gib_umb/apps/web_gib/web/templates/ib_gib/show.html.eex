@@ -3,17 +3,28 @@
   <p>gib: <%= @gib %></p> -->
   <div>
     <!-- <p>shared</p> -->
-    <% ib = @ib %>
-    <% gib = @gib %>
-    <%= render WebGib.SharedView, "ib_gib.html", [ib: ib, gib: gib] %>
+    <% ib = @ib %> <% gib = @gib %> <% ib_gib = @ib_gib %>
+    <% thing_data = @thing_data %> <% thing_relations = @thing_relations %>
+    <a href="<%= ib_gib_path(@conn, :show, ib_gib) %>">
+      <%= render WebGib.SharedIbGibView, "ib_gib.html", [ib: ib, gib: gib, ib_gib: ib_gib] %>
+    </a>
   </div>
-  <%= for item <- test_list do %>
+
+  <div>
+    <%= render WebGib.SharedIbGibView, "data.html", [ib: ib, gib: gib, ib_gib: ib_gib, thing_data: thing_data] %>
+  </div>
+
+  <div>
+    <%= render WebGib.SharedIbGibView, "relations.html", [ib: ib, gib: gib, ib_gib: ib_gib, thing_relations: thing_relations] %>
+  </div>
+
+  <!-- <%= for item <- test_list do %>
     <p>
       <a href="<%= ib_gib_path(@conn, :show, item) %>">
         <%= item %>
       </a>
     </p>
-  <% end %>
+  <% end %> -->
 
 </div>
 <!-- <div>

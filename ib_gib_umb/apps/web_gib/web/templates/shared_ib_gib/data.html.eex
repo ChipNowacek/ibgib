@@ -1,0 +1,5 @@
+<%= if Enum.count(@thing_data) > 0 do %>
+  <p>Data: <%= inspect @thing_data %></p>
+<% else %>
+  <p>Data: [no data yo]</p>
+<% end %>

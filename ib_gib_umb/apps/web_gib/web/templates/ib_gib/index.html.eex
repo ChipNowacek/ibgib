@@ -1,14 +1,14 @@
 <div>
-  <p>Yo. IbGib.</p>
-  <%= for item <- test_list do %>
-    <p>
-      <a href="<%= ib_gib_path(@conn, :show, item) %>">
-        item: <%= item %>
-      </a>
-    </p>
-  <% end %>
+
+  <div>
+    <% ib = @ib %> <% gib = @gib %> <% ib_gib = @ib_gib %>
+    <a href="<%= ib_gib_path(@conn, :show, ib_gib) %>">
+      <%= render WebGib.SharedIbGibView, "ib_gib.html", [ib: ib, gib: gib, ib_gib: ib_gib] %>
+    </a>
+  </div>
+
 
 </div>
-<!-- <div>
-  <%= button("+", to: "/?action=fork&src_ib_gib=ib^gib") %>
-</div> -->
+<div>
+  <%= button("+", to: "/ibgib/api/fork?src_ib_gib=#{ib_gib}") %>
+</div>

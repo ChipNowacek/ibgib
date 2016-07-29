@@ -1,12 +1,18 @@
 defmodule IbGib.Helper do
+  require Logger
+
   @delim "^"
 
   @spec get_ib_gib(String.t, String.t) :: {:ok, String.t} | {:error, String.t}
-  def get_ib_gib(ib, gib) when is_bitstring(ib) and is_bitstring(gib) do
+  def get_ib_gib(ib, gib)
+    when is_bitstring(ib) and bit_size(ib) > 0 and
+         is_bitstring(gib) and bit_size(gib) > 0 do
     {:ok, ib <> @delim <> gib}
   end
-  def get_ib_gib(_ib, _gib) do
-    {:error, "ib and gib are not both bitstrings."}
+  def get_ib_gib(ib, gib) do
+    error_msg = "ib and gib are not both bitstrings with length > 0. ib: #{inspect ib}. gib: #{inspect gib}"
+    Logger.error error_msg
+    {:error, error_msg}
   end
 
   @spec get_ib_gib!(String.t, String.t) :: String.t
