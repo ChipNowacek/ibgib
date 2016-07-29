@@ -1,10 +1,10 @@
 <div>
-  <!-- <p>ib: <%= @ib %></p>
-  <p>gib: <%= @gib %></p> -->
+  <!-- These variables are used in this template. -->
+  <% ib = @ib %> <% gib = @gib %> <% ib_gib = @ib_gib %>
+  <% thing_data = @thing_data %> <% thing_relations = @thing_relations %>
+  <% conn = @conn %>
+
   <div>
-    <!-- <p>shared</p> -->
-    <% ib = @ib %> <% gib = @gib %> <% ib_gib = @ib_gib %>
-    <% thing_data = @thing_data %> <% thing_relations = @thing_relations %>
     <a href="<%= ib_gib_path(@conn, :show, ib_gib) %>">
       <%= render WebGib.SharedIbGibView, "ib_gib.html", [ib: ib, gib: gib, ib_gib: ib_gib] %>
     </a>
@@ -15,18 +15,11 @@
   </div>
 
   <div>
-    <%= render WebGib.SharedIbGibView, "relations.html", [ib: ib, gib: gib, ib_gib: ib_gib, thing_relations: thing_relations] %>
+    <%= render WebGib.SharedIbGibView, "relations.html", [conn: @conn, ib: ib, gib: gib, ib_gib: ib_gib, thing_relations: thing_relations] %>
   </div>
-
-  <!-- <%= for item <- test_list do %>
-    <p>
-      <a href="<%= ib_gib_path(@conn, :show, item) %>">
-        <%= item %>
-      </a>
-    </p>
-  <% end %> -->
-
+  <div class="ib-tooltip">
+    <!-- <%= button(<<226,142,135>>, to: "/ibgib/api/fork?src_ib_gib=#{ib_gib}") %> -->
+    <%= button(fork_label, to: "/ibgib/api/fork?src_ib_gib=#{ib_gib}") %>
+    <span class="ib-tooltiptext"><%= fork_tooltip %></span>
+  </div>
 </div>
-<!-- <div>
-  <%= button("+", to: "/?action=fork&src_ib_gib=ib^gib") %>
-</div> -->

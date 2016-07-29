@@ -1,4 +1,8 @@
-<!-- The at symbol gets the value out of the assigns map. -->
-<p>ib: <%= @ib %></p>
-<p>gib: <%= @gib %></p>
-<p>ib_gib: <%= @ib_gib %></p>
+<div class="ib-debug-border">
+
+  <!-- The at symbol gets the value out of the assigns map. -->
+  <p>ib: <%= @ib %></p>
+  <p>gib: <%= @gib %></p>
+  <p>ib_gib: <%= @ib_gib %></p>
+
+</div>

@@ -2,17 +2,17 @@
   <h2><%= gettext "Welcome to %{name} 8~/", name: "ibGib" %></h2>
   <p class="lead">ib. Gib. ibGib.</p>
 
-  <%= for item <- test_list do %>
-    <!-- <p><%= link(item, to: "/ibgib", method: "get") %></p> -->
+  <!-- <%= for item <- test_list do %>
     <p>
       <a href="<%= ib_gib_path(@conn, :show, item) %>">
         <%= item %>
       </a>
     </p>
-
-  <% end %>
+  <% end %> -->
 </div>
 
 <div>
-  <%= button("+", to: "/?action=fork&src_ib_gib=ib^gib") %>
+  <a href="<%= ib_gib_path(@conn, :index) %>">Hmm...</a>
+
+  <!-- <%= button("Click me?", to: "/ibgib") %> -->
 </div>

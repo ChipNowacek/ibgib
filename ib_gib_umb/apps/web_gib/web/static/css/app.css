@@ -20,45 +20,33 @@
   background-color: #76963e !important;
 }
 
-.ib-chat-input {
-  display: flex;
+/*---------------------------------------------------------------------------*/
+/* Tooltip */
+/* Thanks w3schools! http://www.w3schools.com/css/css_tooltip.asp */
+/*---------------------------------------------------------------------------*/
+.ib-tooltip {
+    position: relative;
+    display: inline-block;
+    border-bottom: 1px dotted black;
+}
+.ib-tooltip .ib-tooltiptext {
+    visibility: hidden;
+    width: 120px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+
+    /* Position the tooltip */
+    position: absolute;
+    z-index: 1;
+}
+.ib-tooltip:hover .ib-tooltiptext {
+    visibility: visible;
 }
 
-.ib-user-name {
-  width: 200px;
-}
 
-.ib-message {
-  width: 200px !important;
-}
-
-
-
-/* Sticky footer styles
--------------------------------------------------- */
-html {
-  position: relative;
-  min-height: 100%;
-}
-body {
-  /* Margin bottom by footer height */
-  margin-top: 50px;
-  margin-bottom: 60px;
-}
-
-#footer {
-  position: fixed;
-  bottom: 0px;
-  width: 100%;
-  /* Set the fixed height of the footer here */
-  height: 60px;
-  padding-top: 1em;
-  background-color: #f5f5f5;
-}
-
-#messages {
-  margin-top: 0px;
-}
 /* Custom page CSS
 -------------------------------------------------- */
 /* Not required for template or sticky footer method. */
@@ -77,4 +65,16 @@ body > .container {
 
 code {
   font-size: 80%;
+}
+
+
+/*---------------------------------------------------------------------------*/
+/* Borders */
+/*---------------------------------------------------------------------------*/
+
+.ib-debug-border {
+  margin: 1px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: black;
 }

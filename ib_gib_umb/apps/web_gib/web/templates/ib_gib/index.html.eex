@@ -10,5 +10,5 @@
 
 </div>
 <div>
-  <%= button("+", to: "/ibgib/api/fork?src_ib_gib=#{ib_gib}") %>
+  <%= button(fork_label, to: "/ibgib/api/fork?src_ib_gib=#{ib_gib}") %>
 </div>
