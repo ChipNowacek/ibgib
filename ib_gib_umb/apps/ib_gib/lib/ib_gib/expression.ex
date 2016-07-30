@@ -125,10 +125,15 @@ defmodule IbGib.Expression do
 
     # the ib stays the same
     ib = a[:ib]
+    original_gib = a[:gib]
+    original_ib_gib = Helper.get_ib_gib!(ib, original_gib)
     Logger.debug "retaining ib. a[:ib]...: #{ib}"
 
     # We add the mut8 itself to the `relations`.
-    a = a |> add_relation("history", b)
+    a = a
+        |> add_relation("past", original_ib_gib)
+        |> add_relation("history", b)
+
 
     a_data = Map.get(a, :data, %{})
     b_data = Map.get(b, :data, %{})
