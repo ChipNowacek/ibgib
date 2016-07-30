@@ -66,7 +66,58 @@ defmodule WebGib.IbGibController do
 
   end
 
+  # ----------------------------------------------------------------------------
+  # Mut8
+  # ----------------------------------------------------------------------------
 
+  def mut8(conn, %{"mut8n" => %{"key" => key, "value" => value, "src_ib_gib" => src_ib_gib} = mut8n} = params) do
+    Logger.debug "conn: #{inspect conn}"
+    Logger.warn "conn.params: #{inspect conn.params}"
+    Logger.debug "params: #{inspect params}"
+    # data_key = conn.params["mut8n"]["key"]
+    # data_value = conn.params["mut8n"]["value"]
+    # data_key = params["mut8n"]["key"]
+    # data_value = params["mut8n"]["value"]
+    # msg = "key: #{data_key}.\nvalue: #{data_value}"
+    msg = "key: #{key}\nvalue: #{value}"
+
+    Logger.warn msg
+
+    do_mut8(conn, src_ib_gib, key, value)
+  end
+
+  defp do_mut8(conn, src_ib_gib, key, value) do
+    Logger.debug "."
+    case mut8_impl(src_ib_gib, key, value) do
+      {:ok, mut8d_thing} ->
+        Logger.info "mut8d_thing: #{inspect mut8d_thing}"
+
+        mut8d_thing_info = mut8d_thing |> IbGib.Expression.get_info!
+        ib = mut8d_thing_info[:ib]
+        gib = mut8d_thing_info[:gib]
+        ib_gib = get_ib_gib!(ib, gib)
+
+        conn
+        |> redirect(to: "/ibgib/#{ib_gib}")
+      other ->
+        # put flash error
+        error_msg = dgettext "error", "Fork failed."
+        Logger.error "#{error_msg}. (#{inspect other})"
+        conn
+        |> put_flash(:error, error_msg)
+        |> redirect(to: "/ibgib/#{src_ib_gib}")
+    end
+  end
+
+  defp mut8_impl(src_ib_gib, key, value)
+      when is_bitstring(src_ib_gib) and
+           is_bitstring(key) and is_bitstring(value) and
+           src_ib_gib !== "" and key !== "" do
+      Logger.warn "src_ib_gib: #{src_ib_gib}, key: #{key}, value: #{value}"
+
+      {:ok, src} = IbGib.Expression.Supervisor.start_expression(src_ib_gib)
+      src |> IbGib.Expression.mut8(%{key => value})
+    end
   # ----------------------------------------------------------------------------
   # Fork
   # ----------------------------------------------------------------------------
@@ -118,7 +169,7 @@ defmodule WebGib.IbGibController do
   defp fork_impl(root, src_ib_gib \\ @root_ib_gib, dest_ib \\ new_id)
   defp fork_impl(root, src_ib_gib, dest_ib)
     when is_bitstring(src_ib_gib) and is_bitstring(dest_ib) and
-         src_ib_gib !== "" and src_ib_gib !== "" do
+         src_ib_gib !== "" and dest_ib !== "" do
     Logger.debug "dest_ib: #{dest_ib}"
     src =
       if (src_ib_gib === "" or src_ib_gib === @root_ib_gib) do

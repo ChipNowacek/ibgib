@@ -5,5 +5,17 @@
   <% else %>
     <p>Data: [no data yo]</p>
   <% end %>
+  <div>
+    <%= form_for @conn, ib_gib_path(@conn, :mut8), [as: :mut8n], fn f -> %>
+      <%= text_input f, :key %>
+      <%= text_input f, :value %>
+      <%= hidden_input f, :src_ib_gib, value: @ib_gib %>
+      <div class="ib-tooltip">
+        <%= submit mut8_label %>
+        <span class="ib-tooltiptext"><%= mut8_tooltip %></span>
+      </div>
+    <% end %>
+  </div>
+
 
 </div>

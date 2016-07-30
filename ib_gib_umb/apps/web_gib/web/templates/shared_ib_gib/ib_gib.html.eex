@@ -1,8 +1,20 @@
 <div class="ib-debug-border">
 
   <!-- The at symbol gets the value out of the assigns map. -->
-  <p>ib: <%= @ib %></p>
-  <p>gib: <%= @gib %></p>
-  <p>ib_gib: <%= @ib_gib %></p>
+  <!-- <p>ib: <%= @ib %></p>
+  <p>gib: <%= @gib %></p> -->
+  <a href="<%= ib_gib_path(@conn, :show, @ib_gib) %>">
+
+    <p>ib_gib: <%= @ib_gib %></p>
+  </a>
+  <div>
+    <div class="ib-tooltip">
+      <!-- <%= button(<<226,142,135>>, to: "/ibgib/api/fork?src_ib_gib=#{@ib_gib}") %> -->
+      <%= button(fork_label, to: "/ibgib/api/fork?src_ib_gib=#{@ib_gib}") %>
+      <span class="ib-tooltiptext"><%= fork_tooltip %></span>
+    </div>
+
+    <!-- <%= button(fork_label, to: "/ibgib/api/fork?src_ib_gib=#{@ib_gib}") %> -->
+  </div>
 
 </div>
