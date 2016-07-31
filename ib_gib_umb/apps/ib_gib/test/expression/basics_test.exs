@@ -292,14 +292,14 @@ defmodule IbGib.Expression.BasicsTest do
 
     Logger.debug "Infos\na: #{inspect a_info}\nnew_a: #{inspect new_a_info}\ninstance: #{inspect a_instance_info}"
 
-    Logger.debug "new_a_info[:relations][\"instance\"]: #{inspect new_a_info[:relations]["instance"]}"
+    Logger.debug "new_a_info[:rel8ns][\"instance\"]: #{inspect new_a_info[:rel8ns]["instance"]}"
     Logger.debug "a_instance_ib_gib: #{inspect a_instance_ib_gib}"
 
     assert(
-      new_a_info[:relations]["instance"]
+      new_a_info[:rel8ns]["instance"]
       |> Enum.map(&(String.split(&1, @delim) |> Enum.at(0)))
       |> Enum.member?(a_instance_info[:ib])
     )
-    assert a_instance_info[:relations]["instance_of"] |> Enum.member?(a_ib_gib)
+    assert a_instance_info[:rel8ns]["instance_of"] |> Enum.member?(a_ib_gib)
   end
 end

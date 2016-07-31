@@ -41,7 +41,7 @@ defmodule WebGib.IbGibController do
       with {:ok, thing} <- IbGib.Expression.Supervisor.start_expression({ib, gib}),
          {:ok, thing_info} <- thing |> IbGib.Expression.get_info do
         thing_data = thing_info[:data]
-        thing_relations = thing_info[:relations]
+        thing_relations = thing_info[:rel8ns]
         conn =
           conn
           |> assign(:ib, ib)

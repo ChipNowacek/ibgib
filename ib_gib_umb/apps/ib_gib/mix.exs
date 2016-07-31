@@ -11,14 +11,16 @@ defmodule IbGib.Mixfile do
      elixir: "~> 1.2",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
-     deps: deps]
+     deps: deps,
+     aliases: aliases]
   end
 
   # Configuration for the OTP application
   #
   # Type "mix help compile.app" for more information
   def application do
-    [applications: [:logger, :random_gib, :poison],
+    # [applications: [:postgrex, :ecto, :logger, :random_gib],
+    [applications: [:postgrex, :ecto, :logger, :random_gib, :poison],
      mod: {IbGib, []}]
   end
 
@@ -43,4 +45,12 @@ defmodule IbGib.Mixfile do
       {:random_gib, in_umbrella: true}
     ]
   end
+
+  defp aliases do
+    ["ecto.setup": ["ecto.create", "ecto.migrate"],
+    # ["ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
+    "ecto.reset": ["ecto.drop", "ecto.setup"],
+    "test":       ["ecto.reset", "test"]]
+  end
+
 end

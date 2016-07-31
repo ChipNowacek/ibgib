@@ -46,7 +46,7 @@ defmodule IbGib.Expression do
         %{
           :ib => ib,
           :gib => gib,
-          :relations => %{
+          :rel8ns => %{
             "history" => ["ib#{@delim}gib"]#,
             # "ancestor" => ["ib#{@delim}gib"],
             },
@@ -83,7 +83,7 @@ defmodule IbGib.Expression do
   defp apply_fork(a, b) do
     # We are applying a fork transform.
     Logger.debug "applying fork b to ib_gib a.\na: #{inspect a}\nb: #{inspect b}\n"
-    Logger.debug "a[:relations]: #{inspect a[:relations]}"
+    Logger.debug "a[:rel8ns]: #{inspect a[:rel8ns]}"
     fork_data = b[:data]
 
     # We're going to borrow `a` as our own info for the new thing. We're just
@@ -105,7 +105,7 @@ defmodule IbGib.Expression do
     a = Map.put(a, :data, data)
 
     # Now we calculate the new hash and set it to `:gib`.
-    gib = Helper.hash(ib, a[:relations], data)
+    gib = Helper.hash(ib, a[:rel8ns], data)
     Logger.debug "gib: #{gib}"
     a = Map.put(a, :gib, gib)
 
@@ -117,7 +117,7 @@ defmodule IbGib.Expression do
   defp apply_mut8(a, b) do
     # We are applying a mut8 transform.
     Logger.debug "applying mut8 b to ib_gib a.\na: #{inspect a}\nb: #{inspect b}\n"
-    Logger.debug "a[:relations]: #{inspect a[:relations]}"
+    Logger.debug "a[:rel8ns]: #{inspect a[:rel8ns]}"
 
     # We're going to borrow `a` as our own info for the new thing. We're just
     # going to change its `gib`, and `relations`, and its `data` since it's
@@ -144,7 +144,7 @@ defmodule IbGib.Expression do
     a = Map.put(a, :data, merged_data)
 
     # Now we calculate the new hash and set it to `:gib`.
-    gib = Helper.hash(ib, a[:relations], merged_data)
+    gib = Helper.hash(ib, a[:rel8ns], merged_data)
     Logger.debug "gib: #{gib}"
     a = Map.put(a, :gib, gib)
 
@@ -156,7 +156,7 @@ defmodule IbGib.Expression do
   defp apply_rel8(a, b) do
     # We are applying a rel8 transform.
     Logger.debug "applying rel8 b to ib_gib a.\na: #{inspect a}\nb: #{inspect b}\n"
-    Logger.debug "a[:relations]: #{inspect a[:relations]}"
+    Logger.debug "a[:rel8ns]: #{inspect a[:rel8ns]}"
 
     # We add the rel8 transform to the history.
     a = a |> add_relation("history", b)
@@ -176,7 +176,7 @@ defmodule IbGib.Expression do
       end
     Logger.debug "new_relations: #{inspect new_relations}, other_ib_gib: #{other_ib_gib}"
     new_a_relations =
-      Enum.reduce(new_relations, a[:relations], fn(x, acc) ->
+      Enum.reduce(new_relations, a[:rel8ns], fn(x, acc) ->
         if Map.has_key?(acc, x) and !Enum.member?(acc[x], other_ib_gib) do
           # We already have the key, so append it to the end of the list
           Map.put(acc, x, acc[x] ++ [other_ib_gib])
@@ -184,12 +184,12 @@ defmodule IbGib.Expression do
           Map.put_new(acc, x, [other_ib_gib])
         end
       end)
-    a = Map.put(a, :relations, new_a_relations)
+    a = Map.put(a, :rel8ns, new_a_relations)
     Logger.debug "new a: #{inspect a}"
 
     # Now we calculate the new hash and set it to `:gib`.
     ib = a[:ib]
-    new_gib = Helper.hash(ib, a[:relations], a[:data])
+    new_gib = Helper.hash(ib, a[:rel8ns], a[:data])
     Logger.debug "new_gib: #{new_gib}"
     a = Map.put(a, :gib, new_gib)
 
@@ -199,15 +199,15 @@ defmodule IbGib.Expression do
   end
 
   defp add_relation(a, relation_name, b) when is_map(a) and is_bitstring(relation_name) and is_bitstring(b) do
-    Logger.debug "Adding relation #{relation_name} to a. a[:relations]: #{inspect a[:relations]}"
-    a_relations = a[:relations]
+    Logger.debug "Adding relation #{relation_name} to a. a[:rel8ns]: #{inspect a[:rel8ns]}"
+    a_relations = a[:rel8ns]
 
     relation = Map.get(a_relations, relation_name, [])
     new_relation = relation ++ [b]
 
     new_a_relations = Map.put(a_relations, relation_name, new_relation)
-    new_a = Map.put(a, :relations, new_a_relations)
-    Logger.debug "Added relation #{relation_name} to a. a[:relations]: #{inspect a[:relations]}"
+    new_a = Map.put(a, :rel8ns, new_a_relations)
+    Logger.debug "Added relation #{relation_name} to a. a[:rel8ns]: #{inspect a[:rel8ns]}"
     new_a
   end
   defp add_relation(a, relation_name, b) when is_map(a) and is_bitstring(relation_name) and is_map(b) do

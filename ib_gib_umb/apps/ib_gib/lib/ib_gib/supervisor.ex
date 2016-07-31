@@ -15,7 +15,8 @@ defmodule IbGib.Supervisor do
       # For now, not going to worry about it.
       supervisor(IbGib.Expression.Supervisor, []),
       supervisor(IbGib.Expression.Registry, []),
-      supervisor(IbGib.Data.Cache, [])
+      supervisor(IbGib.Data.Cache, []),
+      supervisor(IbGib.Data.Repo, [])
     ]
 
     supervise(children, strategy: :one_for_all)

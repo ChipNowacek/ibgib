@@ -56,8 +56,8 @@ defmodule IbGib.Expression.HelloWorldTest do
     _text_instance_rel8d_ib_gib = Helper.get_ib_gib!(text_instance_rel8d_info[:ib], text_instance_rel8d_info[:gib])
     Logger.debug "text_instance_rel8d_info: #{inspect text_instance_rel8d_info}"
 
-    assert hw_instance_rel8d_info[:relations]["rel8d"] === [text_instance_ib_gib]
-    assert text_instance_rel8d_info[:relations]["rel8d"] === [hw_instance_ib_gib]
+    assert hw_instance_rel8d_info[:rel8ns]["rel8d"] === [text_instance_ib_gib]
+    assert text_instance_rel8d_info[:rel8ns]["rel8d"] === [hw_instance_ib_gib]
   end
 
   @tag :capture_log
@@ -110,11 +110,11 @@ defmodule IbGib.Expression.HelloWorldTest do
     _text_instance_rel8d_ib_gib = Helper.get_ib_gib!(text_instance_rel8d_info[:ib], text_instance_rel8d_info[:gib])
     Logger.debug "text_instance_rel8d_info: #{inspect text_instance_rel8d_info}"
 
-    assert hw_instance_rel8d_info[:relations]["rel8d"] === [text_instance_ib_gib]
-    assert text_instance_rel8d_info[:relations]["rel8d"] === [hw_instance_ib_gib]
-    assert hw_instance_rel8d_info[:relations]["prop"] === [text_instance_ib_gib]
-    assert hw_instance_rel8d_info[:relations]["text"] === [text_instance_ib_gib]
-    assert text_instance_rel8d_info[:relations]["prop_of"] === [hw_instance_ib_gib]
+    assert hw_instance_rel8d_info[:rel8ns]["rel8d"] === [text_instance_ib_gib]
+    assert text_instance_rel8d_info[:rel8ns]["rel8d"] === [hw_instance_ib_gib]
+    assert hw_instance_rel8d_info[:rel8ns]["prop"] === [text_instance_ib_gib]
+    assert hw_instance_rel8d_info[:rel8ns]["text"] === [text_instance_ib_gib]
+    assert text_instance_rel8d_info[:rel8ns]["prop_of"] === [hw_instance_ib_gib]
   end
 
   @tag :capture_log
@@ -189,7 +189,7 @@ defmodule IbGib.Expression.HelloWorldTest do
     hw_info = hw |> get_info!
     Logger.warn "hw_info: #{inspect hw_info}"
 
-    hw_info[:relations]["history"] |> Enum.each(fn (ig) ->
+    hw_info[:rel8ns]["history"] |> Enum.each(fn (ig) ->
         Logger.info "ig: #{ig}"
         {:ok, ig_pid} = Expression.Supervisor.start_expression(ig)
         ig_info = ig_pid |> Expression.get_info!
