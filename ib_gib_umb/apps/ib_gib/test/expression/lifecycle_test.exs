@@ -1,6 +1,6 @@
 defmodule IbGib.Expression.LifecycleTest do
   use ExUnit.Case
-  alias IbGib.{Expression, Helper}
+  alias IbGib.Helper
   import IbGib.Expression
   require Logger
 

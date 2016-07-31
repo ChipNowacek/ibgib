@@ -159,6 +159,7 @@ defmodule IbGib.Expression.HelloWorldTest do
     Logger.debug "text_instance_info: #{inspect text_instance_info}"
   end
 
+  @tag :capture_log
   test "hello world with user owner" do
     {:ok, root} = Expression.Supervisor.start_expression
 
@@ -168,7 +169,7 @@ defmodule IbGib.Expression.HelloWorldTest do
     user = root |> fork!("user")
     user_info = user |> get_info!
 
-    {user, bob} = user |> instance!("bob")
+    {_user, bob} = user |> instance!("bob")
     bob_info = bob |> get_info!
     Logger.warn "hw_info: #{inspect hw_info}"
     Logger.warn "user_info: #{inspect user_info}"
@@ -182,6 +183,7 @@ defmodule IbGib.Expression.HelloWorldTest do
     Logger.warn "bob_info: #{inspect bob_info}"
   end
 
+  @tag :capture_log
   test "playground" do
     {:ok, root} = Expression.Supervisor.start_expression
 

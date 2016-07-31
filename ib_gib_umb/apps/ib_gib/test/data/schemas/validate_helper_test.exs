@@ -30,6 +30,7 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
   end
 
 
+  @tag :capture_log
   test "valid ib_gibs" do
     [
       "#{random_min_id}#{@delim}#{random_min_id}",
@@ -43,6 +44,7 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
     end)
   end
 
+  @tag :capture_log
   test "invalid ib_gib, not string" do
     [
       :some_atom,
@@ -55,6 +57,7 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
     end)
   end
 
+  @tag :capture_log
   test "invalid ib_gib, no delim" do
     [
       "#{random_min_id}#{random_min_id}",
@@ -68,6 +71,7 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
     end)
   end
 
+  @tag :capture_log
   test "invalid ib_gib, ib_gib lengths" do
     [
       # a is extra character
@@ -79,6 +83,7 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
     end)
   end
 
+  @tag :capture_log
   test "invalid ib_gib, ib lengths" do
     [
       "#{@delim}#{random_min_id}",
@@ -91,6 +96,7 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
     end)
   end
 
+  @tag :capture_log
   test "invalid ib_gib, gib lengths" do
     [
       "#{random_min_id}#{@delim}",
@@ -104,6 +110,7 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
   end
 
 
+  @tag :capture_log
   test "map_of_ib_gib_arrays valid" do
     [
       %{"history" => ["ib^gib"]},
@@ -121,6 +128,7 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
     end)
   end
 
+  @tag :capture_log
   test "map_of_ib_gib_arrays invalid, lengths" do
     [
       %{"history" => ["ib^"]},

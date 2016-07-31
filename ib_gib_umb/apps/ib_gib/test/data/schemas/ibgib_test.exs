@@ -5,8 +5,8 @@ defmodule IbGib.Data.Schemas.IbGibTest do
   use IbGib.Constants, :ib_gib
   use IbGib.Constants, :error_msgs
   alias IbGib.TestHelper
-  alias IbGib.Data.Repo
-  alias IbGib.Data.Schemas.{IbGibModel,ValidateHelper}
+  # alias IbGib.Data.Repo
+  alias IbGib.Data.Schemas.IbGibModel
   alias RandomGib.Get
 
   @at_least_msg "should have at least %{count} item(s)"

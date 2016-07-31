@@ -1,7 +1,7 @@
 defmodule IbGib.Expression.BasicsTest do
   use ExUnit.Case
   alias IbGib.{Expression, Helper}
-  import IbGib.Expression
+  # import IbGib.Expression
   require Logger
 
   @delim "^"
