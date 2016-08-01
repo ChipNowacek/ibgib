@@ -15,12 +15,12 @@ defmodule IbGib.TransformFactory do
     relations = %{
       "history" => ["ib#{@delim}gib", "fork#{@delim}gib"]
     }
-    data = %{src_ib_gib: src_ib_gib, dest_ib: dest_ib}
+    data = %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib}
     gib = Helper.hash(ib, relations, data)
     %{
       ib: ib,
       gib: gib,
-      relations: relations,
+      rel8ns: relations,
       data: data
     }
   end
@@ -36,12 +36,12 @@ defmodule IbGib.TransformFactory do
     relations = %{
       "history" => ["ib#{@delim}gib", "mut8#{@delim}gib"]
     }
-    data = %{src_ib_gib: src_ib_gib, new_data: new_data}
+    data = %{"src_ib_gib" => src_ib_gib, "new_data" => new_data}
     gib = Helper.hash(ib, relations, data)
     %{
       ib: ib,
       gib: gib,
-      relations: relations,
+      rel8ns: relations,
       data: data
     }
   end
@@ -69,16 +69,16 @@ defmodule IbGib.TransformFactory do
       "history" => ["ib#{@delim}gib", "rel8#{@delim}gib"]
     }
     data = %{
-      src_ib_gib: src_ib_gib,
-      dest_ib_gib: dest_ib_gib,
-      src_rel8ns: src_rel8ns |> Enum.concat(@default_rel8ns) |> Enum.uniq,
-      dest_rel8ns: dest_rel8ns |> Enum.concat(@default_rel8ns) |> Enum.uniq
+      "src_ib_gib" => src_ib_gib,
+      "dest_ib_gib" => dest_ib_gib,
+      "src_rel8ns" => src_rel8ns |> Enum.concat(@default_rel8ns) |> Enum.uniq,
+      "dest_rel8ns" => dest_rel8ns |> Enum.concat(@default_rel8ns) |> Enum.uniq
     }
     gib = Helper.hash(ib, relations, data)
     %{
       ib: ib,
       gib: gib,
-      relations: relations,
+      rel8ns: relations,
       data: data
     }
   end

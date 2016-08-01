@@ -69,52 +69,8 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
   Returns true if it's a map of valid
   """
   def valid_data?(_field, src, max_size \\ max_data_size)
-  def valid_data?(_field, src, max_size)
-    when is_map(src) and map_size(src) > 0 do
-
-      # Going to reduce the enumerable to avoid going through multiple times.
-      # -1 returned means not valid. Anything positive will be the size.
-
-    valid = 0 <
-      src
-      |> Enum.reduce_while(0,
-        fn(item, acc) ->
-          Logger.debug "item: #{inspect item}"
-          {key, value} = item
-
-          # Logger.debug "key: #{inspect key}\nvalue: #{inspect value}"
-          # Logger.debug "is_list(value): #{is_list(value)}"
-          if (is_bitstring(key) and (is_bitstring(value) or is_nil(value))) do
-            key_length = key |> String.length
-
-            key_valid? =
-              is_bitstring(key) and key_length > 0 and key_length <= max_id_length
-
-            if (key_valid?) do
-              value_valid? =
-                if is_nil(value) do
-                  {:cont, acc + key_length}
-                else
-                  value_length = value |> String.length
-                  running_size = acc + key_length + value_length
-                  if (running_size <= max_size) do
-                    Logger.debug "running_size: #{running_size}, max_size: #{max_size}"
-                    {:cont, running_size}
-                  else
-                    # not valid - too big
-                    {:halt, -1}
-                  end
-                end
-            else
-              # not valid
-              {:halt, -1}
-            end
-          else
-            # key and value must be bitstrings, or value can be nil
-            # not valid
-            {:halt, -1}
-          end
-        end)
+  def valid_data?(_field, src, max_size) when is_map(src) and map_size(src) > 0 do
+    get_map_size(src, 0, max_size) !== -1
   end
   def valid_data?(_field, src, max_size)
     when is_map(src) and map_size(src) === 0 do
@@ -128,6 +84,74 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
   def valid_data?(_field, _src, max_size) do
     Logger.debug "other"
     false
+  end
+
+  @doc """
+
+  Returns -1 if running_size exceeds max_size at any point.
+  """
+  def get_map_size(m, running_size \\ 0, max_size \\ max_data_size)
+    when is_map(m) and is_integer(max_size) and is_integer(running_size) do
+    m
+    |> Enum.reduce_while(running_size,
+      fn(item, acc) ->
+        Logger.debug "item: #{inspect item}"
+        {key, value} = item
+
+        # Logger.debug "key: #{inspect key}\nvalue: #{inspect value}"
+        # Logger.debug "is_list(value): #{is_list(value)}"
+        if (is_bitstring(key)) do
+          key_length = key |> String.length
+
+          key_valid? =
+            is_bitstring(key) and key_length > 0 and key_length <= max_id_length
+
+          if (key_valid?) do
+            value_valid? =
+              cond do
+                is_nil(value) ->
+                  # add the key_length to the acc and continue
+                  {:cont, acc + key_length}
+
+                is_bitstring(value) ->
+                  # Add the key_length and value_length to the acc
+                  # then check to see if we've gotten too big for our britches.
+                  value_length = value |> String.length
+                  new_running_size = acc + key_length + value_length
+                  if (new_running_size <= max_size) do
+                    Logger.debug "new_running_size: #{new_running_size}, max_size: #{max_size}"
+                    {:cont, new_running_size}
+                  else
+                    # not valid - too big
+                    {:halt, -1}
+                  end
+
+                is_map(value) ->
+                  # Call the get_map_size recursively, passing in our current
+                  # acc value as the starting point.
+                  new_running_size = get_map_size(value, acc + key_length, max_size)
+                  if (new_running_size === -1) do
+                    # Internal map has put us over the top
+                    {:halt, -1}
+                  else
+                    {:cont, new_running_size}
+                  end
+                true ->
+                  # not valid - value is not a map, string, or nil
+                  {:halt, -1}
+              end
+          else
+            # key invalid
+            # not valid
+            {:halt, -1}
+          end
+        else
+          # key must be a bitstring, and value must be bitstring, map, or nil
+          # not valid
+          {:halt, -1}
+        end
+      end)
+
   end
 
   def valid_ib_gib?(ib_gib) when is_bitstring(ib_gib) do

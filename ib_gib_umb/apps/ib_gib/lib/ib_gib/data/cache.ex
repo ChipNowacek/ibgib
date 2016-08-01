@@ -25,9 +25,10 @@ defmodule IbGib.Data.Cache do
   @doc """
   Inserts/replaces the given `key` with the given `value`.
 
-  Returns :ok
+  Returns {:ok, :ok} or {:error, reason}
   """
   def put(key, value, name \\ @srv_name) when is_bitstring(key) do
+    Logger.warn "Yoooooooooooooooooo put"
     GenServer.call(name, {:put, {key, value}})
   end
 

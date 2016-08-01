@@ -35,6 +35,10 @@ defmodule IbGib.Constants do
         "invalid. unknown src maybe, maybe not an array of string"
       end
 
+      def emsg_invalid_data_value(value) do
+        "invalid data value: #{inspect value}"
+      end
+
       def emsg_unknown_field do
         "Unknown field. Expected either :data or :rel8ns."
       end

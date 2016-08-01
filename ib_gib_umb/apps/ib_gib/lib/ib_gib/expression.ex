@@ -91,20 +91,21 @@ defmodule IbGib.Expression do
 
     # We take the ib directly from the fork's `dest_ib`.
     Logger.debug "Setting a[:ib]... fork_data: #{inspect fork_data}"
-    ib = fork_data[:dest_ib]
+    ib = fork_data["dest_ib"]
     a = Map.put(a, :ib, ib)
     Logger.debug "a: #{inspect a}"
 
     # We add the fork itself to the `relations` `history`.
     a = a |> add_relation("history", b)
-    Logger.debug "fork_data[:src_ib_gib]: #{fork_data[:src_ib_gib]}"
-    a = a |> add_relation("ancestor", fork_data[:src_ib_gib])
+    Logger.debug "fork_data[\"src_ib_gib\"]: #{fork_data["src_ib_gib"]}"
+    a = a |> add_relation("ancestor", fork_data["src_ib_gib"])
 
     data = Map.get(a, :data, %{})
     Logger.debug "data: #{inspect data}"
     a = Map.put(a, :data, data)
 
     # Now we calculate the new hash and set it to `:gib`.
+    Logger.warn "ib: #{inspect ib}"
     gib = Helper.hash(ib, a[:rel8ns], data)
     Logger.debug "gib: #{gib}"
     a = Map.put(a, :gib, gib)
@@ -162,17 +163,17 @@ defmodule IbGib.Expression do
     a = a |> add_relation("history", b)
 
     # We need to know if we are source or destination of this rel8n.
-    src_ib_gib = b[:data][:src_ib_gib]
-    dest_ib_gib = b[:data][:dest_ib_gib]
+    src_ib_gib = b[:data]["src_ib_gib"]
+    dest_ib_gib = b[:data]["dest_ib_gib"]
 
     # Retaining ib because is a rel8 transform
     a_ib_gib = Helper.get_ib_gib!(a[:ib], a[:gib])
 
     {new_relations, other_ib_gib} =
       if (a_ib_gib === src_ib_gib) do
-        {b[:data][:src_rel8ns], dest_ib_gib}
+        {b[:data]["src_rel8ns"], dest_ib_gib}
       else
-        {b[:data][:dest_rel8ns], src_ib_gib}
+        {b[:data]["dest_rel8ns"], src_ib_gib}
       end
     Logger.debug "new_relations: #{inspect new_relations}, other_ib_gib: #{other_ib_gib}"
     new_a_relations =
@@ -456,7 +457,7 @@ defmodule IbGib.Expression do
     Logger.debug "fork_info: #{inspect fork_info}"
 
     # 2. Save transform
-    IbGib.Data.save(fork_info)
+    {:ok, :ok} = IbGib.Data.save(fork_info)
 
     # 3. Create instance process of fork
     Logger.debug "fork saved. Now trying to create fork transform expression process"

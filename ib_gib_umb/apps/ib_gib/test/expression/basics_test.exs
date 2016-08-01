@@ -1,10 +1,22 @@
 defmodule IbGib.Expression.BasicsTest do
   use ExUnit.Case
   alias IbGib.{Expression, Helper}
+  # alias IbGib.Data.Repo
   # import IbGib.Expression
   require Logger
 
   @delim "^"
+
+  setup context do
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(IbGib.Data.Repo)
+
+    unless context[:async] do
+      Ecto.Adapters.SQL.Sandbox.mode(IbGib.Data.Repo, {:shared, self()})
+    end
+
+    test_name = "#{context.test}" |> String.replace(" ", "_") |> String.replace(",", "_")
+    {:ok, test_name: String.to_atom(test_name)}
+  end
 
   @tag :capture_log
   test "create expression, from scratch, root Thing" do
