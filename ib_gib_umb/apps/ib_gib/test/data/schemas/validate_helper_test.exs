@@ -4,6 +4,7 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
   alias RandomGib.Get
 
   alias IbGib.Data.Schemas.ValidateHelper
+  use IbGib.Constants, :ib_gib
 
   @min 1
   @max 64
@@ -152,7 +153,99 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
     end)
   end
 
+  # ----------------------------------------------------------------------------
+  # valid_data?
+  # ----------------------------------------------------------------------------
 
+  @tag :capture_log
+  test "valid_data?, valid, empty map" do
+    test_map = %{}
+
+    assert ValidateHelper.valid_data?(:some_field, test_map)
+  end
+
+  @tag :capture_log
+  test "valid_data?, valid, nil map" do
+    test_map = nil
+
+    assert ValidateHelper.valid_data?(:some_field, test_map)
+  end
+
+  @tag :capture_log
+  test "valid_data?, invalid, other" do
+    [
+      :some_atom,
+      "some string",
+      123
+    ]
+    |> Enum.each(fn(test_non_map) ->
+      assert !ValidateHelper.valid_data?(:some_field, test_non_map)
+    end)
+  end
+
+  @tag :capture_log
+  test "valid_data?, invalid, non-string keys/values" do
+    [
+      %{:some_atom => "some string"},
+      %{123 => "some string"},
+      %{"some string" => :some_atom},
+      %{"some string" => 123},
+      %{"a" => "a value", "b" => "b value", :some_atom => "some string"},
+      %{"a" => "a value", "b" => "b value", 123 => "some string"},
+      %{"a" => "a value", "b" => "b value", "some string" => :some_atom},
+      %{"a" => "a value", "b" => "b value", "some string" => 123},
+    ]
+    |> Enum.each(fn(test_non_map) ->
+      assert !ValidateHelper.valid_data?(:some_field, test_non_map)
+    end)
+  end
+
+  @tag :capture_log
+  test "valid_data?, valid, at max data size" do
+    test_max_size = 100000
+    test_value_length = div(test_max_size, 2) - 1 # reserve 1 length for key
+    test_value = Enum.reduce(1..test_value_length, "", fn(x, acc) -> "a" <> acc end)
+    Logger.debug "test_value: #{test_value}"
+    # test_value = Enum.reduce([0, 5], fn(x, acc) -> "a" <<>> acc end)
+    test_map = %{
+      "a" => test_value,
+      "b" => test_value
+    }
+    assert ValidateHelper.valid_data?(:some_field, test_map, test_max_size)
+  end
+
+  @tag :capture_log
+  test "valid_data?, invalid, key puts it just over max data size" do
+    test_max_size = 100000
+    test_value_length = div(test_max_size, 2) - 1 # reserve 1 length for key
+    test_value = Enum.reduce(1..test_value_length, "", fn(x, acc) -> "a" <> acc end)
+    Logger.debug "test_value: #{test_value}"
+    # test_value = Enum.reduce([0, 5], fn(x, acc) -> "a" <<>> acc end)
+    test_map = %{
+      "a" => test_value,
+      "b" => test_value,
+      "c" => "" # Just the key itself should make it too big
+    }
+    assert !ValidateHelper.valid_data?(:some_field, test_map, test_max_size)
+  end
+
+  @tag :capture_log
+  test "valid_data?, invalid, value puts it just over max data size" do
+    test_max_size = 100000
+    test_value_length = div(test_max_size, 2) - 2
+    test_value = Enum.reduce(1..test_value_length, "", fn(x, acc) -> "a" <> acc end)
+    Logger.debug "test_value: #{test_value}"
+    # test_value = Enum.reduce([0, 5], fn(x, acc) -> "a" <<>> acc end)
+    test_map = %{
+      "a" => test_value,
+      "b" => test_value,
+      # This takes a little thought, but the -2 test value length reserves
+      # a total of 2 bytes to still be valid. So a third key: "c" => "c" would
+      # still be valid. But the extra "c" juts puts it over the max size.
+      "c" => "cc"
+    }
+    assert !ValidateHelper.valid_data?(:some_field, test_map, test_max_size)
+  end
 
   # test "single valid id" do
   #   result = ValidateHelper.id_array(:some_field, ["123", "456", "wefoijwefoij"])

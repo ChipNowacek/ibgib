@@ -68,48 +68,65 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
 
   Returns true if it's a map of valid
   """
-  def valid_data?(_field, src)
-  def valid_data?(_field, src)
+  def valid_data?(_field, src, max_size \\ max_data_size)
+  def valid_data?(_field, src, max_size)
     when is_map(src) and map_size(src) > 0 do
-    running_size = 0
-    src
-    |> Enum.all?(
-      fn(item) ->
-        Logger.debug "item: #{inspect item}"
-        {key, value} = item
 
-        # Logger.debug "key: #{inspect key}\nvalue: #{inspect value}"
-        # Logger.debug "is_list(value): #{is_list(value)}"
-        if (is_bitstring(key) and (is_bitstring(value) or is_nil(value))) do
-          key_length = key |> String.length
+      # Going to reduce the enumerable to avoid going through multiple times.
+      # -1 returned means not valid. Anything positive will be the size.
 
-          key_valid? =
-            is_bitstring(key) and key_length > 0 and key_length <= max_id_length
+    valid = 0 <
+      src
+      |> Enum.reduce_while(0,
+        fn(item, acc) ->
+          Logger.debug "item: #{inspect item}"
+          {key, value} = item
 
-          value_valid? =
-            if is_nil(value) do
-              true
+          # Logger.debug "key: #{inspect key}\nvalue: #{inspect value}"
+          # Logger.debug "is_list(value): #{is_list(value)}"
+          if (is_bitstring(key) and (is_bitstring(value) or is_nil(value))) do
+            key_length = key |> String.length
+
+            key_valid? =
+              is_bitstring(key) and key_length > 0 and key_length <= max_id_length
+
+            if (key_valid?) do
+              value_valid? =
+                if is_nil(value) do
+                  {:cont, acc + key_length}
+                else
+                  value_length = value |> String.length
+                  running_size = acc + key_length + value_length
+                  if (running_size <= max_size) do
+                    Logger.debug "running_size: #{running_size}, max_size: #{max_size}"
+                    {:cont, running_size}
+                  else
+                    # not valid - too big
+                    {:halt, -1}
+                  end
+                end
             else
-              value_length = value |> String.length
-              running_size = running_size + value_length
-              Logger.debug "running_size: #{running_size}"
-              running_size <= max_data_size
+              # not valid
+              {:halt, -1}
             end
-
-          key_valid? and value_valid?
-        else
-          # key and value must be bitstrings, or value can be nil
-          false
-        end
-      end)
+          else
+            # key and value must be bitstrings, or value can be nil
+            # not valid
+            {:halt, -1}
+          end
+        end)
   end
-  def valid_data?(_field, src) when is_map(src) and map_size(src) === 0 do
+  def valid_data?(_field, src, max_size)
+    when is_map(src) and map_size(src) === 0 do
+    Logger.debug "empty map"
     true
   end
-  def valid_data?(_field, src) when src === nil do
+  def valid_data?(_field, src, max_size) when src === nil do
+    Logger.debug "nil map"
     true
   end
-  def valid_data?(_field, _src) do
+  def valid_data?(_field, _src, max_size) do
+    Logger.debug "other"
     false
   end
 
