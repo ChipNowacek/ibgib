@@ -28,13 +28,7 @@ defmodule IbGib.Data.Schemas.IbGibModel do
     |> validate_required([:ib, :gib, :rel8ns])
     |> validate_length(:ib, min: @min, max: @max)
     |> validate_length(:gib, min: @min, max: @max)
-    |> validate_change(:rel8ns, fn(field, src) ->
-        if ValidateHelper.map_of_ib_gib_arrays?(field, src) do
-          []
-        else
-          [rel8ns: emsg_invalid_relations]
-        end
-      end)
+    |> validate_change(:rel8ns, &ValidateHelper.do_validate_change(&1,&2))
     |> unique_constraint(:ib, name: :ibgibs_ib_gib_index)
     |> unique_constraint(:gib, name: :ibgibs_ib_gib_index)
   end

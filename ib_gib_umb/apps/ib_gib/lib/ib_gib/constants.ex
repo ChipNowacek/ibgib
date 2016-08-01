@@ -1,5 +1,8 @@
 defmodule IbGib.Constants do
 
+  @doc """
+  Use this with `use IbGib.Constants, :ib_gib`
+  """
   def ib_gib do
     quote do
       def delim, do: "^"
@@ -7,16 +10,33 @@ defmodule IbGib.Constants do
       def max_id_length, do: 64
       def min_ib_gib_length, do: 3 # min + delim + min
       def max_ib_gib_length, do: 129 # max + delim + max
+      def max_data_size, do: 10_240_000 # 10 MB max internal data
     end
   end
 
   @doc """
-  Use this by `use IbGib.Constants, :error_msgs`
+  Use this with `use IbGib.Constants, :error_msgs`
   """
   def error_msgs do
     quote do
       def emsg_invalid_relations do
-        "Something about the rel8ns is invalid. :/"
+        "Something about the rel8ns is invalid. :-/"
+      end
+
+      def emsg_invalid_data do
+        "Something about the data is invalid. :-O"
+      end
+
+      def emsg_invalid_id_length do
+        "invalid id length"
+      end
+
+      def emsg_invalid_unknown_src_maybe do
+        "invalid. unknown src maybe, maybe not an array of string"
+      end
+
+      def emsg_unknown_field do
+        "Unknown field. Expected either :data or :rel8ns."
       end
     end
   end

@@ -1,4 +1,4 @@
-defmodule IbGib.Data.Schemas.IbGibTest do
+defmodule IbGib.Data.Schemas.IbGib.ValidationTest do
   use ExUnit.Case
   require Logger
 
@@ -6,7 +6,7 @@ defmodule IbGib.Data.Schemas.IbGibTest do
   use IbGib.Constants, :error_msgs
   alias IbGib.TestHelper
   # alias IbGib.Data.Repo
-  alias IbGib.Data.Schemas.IbGibModel
+  alias IbGib.Data.Schemas.{IbGibModel,ValidateHelper}
   alias RandomGib.Get
 
   @at_least_msg "should have at least %{count} item(s)"
