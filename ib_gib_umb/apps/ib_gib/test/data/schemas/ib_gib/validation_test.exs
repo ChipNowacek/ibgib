@@ -26,7 +26,7 @@ defmodule IbGib.Data.Schemas.IbGib.ValidationTest do
 
 
   @tag :capture_log
-  test "valid (minimum)" do
+  test "model, valid, minimum" do
     Logger.debug "start...yo...."
 
     changeset = IbGibModel.changeset(%IbGibModel{}, %{
@@ -43,7 +43,7 @@ defmodule IbGib.Data.Schemas.IbGib.ValidationTest do
   end
 
   @tag :capture_log
-  test "valid (with data)" do
+  test "model, valid, with data" do
     changeset = IbGibModel.changeset(%IbGibModel{}, %{
                     ib: Get.some_letters(20),
                     gib: Get.some_letters(20),
@@ -58,7 +58,37 @@ defmodule IbGib.Data.Schemas.IbGib.ValidationTest do
   end
 
   @tag :capture_log
-  test "required stuff" do
+  test "model, valid, data is empty map" do
+    changeset = IbGibModel.changeset(%IbGibModel{}, %{
+                    ib: Get.some_letters(20),
+                    gib: Get.some_letters(20),
+                    data: %{},
+                    rel8ns: %{
+                      Get.some_letters(5) => ["#{Get.some_letters(min_ib_gib_length)}#{delim}#{Get.some_letters(min_ib_gib_length)}"]
+                    }
+                  })
+    Logger.debug "changeset: #{inspect changeset}"
+
+    TestHelper.succeed_insert(changeset)
+  end
+
+  @tag :capture_log
+  test "model, valid, data is nil" do
+    changeset = IbGibModel.changeset(%IbGibModel{}, %{
+                    ib: Get.some_letters(20),
+                    gib: Get.some_letters(20),
+                    data: nil,
+                    rel8ns: %{
+                      Get.some_letters(5) => ["#{Get.some_letters(min_ib_gib_length)}#{delim}#{Get.some_letters(min_ib_gib_length)}"]
+                    }
+                  })
+    Logger.debug "changeset: #{inspect changeset}"
+
+    TestHelper.succeed_insert(changeset)
+  end
+
+  @tag :capture_log
+  test "required, invalids, stuff aint provided" do
     changeset = IbGibModel.changeset(%IbGibModel{}, %{
                       #
                     })
@@ -70,7 +100,7 @@ defmodule IbGib.Data.Schemas.IbGib.ValidationTest do
   end
 
   @tag :capture_log
-  test "invalid ib and gib (too long)" do
+  test "ib and gib, invalid, too long" do
     changeset = IbGibModel.changeset(%IbGibModel{}, %{
                     ib: Get.some_letters(max_id_length+1), # too many
                     gib: Get.some_letters(max_id_length+1) # too many
@@ -81,7 +111,7 @@ defmodule IbGib.Data.Schemas.IbGib.ValidationTest do
   end
 
   @tag :capture_log
-  test "invalid ib and gib (too short)" do
+  test "ib and gib, invalid, too short" do
     changeset = IbGibModel.changeset(%IbGibModel{}, %{
                     ib: "", # too few
                     gib: "" # too few
@@ -92,7 +122,7 @@ defmodule IbGib.Data.Schemas.IbGib.ValidationTest do
   end
 
   @tag :capture_log
-  test "invalid rel8ns" do
+  test "rel8ns, invalid, no delim" do
     changeset = IbGibModel.changeset(%IbGibModel{}, %{
                   rel8ns: %{Get.some_letters(5) => "some letters no delim"}
                 })
@@ -100,7 +130,7 @@ defmodule IbGib.Data.Schemas.IbGib.ValidationTest do
   end
 
   @tag :capture_log
-  test "invalid rel8ns2" do
+  test "rel8ns, invalid, ib_gib too long" do
     changeset = IbGibModel.changeset(%IbGibModel{}, %{
                   rel8ns: %{Get.some_letters(5) => Get.some_letters((2 * max_id_length)+2)}
                 })
@@ -108,7 +138,7 @@ defmodule IbGib.Data.Schemas.IbGib.ValidationTest do
   end
 
   @tag :capture_log
-  test "invalid rel8ns3" do
+  test "rel8ns, invalid, ib_gib too long among other valid ib_gib" do
     changeset = IbGibModel.changeset(%IbGibModel{}, %{
       rel8ns: %{
           Get.some_letters(5) => Get.some_letters(2),
@@ -120,7 +150,7 @@ defmodule IbGib.Data.Schemas.IbGib.ValidationTest do
   end
 
   @tag :capture_log
-  test "invalid rel8ns ib_gib is empty" do
+  test "rel8ns, invalid, ib_gib list is empty" do
     changeset = IbGibModel.changeset(%IbGibModel{}, %{
                       rel8ns: %{"a" => []}
                     })
@@ -128,10 +158,42 @@ defmodule IbGib.Data.Schemas.IbGib.ValidationTest do
   end
 
   @tag :capture_log
-  test "invalid rel8ns is empty map" do
+  test "rel8ns, invalid, rel8ns is empty map" do
     changeset = IbGibModel.changeset(%IbGibModel{}, %{
                       rel8ns: %{}
                     })
     TestHelper.flunk_insert(changeset, :rel8ns, emsg_invalid_relations)
+  end
+
+  @tag :capture_log
+  test "data, invalid, key is atom" do
+    changeset = IbGibModel.changeset(%IbGibModel{}, %{
+                  data: %{:some_atom => Get.some_letters(5)}
+                })
+    TestHelper.flunk_insert(changeset, :data, emsg_invalid_data)
+  end
+
+  @tag :capture_log
+  test "data, invalid, value is atom" do
+    changeset = IbGibModel.changeset(%IbGibModel{}, %{
+                  data: %{Get.some_letters(5) => :some_atom}
+                })
+    TestHelper.flunk_insert(changeset, :data, emsg_invalid_data)
+  end
+
+  @tag :capture_log
+  test "data, invalid, key is integer" do
+    changeset = IbGibModel.changeset(%IbGibModel{}, %{
+                  data: %{123 => Get.some_letters(5)}
+                })
+    TestHelper.flunk_insert(changeset, :data, emsg_invalid_data)
+  end
+
+  @tag :capture_log
+  test "data, invalid, value is integer" do
+    changeset = IbGibModel.changeset(%IbGibModel{}, %{
+                  data: %{Get.some_letters(5) => 123}
+                })
+    TestHelper.flunk_insert(changeset, :data, emsg_invalid_data)
   end
 end
