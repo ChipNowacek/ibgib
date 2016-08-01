@@ -196,4 +196,18 @@ defmodule IbGib.Data.Schemas.IbGib.ValidationTest do
                 })
     TestHelper.flunk_insert(changeset, :data, emsg_invalid_data)
   end
+
+  # @tag :capture_log
+  # test "data, invalid, data is too big (THIS SHOULD ONLY BE RUN WITH CONSTANT CHANGED)" do
+  #   # The max data size is currently set to 10 MB, making this unit test way
+  #   # too long. So for a single run, I'm going to change that value to a smaller
+  #   # max size and run it. Then, when done, we should change it back and
+  #   # comment out this unit test.
+  #   temp_max_size = 1000
+  #   changeset = IbGibModel.changeset(%IbGibModel{}, %{
+  #                 # data size is 1 (key = "a") + temp_max_size, so is too big.
+  #                 data: %{"a" => Get.some_letters(temp_max_size)}
+  #               })
+  #   TestHelper.flunk_insert(changeset, :data, emsg_invalid_data)
+  # end
 end
