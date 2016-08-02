@@ -1,5 +1,7 @@
 defmodule IbGib.Data do
   require Logger
+  import Ecto.Query
+
   alias IbGib.Data.Schemas.IbGibModel
   alias IbGib.Data.Repo
 
@@ -30,7 +32,10 @@ defmodule IbGib.Data do
   def load(ib, gib) when is_bitstring(ib) and is_bitstring(gib) do
     key = IbGib.Helper.get_ib_gib!(ib, gib)
     # For now, simply gets the value from the cache
-    IbGib.Data.Cache.get(key)
+    case IbGib.Data.Cache.get(key) do
+      {:ok, value} -> {:ok, value}
+      {:error, _} -> get_from_repo(ib, gib)
+    end
   end
 
   def load!(ib, gib) when is_bitstring(ib) and is_bitstring(gib) do
@@ -54,11 +59,12 @@ defmodule IbGib.Data do
            rel8ns: info[:rel8ns]
          })
          |> Repo.insert do
+
       {:ok, model} ->
         Logger.warn "Inserted changeset.\nib: #{info[:ib]}\ngib: #{info[:gib]}\nmodel: #{inspect model}"
         {:ok, model}
-      {:error, changeset} ->
 
+      {:error, changeset} ->
         already_error = {"has already been taken", []}
         if (Enum.count(changeset.errors) === 1 and changeset.errors[:ib] === already_error) do
           Logger.warn "Did NOT insert changeset. Already exists.\nib: #{info[:ib]}\ngib: #{info[:gib]}\nchangeset: #{inspect changeset}"
@@ -67,6 +73,21 @@ defmodule IbGib.Data do
           Logger.error "Error inserting changeset.\nib: #{info[:ib]}\ngib: #{info[:gib]}\nchangeset: #{inspect changeset}"
           {:error, changeset}
         end
+    end
+  end
+
+  defp get_from_repo(ib, gib) do
+    model =
+      IbGibModel
+      |> where(ib: ^ib, gib: ^gib)
+      |> Repo.one
+
+    Logger.warn "got model: #{inspect model}"
+    if (model === nil) do
+      {:error, :not_found}
+    else
+      %{:ib => ^ib, :gib => ^gib, :data => data, :rel8ns => rel8ns} = model
+      {:ok, %{:ib => ib, :gib => gib, :data => data, :rel8ns => rel8ns}}
     end
   end
 end
