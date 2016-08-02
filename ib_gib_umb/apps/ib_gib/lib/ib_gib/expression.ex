@@ -138,8 +138,9 @@ defmodule IbGib.Expression do
 
     a_data = Map.get(a, :data, %{})
     b_data = Map.get(b, :data, %{})
+    Logger.debug "a_data: #{inspect a_data}\nb_data: #{inspect b_data}"
     # Adds/Overrides anything in `a_data` with `b_data`
-    merged_data = Map.merge(a_data, b_data[:new_data])
+    merged_data = Map.merge(a_data, b_data["new_data"])
 
     Logger.debug "merged data: #{inspect merged_data}"
     a = Map.put(a, :data, merged_data)

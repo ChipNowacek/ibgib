@@ -250,6 +250,7 @@ defmodule IbGib.Expression.BasicsTest do
 
     prop = "prop_name"
     prop_value = "prop value yo"
+    Logger.warn "========================================================="
     # I would normally just say hw = hw ..., but since we'll do asserts, I'm
     # suffixing this with 2: hw2.
     {:ok, {hw2, hw2_info, hw2_ib_gib}} = hw |> Expression.gib(:mut8, %{prop => prop_value})

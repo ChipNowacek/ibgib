@@ -3,11 +3,14 @@ defmodule IbGib.Expression.RegistryTest do
   require Logger
 
   setup context do
-    # ets doesn't like spaces in the names, and we use this for that?
-    test_name = String.replace("#{context.test}", " ", "_")
-    test_name = String.replace(test_name, ",", "_")
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(IbGib.Data.Repo)
+
+    unless context[:async] do
+      Ecto.Adapters.SQL.Sandbox.mode(IbGib.Data.Repo, {:shared, self()})
+    end
+
+    test_name = "#{context.test}" |> String.replace(" ", "_") |> String.replace(",", "_")
     {:ok, test_name: String.to_atom(test_name)}
-    # {:ok, test_name: context.test}
   end
 
   @tag :capture_log

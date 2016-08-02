@@ -6,6 +6,17 @@ defmodule IbGib.Expression.HelloWorldTest do
 
   @delim "^"
 
+  setup context do
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(IbGib.Data.Repo)
+
+    unless context[:async] do
+      Ecto.Adapters.SQL.Sandbox.mode(IbGib.Data.Repo, {:shared, self()})
+    end
+
+    test_name = "#{context.test}" |> String.replace(" ", "_") |> String.replace(",", "_")
+    {:ok, test_name: String.to_atom(test_name)}
+  end
+
   @tag :capture_log
   test "hello world then fork instance, text then fork instance, relate" do
 

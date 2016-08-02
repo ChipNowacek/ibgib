@@ -6,6 +6,17 @@ defmodule IbGib.Expression.LifecycleTest do
 
   @delim "^"
 
+  setup context do
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(IbGib.Data.Repo)
+
+    unless context[:async] do
+      Ecto.Adapters.SQL.Sandbox.mode(IbGib.Data.Repo, {:shared, self()})
+    end
+
+    test_name = "#{context.test}" |> String.replace(" ", "_") |> String.replace(",", "_")
+    {:ok, test_name: String.to_atom(test_name)}
+  end
+
   @tag :capture_log
   test "Many forks" do
     # I lower this for regular unit tests. I change it to a big number if I
