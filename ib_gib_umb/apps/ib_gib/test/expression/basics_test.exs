@@ -148,7 +148,7 @@ defmodule IbGib.Expression.BasicsTest do
 
   @tag :capture_log
   test "create text from root, create text from root again" do
-    # When the same ib_gib thing is created twice, the second one will error
+    # When the same ib_gib thing is created twice, the second one will NOT error
     # out. I'm not sure if this is desired behavior or not!?
 
     # Randomized to keep unit tests from overlapping.
@@ -174,7 +174,9 @@ defmodule IbGib.Expression.BasicsTest do
     {fork_result_b, _reason_b} = Expression.fork(ib_gib_pid, text)
     Logger.debug "fork_result_b: #{inspect fork_result_b}"
 
-    assert fork_result_b === :error
+    # I've changed this so that it will NOT error out
+    # assert fork_result_b === :error
+    assert fork_result_b === :ok
   end
 
   @tag :capture_log
@@ -265,11 +267,12 @@ defmodule IbGib.Expression.BasicsTest do
     # Randomized to keep unit tests from overlapping.
     a_ib = "a_#{RandomGib.Get.some_letters(5)}"
     {:ok, {a, a_info, a_ib_gib}} = root |> Expression.gib(:fork, a_ib)
-    Logger.debug "a: #{inspect a}\na_info: #{inspect a_info}\na_ib_gib: #{a_ib_gib}"
+    Logger.warn "a: #{inspect a}\na_info: #{inspect a_info}\na_ib_gib: #{a_ib_gib}"
 
     b_ib = "b_#{RandomGib.Get.some_letters(5)}"
     {:ok, {b, b_info, b_ib_gib}} = root |> Expression.gib(:fork, b_ib)
-    Logger.debug "b: #{inspect b}\nb_info: #{inspect b_info}\nb_ib_gib: #{b_ib_gib}"
+    Logger.warn "b: #{inspect b}\nb_info: #{inspect b_info}\nb_ib_gib: #{b_ib_gib}"
+    Logger.warn "0000"
 
     {
       :ok,
@@ -277,6 +280,7 @@ defmodule IbGib.Expression.BasicsTest do
       {new_b, new_b_info, new_b_ib_gib}
     } = a |> Expression.gib(:rel8, b)
 
+    Logger.warn "1111"
     assert new_a_info === new_a |> Expression.get_info!
     assert new_b_info === new_b |> Expression.get_info!
 

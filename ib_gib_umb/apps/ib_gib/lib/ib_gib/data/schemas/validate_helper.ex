@@ -136,6 +136,27 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
                   else
                     {:cont, new_running_size}
                   end
+
+                is_list(value) ->
+                  new_running_size =
+                    Enum.reduce_while(value, acc + key_length, fn(list_item, list_acc) ->
+                      # Must be a list of bitstrings
+                      cond do
+                        is_nil(list_item) ->
+                          {:cont, list_acc}
+                        is_bitstring(list_item) ->
+                          {:cont, list_acc + String.length(list_item)}
+                        true ->
+                          {:halt, -1}
+                      end
+                    end)
+                    if (new_running_size === -1) do
+                      # Internal map has put us over the top
+                      {:halt, -1}
+                    else
+                      {:cont, new_running_size}
+                    end
+                    
                 true ->
                   # not valid - value is not a map, string, or nil
                   {:halt, -1}

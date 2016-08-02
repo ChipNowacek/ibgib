@@ -28,7 +28,7 @@ defmodule IbGib.Data.Cache do
   Returns {:ok, :ok} or {:error, reason}
   """
   def put(key, value, name \\ @srv_name) when is_bitstring(key) do
-    Logger.warn "Yoooooooooooooooooo put"
+    Logger.debug "putting..."
     GenServer.call(name, {:put, {key, value}})
   end
 

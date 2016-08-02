@@ -371,10 +371,15 @@ defmodule IbGib.Expression do
 
   def gib(expr_pid, :rel8, other_pid, src_rel8ns \\ @default_rel8ns, dest_rel8ns \\ @default_rel8ns) do
     {next, next_other} = IbGib.Expression.rel8!(expr_pid, other_pid, src_rel8ns, dest_rel8ns)
+    Logger.warn "a"
     next_info = next |> IbGib.Expression.get_info!
+    Logger.warn "b"
     next_other_info = next_other |> IbGib.Expression.get_info!
+    Logger.warn "c"
     next_ib_gib = Helper.get_ib_gib!(next_info[:ib], next_info[:gib])
+    Logger.warn "d"
     next_other_ib_gib = Helper.get_ib_gib!(next_other_info[:ib], next_other_info[:gib])
+    Logger.warn "e"
     {
       :ok,
       {next, next_info, next_ib_gib},
@@ -420,7 +425,7 @@ defmodule IbGib.Expression do
     Logger.debug "mut8_info: #{inspect mut8_info}"
 
     # 2. Save transform
-    IbGib.Data.save(mut8_info)
+    {:ok, :ok} = IbGib.Data.save(mut8_info)
 
     # 3. Create instance process of mut8
     Logger.debug "mut8 saved. Now trying to create mut8 transform expression process"
@@ -482,7 +487,7 @@ defmodule IbGib.Expression do
     Logger.debug "rel8_info: #{inspect rel8_info}"
 
     # 2. Save transform
-    IbGib.Data.save(rel8_info)
+    {:ok, :ok} = IbGib.Data.save(rel8_info)
 
     # 3. Create instance process of rel8
     Logger.debug "rel8 saved. Now trying to create rel8 transform expression process"

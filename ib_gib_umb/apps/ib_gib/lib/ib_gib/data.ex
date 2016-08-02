@@ -10,7 +10,9 @@ defmodule IbGib.Data do
         {:ok, :ok}
     else
       # Need to improve this. :X
-      # {:error, :already} -> {:ok, :ok}
+      {:error, :already} ->
+        Logger.info "Tried to save info data that already exists."
+        {:ok, :ok}
       # {:error, changeset} ->
       #   {:error, "Save failed. changeset: #{inspect changeset}"}
       failure -> {:error, "Save failed: #{inspect failure}"}
@@ -21,9 +23,6 @@ defmodule IbGib.Data do
     Logger.warn "info: #{inspect info}"
     case save(info) do
       {:ok, :ok} -> :ok
-      {:error, :already} ->
-        Logger.info "Tried to save info data that already exists."
-        :ok
       {:error, reason} -> raise reason
     end
   end
@@ -48,13 +47,26 @@ defmodule IbGib.Data do
   """
   defp insert_into_repo(info) when is_map(info) do
     Logger.debug "inserting into repo. info: #{inspect info}"
-    changeset =
-      IbGibModel.changeset(%IbGibModel{}, %{
-        ib: info[:ib],
-        gib: info[:gib],
-        data: info[:data],
-        rel8ns: info[:rel8ns]
-      })
-      |> Repo.insert
+    case IbGibModel.changeset(%IbGibModel{}, %{
+           ib: info[:ib],
+           gib: info[:gib],
+           data: info[:data],
+           rel8ns: info[:rel8ns]
+         })
+         |> Repo.insert do
+      {:ok, model} ->
+        Logger.warn "Inserted changeset.\nib: #{info[:ib]}\ngib: #{info[:gib]}\nmodel: #{inspect model}"
+        {:ok, model}
+      {:error, changeset} ->
+
+        already_error = {"has already been taken", []}
+        if (Enum.count(changeset.errors) === 1 and changeset.errors[:ib] === already_error) do
+          Logger.warn "Did NOT insert changeset. Already exists.\nib: #{info[:ib]}\ngib: #{info[:gib]}\nchangeset: #{inspect changeset}"
+          {:error, :already}
+        else
+          Logger.error "Error inserting changeset.\nib: #{info[:ib]}\ngib: #{info[:gib]}\nchangeset: #{inspect changeset}"
+          {:error, changeset}
+        end
+    end
   end
 end
