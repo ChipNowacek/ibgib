@@ -1,4 +1,11 @@
 defmodule WebGib.Constants do
+  def error_msgs do
+    quote do
+      def emsg_invalid_dest_ib do
+        "Only letters, numbers, spaces, dashes, underscores are allowed for the destination ib. Just hit the back button to return."
+      end
+    end
+  end
   def fork do
     quote do
       def fork_label do

@@ -1,18 +1,4 @@
 <div class="jumbotron">
   <h2><%= gettext "Welcome to %{name} 8~/", name: "ibGib" %></h2>
-  <p class="lead">ib. Gib. ibGib.</p>
-
-  <!-- <%= for item <- test_list do %>
-    <p>
-      <a href="<%= ib_gib_path(@conn, :show, item) %>">
-        <%= item %>
-      </a>
-    </p>
-  <% end %> -->
-</div>
-
-<div>
-  <a href="<%= ib_gib_path(@conn, :index) %>">Hmm...</a>
-
-  <!-- <%= button("Click me?", to: "/ibgib") %> -->
+  <p class="lead">ib. Gib. <a href="<%= ib_gib_path(@conn, :index) %>">ibGib</a>.</p>
 </div>

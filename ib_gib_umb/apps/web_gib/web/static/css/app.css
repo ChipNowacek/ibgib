@@ -31,7 +31,7 @@
 }
 .ib-tooltip .ib-tooltiptext {
     visibility: hidden;
-    width: 120px;
+    width: 200px;
     background-color: black;
     color: #fff;
     text-align: center;
@@ -46,6 +46,27 @@
     visibility: visible;
 }
 
+.ib-tooltip-big {
+    position: relative;
+    display: inline-block;
+    border-bottom: 1px dotted black;
+}
+.ib-tooltip-big .ib-tooltiptext-big {
+    visibility: hidden;
+    width: 600px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+
+    /* Position the tooltip */
+    position: absolute;
+    z-index: 1;
+}
+.ib-tooltip-big:hover .ib-tooltiptext-big {
+    visibility: visible;
+}
 
 /* Custom page CSS
 -------------------------------------------------- */
@@ -77,4 +98,13 @@ code {
   border-width: 1px;
   border-style: solid;
   border-color: black;
+}
+
+.ib-info-border {
+  margin: 5px;
+  border-width: 1px;
+  border-color: #76963e;
+  border-radius: 5px;
+  border-style: solid;
+  padding: 5px;
 }

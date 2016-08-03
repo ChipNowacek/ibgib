@@ -2,7 +2,7 @@
   <!--  -->
   <div>
     <a href="<%= ib_gib_path(@conn, :show, @ib_gib) %>">
-      <%= render WebGib.SharedIbGibView, "ib_gib.html", [conn: @conn, ib: @ib, gib: @gib, ib_gib: @ib_gib] %>
+      <%= render WebGib.SharedIbGibView, "ib_gib.html", [conn: @conn, ib: @ib, gib: @gib, ib_gib: @ib_gib, show_fork: true] %>
     </a>
   </div>
 

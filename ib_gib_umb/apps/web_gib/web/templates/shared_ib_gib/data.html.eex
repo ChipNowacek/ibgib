@@ -1,9 +1,9 @@
-<div class="ib-debug-border">
+<div class="ib-info-border">
 
   <%= if Enum.count(@thing_data) > 0 do %>
     <p>Data: <%= inspect @thing_data %></p>
   <% else %>
-    <p>Data: [no data yo]</p>
+    <p>Data: <em>(no data yet)</em></p>
   <% end %>
   <div>
     <%= form_for @conn, ib_gib_path(@conn, :mut8), [as: :mut8n], fn f -> %>

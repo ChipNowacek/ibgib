@@ -1,6 +1,9 @@
 defmodule WebGib.IbGibController do
   use WebGib.Web, :controller
   require Logger
+
+  use IbGib.Constants, :ib_gib
+  use WebGib.Constants, :error_msgs
   import IbGib.Helper
 
   @delim "^"
@@ -128,9 +131,19 @@ defmodule WebGib.IbGibController do
     Logger.debug "params: #{inspect params}"
     msg = "dest_ib: #{dest_ib}"
 
-    Logger.debug msg
+    if validate(:dest_ib, dest_ib) do
+      do_fork(conn, %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib})
+    else
+      conn
+      |> put_flash(:error, emsg_invalid_dest_ib)
+      |> redirect(to: "/ibgib/#{src_ib_gib}")
+    end
+  end
 
-    do_fork(conn, %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib})
+  defp validate(:dest_ib, dest_ib) do
+    Regex.match?(regex_valid_ib, dest_ib) or
+      # empty or nil dest_ib will be set automatically.
+      dest_ib === "" or dest_ib === nil
   end
   # def fork(conn, %{"fork_form_data" => %{"dest_ib" => "", "src_ib_gib" => src_ib_gib}} = params) do
   #   dest_ib = ""
