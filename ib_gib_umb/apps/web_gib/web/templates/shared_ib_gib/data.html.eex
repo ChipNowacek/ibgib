@@ -3,7 +3,7 @@
   <%= if Enum.count(@thing_data) > 0 do %>
     <p>Data: <%= inspect @thing_data %></p>
   <% else %>
-    <p>Data: <em>(no data yet)</em></p>
+    <p>Data:</p>
   <% end %>
   <div>
     <%= form_for @conn, ib_gib_path(@conn, :mut8), [as: :mut8n], fn f -> %>

@@ -7,12 +7,10 @@
       <div class="ib-info-border">
         <h4><%= rel8n %>:</h4>
         <%= for rel8n_ib_gib <- rel8n_ib_gib_list do %>
-          <div class="ib-info-border">
-            <a href="<%= ib_gib_path(@conn, :show, rel8n_ib_gib) %>">
-              <% [rel8n_ib, rel8n_gib] = String.split(rel8n_ib_gib, "^") %>
-              <%= render WebGib.SharedIbGibView, "ib_gib.html", [conn: @conn, ib: rel8n_ib, gib: rel8n_gib, ib_gib: rel8n_ib_gib, show_fork: false] %>
-            </a>
-          </div>
+          <a href="<%= ib_gib_path(@conn, :show, rel8n_ib_gib) %>">
+            <% [rel8n_ib, rel8n_gib] = String.split(rel8n_ib_gib, "^") %>
+            <%= render WebGib.SharedIbGibView, "ib_gib.html", [conn: @conn, ib: rel8n_ib, gib: rel8n_gib, ib_gib: rel8n_ib_gib, show_fork: false] %>
+          </a>
         <% end %>
       </div>
 
