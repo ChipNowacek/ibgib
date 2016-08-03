@@ -11,6 +11,7 @@ defmodule IbGib.Constants do
       def min_ib_gib_length, do: 3 # min + delim + min
       def max_ib_gib_length, do: 129 # max + delim + max
       def max_data_size, do: 10_240_000 # 10 MB max internal data
+      def default_history, do: ["ib#{delim}gib"]
     end
   end
 

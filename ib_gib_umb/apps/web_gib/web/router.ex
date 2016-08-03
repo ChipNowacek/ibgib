@@ -2,7 +2,6 @@ defmodule WebGib.Router do
   use WebGib.Web, :router
   use Phoenix.Socket
 
-
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session

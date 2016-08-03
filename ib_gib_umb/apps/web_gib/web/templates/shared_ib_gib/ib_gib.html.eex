@@ -7,14 +7,16 @@
 
     <p>ib_gib: <%= @ib_gib %></p>
   </a>
-  <div>
-    <div class="ib-tooltip">
-      <!-- <%= button(<<226,142,135>>, to: "/ibgib/api/fork?src_ib_gib=#{@ib_gib}") %> -->
-      <%= button(fork_label, to: "/ibgib/api/fork?src_ib_gib=#{@ib_gib}") %>
-      <span class="ib-tooltiptext"><%= fork_tooltip %></span>
-    </div>
 
-    <!-- <%= button(fork_label, to: "/ibgib/api/fork?src_ib_gib=#{@ib_gib}") %> -->
+  <div>
+    <%= form_for @conn, ib_gib_path(@conn, :fork), [as: :fork_form_data], fn f -> %>
+      <%= text_input f, :dest_ib %>
+      <%= hidden_input f, :src_ib_gib, value: @ib_gib %>
+      <div class="ib-tooltip">
+        <%= submit fork_label %>
+        <span class="ib-tooltiptext"><%= fork_tooltip %></span>
+      </div>
+    <% end %>
   </div>
 
 </div>

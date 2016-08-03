@@ -2,9 +2,24 @@ defmodule IbGib.Expression do
   use GenServer
   require Logger
 
+  use IbGib.Constants, :ib_gib
   alias IbGib.{TransformFactory, Helper}
 
-  @delim "^"
+  @moduledoc """
+
+  ## Init Functions
+  In in the init stage, an expression either loads existing information from
+  the `IbGib.Data.Repo` or `IbGib.Data.Cache`, or it does the work of two
+  ib_gib coming into contact with each other (see the Apply Functions).
+
+  ## Apply Functions
+  These functions are called within init functions on new expressions. Here,
+  we take the first ib_gib info (`a`) as our "starting point", and then we
+  "apply" `b`, which for starters are pretty much transforms: `fork`, `mut8`,
+  and `rel8`.
+
+  So these apply functions actually perform the "work" of combining two ib_gib.
+  """
 
   # ----------------------------------------------------------------------------
   # Constructors
@@ -47,8 +62,8 @@ defmodule IbGib.Expression do
           :ib => ib,
           :gib => gib,
           :rel8ns => %{
-            "history" => ["ib#{@delim}gib"]#,
-            # "ancestor" => ["ib#{@delim}gib"],
+            "history" => default_history#,
+            # "ancestor" => ["ib#{delim}gib"],
             },
           :data => %{}
         }
@@ -80,39 +95,56 @@ defmodule IbGib.Expression do
     end
   end
 
+  # ----------------------------------------------------------------------------
+  # Apply Functions
+  # ----------------------------------------------------------------------------
   defp apply_fork(a, b) do
     # We are applying a fork transform.
     Logger.debug "applying fork b to ib_gib a.\na: #{inspect a}\nb: #{inspect b}\n"
     Logger.debug "a[:rel8ns]: #{inspect a[:rel8ns]}"
     fork_data = b[:data]
+    # b_ib_gib = Helper.get_ib_gib!(b[:ib], b[:gib])
 
-    # We're going to borrow `a` as our own info for the new thing. We're just
-    # going to change its `ib`, `gib`, and `relations`.
+    # We're going to populate this with data from `a` and `b`.
+    this_info = %{}
+    Logger.debug "this_info: #{inspect this_info}"
 
     # We take the ib directly from the fork's `dest_ib`.
-    Logger.debug "Setting a[:ib]... fork_data: #{inspect fork_data}"
-    ib = fork_data["dest_ib"]
-    a = Map.put(a, :ib, ib)
-    Logger.debug "a: #{inspect a}"
+    this_ib = fork_data["dest_ib"]
+    this_info = Map.put(this_info, :ib, this_ib)
+    Logger.debug "this_info: #{inspect this_info}"
 
-    # We add the fork itself to the `relations` `history`.
-    a = a |> add_relation("history", b)
+    # rel8ns is tricky. Should we by default keep rel8ns except past?
+    # Or should we reset and only bring over `history` and `ancestor`? Others?
+    # tricky...
+    a_history = Map.get(a[:rel8ns], "history", [])
+    a_ancestor = Map.get(a[:rel8ns], "ancestor", [])
+    this_rel8ns = %{
+      "history" => a_history,
+      "ancestor" => a_ancestor
+    }
+    Logger.warn "this_rel8ns: #{inspect this_rel8ns}"
+    this_info = Map.put(this_info, :rel8ns, this_rel8ns)
+    Logger.debug "this_info: #{inspect this_info}"
+
+    # We add the fork itself to the relations `history`.
+    this_info = this_info |> add_relation("history", b)
     Logger.debug "fork_data[\"src_ib_gib\"]: #{fork_data["src_ib_gib"]}"
-    a = a |> add_relation("ancestor", fork_data["src_ib_gib"])
+    this_info = this_info |> add_relation("ancestor", fork_data["src_ib_gib"])
+    Logger.debug "this_info: #{inspect this_info}"
 
-    data = Map.get(a, :data, %{})
-    Logger.debug "data: #{inspect data}"
-    a = Map.put(a, :data, data)
+    # Copy the data over. Data is considered to be "small", so should be
+    # copyable.
+    this_data = Map.get(a, :data, %{})
+    this_info = Map.put(this_info, :data, this_data)
+    Logger.debug "this_info: #{inspect this_info}"
 
     # Now we calculate the new hash and set it to `:gib`.
-    Logger.warn "ib: #{inspect ib}"
-    gib = Helper.hash(ib, a[:rel8ns], data)
-    Logger.debug "gib: #{gib}"
-    a = Map.put(a, :gib, gib)
+    this_gib = Helper.hash(this_ib, this_info[:rel8ns], this_data)
+    this_info = Map.put(this_info, :gib, this_gib)
+    Logger.debug "this_info: #{inspect this_info}"
 
-    Logger.debug "a[:gib] set to gib: #{gib}"
-
-    on_new_expression_completed(ib, gib, a)
+    on_new_expression_completed(this_ib, this_gib, this_info)
   end
 
   defp apply_mut8(a, b) do

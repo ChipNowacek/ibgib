@@ -72,7 +72,7 @@ defmodule WebGib.IbGibController do
 
   def mut8(conn, %{"mut8n" => %{"key" => key, "value" => value, "src_ib_gib" => src_ib_gib} = mut8n} = params) do
     Logger.debug "conn: #{inspect conn}"
-    Logger.warn "conn.params: #{inspect conn.params}"
+    Logger.debug "conn.params: #{inspect conn.params}"
     Logger.debug "params: #{inspect params}"
     # data_key = conn.params["mut8n"]["key"]
     # data_value = conn.params["mut8n"]["value"]
@@ -81,7 +81,7 @@ defmodule WebGib.IbGibController do
     # msg = "key: #{data_key}.\nvalue: #{data_value}"
     msg = "key: #{key}\nvalue: #{value}"
 
-    Logger.warn msg
+    Logger.debug msg
 
     do_mut8(conn, src_ib_gib, key, value)
   end
@@ -113,7 +113,7 @@ defmodule WebGib.IbGibController do
       when is_bitstring(src_ib_gib) and
            is_bitstring(key) and is_bitstring(value) and
            src_ib_gib !== "" and key !== "" do
-      Logger.warn "src_ib_gib: #{src_ib_gib}, key: #{key}, value: #{value}"
+      Logger.debug "src_ib_gib: #{src_ib_gib}, key: #{key}, value: #{value}"
 
       {:ok, src} = IbGib.Expression.Supervisor.start_expression(src_ib_gib)
       src |> IbGib.Expression.mut8(%{key => value})
@@ -122,17 +122,38 @@ defmodule WebGib.IbGibController do
   # Fork
   # ----------------------------------------------------------------------------
 
-  def fork(conn, %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib} = params) do
-    Logger.debug "index. params: #{inspect params}"
+  def fork(conn, %{"fork_form_data" => %{"dest_ib" => dest_ib, "src_ib_gib" => src_ib_gib}} = params) do
+    Logger.debug "conn: #{inspect conn}"
+    Logger.debug "conn.params: #{inspect conn.params}"
+    Logger.debug "params: #{inspect params}"
+    msg = "dest_ib: #{dest_ib}"
+
+    Logger.debug msg
+
     do_fork(conn, %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib})
   end
-  def fork(conn, %{"src_ib_gib" => src_ib_gib} = params) do
-    Logger.debug "index. params: #{inspect params}"
-    do_fork(conn, %{"src_ib_gib" => src_ib_gib, "dest_ib" => new_id})
-  end
+  # def fork(conn, %{"fork_form_data" => %{"dest_ib" => "", "src_ib_gib" => src_ib_gib}} = params) do
+  #   dest_ib = ""
+  #   Logger.debug "conn: #{inspect conn}"
+  #   Logger.debug "conn.params: #{inspect conn.params}"
+  #   Logger.debug "params: #{inspect params}"
+  #   msg = "dest_ib: #{dest_ib}"
+  #
+  #   Logger.debug msg
+  #
+  #   do_fork(conn, %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib})
+  # end
+  # def fork(conn, %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib} = params) do
+  #   Logger.debug "index. params: #{inspect params}"
+  #   do_fork(conn, %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib})
+  # end
+  # def fork(conn, %{"src_ib_gib" => src_ib_gib} = params) do
+  #   Logger.debug "index. params: #{inspect params}"
+  #   do_fork(conn, %{"src_ib_gib" => src_ib_gib, "dest_ib" => new_id})
+  # end
 
   defp do_fork(conn, %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib}) do
-    Logger.debug "."
+    Logger.debug "src_ib_gib: #{src_ib_gib}\ndest_ib: #{dest_ib}"
     case fork_impl(conn.assigns[:root], src_ib_gib, dest_ib) do
       {:ok, forked_thing} ->
         Logger.info "forked_thing: #{inspect forked_thing}"
@@ -170,7 +191,7 @@ defmodule WebGib.IbGibController do
   defp fork_impl(root, src_ib_gib, dest_ib)
     when is_bitstring(src_ib_gib) and is_bitstring(dest_ib) and
          src_ib_gib !== "" and dest_ib !== "" do
-    Logger.debug "dest_ib: #{dest_ib}"
+    Logger.warn "dest_ib: #{dest_ib}"
     src =
       if (src_ib_gib === "" or src_ib_gib === @root_ib_gib) do
         root
@@ -181,5 +202,9 @@ defmodule WebGib.IbGibController do
 
     src |> IbGib.Expression.fork(dest_ib)
   end
-
+  defp fork_impl(root, src_ib_gib, dest_ib)
+    when is_bitstring(src_ib_gib) and is_bitstring(dest_ib) and
+         src_ib_gib !== "" and (dest_ib === "" or is_nil(dest_ib)) do
+      fork_impl(root, src_ib_gib, new_id)
+  end
 end
