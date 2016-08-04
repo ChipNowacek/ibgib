@@ -16,7 +16,8 @@ defmodule IbGib.Expression do
   These functions are called within init functions on new expressions. Here,
   we take the first ib_gib info (`a`) as our "starting point", and then we
   "apply" `b`, which for starters are pretty much transforms: `fork`, `mut8`,
-  and `rel8`.
+  and `rel8`. When applying a query, I am not sure how the `a` will come into
+  play, but initially it will be pretty much ignored (I think).
 
   So these apply functions actually perform the "work" of combining two ib_gib.
   """
@@ -88,6 +89,8 @@ defmodule IbGib.Expression do
         apply_mut8(a, b)
       b[:ib] === "rel8" and b[:gib] !== "gib" ->
         apply_rel8(a, b)
+      b[:ib] === "query" and b[:gib] !== "gib" ->
+        apply_query(a, b)
       true ->
         err_msg = "unknown combination: a: #{inspect a}, b: #{inspect b}"
         Logger.error err_msg
@@ -97,6 +100,9 @@ defmodule IbGib.Expression do
 
   # ----------------------------------------------------------------------------
   # Apply Functions
+  # We are within an init of a new process, and we are apply given `b`
+  # ib_gib info map (transform/query) to a given `a` "starting point" ib_gib
+  # info map. See moduledoc for more details.0
   # ----------------------------------------------------------------------------
   defp apply_fork(a, b) do
     # We are applying a fork transform.
@@ -167,7 +173,6 @@ defmodule IbGib.Expression do
         |> add_relation("past", original_ib_gib)
         |> add_relation("history", b)
 
-
     a_data = Map.get(a, :data, %{})
     b_data = Map.get(b, :data, %{})
     Logger.debug "a_data: #{inspect a_data}\nb_data: #{inspect b_data}"
@@ -230,6 +235,32 @@ defmodule IbGib.Expression do
     Logger.debug "a[:gib] set to gib: #{a[:gib]}"
 
     on_new_expression_completed(ib, new_gib, a)
+  end
+
+  defp apply_query(a, b) do
+    query_options = b[:data]["options"]
+    result = IbGib.Data.query(query_options)
+    Logger.warn "query result: #{inspect result}"
+
+    this_info = %{}
+    this_ib = "queryresult"
+    this_info = Map.put(this_info, :ib, this_ib)
+    this_data = %{"result_count" => "#{Enum.count(result)}"}
+    this_rel8ns = %{"history" => default_history, "ancestor" => ["queryresult^gib"]}
+    this_info =
+      this_info
+      |> Map.put(:ib, this_ib)
+      |> Map.put(:data, this_data)
+      |> Map.put(:rel8ns, this_rel8ns)
+      |> add_relation("history", b)
+
+    # Leaving off here. Need to get the results into the relations with
+    # "result" => ["ib1^gib", "ib2^gib", etc...]
+    # Maybe do a reduce to get the list and then add the relation.
+    # result
+    # |> Enum.each(fn(result_ib_gib) ->  end)
+
+    # on_new_expression_completed()
   end
 
   defp add_relation(a, relation_name, b) when is_map(a) and is_bitstring(relation_name) and is_bitstring(b) do
@@ -354,7 +385,10 @@ defmodule IbGib.Expression do
   end
 
   # ----------------------------------------------------------------------------
-  #
+  # Complex Factory Functions
+  # These functions perform multiple transforms on ib_gib.
+  # Example: `instance` will perform a `fork`, and then `rel8` each of the two
+  # to each other, one ATOW rel8n is `instance` and the other is `instance_of`.
   # ----------------------------------------------------------------------------
 
     @doc """
@@ -370,12 +404,37 @@ defmodule IbGib.Expression do
     end
 
     @doc """
-    Bang version of `instance/1`.
+    Bang version of `instance/2`.
     """
     @spec instance!(pid, String.t) :: {pid, pid} | any
     def instance!(expr_pid, dest_ib \\ Helper.new_id) when is_pid(expr_pid) and is_bitstring(dest_ib) do
       case instance(expr_pid, dest_ib) do
         {:ok, {new_expr_pid, instance_pid}} -> {new_expr_pid, instance_pid}
+        {:error, reason} -> raise "#{inspect reason}"
+      end
+    end
+
+    @doc """
+      Look for data, rel8ns, etc. Leaving off here.
+    """
+    def query(expr_pid, ib_options, data_options, rel8ns_options, time_options, meta_options)
+      when is_pid(expr_pid) and
+           is_map(ib_options) and is_map(data_options) and
+           is_map(rel8ns_options) and is_map(time_options) and
+           is_map(meta_options) do
+      GenServer.call(expr_pid, {:query, ib_options, data_options, rel8ns_options, time_options, meta_options})
+    end
+
+    @doc """
+    Bang version of `query/6`
+    """
+    def query!(expr_pid, ib_options, data_options, rel8ns_options, time_options, meta_options)
+      when is_pid(expr_pid) and
+           is_map(ib_options) and is_map(data_options) and
+           is_map(rel8ns_options) and is_map(time_options) and
+           is_map(meta_options) do
+      case query(expr_pid, ib_options, data_options, rel8ns_options, time_options, meta_options) do
+        {:ok, new_qry_expr_pid} -> new_qry_expr_pid
         {:error, reason} -> raise "#{inspect reason}"
       end
     end
@@ -476,8 +535,12 @@ defmodule IbGib.Expression do
     {:reply, {:ok, {new_this, new_other}}, state}
   end
   def handle_call({:instance, dest_ib}, _from, state) do
-    Logger.warn "dest_ib: #{dest_ib}"
+    Logger.debug "dest_ib: #{dest_ib}"
     {:reply, instance_impl(dest_ib, state), state}
+  end
+  def handle_call({:query, ib_options, data_options, rel8ns_options, time_options, meta_options}, _from, state) do
+    Logger.warn "ib_options: #{inspect ib_options}\ndata_options: #{inspect data_options}\nrel8ns_options: #{inspect rel8ns_options}\ntime_options: #{inspect time_options}\nmeta_options: #{meta_options}"
+    {:reply, query_impl(ib_options, data_options, rel8ns_options, time_options, meta_options, state), state}
   end
   def handle_call(:get_info, _from, state) do
     Logger.metadata([x: :get_info])
@@ -538,11 +601,11 @@ defmodule IbGib.Expression do
   defp instance_impl(dest_ib, state) do
     Logger.debug "_state_: #{inspect state}"
     Logger.warn "dest_ib: #{dest_ib}"
-    info = state[:info]
 
     # I think when we instance, we're just going to keep the same ib. It will
     # of course create a new gib hash. I think this is what we want to do...
     # I'm not sure!
+    # info = state[:info]
     # fork_dest_ib = info[:ib]
     # fork_dest_ib = Helper.new_id
     {:ok, instance} = fork_impl(dest_ib, state)
@@ -551,6 +614,29 @@ defmodule IbGib.Expression do
       rel8_impl(instance, ["instance"], ["instance_of"], state)
     Logger.debug "new_this: #{inspect new_this}\nnew_instance: #{inspect new_instance}"
     {:ok, {new_this, new_instance}}
+  end
+
+  defp query_impl(ib_options, data_options, rel8ns_options, time_options, meta_options, state)
+    when is_map(ib_options) and is_map(data_options) and
+         is_map(rel8ns_options) and is_map(time_options) and
+         is_map(meta_options) do
+    Logger.debug "_state_: #{inspect state}"
+
+    # 1. Create query ib_gib
+    query_info = TransformFactory.query(ib_options, data_options, rel8ns_options, time_options, meta_options)
+    Logger.debug "query_info: #{inspect query_info}"
+
+    # 2. Save query ib_gib
+    {:ok, :ok} = IbGib.Data.save(query_info)
+
+    # 3. Create instance process of query
+    Logger.debug "query saved. Now trying to create query expression process."
+    {:ok, query} = IbGib.Expression.Supervisor.start_expression({query_info[:ib], query_info[:gib]})
+
+    # 4. Create new ib_gib by contacting query ib_gib
+    contact_result = contact_impl(query, state)
+    Logger.debug "contact_result: #{inspect contact_result}"
+    contact_result
   end
 
   defp contact_impl(other_pid, state) when is_pid(other_pid) and is_map(state) do

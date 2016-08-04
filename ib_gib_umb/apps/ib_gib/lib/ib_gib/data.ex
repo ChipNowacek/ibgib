@@ -80,6 +80,63 @@ defmodule IbGib.Data do
   end
 
   @doc """
+  ib_options:
+    keys: "regex", "is", "in"
+    value: bitstring, e.g. "some ib", "[A-Za-z0]+"
+  """
+  def query(%{"ib" => ib_options, "data" => data_options, "rel8ns" => rel8ns_options, "time" => time_options, "meta" => meta_options} = options) do
+
+    result =
+      IbGibModel
+      |> add_ib_options(ib_options)
+      |> add_data_options(data_options)
+      |> add_rel8ns_options(rel8ns_options)
+      |> add_time_options(time_options)
+      |> add_meta_options(meta_options)
+      |> select([:ib, :gib])
+      |> Repo.all
+  end
+
+  # ----------------------------------------------------------------------------
+  # Private Functions
+  # ----------------------------------------------------------------------------
+
+  defp add_ib_options(query, ib_options) when is_map(ib_options and map_size(ib_options) > 0 do
+    query
+  end
+  defp add_ib_options(query, ib_options) do
+    query
+  end
+
+  defp add_data_options(query, data_options) when is_map(data_options and map_size(data_options) > 0 do
+    query
+  end
+  defp add_data_options(query, data_options) do
+    query
+  end
+
+  defp add_rel8ns_options(query, rel8ns_options) when is_map(rel8ns_options and map_size(rel8ns_options) > 0 do
+    query
+  end
+  defp add_rel8ns_options(query, rel8ns_options) do
+    query
+  end
+
+  defp add_time_options(query, time_options) when is_map(time_options and map_size(time_options) > 0 do
+    query
+  end
+  defp add_time_options(query, time_options) do
+    query
+  end
+
+  defp add_meta_options(query, meta_options) when is_map(meta_options and map_size(meta_options) > 0 do
+    query
+  end
+  defp add_meta_options(query, meta_options) do
+    query
+  end
+
+  @doc """
   Inserts ib_gib info into the repo.
 
   Returns {:ok, model} or {:error, changeset}

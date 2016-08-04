@@ -1,5 +1,6 @@
 defmodule IbGib.TransformFactory do
   alias IbGib.Helper
+  use IbGib.Constants, :ib_gib
 
   @delim "^"
 
@@ -73,6 +74,35 @@ defmodule IbGib.TransformFactory do
       "dest_ib_gib" => dest_ib_gib,
       "src_rel8ns" => src_rel8ns |> Enum.concat(@default_rel8ns) |> Enum.uniq,
       "dest_rel8ns" => dest_rel8ns |> Enum.concat(@default_rel8ns) |> Enum.uniq
+    }
+    gib = Helper.hash(ib, relations, data)
+    %{
+      ib: ib,
+      gib: gib,
+      rel8ns: relations,
+      data: data
+    }
+  end
+
+  def query(ib_options, data_options, rel8ns_options, time_options,
+    meta_options)
+    when is_map(ib_options) and is_map(data_options) and
+         is_map(rel8ns_options) and is_map(time_options) and
+         is_map(meta_options) do
+
+    ib = "query"
+    relations = %{
+      "history" => ["ib#{@delim}gib", "query#{@delim}gib"]
+    }
+    data = %{
+      "options" =>
+        %{
+          "ib" => ib_options,
+          "data" => data_options,
+          "rel8ns" => rel8ns_options,
+          "time" => time_options,
+          "meta" => meta_options
+        }
     }
     gib = Helper.hash(ib, relations, data)
     %{
