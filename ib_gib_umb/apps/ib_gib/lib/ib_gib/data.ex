@@ -5,6 +5,24 @@ defmodule IbGib.Data do
   alias IbGib.Data.Schemas.IbGibModel
   alias IbGib.Data.Repo
 
+  @doc """
+  Takes the given `info`, validates it, inserts it in the repo, and then puts
+  it in the cache. The `info` should be `IbGib.Data.Schemas.IbGibModel` info,
+  which ATOW (9:30 AM) is as follows:
+
+  ```
+  field :ib, :string
+  field :gib, :string
+  field :data, :map
+  field :rel8ns, :map
+  ```
+
+  _(J/k. ATOW: 2016/08/04)_
+
+  Returns `{:ok, :ok}` if succeeds **or if the ib+gib already exists**. It will
+  log the fact that it tried to save data that already existed. If fails,
+  returns `{:error, reason}`
+  """
   def save(info) when is_map(info) do
     # I can't figure out how to do a multi-line with clause!
     with {:ok, _model} <- insert_into_repo(info),
@@ -21,6 +39,9 @@ defmodule IbGib.Data do
     end
   end
 
+  @doc """
+  Bang version of `save/1`.
+  """
   def save!(info) when is_map(info) do
     Logger.warn "info: #{inspect info}"
     case save(info) do
@@ -29,6 +50,16 @@ defmodule IbGib.Data do
     end
   end
 
+  @doc """
+  This gets a map from the `IbGib.Data.Schemas.IbGibModel` for the given `ib`
+  and `gib`. **Does NOT get the model struct!**
+
+  First it looks in the `IbGib.Data.Cache`. If it's not found there, then it
+  looks in the `IbGib.Data.Repo`.
+
+  Returns the **map** of the `IbGib.Data.Schemas.IbGibModel` if found in
+  either the cache or the repo, `{:ok, map}`. If not found, `{:error, :not_found}`.
+  """
   def load(ib, gib) when is_bitstring(ib) and is_bitstring(gib) do
     key = IbGib.Helper.get_ib_gib!(ib, gib)
     # For now, simply gets the value from the cache
@@ -38,6 +69,9 @@ defmodule IbGib.Data do
     end
   end
 
+  @doc """
+  Bang version of `load/2`.
+  """
   def load!(ib, gib) when is_bitstring(ib) and is_bitstring(gib) do
     case load(ib, gib) do
       {:ok, value} -> value
