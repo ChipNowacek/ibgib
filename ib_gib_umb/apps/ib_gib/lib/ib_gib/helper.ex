@@ -1,13 +1,12 @@
 defmodule IbGib.Helper do
+  use IbGib.Constants, :ib_gib
   require Logger
-
-  @delim "^"
 
   @spec get_ib_gib(String.t, String.t) :: {:ok, String.t} | {:error, String.t}
   def get_ib_gib(ib, gib)
     when is_bitstring(ib) and bit_size(ib) > 0 and
          is_bitstring(gib) and bit_size(gib) > 0 do
-    {:ok, ib <> @delim <> gib}
+    {:ok, ib <> delim <> gib}
   end
   def get_ib_gib(ib, gib) do
     error_msg = "ib and gib are not both bitstrings with length > 0. ib: #{inspect ib}. gib: #{inspect gib}"
@@ -86,6 +85,39 @@ defmodule IbGib.Helper do
   @spec hash(String.t) :: String.t
   def hash(s) when is_bitstring(s) do
     :crypto.hash(:sha256, s) |> Base.encode16
+  end
+
+  def valid_ib?(ib) when is_bitstring(ib) do
+    ib_length = ib |> String.length
+
+    ib_length >= min_id_length and
+      ib_length <= max_id_length and
+      Regex.match?(regex_valid_ib, ib)
+  end
+  def valid_ib?(ib) do
+    false
+  end
+
+  def valid_gib?(gib) when is_bitstring(gib) do
+    gib_length = gib |> String.length
+
+    gib_length >= min_id_length and
+      gib_length <= max_id_length and
+      Regex.match?(regex_valid_gib, gib)
+  end
+  def valid_gib?(gib) do
+    false
+  end
+
+  def valid_ib_gib?(ib_gib) when is_bitstring(ib_gib) do
+    ib_gib_length = ib_gib |> String.length
+
+    ib_gib_length >= min_ib_gib_length and
+      ib_gib_length <= max_ib_gib_length and
+      Regex.match?(regex_valid_ib_gib, ib_gib)
+  end
+  def valid_ib_gib?(ib_gib) do
+    false
   end
 
 end

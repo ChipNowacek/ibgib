@@ -1,4 +1,8 @@
 defmodule IbGib.Data.Schemas.IbGib.QueryTest do
+  @moduledoc """
+  This is for testing the repo side of querying, i.e. the data layer.
+  See also `IbGib.Expression.ExpressionQueryTest`
+  """
   use ExUnit.Case
   require Logger
   import Ecto.Query

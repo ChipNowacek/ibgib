@@ -141,7 +141,7 @@ defmodule WebGib.IbGibController do
   end
 
   defp validate(:dest_ib, dest_ib) do
-    Regex.match?(regex_valid_ib, dest_ib) or
+    valid_ib?(dest_ib) or
       # empty or nil dest_ib will be set automatically.
       dest_ib === "" or dest_ib === nil
   end

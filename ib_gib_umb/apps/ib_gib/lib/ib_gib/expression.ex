@@ -1,6 +1,7 @@
 defmodule IbGib.Expression do
   use GenServer
   require Logger
+  import Enum
 
   use IbGib.Constants, :ib_gib
   alias IbGib.{TransformFactory, Helper}
@@ -242,6 +243,13 @@ defmodule IbGib.Expression do
     result = IbGib.Data.query(query_options)
     Logger.warn "query result: #{inspect result}"
 
+    # debug
+    result_as_list =
+      result |> reduce([], fn(ib_gib_model, acc) ->
+        acc ++ [Helper.get_ib_gib!(ib_gib_model.ib, ib_gib_model.gib)]
+      end)
+    Logger.warn "query result_as_list: #{inspect result_as_list}"
+
     this_info = %{}
     this_ib = "queryresult"
     this_info = Map.put(this_info, :ib, this_ib)
@@ -253,31 +261,49 @@ defmodule IbGib.Expression do
       |> Map.put(:data, this_data)
       |> Map.put(:rel8ns, this_rel8ns)
       |> add_relation("history", b)
+      |> add_relation(
+          "result",
+          result |> reduce([], fn(ib_gib_model, acc) ->
+            acc ++ [Helper.get_ib_gib!(ib_gib_model.ib, ib_gib_model.gib)]
+          end))
 
-    # Leaving off here. Need to get the results into the relations with
-    # "result" => ["ib1^gib", "ib2^gib", etc...]
-    # Maybe do a reduce to get the list and then add the relation.
-    # result
-    # |> Enum.each(fn(result_ib_gib) ->  end)
+    this_gib = Helper.hash(this_ib, this_info[:rel8ns], this_info[:data])
+    this_info = Map.put(this_info, :gib, this_gib)
 
-    # on_new_expression_completed()
+    Logger.debug "this_info is built yo! this_info: #{inspect this_info}"
+    on_new_expression_completed(this_ib, this_gib, this_info)
   end
+
 
   defp add_relation(a, relation_name, b) when is_map(a) and is_bitstring(relation_name) and is_bitstring(b) do
-    Logger.debug "Adding relation #{relation_name} to a. a[:rel8ns]: #{inspect a[:rel8ns]}"
-    a_relations = a[:rel8ns]
+    # Logger.debug "bitstring yo"
+    add_relation(a, relation_name, [b])
+  end
+  defp add_relation(a, relation_name, b) when is_map(a) and is_bitstring(relation_name) and is_list(b) do
+    # Logger.debug "array list"
+    b_is_list_of_ib_gib =
+      b |> all?(fn(item) -> Helper.valid_ib_gib?(item) end)
 
-    relation = Map.get(a_relations, relation_name, [])
-    new_relation = relation ++ [b]
+    if (b_is_list_of_ib_gib) do
+      Logger.debug "Adding relation #{relation_name} to a. a[:rel8ns]: #{inspect a[:rel8ns]}"
+      a_relations = a[:rel8ns]
 
-    new_a_relations = Map.put(a_relations, relation_name, new_relation)
-    new_a = Map.put(a, :rel8ns, new_a_relations)
-    Logger.debug "Added relation #{relation_name} to a. a[:rel8ns]: #{inspect a[:rel8ns]}"
-    new_a
+      relation = Map.get(a_relations, relation_name, [])
+      new_relation = relation ++ b
+
+      new_a_relations = Map.put(a_relations, relation_name, new_relation)
+      new_a = Map.put(a, :rel8ns, new_a_relations)
+      Logger.debug "Added relation #{relation_name} to a. a[:rel8ns]: #{inspect a[:rel8ns]}"
+      new_a
+    else
+      Logger.warn "Tried to add relation list of non-valid ib_gib."
+      a
+    end
   end
   defp add_relation(a, relation_name, b) when is_map(a) and is_bitstring(relation_name) and is_map(b) do
+    # Logger.debug "mappy mappy"
     b_ib_gib = Helper.get_ib_gib!(b[:ib], b[:gib])
-    add_relation(a, relation_name, b_ib_gib)
+    add_relation(a, relation_name, [b_ib_gib])
   end
 
   defp on_new_expression_completed(ib, gib, info) do
@@ -415,8 +441,17 @@ defmodule IbGib.Expression do
     end
 
     @doc """
-      Look for data, rel8ns, etc. Leaving off here.
+    Ok, this creates an ib_gib that contains the query info passed in with the
+    various given options maps. (This is similar to creating a fork, mut8, or
+    rel8 transform.) It then "applies" this query, which then goes off and
+    actually populates the results of the query. These results are then stored
+    in another ib_gib.
+
+    ## Returns
+    Returns `{:ok, qry_results_expr_pid}` which is the reference to the newly
+    generated queryresults ib_gib (not the query "transform" ib_gib).
     """
+    @spec query(pid, map, map, map, map, map) :: {:ok, pid} | {:error, any}
     def query(expr_pid, ib_options, data_options, rel8ns_options, time_options, meta_options)
       when is_pid(expr_pid) and
            is_map(ib_options) and is_map(data_options) and
@@ -428,13 +463,14 @@ defmodule IbGib.Expression do
     @doc """
     Bang version of `query/6`
     """
+    @spec query!(pid, map, map, map, map, map) :: pid | any
     def query!(expr_pid, ib_options, data_options, rel8ns_options, time_options, meta_options)
       when is_pid(expr_pid) and
            is_map(ib_options) and is_map(data_options) and
            is_map(rel8ns_options) and is_map(time_options) and
            is_map(meta_options) do
       case query(expr_pid, ib_options, data_options, rel8ns_options, time_options, meta_options) do
-        {:ok, new_qry_expr_pid} -> new_qry_expr_pid
+        {:ok, qry_results_expr_pid} -> qry_results_expr_pid
         {:error, reason} -> raise "#{inspect reason}"
       end
     end
@@ -539,7 +575,7 @@ defmodule IbGib.Expression do
     {:reply, instance_impl(dest_ib, state), state}
   end
   def handle_call({:query, ib_options, data_options, rel8ns_options, time_options, meta_options}, _from, state) do
-    Logger.warn "ib_options: #{inspect ib_options}\ndata_options: #{inspect data_options}\nrel8ns_options: #{inspect rel8ns_options}\ntime_options: #{inspect time_options}\nmeta_options: #{meta_options}"
+    Logger.warn "ib_options: #{inspect ib_options}\ndata_options: #{inspect data_options}\nrel8ns_options: #{inspect rel8ns_options}\ntime_options: #{inspect time_options}\nmeta_options: #{inspect meta_options}"
     {:reply, query_impl(ib_options, data_options, rel8ns_options, time_options, meta_options, state), state}
   end
   def handle_call(:get_info, _from, state) do

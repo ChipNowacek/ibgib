@@ -5,15 +5,22 @@ defmodule IbGib.Constants do
   """
   def ib_gib do
     quote do
+      # if change, must also change in regex below
       def delim, do: "^"
+
       def min_id_length, do: 1
       def max_id_length, do: 64
       def min_ib_gib_length, do: 3 # min + delim + min
       def max_ib_gib_length, do: 129 # max + delim + max
       def max_data_size, do: 10_240_000 # 10 MB max internal data
-      def default_history, do: ["ib#{delim}gib"]
       # one or more word chars, underscore, dash
-      def regex_valid_ib, do: ~r/^[\w_-\s]+$/
+      def regex_valid_ib, do: ~r/^[\w\d_-\s]+$/
+      def regex_valid_gib, do: ~r/^[\w\d]+$/
+      # delim hardcoded in!!!!
+      def regex_valid_ib_gib, do: ~r/^[\w\d_-\s]+\^[\w\d]+$/
+
+      def default_history, do: ["ib#{delim}gib"]
+
     end
   end
 
