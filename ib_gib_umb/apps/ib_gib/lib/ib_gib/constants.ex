@@ -4,10 +4,13 @@ defmodule IbGib.Constants do
   Use this with `use IbGib.Constants, :ib_gib`
   """
   def ib_gib do
+    # defmacro delim do
+    #   quote do: "^"
+    # end
     quote do
       # if change, must also change in regex below
+      @delim "^"
       def delim, do: "^"
-
       def min_id_length, do: 1
       def max_id_length, do: 64
       def min_ib_gib_length, do: 3 # min + delim + min
@@ -54,6 +57,12 @@ defmodule IbGib.Constants do
       end
     end
   end
+
+  # def query do
+  #   quote do
+  #     def ib_search_methods, do: @ib_search_methods
+  #   end
+  # end
 
   @doc """
   When used, dispatch to the appropriate controller/view/etc.

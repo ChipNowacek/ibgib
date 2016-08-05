@@ -104,8 +104,17 @@ defmodule IbGib.Data do
   # Private Functions
   # ----------------------------------------------------------------------------
 
-  defp add_ib_options(query, ib_options) when is_map(ib_options) and map_size(ib_options) > 0 do
-    query
+  defp add_ib_options(query,
+                      %{"what" => search_term, "how" => method} = ib_options)
+    when is_map(ib_options) and map_size(ib_options) > 0 and
+         is_bitstring(search_term) and is_bitstring(method) do
+      case method do
+        "is" ->
+          query |> where(ib: ^search_term)
+        _ ->
+          Logger.info("Unknown method: #{method}. search_term: #{search_term}")
+          query
+      end
   end
   defp add_ib_options(query, ib_options) do
     query

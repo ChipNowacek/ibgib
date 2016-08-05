@@ -451,25 +451,19 @@ defmodule IbGib.Expression do
     Returns `{:ok, qry_results_expr_pid}` which is the reference to the newly
     generated queryresults ib_gib (not the query "transform" ib_gib).
     """
-    @spec query(pid, map, map, map, map, map) :: {:ok, pid} | {:error, any}
-    def query(expr_pid, ib_options, data_options, rel8ns_options, time_options, meta_options)
-      when is_pid(expr_pid) and
-           is_map(ib_options) and is_map(data_options) and
-           is_map(rel8ns_options) and is_map(time_options) and
-           is_map(meta_options) do
-      GenServer.call(expr_pid, {:query, ib_options, data_options, rel8ns_options, time_options, meta_options})
+    @spec query(pid, map) :: {:ok, pid} | {:error, any}
+    def query(expr_pid, query_options)
+      when is_pid(expr_pid) and is_map(query_options) do
+      GenServer.call(expr_pid, {:query, query_options})
     end
 
     @doc """
     Bang version of `query/6`
     """
-    @spec query!(pid, map, map, map, map, map) :: pid | any
-    def query!(expr_pid, ib_options, data_options, rel8ns_options, time_options, meta_options)
-      when is_pid(expr_pid) and
-           is_map(ib_options) and is_map(data_options) and
-           is_map(rel8ns_options) and is_map(time_options) and
-           is_map(meta_options) do
-      case query(expr_pid, ib_options, data_options, rel8ns_options, time_options, meta_options) do
+    @spec query!(pid, map) :: pid | any
+    def query!(expr_pid, query_options)
+      when is_pid(expr_pid) and is_map(query_options) do
+      case query(expr_pid, query_options) do
         {:ok, qry_results_expr_pid} -> qry_results_expr_pid
         {:error, reason} -> raise "#{inspect reason}"
       end
@@ -574,9 +568,9 @@ defmodule IbGib.Expression do
     Logger.debug "dest_ib: #{dest_ib}"
     {:reply, instance_impl(dest_ib, state), state}
   end
-  def handle_call({:query, ib_options, data_options, rel8ns_options, time_options, meta_options}, _from, state) do
-    Logger.warn "ib_options: #{inspect ib_options}\ndata_options: #{inspect data_options}\nrel8ns_options: #{inspect rel8ns_options}\ntime_options: #{inspect time_options}\nmeta_options: #{inspect meta_options}"
-    {:reply, query_impl(ib_options, data_options, rel8ns_options, time_options, meta_options, state), state}
+  def handle_call({:query, query_options}, _from, state) do
+    Logger.warn "query_options: #{inspect query_options}"
+    {:reply, query_impl(query_options, state), state}
   end
   def handle_call(:get_info, _from, state) do
     Logger.metadata([x: :get_info])
@@ -652,14 +646,12 @@ defmodule IbGib.Expression do
     {:ok, {new_this, new_instance}}
   end
 
-  defp query_impl(ib_options, data_options, rel8ns_options, time_options, meta_options, state)
-    when is_map(ib_options) and is_map(data_options) and
-         is_map(rel8ns_options) and is_map(time_options) and
-         is_map(meta_options) do
+  defp query_impl(query_options, state)
+    when is_map(query_options) do
     Logger.debug "_state_: #{inspect state}"
 
     # 1. Create query ib_gib
-    query_info = TransformFactory.query(ib_options, data_options, rel8ns_options, time_options, meta_options)
+    query_info = TransformFactory.query(query_options)
     Logger.debug "query_info: #{inspect query_info}"
 
     # 2. Save query ib_gib

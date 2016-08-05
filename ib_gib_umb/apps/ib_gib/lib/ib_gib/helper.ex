@@ -6,7 +6,7 @@ defmodule IbGib.Helper do
   def get_ib_gib(ib, gib)
     when is_bitstring(ib) and bit_size(ib) > 0 and
          is_bitstring(gib) and bit_size(gib) > 0 do
-    {:ok, ib <> delim <> gib}
+    {:ok, ib <> "#{delim}" <> gib}
   end
   def get_ib_gib(ib, gib) do
     error_msg = "ib and gib are not both bitstrings with length > 0. ib: #{inspect ib}. gib: #{inspect gib}"

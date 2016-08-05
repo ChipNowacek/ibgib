@@ -2,19 +2,16 @@ defmodule IbGib.TransformFactory do
   alias IbGib.Helper
   use IbGib.Constants, :ib_gib
 
-  @delim "^"
-
-
   @doc """
   Creates a fork with source `src_ib_gib` and dest_ib of given `dest_ib`. In
   most cases, no `dest_ib` need be specified, so it will just create a new
   random `ib`.
   """
   @spec fork(String.t, String.t) :: map
-  def fork(src_ib_gib \\ "ib#{@delim}gib", dest_ib \\ Helper.new_id) when is_bitstring(src_ib_gib) and is_bitstring(dest_ib) do
+  def fork(src_ib_gib \\ "ib#{delim}gib", dest_ib \\ Helper.new_id) when is_bitstring(src_ib_gib) and is_bitstring(dest_ib) do
     ib = "fork"
     relations = %{
-      "history" => ["ib#{@delim}gib", "fork#{@delim}gib"]
+      "history" => ["ib#{delim}gib", "fork#{delim}gib"]
     }
     data = %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib}
     gib = Helper.hash(ib, relations, data)
@@ -35,7 +32,7 @@ defmodule IbGib.TransformFactory do
   def mut8(src_ib_gib, new_data) when is_bitstring(src_ib_gib) and is_map(new_data) do
     ib = "mut8"
     relations = %{
-      "history" => ["ib#{@delim}gib", "mut8#{@delim}gib"]
+      "history" => ["ib#{delim}gib", "mut8#{delim}gib"]
     }
     data = %{"src_ib_gib" => src_ib_gib, "new_data" => new_data}
     gib = Helper.hash(ib, relations, data)
@@ -67,7 +64,7 @@ defmodule IbGib.TransformFactory do
          is_list(dest_rel8ns) and length(dest_rel8ns) >= 1  do
     ib = "rel8"
     relations = %{
-      "history" => ["ib#{@delim}gib", "rel8#{@delim}gib"]
+      "history" => ["ib#{delim}gib", "rel8#{delim}gib"]
     }
     data = %{
       "src_ib_gib" => src_ib_gib,
@@ -84,25 +81,15 @@ defmodule IbGib.TransformFactory do
     }
   end
 
-  def query(ib_options, data_options, rel8ns_options, time_options,
-    meta_options)
-    when is_map(ib_options) and is_map(data_options) and
-         is_map(rel8ns_options) and is_map(time_options) and
-         is_map(meta_options) do
+  def query(query_options)
+    when is_map(query_options) do
 
     ib = "query"
     relations = %{
-      "history" => ["ib#{@delim}gib", "query#{@delim}gib"]
+      "history" => ["ib#{delim}gib", "query#{delim}gib"]
     }
     data = %{
-      "options" =>
-        %{
-          "ib" => ib_options,
-          "data" => data_options,
-          "rel8ns" => rel8ns_options,
-          "time" => time_options,
-          "meta" => meta_options
-        }
+      "options" => query_options
     }
     gib = Helper.hash(ib, relations, data)
     %{
