@@ -4,7 +4,7 @@ defmodule IbGib.QueryOptionsFactory do
 
   # I would prefer to have this in IbGib.Constants, but I can't figure out
   # how to put it in the guard.
-  @ib_search_methods ["is", "in", "regex"]
+  @ib_search_methods ["is", "like", "regex"]
   defmacro is_valid_ib_method(method) do
     quote do: unquote(method) in @ib_search_methods
   end

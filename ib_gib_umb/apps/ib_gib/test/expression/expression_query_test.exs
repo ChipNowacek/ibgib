@@ -42,7 +42,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     assert Enum.count(query_result_info[:rel8ns]["result"]) > 0
   end
 
-  test "Fork a couple ib, query, by_ib" do
+  test "Fork a couple ib, query, ib is" do
     test_count = 5
     {:ok, root} = IbGib.Expression.Supervisor.start_expression()
 
@@ -60,6 +60,39 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     query_options =
       do_query
       |> where_ib("is", test_ib)
+
+    {:ok, query_result} = root |> query(query_options)
+    Logger.debug "query_result: #{inspect query_result}"
+    query_result_info = query_result |> get_info!
+    Logger.debug "query_result_info: #{inspect query_result_info}"
+    result_list = query_result_info[:rel8ns]["result"]
+    Logger.debug "result_list: #{inspect result_list}"
+    assert Enum.count(result_list) === 1
+
+    single_result = Enum.at(result_list, 0)
+    assert single_result === test_ib_gib
+    Logger.debug "single result: #{single_result}"
+  end
+
+  test "Fork a couple ib, query, ib like" do
+    test_count = 5
+    {:ok, root} = IbGib.Expression.Supervisor.start_expression()
+
+    # Create some random other ib_gib
+    a = root |> fork!
+
+    Logger.configure(level: :info)
+    1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}")))
+    Logger.configure(level: :debug)
+
+    # Create the one ib_gib we want to query for
+    test_ib = "hey this is a test ib"
+    {:ok, {_test, _test_info, test_ib_gib}} = root |> gib(:fork, test_ib)
+
+    search_term = "is is a"
+    query_options =
+      do_query
+      |> where_ib("like", search_term)
 
     {:ok, query_result} = root |> query(query_options)
     Logger.debug "query_result: #{inspect query_result}"

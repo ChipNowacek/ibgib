@@ -108,9 +108,14 @@ defmodule IbGib.Data do
                       %{"what" => search_term, "how" => method} = ib_options)
     when is_map(ib_options) and map_size(ib_options) > 0 and
          is_bitstring(search_term) and is_bitstring(method) do
+      Logger.warn "yoooooooooooooooo"
+
       case method do
         "is" ->
           query |> where(ib: ^search_term)
+        "like" ->
+          wrapped_search_term = "%#{search_term}%"
+          query |> where([x], ilike(x.ib, ^wrapped_search_term))
         _ ->
           Logger.info("Unknown method: #{method}. search_term: #{search_term}")
           query
