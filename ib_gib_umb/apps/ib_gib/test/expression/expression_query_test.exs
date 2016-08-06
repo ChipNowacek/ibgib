@@ -8,7 +8,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
 
   use ExUnit.Case
   use IbGib.Constants, :ib_gib
-  alias IbGib.{Expression, Helper}
+  # alias IbGib.{Expression, Helper}
   # alias IbGib.Data.Repo
   import IbGib.Expression
   import IbGib.QueryOptionsFactory
@@ -55,7 +55,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
 
     # Create the one ib_gib we want to query for
     test_ib = "hey this is a test ib"
-    {:ok, {test, test_info, test_ib_gib}} = root |> gib(:fork, test_ib)
+    {:ok, {_test, _test_info, test_ib_gib}} = root |> gib(:fork, test_ib)
 
     query_options =
       do_query

@@ -204,7 +204,7 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
   test "valid_data?, valid, at max data size" do
     test_max_size = 100000
     test_value_length = div(test_max_size, 2) - 1 # reserve 1 length for key
-    test_value = Enum.reduce(1..test_value_length, "", fn(x, acc) -> "a" <> acc end)
+    test_value = Enum.reduce(1..test_value_length, "", fn(_, acc) -> "a" <> acc end)
     Logger.debug "test_value: #{test_value}"
     # test_value = Enum.reduce([0, 5], fn(x, acc) -> "a" <<>> acc end)
     test_map = %{
@@ -218,7 +218,7 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
   test "valid_data?, invalid, key puts it just over max data size" do
     test_max_size = 100000
     test_value_length = div(test_max_size, 2) - 1 # reserve 1 length for key
-    test_value = Enum.reduce(1..test_value_length, "", fn(x, acc) -> "a" <> acc end)
+    test_value = Enum.reduce(1..test_value_length, "", fn(_, acc) -> "a" <> acc end)
     Logger.debug "test_value: #{test_value}"
     # test_value = Enum.reduce([0, 5], fn(x, acc) -> "a" <<>> acc end)
     test_map = %{
@@ -233,7 +233,7 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
   test "valid_data?, invalid, value puts it just over max data size" do
     test_max_size = 100000
     test_value_length = div(test_max_size, 2) - 2
-    test_value = Enum.reduce(1..test_value_length, "", fn(x, acc) -> "a" <> acc end)
+    test_value = Enum.reduce(1..test_value_length, "", fn(_, acc) -> "a" <> acc end)
     Logger.debug "test_value: #{test_value}"
     # test_value = Enum.reduce([0, 5], fn(x, acc) -> "a" <<>> acc end)
     test_map = %{

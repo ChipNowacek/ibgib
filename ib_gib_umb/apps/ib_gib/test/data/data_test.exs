@@ -1,14 +1,14 @@
 defmodule IbGib.Data.DataTest do
   use ExUnit.Case
   require Logger
-  import Ecto.Query
+  # import Ecto.Query
 
   use IbGib.Constants, :ib_gib
   use IbGib.Constants, :error_msgs
-  alias IbGib.TestHelper
-  alias IbGib.Data.Repo
+  # alias IbGib.TestHelper
+  # alias IbGib.Data.Repo
   alias IbGib.Data
-  alias IbGib.Data.Schemas.IbGibModel
+  # alias IbGib.Data.Schemas.IbGibModel
   alias RandomGib.Get
 
   @at_least_msg "should have at least %{count} item(s)"
@@ -114,7 +114,7 @@ defmodule IbGib.Data.DataTest do
     model = %{
       ib: ib,
       gib: gib,
-      # data: data,
+      data: data,
       rel8ns: rel8ns
     }
 
@@ -130,7 +130,7 @@ defmodule IbGib.Data.DataTest do
     model = %{
       ib: ib,
       gib: gib,
-      # data: data,
+      data: data,
       rel8ns: rel8ns
     }
 
@@ -146,7 +146,7 @@ defmodule IbGib.Data.DataTest do
     model = %{
       ib: ib,
       gib: gib,
-      # data: data,
+      data: data,
       rel8ns: rel8ns
     }
 
@@ -168,7 +168,7 @@ defmodule IbGib.Data.DataTest do
     model = %{
       ib: ib,
       gib: gib,
-      # data: data,
+      data: data,
       rel8ns: rel8ns
     }
 
