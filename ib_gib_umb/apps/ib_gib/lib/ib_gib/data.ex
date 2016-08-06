@@ -104,29 +104,43 @@ defmodule IbGib.Data do
   # Private Functions
   # ----------------------------------------------------------------------------
 
-  defp add_ib_options(query,
-                      %{"what" => search_term, "how" => method} = ib_options)
+  defp add_ib_options(query, %{"what" => search_term, "how" => method} =
+    ib_options)
     when is_map(ib_options) and map_size(ib_options) > 0 and
          is_bitstring(search_term) and is_bitstring(method) do
-      Logger.warn "yoooooooooooooooo"
+    Logger.warn "yoooooooooooooooo"
 
-      case method do
-        "is" ->
-          query |> where(ib: ^search_term)
-        "like" ->
-          wrapped_search_term = "%#{search_term}%"
-          query |> where([x], ilike(x.ib, ^wrapped_search_term))
-        _ ->
-          Logger.info("Unknown method: #{method}. search_term: #{search_term}")
-          query
-      end
+    case method do
+      "is" ->
+        query |> where(ib: ^search_term)
+      "like" ->
+        wrapped_search_term = "%#{search_term}%"
+        query |> where([x], ilike(x.ib, ^wrapped_search_term))
+      _ ->
+        Logger.info("Unknown method: #{method}. search_term: #{search_term}")
+        query
+    end
   end
   defp add_ib_options(query, ib_options) do
     query
   end
 
-  defp add_data_options(query, data_options) when is_map(data_options) and map_size(data_options) > 0 do
-    query
+  defp add_data_options(query, %{"what" => search_term, "how" => method,
+    "where" => where} = data_options)
+    when is_map(data_options) and map_size(data_options) > 0 and
+         is_bitstring(search_term) and is_bitstring(method) and
+         is_bitstring(where) do
+    Logger.warn "yoooooooooooooooo"
+
+    case {method, where} do
+      {"is", "key"} ->
+        Logger.warn "is key yo"
+        query
+        |> where([x], fragment("? \\? ?", x.data, ^search_term))
+      _ ->
+        Logger.info("Unknown {method, where}: {#{method}, #{where}}. search_term: #{search_term}")
+        query
+    end
   end
   defp add_data_options(query, data_options) do
     query
