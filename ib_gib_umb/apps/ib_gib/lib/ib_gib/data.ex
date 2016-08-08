@@ -177,8 +177,22 @@ defmodule IbGib.Data do
     query
   end
 
-  defp add_rel8ns_options(query, rel8ns_options) when is_map(rel8ns_options) and map_size(rel8ns_options) > 0 do
-    query
+  defp add_rel8ns_options(query,  rel8ns_options)
+  defp add_rel8ns_options(query, %{"what" => search_term, "how" => method,
+    "where" => where, "extra" => with_or_without} = rel8ns_options) when is_map(rel8ns_options) and map_size(rel8ns_options) > 0 do
+      case {with_or_without, method} do
+        {"with", "ib_gib"} ->
+          Logger.warn "with ib_gib. where: #{where}. search_term: #{search_term}"
+          query
+          |> where(fragment("? IN (SELECT jsonb_array_elements_text(rel8ns -> ?))", ^search_term, ^where))
+        _ ->
+          query
+      end
+      # if (with_or_without == "with") do
+      #
+      # else
+      #   query
+      # end
   end
   defp add_rel8ns_options(query, rel8ns_options) do
     query

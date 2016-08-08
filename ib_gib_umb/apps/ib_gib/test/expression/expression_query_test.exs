@@ -312,4 +312,38 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     Logger.debug "single result: #{single_result}"
   end
 
+  @tag :capture_log
+  test "Fork a couple ib, fork b, then c from b, query, rel8n ancestor is a" do
+    test_count = 5
+    {:ok, root} = IbGib.Expression.Supervisor.start_expression()
+
+    a = root |> fork!
+    Logger.configure(level: :info)
+    1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}")))
+    Logger.configure(level: :debug)
+
+    b = a |> fork!
+    test_ib_b = "hey this is a test ib yuk yuk"
+    {:ok, {test_b, _test_info_b, test_ib_gib_b}} = a |> gib(:fork, test_ib_b)
+    test_ib_c = "this is c"
+    {:ok, {test_c, _test_info_c, test_ib_gib_c}} = test_b |> gib(:fork, test_ib_c)
+
+    query_options =
+      do_query
+      # def where_rel8ns_with(acc_options, rel8n_name, method, search_term)
+      |> where_rel8ns_with("ancestor", "ib_gib", test_ib_gib_b)
+    {:ok, query_result} = root |> query(query_options)
+    Logger.debug "query_result: #{inspect query_result}"
+    query_result_info = query_result |> get_info!
+    Logger.info "query_result_info: #{inspect query_result_info}"
+
+    result_list = query_result_info[:rel8ns]["result"]
+    Logger.debug "result_list: #{inspect result_list}"
+    assert Enum.count(result_list) === 1
+
+    single_result = Enum.at(result_list, 0)
+    assert single_result === test_ib_gib_c
+    Logger.debug "single result: #{single_result}"
+  end
+
 end
