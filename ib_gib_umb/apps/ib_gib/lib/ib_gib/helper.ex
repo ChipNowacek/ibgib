@@ -22,6 +22,27 @@ defmodule IbGib.Helper do
     end
   end
 
+  @spec separate_ib_gib(String.t) :: {:ok, {String.t, String.t}} | {:error, String.t}
+  def separate_ib_gib(ib_gib)
+  def separate_ib_gib(ib_gib) when is_bitstring(ib_gib) do
+    as_array = String.split(ib_gib, delim)
+    {ib, gib} = {Enum.at(as_array, 0), Enum.at(as_array, 1)}
+    {:ok, {ib, gib}}
+  end
+  def separate_ib_gib(ib_gib) do
+    error_msg = "ib_gib must be a bitstring with a valid delim (#{delim}). ib_gib: #{inspect ib_gib}"
+    Logger.error error_msg
+    {:error, error_msg}
+  end
+
+  @spec separate_ib_gib!(String.t) :: {String.t, String.t}
+  def separate_ib_gib!(ib_gib) when is_bitstring(ib_gib) do
+    case separate_ib_gib(ib_gib) do
+      {:ok, result} -> result
+      {:error, reason} -> raise reason
+    end
+  end
+
   @spec new_id() :: String.t
   def new_id() do
     RandomGib.Get.some_letters(30)

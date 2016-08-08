@@ -93,7 +93,7 @@ defmodule IbGib.Data do
       |> add_rel8ns_options(rel8ns_options)
       |> add_time_options(time_options)
       |> add_meta_options(meta_options)
-      |> select([:ib, :gib, :inserted_at])
+      |> select([:ib, :gib, :inserted_at, :data])
 
     result = model |> Repo.all
 
@@ -115,6 +115,10 @@ defmodule IbGib.Data do
       "is" ->
         query =
           query |> where(ib: ^search_term)
+        query
+      "isnt" ->
+        query =
+          query |> where(fragment("ib != ?", ^search_term))
         query
       "like" ->
         wrapped_search_term = "%#{search_term}%"
@@ -148,7 +152,21 @@ defmodule IbGib.Data do
         Logger.warn "key like"
         wrapped_search_term = "%#{search_term}%"
         query =
-          query |> where(fragment("(SELECT count(*) FROM jsonb_each_text(data) WHERE key ILIKE ?) > 0", ^wrapped_search_term))
+          query
+          |> where(fragment("(SELECT count(*) FROM jsonb_each_text(data) WHERE key ILIKE ?) > 0", ^wrapped_search_term))
+        query
+      {"value", "is"} ->
+        Logger.warn "value is"
+        query =
+          query
+          |> where(fragment("(SELECT count(*) FROM jsonb_each_text(data) WHERE value = ?) > 0", ^search_term))
+        query
+      {"value", "like"} ->
+        Logger.warn "key like"
+        wrapped_search_term = "%#{search_term}%"
+        query =
+          query
+          |> where(fragment("(SELECT count(*) FROM jsonb_each_text(data) WHERE value ILIKE ?) > 0", ^wrapped_search_term))
         query
       _ ->
         Logger.info("Unknown {method, where}: {#{method}, #{where}}. search_term: #{search_term}")

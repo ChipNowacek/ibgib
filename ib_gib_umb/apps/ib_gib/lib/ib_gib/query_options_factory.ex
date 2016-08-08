@@ -1,10 +1,12 @@
 defmodule IbGib.QueryOptionsFactory do
+  require Logger
+
   alias IbGib.Helper
   use IbGib.Constants, :ib_gib
 
   # I would prefer to have this in IbGib.Constants, but I can't figure out
   # how to put it in the guard.
-  @ib_search_methods ["is", "like"] #, "regex"] not implemented yet
+  @ib_search_methods ["is", "like", "isnt"] #, "regex"] not implemented yet
   defmacro is_valid_ib_method(method) do
     quote do: unquote(method) in @ib_search_methods
   end
@@ -32,6 +34,7 @@ defmodule IbGib.QueryOptionsFactory do
   def where_ib(acc_options, method, search_term)
     when is_map(acc_options) and is_bitstring(search_term) and
          is_bitstring(method) and is_valid_ib_method(method) do
+
     options = %{
       "ib" => %{
         "what" => search_term,
