@@ -98,7 +98,7 @@ defmodule IbGib.Data do
       |> add_rel8ns_options(rel8ns_options)
       |> add_time_options(time_options)
       |> add_meta_options(meta_options)
-      |> select_ib_gib
+      |> do_select
 
     result = model |> Repo.all
 
@@ -106,16 +106,19 @@ defmodule IbGib.Data do
     result
   end
 
-  defp do_select({query, %{"select_type" => select_type, "lateral_search_term" => lateral_search_term}}) do
+  defp do_select({query, %{"select_type" => select_type, "lateral_search_term" => lateral_search_term} = run_options}) do
     case select_type do
       "normal" ->
+        Logger.warn "normal select"
         query = query |> select([:ib, :gib, :inserted_at])
         {query, run_options}
       "lateral_data" ->
-        query =
-          query
-          |> join(:inner_lateral, [x], y in fragment("SELECT jsonb_each_text(data) WHERE key LIKE ?", "%#{^lateral_search_term}%"))
-          |> select([x], x.ib, x.gib, x.inserted_at)
+        Logger.warn "lateral_data select"
+        # wrapped_search_term = "%#{lateral_search_term}%"
+        # Trying to accomplish (which works):
+        # SELECT ib, gib, key FROM ibgibs, lateral jsonb_each_text(data) WHERE key LIKE '%dest%';
+
+        query = query |> select([:ib, :gib, :inserted_at])
         {query, run_options}
     end
   end
@@ -165,7 +168,11 @@ defmodule IbGib.Data do
         {query, run_options}
       {"key", "like"} ->
         Logger.warn "key like"
-        run_options = Map.merge(run_options, %{})
+        wrapped_search_term = "%#{search_term}%"
+        run_options = Map.merge(run_options, %{"select_type" => "lateral_data", "lateral_search_term" => search_term})
+        query =
+          query |> where(fragment("(SELECT count(*) FROM jsonb_each_text(data) WHERE key ILIKE ?) > 0", ^wrapped_search_term))
+        {query, run_options}
       _ ->
         Logger.info("Unknown {method, where}: {#{method}, #{where}}. search_term: #{search_term}")
         {query, run_options}

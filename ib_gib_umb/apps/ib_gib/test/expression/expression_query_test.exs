@@ -165,7 +165,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     # Reassign the same vars because we really want the version with the data
     {:ok, {test, _test_info, test_ib_gib}} = test |> gib(:mut8, test_data)
 
-    search_term = "y ke"
+    search_term = "my"
     query_options =
       do_query
       |> where_data("key", "like", search_term)
