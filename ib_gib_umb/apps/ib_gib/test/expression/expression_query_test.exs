@@ -124,9 +124,9 @@ defmodule IbGib.Expression.ExpressionQueryTest do
 
     # Create the one ib_gib we want to query for
     test_ib = "hey this is a test ib"
-    {:ok, {_test, _test_info, test_ib_gib}} = root |> gib(:fork, test_ib)
+    {:ok, {_test, _test_info, _test_ib_gib}} = root |> gib(:fork, test_ib)
 
-    search_term = test_ib
+    # search_term = test_ib
     query_options =
       do_query
       |> where_ib("isnt", test_ib)
@@ -165,9 +165,9 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     test_value = "my test value yoooo"
     test_data = %{test_key => test_value}
     test_ib = "test ib data key is"
-    {:ok, {test, _test_info, test_ib_gib}} = root |> gib(:fork, test_ib)
+    {:ok, {test, _test_info, _test_ib_gib}} = root |> gib(:fork, test_ib)
     # Reassign the same vars because we really want the version with the data
-    {:ok, {test, _test_info, test_ib_gib}} = test |> gib(:mut8, test_data)
+    {:ok, {_test, _test_info, test_ib_gib}} = test |> gib(:mut8, test_data)
 
     search_term = test_key
     query_options =
@@ -204,9 +204,9 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     test_value = "my test value yoooo"
     test_data = %{test_key => test_value}
     test_ib = "test ib data key is"
-    {:ok, {test, _test_info, test_ib_gib}} = root |> gib(:fork, test_ib)
+    {:ok, {test, _test_info, _test_ib_gib}} = root |> gib(:fork, test_ib)
     # Reassign the same vars because we really want the version with the data
-    {:ok, {test, _test_info, test_ib_gib}} = test |> gib(:mut8, test_data)
+    {:ok, {_test, _test_info, test_ib_gib}} = test |> gib(:mut8, test_data)
 
     search_term = "y key yo yo yo123"
     query_options =
@@ -243,9 +243,9 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     test_value = "my test value yoooo"
     test_data = %{test_key => test_value}
     test_ib = "test ib data key is"
-    {:ok, {test, _test_info, test_ib_gib}} = root |> gib(:fork, test_ib)
+    {:ok, {test, _test_info, _test_ib_gib}} = root |> gib(:fork, test_ib)
     # Reassign the same vars because we really want the version with the data
-    {:ok, {test, _test_info, test_ib_gib}} = test |> gib(:mut8, test_data)
+    {:ok, {_test, _test_info, test_ib_gib}} = test |> gib(:mut8, test_data)
 
     search_term = test_value
     query_options =
@@ -282,9 +282,9 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     test_value = "my test value yoooo1q23451235"
     test_data = %{test_key => test_value}
     test_ib = "test ib data key is"
-    {:ok, {test, _test_info, test_ib_gib}} = root |> gib(:fork, test_ib)
+    {:ok, {test, _test_info, _test_ib_gib}} = root |> gib(:fork, test_ib)
     # Reassign the same vars because we really want the version with the data
-    {:ok, {test, _test_info, test_ib_gib}} = test |> gib(:mut8, test_data)
+    {:ok, {_test, _test_info, test_ib_gib}} = test |> gib(:mut8, test_data)
 
     search_term = "y test value yoooo1q23451"
     query_options =
@@ -322,11 +322,10 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}")))
     Logger.configure(level: :debug)
 
-    b = a |> fork!
     test_ib_b = "hey this is a test ib yuk yuk"
     {:ok, {test_b, _test_info_b, test_ib_gib_b}} = a |> gib(:fork, test_ib_b)
     test_ib_c = "this is c"
-    {:ok, {test_c, _test_info_c, test_ib_gib_c}} = test_b |> gib(:fork, test_ib_c)
+    {:ok, {_test_c, _test_info_c, test_ib_gib_c}} = test_b |> gib(:fork, test_ib_c)
 
     query_options =
       do_query
@@ -355,11 +354,11 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}")))
     Logger.configure(level: :debug)
 
-    b = a |> fork!
+    # b = a |> fork!
     test_ib_b = "hey this is a test ib yuk yuk"
     {:ok, {test_b, _test_info_b, test_ib_gib_b}} = a |> gib(:fork, test_ib_b)
     test_ib_c = "this is c"
-    {:ok, {test_c, _test_info_c, test_ib_gib_c}} = test_b |> gib(:fork, test_ib_c)
+    {:ok, {_test_c, _test_info_c, test_ib_gib_c}} = test_b |> gib(:fork, test_ib_c)
 
     query_options =
       do_query
