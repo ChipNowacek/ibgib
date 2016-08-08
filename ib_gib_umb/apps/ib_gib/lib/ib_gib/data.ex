@@ -86,19 +86,14 @@ defmodule IbGib.Data do
   """
   def query(%{"ib" => ib_options, "data" => data_options, "rel8ns" => rel8ns_options, "time" => time_options, "meta" => meta_options} = options) do
 
-    # Run options are passed between functions
-    # Use case for putting them in is attempting to do a lateral select
-    # when needed (e.g. when doing a `LIKE` on a jsonb map key)
-    run_options = %{"select_type" => "normal", "lateral_search_term" => nil}
-
-    {model, run_options} =
-      { IbGibModel, run_options}
+    model =
+      IbGibModel
       |> add_ib_options(ib_options)
       |> add_data_options(data_options)
       |> add_rel8ns_options(rel8ns_options)
       |> add_time_options(time_options)
       |> add_meta_options(meta_options)
-      |> do_select
+      |> select([:ib, :gib, :inserted_at])
 
     result = model |> Repo.all
 
@@ -106,28 +101,11 @@ defmodule IbGib.Data do
     result
   end
 
-  defp do_select({query, %{"select_type" => select_type, "lateral_search_term" => lateral_search_term} = run_options}) do
-    case select_type do
-      "normal" ->
-        Logger.warn "normal select"
-        query = query |> select([:ib, :gib, :inserted_at])
-        {query, run_options}
-      "lateral_data" ->
-        Logger.warn "lateral_data select"
-        # wrapped_search_term = "%#{lateral_search_term}%"
-        # Trying to accomplish (which works):
-        # SELECT ib, gib, key FROM ibgibs, lateral jsonb_each_text(data) WHERE key LIKE '%dest%';
-
-        query = query |> select([:ib, :gib, :inserted_at])
-        {query, run_options}
-    end
-  end
-
   # ----------------------------------------------------------------------------
   # Private Functions
   # ----------------------------------------------------------------------------
 
-  defp add_ib_options({query, run_options}, %{"what" => search_term, "how" => method} =
+  defp add_ib_options(query, %{"what" => search_term, "how" => method} =
     ib_options)
     when is_map(ib_options) and map_size(ib_options) > 0 and
          is_bitstring(search_term) and is_bitstring(method) do
@@ -137,22 +115,22 @@ defmodule IbGib.Data do
       "is" ->
         query =
           query |> where(ib: ^search_term)
-        {query, run_options}
+        query
       "like" ->
         wrapped_search_term = "%#{search_term}%"
         query =
           query |> where([x], ilike(x.ib, ^wrapped_search_term))
-        {query, run_options}
+        query
       _ ->
         Logger.info("Unknown method: #{method}. search_term: #{search_term}")
-        {query, run_options}
+        query
     end
   end
-  defp add_ib_options({query, run_options}, ib_options) do
-    {query, run_options}
+  defp add_ib_options(query, ib_options) do
+    query
   end
 
-  defp add_data_options({query, run_options}, %{"what" => search_term, "how" => method,
+  defp add_data_options(query, %{"what" => search_term, "how" => method,
     "where" => where} = data_options)
     when is_map(data_options) and map_size(data_options) > 0 and
          is_bitstring(search_term) and is_bitstring(method) and
@@ -165,42 +143,41 @@ defmodule IbGib.Data do
         query =
           query
           |> where([x], fragment("? \\? ?", x.data, ^search_term))
-        {query, run_options}
+        query
       {"key", "like"} ->
         Logger.warn "key like"
         wrapped_search_term = "%#{search_term}%"
-        run_options = Map.merge(run_options, %{"select_type" => "lateral_data", "lateral_search_term" => search_term})
         query =
           query |> where(fragment("(SELECT count(*) FROM jsonb_each_text(data) WHERE key ILIKE ?) > 0", ^wrapped_search_term))
-        {query, run_options}
+        query
       _ ->
         Logger.info("Unknown {method, where}: {#{method}, #{where}}. search_term: #{search_term}")
-        {query, run_options}
+        query
     end
   end
-  defp add_data_options({query, run_options}, data_options) do
-    {query, run_options}
+  defp add_data_options(query, data_options) do
+    query
   end
 
-  defp add_rel8ns_options({query, run_options}, rel8ns_options) when is_map(rel8ns_options) and map_size(rel8ns_options) > 0 do
-    {query, run_options}
+  defp add_rel8ns_options(query, rel8ns_options) when is_map(rel8ns_options) and map_size(rel8ns_options) > 0 do
+    query
   end
-  defp add_rel8ns_options({query, run_options}, rel8ns_options) do
-    {query, run_options}
-  end
-
-  defp add_time_options({query, run_options}, time_options) when is_map(time_options) and map_size(time_options) > 0 do
-    {query, run_options}
-  end
-  defp add_time_options({query, run_options}, time_options) do
-    {query, run_options}
+  defp add_rel8ns_options(query, rel8ns_options) do
+    query
   end
 
-  defp add_meta_options({query, run_options}, meta_options) when is_map(meta_options) and map_size(meta_options) > 0 do
-    {query, run_options}
+  defp add_time_options(query, time_options) when is_map(time_options) and map_size(time_options) > 0 do
+    query
   end
-  defp add_meta_options({query, run_options}, meta_options) do
-    {query, run_options}
+  defp add_time_options(query, time_options) do
+    query
+  end
+
+  defp add_meta_options(query, meta_options) when is_map(meta_options) and map_size(meta_options) > 0 do
+    query
+  end
+  defp add_meta_options(query, meta_options) do
+    query
   end
 
   @doc """
