@@ -21,6 +21,11 @@ defmodule IbGib.QueryOptionsFactory do
     quote do: unquote(method) in @rel8ns_search_methods
   end
 
+  @with_or_without ["with", "without"]
+  defmacro is_valid_with_or_without(with_or_without) do
+    quote do: unquote(with_or_without) in @with_or_without
+  end
+
   @key_and_or_value ["key", "value", "keyvalue"] #, "regex"] not implemented yet
   defmacro is_valid_key_and_or_value(arg) do
     quote do: unquote(arg) in @key_and_or_value
@@ -85,13 +90,14 @@ defmodule IbGib.QueryOptionsFactory do
   `search_term` should be either a valid ib or valid ib_gib:
   e.g. "some ib here", or "some ib here^SOMEHASH01982347fkj"
   """
-  def where_rel8ns_with(acc_options, rel8n_name, method, search_term)
+  def where_rel8ns(acc_options, rel8n_name, with_or_without, method, search_term)
     when is_map(acc_options) and is_bitstring(rel8n_name) and
+         is_valid_with_or_without(with_or_without) and
          is_valid_rel8ns_method(method) and is_bitstring(search_term) do
     options = %{
       "rel8ns" => %{
         "where" => rel8n_name,
-        "extra" => "with",
+        "extra" => with_or_without,
         "how" => method,
         "what" => search_term,
       }

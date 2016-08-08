@@ -179,13 +179,21 @@ defmodule IbGib.Data do
 
   defp add_rel8ns_options(query,  rel8ns_options)
   defp add_rel8ns_options(query, %{"what" => search_term, "how" => method,
-    "where" => where, "extra" => with_or_without} = rel8ns_options) when is_map(rel8ns_options) and map_size(rel8ns_options) > 0 do
+    "where" => where, "extra" => with_or_without} = rel8ns_options)
+    when is_map(rel8ns_options) and map_size(rel8ns_options) > 0 and
+         is_bitstring(search_term) and is_bitstring(method) and
+         is_bitstring(where) and is_bitstring(with_or_without)do
       case {with_or_without, method} do
         {"with", "ib_gib"} ->
           Logger.warn "with ib_gib. where: #{where}. search_term: #{search_term}"
           query
           |> where(fragment("? IN (SELECT jsonb_array_elements_text(rel8ns -> ?))", ^search_term, ^where))
+        {"without", "ib_gib"} ->
+          Logger.warn "with ib_gib. where: #{where}. search_term: #{search_term}"
+          query
+          |> where(fragment("? NOT IN (SELECT jsonb_array_elements_text(rel8ns -> ?))", ^search_term, ^where))
         _ ->
+          Logger.warn "unknown {with_or_without, method}: {#{with_or_without}, #{method}}"
           query
       end
       # if (with_or_without == "with") do
