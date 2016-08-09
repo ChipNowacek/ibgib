@@ -1,4 +1,4 @@
-<div class="jumbotron">
+<div class="jumbotron ib-green-background">
   <h2><%= gettext "Welcome to %{name} 8~/", name: "ibGib" %></h2>
   <p class="lead">ib. Gib. <a href="<%= ib_gib_path(@conn, :index) %>">ibGib</a>.</p>
 </div>

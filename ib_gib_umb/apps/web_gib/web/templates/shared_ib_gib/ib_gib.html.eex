@@ -7,7 +7,7 @@
   <a href="<%= ib_gib_path(@conn, :show, @ib_gib) %>">
     <div class="ib-tooltip-big">
       <p><%= @ib %></p>
-      <span class="ib-tooltiptext-big"><%= @ib_gib %></span>
+      <span class="ib-tooltiptext-big"><%= @gib %></span>
     </div>
   </a>
 

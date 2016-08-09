@@ -1,0 +1,21 @@
+<ol class="breadcrumb">
+
+  <%= if @ancestors !== nil do %>
+    <%= for ancestor_ib_gib <- @ancestors do %>
+      <% ancestor_ib = ancestor_ib_gib |> String.split("^") |> Enum.at(0) %>
+      <% ancestor_gib = ancestor_ib_gib |> String.split("^") |> Enum.at(1) %>
+
+      <li class="breadcrumb-item">
+        <a href="<%= ib_gib_path(@conn, :show, ancestor_ib_gib) %>">
+          <div class="ib-tooltip-big">
+            <p><%= ancestor_ib %></p>
+            <span class="ib-tooltiptext-big"><%= ancestor_gib %></span>
+          </div>
+        </a>
+      </li>
+
+    <% end %>
+  <% end %>
+  <li class="breadcrumb-item active"><%= @ib %></li>
+  <!-- <li class="breadcrumb-item active">Library</li> -->
+</ol>

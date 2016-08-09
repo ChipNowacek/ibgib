@@ -15,4 +15,8 @@
   <div>
     <%= render WebGib.SharedIbGibView, "relations.html", [conn: @conn, ib: @ib, gib: @gib, ib_gib: @ib_gib, thing_relations: @thing_relations] %>
   </div>
+  <div>
+    <%= render WebGib.SharedIbGibView, "ancestors.html", [conn: @conn, ib: @ib, gib: @gib, ib_gib: @ib_gib, ancestors: @ancestors, show_fork: false] %>
+  </div>
+  
 </div>

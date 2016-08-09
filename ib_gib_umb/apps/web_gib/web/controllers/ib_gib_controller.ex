@@ -45,6 +45,7 @@ defmodule WebGib.IbGibController do
          {:ok, thing_info} <- thing |> IbGib.Expression.get_info do
         thing_data = thing_info[:data]
         thing_relations = thing_info[:rel8ns]
+        Logger.warn "thing_relations: #{inspect thing_relations}"
         conn =
           conn
           |> assign(:ib, ib)
@@ -52,6 +53,7 @@ defmodule WebGib.IbGibController do
           |> assign(:ib_gib, ib_gib)
           |> assign(:thing_data, thing_data)
           |> assign(:thing_relations, thing_relations)
+          |> assign(:ancestors, thing_relations["ancestor"])
         {:ok, conn}
     end
 
