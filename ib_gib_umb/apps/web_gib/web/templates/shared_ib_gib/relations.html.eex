@@ -10,12 +10,13 @@
       <%= if (not Enum.member?(special_rel8ns, rel8n)) do %>
 
         <div class="ib-info-border ib-hoverable">
-          <h4><%= rel8n %>:</h4>
           <div class="ib-hover-btn">
-             <button type="button" class="close">
+             <button type="button" class="close ib-green">
                 <span class="glyphicon glyphicon-cog ib-green"></span>
              </button>
           </div>
+          <h4><%= rel8n %>:</h4>
+
           <%= for {rel8n_ib_gib, rel8n_ib_gib_idx} <- Enum.with_index(rel8n_ib_gib_list) do %>
             <%= rel8n_ib_gib_idx %>
             <a href="<%= ib_gib_path(@conn, :show, rel8n_ib_gib) %>">
@@ -23,18 +24,13 @@
               <%= render WebGib.SharedIbGibView, "ib_gib.html", [conn: @conn, ib: rel8n_ib, gib: rel8n_gib, ib_gib: rel8n_ib_gib, show_fork: false] %>
             </a>
           <% end %>
+
         </div>
 
       <% end %>
 
 
-
-
-
     <% end %>
-
-
-
 
 
   <% else %>

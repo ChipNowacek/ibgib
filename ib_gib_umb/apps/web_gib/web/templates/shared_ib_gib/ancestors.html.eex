@@ -16,6 +16,12 @@
 
     <% end %>
   <% end %>
-  <li class="breadcrumb-item active"><%= @ib %></li>
+
+    <li class="breadcrumb-item active">
+      <div class="ib-tooltip-big">
+        <%= @ib %>
+        <span class="ib-tooltiptext-big"><%= @gib %></span>
+      </div>
+    </li>
   <!-- <li class="breadcrumb-item active">Library</li> -->
 </ol>
