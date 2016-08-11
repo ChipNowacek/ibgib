@@ -24,14 +24,10 @@ defmodule WebGib.Constants do
 
   def mut8 do
     quote do
-      def mut8_label do
-        # ⎆
-        <<226, 142, 134>>
-      end
-
-      def mut8_tooltip do
-        "Mut8 it huzzah!"
-      end
+      def mut8_label, do: <<226, 142, 134>> # ⎆
+      def mut8_tooltip, do: "Mut8 it huzzah!"
+      def mut8_remove_data_label, do: <<226, 157, 140>> # ❌
+      def mut8_remove_data_tooltip, do: "Remove it wha?"
     end
   end
 

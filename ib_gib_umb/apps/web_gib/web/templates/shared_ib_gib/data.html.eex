@@ -5,14 +5,29 @@
 
       <!-- <h4>Data:</h4> -->
       <%= for {key, value} <- @thing_data do %>
-        <div class="row ib-info-border">
-          <div class="ib-data-key col-sm-4">
-            <%= key %>
+        <!-- <div class="ib-info-border ib-hoverable">
+ -->
+
+          <div class="row ib-info-border ib-hoverable">
+            <div class="ib-hover-btn close">
+              <%= form_for @conn, ib_gib_path(@conn, :mut8), [as: :mut8n], fn f -> %>
+                <%= hidden_input f, :key, value: key %>
+                <%= hidden_input f, :action, value: "remove" %>
+                <%= hidden_input f, :src_ib_gib, value: @ib_gib %>
+                <%= submit mut8_remove_data_label %>
+                <div class="ib-tooltip">
+                  <span class="ib-tooltiptext"><%= mut8_remove_data_tooltip %></span>
+                </div>
+              <% end %>
+            </div>
+            <div class="ib-data-key col-sm-2">
+              <%= key %>
+            </div>
+            <div class="ib-data-value col-sm-2">
+              <%= value %>
+            </div>
           </div>
-          <div class="ib-data-value col-sm-4">
-            <%= value %>
-          </div>
-        </div>
+        <!-- </div> -->
       <% end %>
 
     </div>

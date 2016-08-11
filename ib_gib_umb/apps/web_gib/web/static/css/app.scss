@@ -27,6 +27,10 @@ $ibgib_green: #76963e;
   padding: 5px;
 }
 
+form {
+  margin: 0px !important;
+}
+
 /* Remove the bottom border on the jumbotron for visual effect */
 .jumbotron {
   border-bottom: 0;
@@ -92,6 +96,7 @@ $ibgib_green: #76963e;
   position: absolute;
   right: 15px;
   display: none;
+  z-index: 10;
 }
 .ib-hoverable:hover .ib-hover-btn {
   display: block;

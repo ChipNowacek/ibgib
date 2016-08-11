@@ -5,6 +5,7 @@ defmodule WebGib.IbGibController do
   use IbGib.Constants, :ib_gib
   use WebGib.Constants, :error_msgs
   import IbGib.Helper
+  alias IbGib.TransformFactory.Mut8Factory
 
   @delim "^"
   @root_ib_gib "ib#{@delim}gib"
@@ -88,12 +89,27 @@ defmodule WebGib.IbGibController do
 
     Logger.debug msg
 
-    do_mut8(conn, src_ib_gib, key, value)
+    do_mut8(conn, src_ib_gib, {:add_update_key, key, value})
+  end
+  def mut8(conn, %{"mut8n" => %{"key" => key, "action" => action, "src_ib_gib" => src_ib_gib} = mut8n} = params) do
+    Logger.debug "conn: #{inspect conn}"
+    Logger.debug "conn.params: #{inspect conn.params}"
+    Logger.debug "params: #{inspect params}"
+    # data_key = conn.params["mut8n"]["key"]
+    # data_value = conn.params["mut8n"]["value"]
+    # data_key = params["mut8n"]["key"]
+    # data_value = params["mut8n"]["value"]
+    # msg = "key: #{data_key}.\nvalue: #{data_value}"
+    msg = "key: #{key}\naction: #{action}"
+
+    Logger.debug msg
+
+    do_mut8(conn, src_ib_gib, {:remove_key, key})
   end
 
-  defp do_mut8(conn, src_ib_gib, key, value) do
+  defp do_mut8(conn, src_ib_gib, {:add_update_key, key, value}) do
     Logger.debug "."
-    case mut8_impl(src_ib_gib, key, value) do
+    case mut8_impl(src_ib_gib, {:add_update_key, key, value}) do
       {:ok, mut8d_thing} ->
         Logger.info "mut8d_thing: #{inspect mut8d_thing}"
 
@@ -106,7 +122,29 @@ defmodule WebGib.IbGibController do
         |> redirect(to: "/ibgib/#{ib_gib}")
       other ->
         # put flash error
-        error_msg = dgettext "error", "Fork failed."
+        error_msg = dgettext "error", "Mut8 failed."
+        Logger.error "#{error_msg}. (#{inspect other})"
+        conn
+        |> put_flash(:error, error_msg)
+        |> redirect(to: "/ibgib/#{src_ib_gib}")
+    end
+  end
+  defp do_mut8(conn, src_ib_gib, {:remove_key, key}) do
+    Logger.debug "."
+    case mut8_impl(src_ib_gib, {:remove_key, key}) do
+      {:ok, mut8d_thing} ->
+        Logger.info "mut8d_thing: #{inspect mut8d_thing}"
+
+        mut8d_thing_info = mut8d_thing |> IbGib.Expression.get_info!
+        ib = mut8d_thing_info[:ib]
+        gib = mut8d_thing_info[:gib]
+        ib_gib = get_ib_gib!(ib, gib)
+
+        conn
+        |> redirect(to: "/ibgib/#{ib_gib}")
+      other ->
+        # put flash error
+        error_msg = dgettext "error", "Mut8 failed."
         Logger.error "#{error_msg}. (#{inspect other})"
         conn
         |> put_flash(:error, error_msg)
@@ -114,15 +152,24 @@ defmodule WebGib.IbGibController do
     end
   end
 
-  defp mut8_impl(src_ib_gib, key, value)
+  defp mut8_impl(src_ib_gib, {:add_update_key, key, value})
       when is_bitstring(src_ib_gib) and
            is_bitstring(key) and is_bitstring(value) and
            src_ib_gib !== "" and key !== "" do
       Logger.debug "src_ib_gib: #{src_ib_gib}, key: #{key}, value: #{value}"
 
       {:ok, src} = IbGib.Expression.Supervisor.start_expression(src_ib_gib)
-      src |> IbGib.Expression.mut8(%{key => value})
-    end
+      src |> IbGib.Expression.mut8(Mut8Factory.add_or_update_key(key, value))
+  end
+  defp mut8_impl(src_ib_gib, {:remove_key, key})
+      when is_bitstring(src_ib_gib) and
+           is_bitstring(key) and
+           src_ib_gib !== "" and key !== "" do
+      Logger.debug "src_ib_gib: #{src_ib_gib}, key: #{key}"
+
+      {:ok, src} = IbGib.Expression.Supervisor.start_expression(src_ib_gib)
+      src |> IbGib.Expression.mut8(Mut8Factory.remove_key(key))
+  end
   # ----------------------------------------------------------------------------
   # Fork
   # ----------------------------------------------------------------------------
