@@ -24,6 +24,17 @@ defmodule IbGib.Constants do
 
       def default_history, do: ["ib#{delim}gib"]
 
+      @doc """
+      This key prefix is a helper that indicates some meta action for the
+      corresponding key/value entry in a map.
+
+      ATOW: 2016/08/10
+      Use case for this is that I want to be able to delete/edit an existing
+      key via a mut8. So if an ib_gib's data has `"a" => "a value"` and I want
+      to delete that key/value pair.
+      """
+      def map_key_meta_prefix, do: "meta__"
+      def rename_operator, do: ">rename>"
     end
   end
 

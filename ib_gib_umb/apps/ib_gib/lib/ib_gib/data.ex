@@ -23,6 +23,7 @@ defmodule IbGib.Data do
   log the fact that it tried to save data that already existed. If fails,
   returns `{:error, reason}`
   """
+  @spec save(map) :: {:ok, :ok} | {:error, any()}
   def save(info) when is_map(info) do
     # I can't figure out how to do a multi-line with clause!
     with {:ok, _model} <- insert_into_repo(info),

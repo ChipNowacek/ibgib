@@ -5,6 +5,7 @@ defmodule IbGib.Expression do
 
   use IbGib.Constants, :ib_gib
   alias IbGib.{TransformFactory, Helper}
+  alias IbGib.TransformFactory.Mut8Factory
 
   @moduledoc """
 
@@ -177,8 +178,44 @@ defmodule IbGib.Expression do
     a_data = Map.get(a, :data, %{})
     b_data = Map.get(b, :data, %{})
     Logger.debug "a_data: #{inspect a_data}\nb_data: #{inspect b_data}"
-    # Adds/Overrides anything in `a_data` with `b_data`
-    merged_data = Map.merge(a_data, b_data["new_data"])
+
+    b_new_data_metadata =
+      b_data["new_data"]
+      |>Enum.filter(fn(entry) ->
+        Logger.warn "creating metadata. entry: #{inspect entry}"
+          Logger.warn "entry: #{inspect entry}"
+          {entry_key, _} = entry
+          entry_key |> String.starts_with?(map_key_meta_prefix)
+        end)
+      |>Enum.reduce(%{}, fn(entry, acc) ->
+          {key, value} = entry
+          acc |> Map.put(key, value)
+        end)
+    Logger.debug "b_new_data_metadata: #{inspect b_new_data_metadata}"
+
+    a_data = a_data |> apply_mut8_metadata(b_new_data_metadata)
+    Logger.debug "a_data: #{inspect a_data}"
+
+    b_new_data =
+      b_data["new_data"]
+      |>Enum.filter(fn(entry) ->
+          Logger.warn "creating data without metadata. entry: #{inspect entry}"
+          {entry_key, _} = entry
+          !String.starts_with?(entry_key, map_key_meta_prefix)
+        end)
+      |>Enum.reduce(%{}, fn(entry, acc) ->
+          {key, value} = entry
+          acc |> Map.put(key, value)
+        end)
+    Logger.debug "b_new_data: #{inspect b_new_data}"
+    Logger.debug "a_data: #{inspect a_data}"
+
+    merged_data =
+      if (map_size(b_new_data) > 0) do
+        Map.merge(a_data, b_new_data)
+      else
+        a_data
+      end
 
     Logger.debug "merged data: #{inspect merged_data}"
     a = Map.put(a, :data, merged_data)
@@ -191,6 +228,45 @@ defmodule IbGib.Expression do
     Logger.debug "a[:gib] set to gib: #{gib}"
 
     on_new_expression_completed(ib, gib, a)
+  end
+
+  defp apply_mut8_metadata(a_data, b_new_data_metadata)
+    when map_size(b_new_data_metadata) > 0 do
+    Logger.debug "a_data start: #{inspect a_data}"
+
+    remove_key = Mut8Factory.get_meta_key(:mut8_remove_key)
+    rename_key = Mut8Factory.get_meta_key(:mut8_rename_key)
+    Logger.warn "remove_key: #{remove_key}"
+    Logger.warn "rename_key: #{rename_key}"
+
+    b_new_data_metadata
+    |>Enum.reduce(a_data, fn(entry, acc) ->
+        {key, value} = entry
+        Logger.debug "key: #{key}"
+        cond do
+          key === remove_key ->
+            Logger.debug "remove_key. {key, value}: {#{key}, #{value}}"
+            acc = Map.drop(acc, [value])
+
+          key === rename_key ->
+            Logger.debug "rename_key. {key, value}: {#{key}, #{value}}"
+            [old_key_name, new_key_name] = String.split(value, rename_operator)
+            Logger.debug "old_key_name: #{old_key_name}, new: #{new_key_name}"
+            data_value = a_data |> Map.get(old_key_name)
+            acc =
+              acc
+              |> Map.drop([old_key_name])
+              |> Map.put(new_key_name, data_value)
+
+          true ->
+            Logger.error "Unknown mut8_metadata key: #{key}"
+            a_data
+        end
+      end)
+  end
+  defp apply_mut8_metadata(a_data, b_new_data_metadata)
+    when map_size(b_new_data_metadata) === 0 do
+    a_data
   end
 
   defp apply_rel8(a, b) do
@@ -377,7 +453,7 @@ defmodule IbGib.Expression do
   @doc """
   Bang version of `mut8/2`.
   """
-  @spec mut8(pid, map) :: pid | any
+  @spec mut8!(pid, map) :: pid | any
   def mut8!(expr_pid, new_data)
     when is_pid(expr_pid) and is_map(new_data) do
     case mut8(expr_pid, new_data) do
@@ -399,7 +475,7 @@ defmodule IbGib.Expression do
   @doc """
   Bang version of `rel8/4`.
   """
-  @spec rel8(pid, pid, list(String.t), list(String.t)) :: {pid, pid} | any
+  @spec rel8!(pid, pid, list(String.t), list(String.t)) :: {pid, pid} | any
   def rel8!(expr_pid, other_pid, src_rel8ns \\ @default_rel8ns, dest_rel8ns \\ @default_rel8ns)
     when is_pid(expr_pid) and is_pid(other_pid) and expr_pid !== other_pid and
          is_list(src_rel8ns) and length(src_rel8ns) >= 1 and
