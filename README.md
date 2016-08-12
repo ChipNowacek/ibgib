@@ -11,12 +11,13 @@ Don't Panic.
 _(I haven't run these instructions on a fresh install yet, so please let me
 know if you have any problems.)_
 
-Once you fork (if contributing), clone and download the source, you will need to do a few things:
-1. Download and compile the elixir deps.
+Once you fork (if contributing), clone and download the source, you will need to do a few things:  
+
+1. Download and compile the elixir deps.  
    * In the `ib_gib_umb` directory, run:
      * `mix deps.gets`
-     * `mix deps.compile`
-2. Setup and run a PostgreSQL docker container for the repo(s).  
+     * `mix deps.compile`  
+2. Setup and run a PostgreSQL docker container for the repo(s). 
    * [Docker must be installed.](https://docs.docker.com/engine/installation/)
    * Download the official `postgres` image.
      * docker run --name postgres-ctr -e [POSTGRES_USER=postgres,POSTGRES_PASSWORD=postgres,POSTGRES_DB=ib_gib_db_dev] -d postgres
