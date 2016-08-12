@@ -8,15 +8,14 @@ Don't Panic.
 
 ### up and running
 
-_(I haven't run these instructions on a fresh install yet, so please let me
-know if you have any problems.)_
-
 Once you fork (if contributing), clone and download the source, you will need to do a few things:  
 
-1. Download and compile the elixir deps.  
+1. Download and compile the dependencies.  
    * In the `ib_gib_umb` directory, run:
      * `mix deps.gets`
      * `mix deps.compile`  
+   * In the `ib_gib_umb/apps/web_gib` directory, run: 
+     * `npm install`
 2. Setup and run a PostgreSQL docker container for the repo(s). 
    * [Docker must be installed.](https://docs.docker.com/engine/installation/)
    * Download the official `postgres` image.
@@ -25,10 +24,12 @@ Once you fork (if contributing), clone and download the source, you will need to
      web server or tests.
 3. Initialize Ecto for `ib_gib`.
    * Run the following commands in the `ib_gib_umb/apps/ib_gib/` folder:
-     * `ecto mix ecto.create`
-     * `ecto mix ecto.migrate`
-   * It's possible this is needed for `web_gib` also, but I'm not really using that
-     Ecto repo at the moment.
+     * `mix ecto.create`
+     * `mix ecto.migrate`
+   * Run the same commands in the `ib_gib_umb/apps/web_gib/` folder:
+     * `mix ecto.create`
+     * `mix ecto.migrate`
+  
 4. If you want to check out the POC web app, `web_gib`, you will need to run
    the phoenix web server, which once running, you should be able to point your browser to http://localhost/4000.
    * In the `web_gib` directory, run `mix phoenix.server` if you just want to
