@@ -42,7 +42,7 @@ defmodule IbGib.Expression.ExtraMut8Test do
     assert map_size(b_info[:data]) === 0
   end
 
-  # @tag :capture_log
+  @tag :capture_log
   test "mut8, rename key" do
     {:ok, root} = IbGib.Expression.Supervisor.start_expression()
 
