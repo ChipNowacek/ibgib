@@ -1,4 +1,4 @@
-defmodule IbGib.Expression.BasicsTest do
+defmodule IbGib.Expression.ExtraMut8Test do
   use ExUnit.Case
   alias IbGib.Helper
   alias IbGib.TransformFactory.Mut8Factory
