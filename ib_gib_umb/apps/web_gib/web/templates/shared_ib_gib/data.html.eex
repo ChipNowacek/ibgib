@@ -24,7 +24,11 @@
               <%= key %>
             </div>
             <div class="ib-data-value col-sm-2">
-              <%= value %>
+              <%= if is_bitstring(value) do %>
+                <%= value %>
+              <% else %>
+                <%= inspect value %>
+              <% end %>
             </div>
           </div>
         <!-- </div> -->
