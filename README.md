@@ -8,26 +8,28 @@ Don't Panic.
 
 ### up and running
 
-_(I haven't run these instructions on a fresh install yet, so please let me
-know if you have any problems.)_
+Once you fork (if contributing), clone and download the source, you will need to do a few things:  
 
-Once you fork (if contributing), clone and download the source, you will need to do a few things:
-1. Download and compile the elixir deps.
+1. Download and compile the dependencies.  
    * In the `ib_gib_umb` directory, run:
      * `mix deps.gets`
-     * `mix deps.compile`
-2. Setup and run a PostgreSQL docker container for the repo(s).  
+     * `mix deps.compile`  
+   * In the `ib_gib_umb/apps/web_gib` directory, run: 
+     * `npm install`
+2. Setup and run a PostgreSQL docker container for the repo(s). 
    * [Docker must be installed.](https://docs.docker.com/engine/installation/)
    * Download the official `postgres` image.
-     * docker run --name postgres-ctr -e [POSTGRES_USER=postgres,POSTGRES_PASSWORD=postgres,POSTGRES_DB=ib_gib_db_dev] -d postgres
+     * `docker run --name postgres-ctr -e [POSTGRES_USER=postgres,POSTGRES_PASSWORD=postgres,POSTGRES_DB=ib_gib_db_dev] -d postgres`
    * You must be sure that this container is running whenever using the phoenix
      web server or tests.
 3. Initialize Ecto for `ib_gib`.
    * Run the following commands in the `ib_gib_umb/apps/ib_gib/` folder:
-     * `ecto mix ecto.create`
-     * `ecto mix ecto.migrate`
-   * It's possible this is needed for `web_gib` also, but I'm really using that
-     Ecto repo at the moment.
+     * `mix ecto.create`
+     * `mix ecto.migrate`
+   * Run the same commands in the `ib_gib_umb/apps/web_gib/` folder:
+     * `mix ecto.create`
+     * `mix ecto.migrate`
+  
 4. If you want to check out the POC web app, `web_gib`, you will need to run
    the phoenix web server, which once running, you should be able to point your browser to http://localhost/4000.
    * In the `web_gib` directory, run `mix phoenix.server` if you just want to
@@ -61,7 +63,7 @@ Here is my recommended order of perusing the test files, as well as a brief
 description of each:
 1. `data/data_test.exs`
    * Just to give you an idea of how simple the one and only data construct
-     that exists.
+     that exists is.
 2. `expression/basics_test.exs`  
    * This builds up from first creating the root `ib_gib` process, then moving
      on to exercising the fundamental transforms: `fork`, `mut8`, and `rel8`.
