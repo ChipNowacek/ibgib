@@ -4,43 +4,99 @@ Infinite logic takes some getting used to, and this won't make sense and will se
 
 Don't Panic.
 
+## contributing, or just checking ib out
+
+### up and running
+
+_(I haven't run these instructions on a fresh install yet, so please let me
+know if you have any problems.)_
+
+Once you fork (if contributing), clone and download the source, you will need to do a few things:
+1. Download and compile the elixir deps.
+   * In the `ib_gib_umb` directory, run:
+     * `mix deps.gets`
+     * `mix deps.compile`
+2. Setup and run a PostgreSQL docker container for the repo(s).  
+   * [Docker must be installed.](https://docs.docker.com/engine/installation/)
+   * Download the official `postgres` image.
+     * docker run --name postgres-ctr -e [POSTGRES_USER=postgres,POSTGRES_PASSWORD=postgres,POSTGRES_DB=ib_gib_db_dev] -d postgres
+   * You must be sure that this container is running whenever using the phoenix
+     web server or tests.
+3. Initialize Ecto for `ib_gib`.
+   * Run the following commands in the `ib_gib_umb/apps/ib_gib/` folder:
+     * `ecto mix ecto.create`
+     * `ecto mix ecto.migrate`
+   * It's possible this is needed for `web_gib` also, but I'm really using that
+     Ecto repo at the moment.
+4. If you want to check out the POC web app, `web_gib`, you will need to run
+   the phoenix web server, which once running, you should be able to point your browser to http://localhost/4000.
+   * In the `web_gib` directory, run `mix phoenix.server` if you just want to
+     run the server, or `iex -S mix phoenix.server` if you want to use observer
+     to check out the processes while running the server with
+     `iex> :observer.start`.
+   * The address can be changed in `ib_gib_umb/apps/web_gib/config/config.exs`
+   * The port can be changed in `ib_gib_umb/apps/web_gib/config/dev.exs`
+
+### troubleshooting
+
+* If you are getting a bunch of `Postgrex.Protocol` errors when starting the
+  phoenix server, then perhaps you haven't started the PostgreSQL docker
+  container.
+
+### project structure
+
+#### `ib_gib_umb`
+Umbrella application for all Elixir-related ibGib apps.
+
+#### `ib_gib`
+Heart of the ibGib engine. Most of the meat right now is in
+`lib/ib_gib/expression.ex`.
+
+You can see how this is used in the tests in the `test/expression` directory.
+Keep in mind that these tests are starting the db from scratch. The "end" goal
+(for this phase) is to bootstrap the "primitive types" such as numbers, strings,
+arrays, etc., once the initial framework is up and running. More on this later.
+
+Here is my recommended order of perusing the test files, as well as a brief
+description of each:
+1. `data/data_test.exs`
+   * Just to give you an idea of how simple the one and only data construct
+     that exists.
+2. `expression/basics_test.exs`  
+   * This builds up from first creating the root `ib_gib` process, then moving
+     on to exercising the fundamental transforms: `fork`, `mut8`, and `rel8`.
+3. `expression/hello_world_test.exs`  
+   * These tests are where we start to build more complex constructs (`ib_gib`,
+     or often just `ib`), i.e. exercising "Hello World" possibilities.
+4. `expression/expression_query_test.exs`  
+   * Tests for creating and executing queries against `ib_gib`.
+   * Queries are actually pretty neat, since each query is itself an `ib_gib`
+     that creates a query result `ib_gib`. More on this later.
+5. `expression/extra_mut8_test.exs`
+   * Some additional `mut8` transforms that remove and rename keys in the
+     `ib_gib`'s internal `:data` map.
+
+The remaining tests are more structural to the Elixir app than anything
+ibGib-specific.
+
+#### `web_gib`
+Phoenix application. Right now, this includes both "client" and "server".
+This is very much a simple POC app to give an interface to the `ib_gib` app.
+
+#### `random_gib`
+Helper application that I created first when learning the basics of Elixir.
+It provides some simple random functions.
+
+#### `ng2-client`
+Ignore this. I'm still trying to figure out the best way forward for the
+front end.
+
 ## before diving in...why give a s**t about this library?
 
 I mean...I don't even have the guts to spell out the word "shit"?! Oh wait...
 yes, I do but not arbitrarily. And my answer to anyone reading this?
 
-I don't friggin know. Ridiculously quick run down of me and ib:
-
-* Me
-  * Back in the day, used to be "smart", 800 math sat, 36 math act, 5th place
-    state math tournament, 5 Physics C, 4 Physics B, 5 Calc AB, 0 homework,
-  * Number 1 in the world on silly Xbox Live Brain Challenge game.
-  * Started college as a sophomore, ended college as a sophomore.
-  * Never could stomach philosophy, but I ate up books like Chaos; Virus of the Mind; Goedel, Escher, Bach; Relativity Visualized; Brian Green books; Lee Smolin books; etc.
-  * So yes, layman, but doesn't matter. I can follow the math but disagree with
-    fundamental approaches in all of these and other types of axiomatic systems.
-  * Slowly and painfully developed ibGib's living logic over almost 20 years.
-  * So no credibility...just me and my logic.
-* You
-  * Would require an actual obsession to understand.
-  * Would have to concede some of the assumptions of axiomatic systems.
-  * Would require an open mind.
-* ibGib
-  * The only accurate statement that describes ibGib is ibGib.
-  * Originally born from an [acronym](https://github.com/ibgib/ibgib/wiki/acronym) 15-ish years ago: i believe God is being.
-  * Is built around the idea that eschews "theorem proving" as it is currently
-    conceived.
-  * Embraces thinking of logic in terms of itself (ibGib) as "the" fundamental
-    "unit" of existence, with itself as its only "axiom", which is a more
-    precise statement than would be immediately apparent.
-
-I figure this probably sounds like a bunch of bs, which is why I don't usually
-talk or write about it. But I'm cooped up in my house because I freak out now
-when I go out, and I'm growing weary and so am looking for others looking for
-a fundamentally new (and old) approach to logic. So, you can read more on my
-[wiki](https://github.com/ibgib/ibgib/wiki) that I'm starting. Or if you want
-to take a more active approach, either through discussion or actual code
-contribution, hit me up by ([creating a new issue](https://github.com/ibgib/ibgib/issues)).
+I don't friggin know.
 
 And now, on to actual code...
 
