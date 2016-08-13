@@ -1,13 +1,21 @@
 defmodule IbGib.Expression do
-  use GenServer
-  require Logger
-  import Enum
-
-  use IbGib.Constants, :ib_gib
-  alias IbGib.{TransformFactory, Helper}
-  alias IbGib.TransformFactory.Mut8Factory
-
   @moduledoc """
+  This is the primary module right now for the IbGib engine. Basically an
+  `IbGib.Expression` encapsulates functionality for "expressing" ib_gib.
+
+  For starters, you can think of ib_gib as "things" or "objects". The term also
+  will refer to the "name" of a "thing" or "object", represented by an "id"
+  (the `ib`) and the "hash" (the `gib`).
+
+  "Expression" is the process of how we get "new" and "existing" ib_gib. If we
+  express an ib_gib that already exists in our repo, for instance, then it
+  will create an `IbGib.Expression` process (supervised by the
+  `IbGib.Expression.Supervisor`) and hydrate its state from the repo. If we
+  are creating a "new" ib_gib or "mutating" an existing ib_gib, or are
+  executing some other action upon an existing ib_gib, then the expression
+  process will create the appropriate transform ib_gib (and processes) and then
+  generate the resultant ib_gib (and process(es)). While doing this, it
+  automatically saves each ib_gib's state in the repo.
 
   ## Init Functions
   In in the init stage, an expression either loads existing information from
@@ -22,7 +30,41 @@ defmodule IbGib.Expression do
   play, but initially it will be pretty much ignored (I think).
 
   So these apply functions actually perform the "work" of combining two ib_gib.
+
+  ## Basic Client API Functions: `fork`, `mut8`, and `rel8`
+  Each expression process is the state of an ib_gib. The client API functions
+  expose functions for the basic, hard-coded transforms that can be executed
+  using that ib_gib state. These include `fork`, `mut8`, `rel8`. There are also
+  a couple other functions ATOW (2016/08/13): `query` and `instance`.
+
+  The basic workflow is this (I'll use a fork as the example):
+
+  1. Create the fork transform based off of the source expression, save that
+     transform, and create a new running process with that transform's state.
+
+     So at this point, we have the source expression and a new fork transform
+     expression process, with each's state already persisted to the repo.
+
+  2. Bring the transform "into contact" with the source expression, which will
+     create a tertiary ib_gib process. During init, this new process will
+     generate its own state that is a combination of the source and the
+     transform, thus "applying" the transform.
+
+     So, basically, we've created a third ib_gib that is the result of combining
+     our transform and the source. So we will have in the end, the source
+     ib_gib process, a "fork" transform ib_gib process, and the resulting
+     "forked" ib_gib process. In the fork's instance, this new process will have
+     a new `ib`, new `gib`, the same (internal) `data`, and slightly different
+     `rel8ns`, including the source as an "ancestor" of the forked process.
   """
+
+  use GenServer
+  require Logger
+  import Enum
+
+  use IbGib.Constants, :ib_gib
+  alias IbGib.{TransformFactory, Helper}
+  alias IbGib.TransformFactory.Mut8Factory
 
   # ----------------------------------------------------------------------------
   # Constructors
@@ -102,9 +144,9 @@ defmodule IbGib.Expression do
 
   # ----------------------------------------------------------------------------
   # Apply Functions
-  # We are within an init of a new process, and we are apply given `b`
+  # We are within an init of a new process, and we are applying the given `b`
   # ib_gib info map (transform/query) to a given `a` "starting point" ib_gib
-  # info map. See moduledoc for more details.0
+  # info map. See moduledoc for more details.
   # ----------------------------------------------------------------------------
   defp apply_fork(a, b) do
     # We are applying a fork transform.
@@ -319,13 +361,6 @@ defmodule IbGib.Expression do
     result = IbGib.Data.query(query_options)
     Logger.warn "query result: #{inspect result}"
 
-    # debug
-    result_as_list =
-      result |> reduce([], fn(ib_gib_model, acc) ->
-        acc ++ [Helper.get_ib_gib!(ib_gib_model.ib, ib_gib_model.gib)]
-      end)
-    Logger.warn "query result_as_list: #{inspect result_as_list}"
-
     this_info = %{}
     this_ib = "queryresult"
     this_info = Map.put(this_info, :ib, this_ib)
@@ -351,35 +386,47 @@ defmodule IbGib.Expression do
   end
 
 
-  defp add_relation(a, relation_name, b) when is_map(a) and is_bitstring(relation_name) and is_bitstring(b) do
+  # `a` is the ib_gib info map with a key `:rel8ns` which is itself a map
+  # in the form of "relation_name" => [ib^gib1, ib^gib2, ...ib^gibn]. This
+  # adds to that map using the given `relation_name` and given `b`, which is
+  # an `ib_gib` identifier (not the info map) or an array of `ib_gib`.
+  #
+  # ## Examples (not doc tests though, because is private)
+  #     iex> a_info = %{ib: "some ib", gib: "some_gib", rel8ns: %{"ancestor" => ["ib^gib"]}}
+  #     ...> relation_name = "ancestor"
+  #     ...> b = "ib b^gib_b"
+  #     ...> add_relation(a_info, relation_name, b)
+  #     %{ib: "some ib", gib: "some_gib", rel8ns: %{"ancestor" => ["ib^gib", "ib b^gib_b"]}}
+  defp add_relation(a_info, relation_name, b)
+  defp add_relation(a_info, relation_name, b) when is_map(a_info) and is_bitstring(relation_name) and is_bitstring(b) do
     # Logger.debug "bitstring yo"
-    add_relation(a, relation_name, [b])
+    add_relation(a_info, relation_name, [b])
   end
-  defp add_relation(a, relation_name, b) when is_map(a) and is_bitstring(relation_name) and is_list(b) do
+  defp add_relation(a_info, relation_name, b) when is_map(a_info) and is_bitstring(relation_name) and is_list(b) do
     # Logger.debug "array list"
     b_is_list_of_ib_gib =
       b |> all?(fn(item) -> Helper.valid_ib_gib?(item) end)
 
     if (b_is_list_of_ib_gib) do
-      Logger.debug "Adding relation #{relation_name} to a. a[:rel8ns]: #{inspect a[:rel8ns]}"
-      a_relations = a[:rel8ns]
+      Logger.debug "Adding relation #{relation_name} to a_info. a_info[:rel8ns]: #{inspect a_info[:rel8ns]}"
+      a_relations = a_info[:rel8ns]
 
       relation = Map.get(a_relations, relation_name, [])
       new_relation = relation ++ b
 
       new_a_relations = Map.put(a_relations, relation_name, new_relation)
-      new_a = Map.put(a, :rel8ns, new_a_relations)
-      Logger.debug "Added relation #{relation_name} to a. a[:rel8ns]: #{inspect a[:rel8ns]}"
+      new_a = Map.put(a_info, :rel8ns, new_a_relations)
+      Logger.debug "Added relation #{relation_name} to a_info. a_info[:rel8ns]: #{inspect a_info[:rel8ns]}"
       new_a
     else
       Logger.warn "Tried to add relation list of non-valid ib_gib."
-      a
+      a_info
     end
   end
-  defp add_relation(a, relation_name, b) when is_map(a) and is_bitstring(relation_name) and is_map(b) do
+  defp add_relation(a_info, relation_name, b) when is_map(a_info) and is_bitstring(relation_name) and is_map(b) do
     # Logger.debug "mappy mappy"
     b_ib_gib = Helper.get_ib_gib!(b[:ib], b[:gib])
-    add_relation(a, relation_name, [b_ib_gib])
+    add_relation(a_info, relation_name, [b_ib_gib])
   end
 
   defp on_new_expression_completed(ib, gib, info) do
@@ -402,19 +449,19 @@ defmodule IbGib.Expression do
   end
 
   # ----------------------------------------------------------------------------
-  # Client API
+  # Client API - Meta
   # ----------------------------------------------------------------------------
 
   @doc """
-  "applys" two expression processes. This is usually going to be "apply
-  transform".
+  Brings two ib_gib into contact with each other to produce a third, probably
+  new, ib_gib.
   """
   def contact(this_pid, that_pid) when is_pid(this_pid) and is_pid(that_pid) do
     GenServer.call(this_pid, {:contact, that_pid})
   end
 
   # ----------------------------------------------------------------------------
-  # Core Transforms
+  # Client API - Core Transforms
   # ----------------------------------------------------------------------------
 
   @doc """
@@ -443,7 +490,10 @@ defmodule IbGib.Expression do
 
   @doc """
   Mut8s given `expr_pid` internal `data` map, merging given `new_data` into
-  it. Any keys in `new_data` will override any existing keys in `data`.
+  it. By default, any keys in `new_data` will override any existing keys in
+  `data`, but there are options for removing/renaming existing keys.
+
+  See `IbGib.TransformFactory.Mut8Factory` for more details.
   """
   @spec mut8(pid, map) :: {:ok, pid} | {:error, any}
   def mut8(expr_pid, new_data) when is_pid(expr_pid) and is_map(new_data) do
@@ -487,7 +537,40 @@ defmodule IbGib.Expression do
   end
 
   # ----------------------------------------------------------------------------
-  # Complex Factory Functions
+  # Client API - Query
+  # ----------------------------------------------------------------------------
+
+  @doc """
+  Ok, this creates an ib_gib that contains the query info passed in with the
+  various given options maps. (This is similar to creating a fork, mut8, or
+  rel8 transform.) It then "applies" this query, which then goes off and
+  actually populates the results of the query. These results are then stored
+  in another ib_gib.
+
+  ## Returns
+  Returns `{:ok, qry_results_expr_pid}` which is the reference to the newly
+  generated queryresults ib_gib (not the query "transform" ib_gib).
+  """
+  @spec query(pid, map) :: {:ok, pid} | {:error, any}
+  def query(expr_pid, query_options)
+    when is_pid(expr_pid) and is_map(query_options) do
+    GenServer.call(expr_pid, {:query, query_options})
+  end
+
+  @doc """
+  Bang version of `query/6`
+  """
+  @spec query!(pid, map) :: pid | any
+  def query!(expr_pid, query_options)
+    when is_pid(expr_pid) and is_map(query_options) do
+    case query(expr_pid, query_options) do
+      {:ok, qry_results_expr_pid} -> qry_results_expr_pid
+      {:error, reason} -> raise "#{inspect reason}"
+    end
+  end
+
+  # ----------------------------------------------------------------------------
+  # Client API - Compound Factory Functions
   # These functions perform multiple transforms on ib_gib.
   # Example: `instance` will perform a `fork`, and then `rel8` each of the two
   # to each other, one ATOW rel8n is `instance` and the other is `instance_of`.
@@ -516,37 +599,8 @@ defmodule IbGib.Expression do
       end
     end
 
-    @doc """
-    Ok, this creates an ib_gib that contains the query info passed in with the
-    various given options maps. (This is similar to creating a fork, mut8, or
-    rel8 transform.) It then "applies" this query, which then goes off and
-    actually populates the results of the query. These results are then stored
-    in another ib_gib.
-
-    ## Returns
-    Returns `{:ok, qry_results_expr_pid}` which is the reference to the newly
-    generated queryresults ib_gib (not the query "transform" ib_gib).
-    """
-    @spec query(pid, map) :: {:ok, pid} | {:error, any}
-    def query(expr_pid, query_options)
-      when is_pid(expr_pid) and is_map(query_options) do
-      GenServer.call(expr_pid, {:query, query_options})
-    end
-
-    @doc """
-    Bang version of `query/6`
-    """
-    @spec query!(pid, map) :: pid | any
-    def query!(expr_pid, query_options)
-      when is_pid(expr_pid) and is_map(query_options) do
-      case query(expr_pid, query_options) do
-        {:ok, qry_results_expr_pid} -> qry_results_expr_pid
-        {:error, reason} -> raise "#{inspect reason}"
-      end
-    end
-
   # ----------------------------------------------------------------------------
-  # Gib Versions _(return additional information)_
+  # Client API - Gib Versions _(return additional information)_
   # ----------------------------------------------------------------------------
 
   @doc """
