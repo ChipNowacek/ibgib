@@ -44,16 +44,17 @@
       <% end %>
 
     </div>
-  <% else %>
-    <h4>Data:</h4>
   <% end %>
-  <div>
+  <div class="ib-info-border ib-no-margin">
     <%= form_for @conn, ib_gib_path(@conn, :mut8), [as: :mut8n], fn f -> %>
       <%= text_input f, :key %>
       <%= text_input f, :value %>
       <%= hidden_input f, :src_ib_gib, value: @ib_gib %>
       <div class="ib-tooltip">
-        <%= submit mut8_label %>
+        <button class="ib-mut8-data-btn" type="submit">
+          <span class="ib-center-glyph glyphicon glyphicon-flash"></span>
+        </button>
+        <!-- <%= submit mut8_label %> -->
         <span class="ib-tooltiptext"><%= mut8_tooltip %></span>
       </div>
     <% end %>

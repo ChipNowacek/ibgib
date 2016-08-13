@@ -17,8 +17,11 @@
         <%= text_input f, :dest_ib %>
         <%= hidden_input f, :src_ib_gib, value: @ib_gib %>
         <div class="ib-tooltip">
-          <%= submit fork_label %>
-          <span class="ib-tooltiptext"><%= fork_tooltip %></span>
+          <button type="submit">
+            <span class="ib-center-glyph glyphicon glyphicon-flash ib-green"></span>
+            <span class="ib-tooltiptext"><%= fork_tooltip %></span>
+          </button>
+          <!-- <%= submit fork_label %> -->
         </div>
       <% end %>
     </div>
