@@ -6,12 +6,16 @@
 
   <a href="<%= ib_gib_path(@conn, :show, @ib_gib) %>">
     <div class="ib-tooltip-big">
-      <p><%= @ib %></p>
+      <%= if (@big) do %>
+        <h1 class="ib-green"><%= @ib %></h1>
+      <% else %>
+        <p class="ib-green"><%= @ib %></p>
+      <% end %>
       <span class="ib-tooltiptext-big"><%= @gib %></span>
     </div>
   </a>
 
-  <%= if (@show_fork) do %>
+  <%= if (@big) do %>
     <div>
       <%= form_for @conn, ib_gib_path(@conn, :fork), [as: :fork_form_data], fn f -> %>
         <%= text_input f, :dest_ib %>

@@ -21,7 +21,7 @@
             <%= rel8n_ib_gib_idx %>
             <a href="<%= ib_gib_path(@conn, :show, rel8n_ib_gib) %>">
               <% [rel8n_ib, rel8n_gib] = String.split(rel8n_ib_gib, "^") %>
-              <%= render WebGib.SharedIbGibView, "ib_gib.html", [conn: @conn, ib: rel8n_ib, gib: rel8n_gib, ib_gib: rel8n_ib_gib, show_fork: false] %>
+              <%= render WebGib.SharedIbGibView, "ib_gib.html", [conn: @conn, ib: rel8n_ib, gib: rel8n_gib, ib_gib: rel8n_ib_gib, big: false] %>
             </a>
           <% end %>
 
