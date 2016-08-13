@@ -1,7 +1,39 @@
 defmodule IbGib.Helper do
+  @moduledoc """
+  This module provides helper functions used throughout `ib_gib`, and other
+  consuming apps, e.g. `web_gib`.
+  """
+  
   use IbGib.Constants, :ib_gib
   require Logger
 
+
+  @doc """
+  Combines the two given strings `ib` and `gib` using the `delim/0` constant
+  in `IbGib.Constants.ib_gib` to form the `ib_gib` identifier.
+
+  The following examples have the delim hard-coded :X
+
+  ## Examples
+      iex> IbGib.Helper.get_ib_gib("ib", "gib")
+      {:ok, "ib^gib"}
+
+      iex> IbGib.Helper.get_ib_gib("some id", "some hash ABCDEFGHI123")
+      {:ok, "some id^some hash ABCDEFGHI123"}
+
+      # Disable logging for these error doctests.
+      iex> Logger.disable(self)
+      ...> {result, _} = IbGib.Helper.get_ib_gib(:not_a_bitstring, "bitstring here")
+      ...> Logger.enable(self)
+      ...> result
+      :error
+
+      iex> Logger.disable(self)
+      ...> {result, _} = IbGib.Helper.get_ib_gib("bitstring here", :not_a_bitstring)
+      ...> Logger.enable(self)
+      ...> result
+      :error
+  """
   @spec get_ib_gib(String.t, String.t) :: {:ok, String.t} | {:error, String.t}
   def get_ib_gib(ib, gib)
     when is_bitstring(ib) and bit_size(ib) > 0 and
@@ -14,6 +46,16 @@ defmodule IbGib.Helper do
     {:error, error_msg}
   end
 
+  @doc """
+  Bang version of `get_ib_gib/2`.
+
+  ## Examples
+      iex> IbGib.Helper.get_ib_gib!("ib", "gib")
+      "ib^gib"
+
+      iex> IbGib.Helper.get_ib_gib!("some id", "some hash ABCDEFGHI123")
+      "some id^some hash ABCDEFGHI123"
+  """
   @spec get_ib_gib!(String.t, String.t) :: String.t
   def get_ib_gib!(ib, gib) do
     case get_ib_gib(ib, gib) do
@@ -22,6 +64,24 @@ defmodule IbGib.Helper do
     end
   end
 
+  @doc """
+  Separates a given `ib_gib` into its component `ib` and `gib` bitstrings.
+
+
+  ## Examples
+      iex> IbGib.Helper.separate_ib_gib("ib^gib")
+      {:ok, {"ib", "gib"}}
+
+      iex> IbGib.Helper.separate_ib_gib("some id^some hash ABCDEFGHI123")
+      {:ok, {"some id", "some hash ABCDEFGHI123"}}
+
+      # Disable logging for these error doctests.
+      iex> Logger.disable(self)
+      ...> {result, _} = IbGib.Helper.separate_ib_gib(:not_a_bitstring)
+      ...> Logger.enable(self)
+      ...> result
+      :error
+  """
   @spec separate_ib_gib(String.t) :: {:ok, {String.t, String.t}} | {:error, String.t}
   def separate_ib_gib(ib_gib)
   def separate_ib_gib(ib_gib) when is_bitstring(ib_gib) do
@@ -35,6 +95,16 @@ defmodule IbGib.Helper do
     {:error, error_msg}
   end
 
+  @doc """
+  Bang version of `separate_ib_gib/1`.
+
+  ## Examples
+      iex> IbGib.Helper.separate_ib_gib!("ib^gib")
+      {"ib", "gib"}
+
+      iex> IbGib.Helper.separate_ib_gib!("some id^some hash ABCDEFGHI123")
+      {"some id", "some hash ABCDEFGHI123"}
+  """
   @spec separate_ib_gib!(String.t) :: {String.t, String.t}
   def separate_ib_gib!(ib_gib) when is_bitstring(ib_gib) do
     case separate_ib_gib(ib_gib) do
@@ -43,12 +113,29 @@ defmodule IbGib.Helper do
     end
   end
 
+  @doc """
+  Creates a new id string. This is not a properly formatted UUID. It is just
+  a string of random-ish letters.
+
+  It's not strictly necessary that the same algorithm is used across the entire
+  ib_gib system for this. This is more of a convenience helper than an
+  enforcer of consistency.
+  """
   @spec new_id() :: String.t
   def new_id() do
     RandomGib.Get.some_letters(30)
   end
 
+  @doc """
+  Creates a hash based on the given `ib`, `relations`, and `data`.
 
+  ## Examples
+      iex> IbGib.Helper.hash("abc", %{"ancestor" => ["ib^gib"]}, %{"key" => "value"})
+      "5E7AD2FBFE4CA84E3734A750D2F5092755ABA92F374103DFAE22E649C1548B29"
+
+      iex> IbGib.Helper.hash("abc", %{"ancestor" => ["ib^gib"]}, %{})
+      "6105DCBE78589383ACEDADDAC75BB85907029542A2923002A74E250D22183505"
+  """
   @spec hash(String.t, map, map) :: String.t
   def hash(ib, relations, data \\ %{}) when
       is_bitstring(ib) and
@@ -80,12 +167,13 @@ defmodule IbGib.Helper do
   #   aggregate = List.foldl(tail, head, fn(x, acc) -> acc <> "," <> x end)
   #   hash(aggregate)
   # end
+
   @doc ~S"""
    Encodes `map` into json and then creates a unique hash.
 
   ## Examples
 
-    iex> IbGib.TransformFactory.hash(%{"a" => "a here", "b" => "b here too"})
+    iex> IbGib.Helper.hash(%{"a" => "a here", "b" => "b here too"})
     "0AB8246B11E174B2A4A65F0D8AA50BB4CDF712C48BD8C532F57D1703F3404F33"
 
   """
@@ -99,7 +187,7 @@ defmodule IbGib.Helper do
 
   ## Examples
 
-    iex> IbGib.TransformFactory.hash("oijwfensdfjoIEFas283e7NISWEFJOIwe98wefj")
+    iex> IbGib.Helper.hash("oijwfensdfjoIEFas283e7NISWEFJOIwe98wefj")
     "9BDE0A867929A62CA07A4BB5CC21F8E5BBBE388BA477B0E5FCB4B9B74294268F"
 
   """
@@ -108,6 +196,32 @@ defmodule IbGib.Helper do
     :crypto.hash(:sha256, s) |> Base.encode16
   end
 
+  @doc """
+  Determines if the given `ib` is valid.
+  Only letters, digits, underscores, dashes, and spaces allowed.
+
+  See IbGib.Constants.ib_gib.regex_valid_ib.
+
+  ## Examples
+      iex> IbGib.Helper.valid_ib?("ib")
+      true
+
+      iex> IbGib.Helper.valid_ib?("only letters and spaces")
+      true
+
+      iex> IbGib.Helper.valid_ib?("12345")
+      true
+
+      iex> IbGib.Helper.valid_ib?("letters numbers _underscores_ -dashes- spaces allowed")
+      true
+
+      iex> IbGib.Helper.valid_ib?("")
+      false
+
+      # This one is too long. 64 character max
+      iex> IbGib.Helper.valid_ib?("12345678901234567890123456789012345678901234567890123456789012345")
+      false
+  """
   def valid_ib?(ib) when is_bitstring(ib) do
     ib_length = ib |> String.length
 
@@ -119,6 +233,35 @@ defmodule IbGib.Helper do
     false
   end
 
+  @doc """
+  Determines if the given `gib` is valid. Only letters, digits, underscores
+  allowed.
+
+  See IbGib.Constants.ib_gib.regex_valid_gib.
+
+  ## Examples
+      iex> IbGib.Helper.valid_gib?("gib")
+      true
+
+      iex> IbGib.Helper.valid_gib?("lettersANDnumbersONLY12345inGIB")
+      true
+
+      iex> IbGib.Helper.valid_gib?("12345")
+      true
+
+      iex> IbGib.Helper.valid_gib?("underscores_allowed_in_gib")
+      true
+
+      iex> IbGib.Helper.valid_gib?("dashes-not-allowed-in-gib")
+      false
+
+      iex> IbGib.Helper.valid_gib?("")
+      false
+
+      # This one is too long. 64 character max
+      iex> IbGib.Helper.valid_gib?("12345678901234567890123456789012345678901234567890123456789012345")
+      false
+  """
   def valid_gib?(gib) when is_bitstring(gib) do
     gib_length = gib |> String.length
 
@@ -130,6 +273,47 @@ defmodule IbGib.Helper do
     false
   end
 
+
+  @doc """
+  Determines if the given `ib_gib` is valid.
+  Only letters, digits, underscores allowed.
+
+  See IbGib.Constants.ib_gib.regex_valid_ib_gib.
+
+  ## Examples
+      iex> IbGib.Helper.valid_ib_gib?("ib^gib")
+      true
+
+      iex> IbGib.Helper.valid_ib_gib?("letters digits _underscores_ -dashes- spaces^lettersANDnumbersONLY12345inGIB")
+      true
+
+      iex> IbGib.Helper.valid_ib_gib?("12345^12345")
+      true
+
+      iex> IbGib.Helper.valid_gib?("underscores_allowed_in_gib")
+      true
+
+      iex> IbGib.Helper.valid_ib_gib?("letters digits _underscores_ -dashes- spaces^invalid gib with spaces")
+      false
+
+      iex> IbGib.Helper.valid_ib_gib?("letters digits _underscores_ -dashes- spaces^invalid-gib-with-dashes")
+      false
+
+      iex> IbGib.Helper.valid_ib_gib?("letters digits _underscores_ -dashes- spaces^invalidGIBwithSpecial&!@")
+      false
+
+      # max valid length
+      iex> IbGib.Helper.valid_ib_gib?("1234567890123456789012345678901234567890123456789012345678901234^1234567890123456789012345678901234567890123456789012345678901234")
+      true
+
+      # ib is too long. 64 character max
+      iex> IbGib.Helper.valid_ib_gib?("12345678901234567890123456789012345678901234567890123456789012345^1234567890123456789012345678901234567890123456789012345678901234")
+      false
+
+      # gib is too long. 64 character max
+      iex> IbGib.Helper.valid_ib_gib?("1234567890123456789012345678901234567890123456789012345678901234^12345678901234567890123456789012345678901234567890123456789012345")
+      false
+  """
   def valid_ib_gib?(ib_gib) when is_bitstring(ib_gib) do
     ib_gib_length = ib_gib |> String.length
 
