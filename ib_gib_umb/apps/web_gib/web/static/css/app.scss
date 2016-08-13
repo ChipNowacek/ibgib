@@ -11,6 +11,7 @@ $ibgib_green: #76963e;
 /*---------------------------------------------------------------------------*/
 /* Basic */
 /*---------------------------------------------------------------------------*/
+
 .logo {
   width: 100%;
   height: 100px;
@@ -25,10 +26,6 @@ $ibgib_green: #76963e;
   border-radius: 5px;
   border-style: solid;
   padding: 5px;
-}
-
-form {
-  margin: 0px !important;
 }
 
 /* Remove the bottom border on the jumbotron for visual effect */
@@ -49,7 +46,7 @@ form {
 .ib-tooltip .ib-tooltiptext {
     visibility: hidden;
     width: 200px;
-    background-color: black;
+    background-color: $ibgib_green;
     color: #fff;
     text-align: center;
     border-radius: 6px;
@@ -71,7 +68,7 @@ form {
 .ib-tooltip-big .ib-tooltiptext-big {
     visibility: hidden;
     width: 600px;
-    background-color: black;
+    background-color: $ibgib_green;
     color: #fff;
     text-align: center;
     border-radius: 6px;
@@ -102,24 +99,37 @@ form {
   display: block;
 }
 
-/* Custom page CSS
--------------------------------------------------- */
-/* Not required for template or sticky footer method. */
+/*---------------------------------------------------------------------------*/
+/* Tag overrides */
+/*---------------------------------------------------------------------------*/
 
 body > .container {
   padding: 40px 15px 0;
 }
-.container .text-muted {
-  margin: 20px 0;
+
+form {
+  margin: 0px !important;
 }
 
-#footer > .container {
-  padding-right: 15px;
-  padding-left: 15px;
+input {
+  padding-left: 5px;
 }
+
 
 code {
   font-size: 80%;
+}
+
+/*---------------------------------------------------------------------------*/
+/* Other */
+/*---------------------------------------------------------------------------*/
+
+.container .text-muted {
+  margin: 20px 0;
+}
+#footer > .container {
+  padding-right: 15px;
+  padding-left: 15px;
 }
 
 
