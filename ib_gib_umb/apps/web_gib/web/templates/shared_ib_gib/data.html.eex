@@ -11,23 +11,26 @@
           <div class="row ib-info-border ib-hoverable">
             <div class="ib-hover-btn">
 
-              <!-- Edit button -->
-              <button id="data-btnEdit-<%=entry_idx%>" type="button" class="close ib-green ib-remove-data-button" value="<%=entry_idx%>">
-                <span class="glyphicon glyphicon-edit ib-green"></span>
-              </button>
-
               <!-- Remove button -->
               <div class="close">
                 <%= form_for @conn, ib_gib_path(@conn, :mut8), [as: :mut8n], fn f -> %>
                   <%= hidden_input f, :key, value: key %>
                   <%= hidden_input f, :action, value: "remove" %>
                   <%= hidden_input f, :src_ib_gib, value: @ib_gib %>
-                  <%= submit mut8_remove_data_label %>
+                  <button class="close ib-remove-data-btn" type="submit">
+                    <span class="glyphicon glyphicon-remove ib-red"></span>
+                  </button>
                   <div class="ib-tooltip">
                     <span class="ib-tooltiptext"><%= mut8_remove_data_tooltip %></span>
                   </div>
                 <% end %>
               </div>
+
+              <!-- Edit button -->
+              <button id="data-btnEdit-<%=entry_idx%>" type="button" class="close ib-green ib-rename-data-button" value="<%=entry_idx%>">
+                <span class="glyphicon glyphicon-edit ib-green"></span>
+              </button>
+
             </div>
 
             <div id="data-key-<%=entry_idx%>" class="ib-data-key col-sm-2"><%= key %></div>

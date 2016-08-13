@@ -3,9 +3,13 @@
 /*---------------------------------------------------------------------------*/
 
 $ibgib_green: #76963e;
+$ibgib_red: #BF0D49;
 
 .ib-green {
   color: $ibgib_green;
+}
+.ib-red {
+  color: $ibgib_red;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -97,6 +101,14 @@ $ibgib_green: #76963e;
 }
 .ib-hoverable:hover .ib-hover-btn {
   display: block;
+}
+
+.ib-rename-data-btn {
+  color: $ibgib_green;
+}
+
+.ib-remove-data-btn {
+  color: $ibgib_red;
 }
 
 /*---------------------------------------------------------------------------*/
