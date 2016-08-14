@@ -11,7 +11,7 @@ defmodule IbGib.TransformFactory do
   def fork(src_ib_gib \\ "ib#{delim}gib", dest_ib \\ Helper.new_id) when is_bitstring(src_ib_gib) and is_bitstring(dest_ib) do
     ib = "fork"
     relations = %{
-      "history" => ["ib#{delim}gib", "fork#{delim}gib"]
+      "dna" => ["ib#{delim}gib", "fork#{delim}gib"]
     }
     data = %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib}
     gib = Helper.hash(ib, relations, data)
@@ -32,7 +32,7 @@ defmodule IbGib.TransformFactory do
   def mut8(src_ib_gib, new_data) when is_bitstring(src_ib_gib) and is_map(new_data) do
     ib = "mut8"
     relations = %{
-      "history" => ["ib#{delim}gib", "mut8#{delim}gib"]
+      "dna" => ["ib#{delim}gib", "mut8#{delim}gib"]
     }
     data = %{"src_ib_gib" => src_ib_gib, "new_data" => new_data}
     gib = Helper.hash(ib, relations, data)
@@ -64,7 +64,7 @@ defmodule IbGib.TransformFactory do
          is_list(dest_rel8ns) and length(dest_rel8ns) >= 1  do
     ib = "rel8"
     relations = %{
-      "history" => ["ib#{delim}gib", "rel8#{delim}gib"]
+      "dna" => ["ib#{delim}gib", "rel8#{delim}gib"]
     }
     data = %{
       "src_ib_gib" => src_ib_gib,
@@ -86,7 +86,7 @@ defmodule IbGib.TransformFactory do
 
     ib = "query"
     relations = %{
-      "history" => ["ib#{delim}gib", "query#{delim}gib"]
+      "dna" => ["ib#{delim}gib", "query#{delim}gib"]
     }
     data = %{
       "options" => query_options

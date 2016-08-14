@@ -24,6 +24,10 @@ $ibgib_red: #BF0D49;
   text-align: center;;
 }
 
+.ib-no-wrap {
+  white-space: nowrap;
+  overflow-x: scroll;
+}
 /*---------------------------------------------------------------------------*/
 /* Layout */
 /*---------------------------------------------------------------------------*/
@@ -170,13 +174,13 @@ code {
 /* Borders */
 /*---------------------------------------------------------------------------*/
 
-.ib-debug-border {
-  margin: 1px;
-  border-width: 1px;
-  border-style: solid;
-  border-color: black;
-}
-
+// .ib-debug-border {
+//   margin: 1px;
+//   border-width: 1px;
+//   border-style: solid;
+//   border-color: black;
+// }
+//
 .ib-info-border {
   margin: 5px;
   border-width: 1px;
@@ -184,4 +188,27 @@ code {
   border-radius: 5px;
   border-style: solid;
   padding: 5px;
+}
+
+/*---------------------------------------------------------------------------*/
+/* Horizontal Scrolling List */
+/*---------------------------------------------------------------------------*/
+.ib-horizontal-scroll-list
+{
+    overflow-x:scroll;
+    overflow-y:hidden;
+    height:auto;
+    width:100%;
+    padding: 0 15px;
+}
+
+.ib-horizontal-scroll-list-item
+{
+    // border:1px solid black;
+    padding:0;
+    height:auto;
+}
+
+.list-inline {
+  white-space:nowrap;
 }

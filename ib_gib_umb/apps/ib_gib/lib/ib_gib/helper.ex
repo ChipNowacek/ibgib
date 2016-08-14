@@ -149,15 +149,15 @@ defmodule IbGib.Helper do
   end
 
   # @spec hash(String.t, list(String.t), map) :: String.t
-  # def hash(ib, ib_gib_history, data \\ %{}) when
+  # def hash(ib, ib_gib_dna, data \\ %{}) when
   #     is_bitstring(ib) and
-  #     is_list(ib_gib_history) and
+  #     is_list(ib_gib_dna) and
   #     is_map(data) do
   #   ib_hash = hash(ib)
-  #   history_hash = hash(ib_gib_history)
+  #   dna_hash = hash(ib_gib_dna)
   #   data_hash = hash(data)
   #
-  #   hash(ib_hash <> history_hash <> data_hash)
+  #   hash(ib_hash <> dna_hash <> data_hash)
   # end
 
 

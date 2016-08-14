@@ -4,7 +4,7 @@
 
 
     <!-- <p>Relations: </p> -->
-    <% special_rel8ns = ["ancestor"] #, "history", "past"]%>
+    <% special_rel8ns = ["ancestor", "past"] #, "dna", "past"]%>
     <%= for {rel8n, rel8n_ib_gib_list} <- @thing_relations do %>
 
       <%= if (not Enum.member?(special_rel8ns, rel8n)) do %>
@@ -17,13 +17,18 @@
           </div>
           <h4><%= rel8n %>:</h4>
 
-          <%= for {rel8n_ib_gib, rel8n_ib_gib_idx} <- Enum.with_index(rel8n_ib_gib_list) do %>
-            <%= rel8n_ib_gib_idx %>
-            <a href="<%= ib_gib_path(@conn, :show, rel8n_ib_gib) %>">
-              <% [rel8n_ib, rel8n_gib] = String.split(rel8n_ib_gib, "^") %>
-              <%= render WebGib.SharedIbGibView, "ib_gib.html", [conn: @conn, ib: rel8n_ib, gib: rel8n_gib, ib_gib: rel8n_ib_gib, big: false] %>
-            </a>
-          <% end %>
+          <div class="ib-horizontal-scroll-list">
+            <ul class="list-inline">
+              <%= for {rel8n_ib_gib, rel8n_ib_gib_idx} <- Enum.with_index(rel8n_ib_gib_list) do %>
+                <li class="ib-horizontal-scroll-list-item">
+                  <a href="<%= ib_gib_path(@conn, :show, rel8n_ib_gib) %>">
+                    <% [rel8n_ib, rel8n_gib] = String.split(rel8n_ib_gib, "^") %>
+                    <%= render WebGib.SharedIbGibView, "ib_gib.html", [conn: @conn, ib: rel8n_ib, gib: rel8n_gib, ib_gib: rel8n_ib_gib, big: false] %>
+                  </a>
+                </li>
+              <% end %>
+            </ul>
+          </div>
 
         </div>
 

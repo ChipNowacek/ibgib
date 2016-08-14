@@ -27,14 +27,14 @@ defmodule IbGib.Data.DataTest do
   end
 
 
-  @ib_gib_history %{"history" => ["ib^gib"]}
+  @ib_gib_dna %{"dna" => ["ib^gib"]}
 
   @tag :capture_log
   test "save, no data" do
     ib = Get.some_letters(20)
     gib = Get.some_letters(20)
     # data = %{Get.some_letters(5) => Get.some_letters(100)}
-    rel8ns = @ib_gib_history
+    rel8ns = @ib_gib_dna
     model = %{
       ib: ib,
       gib: gib,
@@ -50,7 +50,7 @@ defmodule IbGib.Data.DataTest do
     ib = Get.some_letters(20)
     gib = Get.some_letters(20)
     # data = %{Get.some_letters(5) => Get.some_letters(100)}
-    rel8ns = @ib_gib_history
+    rel8ns = @ib_gib_dna
     model = %{
       ib: ib,
       gib: gib,
@@ -66,7 +66,7 @@ defmodule IbGib.Data.DataTest do
     ib = Get.some_letters(20)
     gib = Get.some_letters(20)
     # data = %{Get.some_letters(5) => Get.some_letters(100)}
-    rel8ns = @ib_gib_history
+    rel8ns = @ib_gib_dna
     model = %{
       ib: ib,
       gib: gib,
@@ -88,7 +88,7 @@ defmodule IbGib.Data.DataTest do
     ib = Get.some_letters(20)
     gib = Get.some_letters(20)
     # data = %{Get.some_letters(5) => Get.some_letters(100)}
-    rel8ns = @ib_gib_history
+    rel8ns = @ib_gib_dna
     model = %{
       ib: ib,
       gib: gib,
@@ -110,7 +110,7 @@ defmodule IbGib.Data.DataTest do
     ib = Get.some_letters(20)
     gib = Get.some_letters(20)
     data = %{Get.some_letters(5) => Get.some_letters(100)}
-    rel8ns = @ib_gib_history
+    rel8ns = @ib_gib_dna
     model = %{
       ib: ib,
       gib: gib,
@@ -126,7 +126,7 @@ defmodule IbGib.Data.DataTest do
     ib = Get.some_letters(20)
     gib = Get.some_letters(20)
     data = %{Get.some_letters(5) => Get.some_letters(100)}
-    rel8ns = @ib_gib_history
+    rel8ns = @ib_gib_dna
     model = %{
       ib: ib,
       gib: gib,
@@ -142,7 +142,7 @@ defmodule IbGib.Data.DataTest do
     ib = Get.some_letters(20)
     gib = Get.some_letters(20)
     data = %{Get.some_letters(5) => Get.some_letters(100)}
-    rel8ns = @ib_gib_history
+    rel8ns = @ib_gib_dna
     model = %{
       ib: ib,
       gib: gib,
@@ -164,7 +164,7 @@ defmodule IbGib.Data.DataTest do
     ib = Get.some_letters(20)
     gib = Get.some_letters(20)
     data = %{Get.some_letters(5) => Get.some_letters(100)}
-    rel8ns = @ib_gib_history
+    rel8ns = @ib_gib_dna
     model = %{
       ib: ib,
       gib: gib,

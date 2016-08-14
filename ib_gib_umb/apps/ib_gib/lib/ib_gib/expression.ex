@@ -107,7 +107,7 @@ defmodule IbGib.Expression do
           :ib => ib,
           :gib => gib,
           :rel8ns => %{
-            "history" => default_history#,
+            "dna" => default_dna#,
             # "ancestor" => ["ib#{delim}gib"],
             },
           :data => %{}
@@ -165,20 +165,20 @@ defmodule IbGib.Expression do
     Logger.debug "this_info: #{inspect this_info}"
 
     # rel8ns is tricky. Should we by default keep rel8ns except past?
-    # Or should we reset and only bring over `history` and `ancestor`? Others?
+    # Or should we reset and only bring over `dna` and `ancestor`? Others?
     # tricky...
-    a_history = Map.get(a[:rel8ns], "history", [])
+    a_dna = Map.get(a[:rel8ns], "dna", [])
     a_ancestor = Map.get(a[:rel8ns], "ancestor", [])
     this_rel8ns = %{
-      "history" => a_history,
+      "dna" => a_dna,
       "ancestor" => a_ancestor
     }
     Logger.warn "this_rel8ns: #{inspect this_rel8ns}"
     this_info = Map.put(this_info, :rel8ns, this_rel8ns)
     Logger.debug "this_info: #{inspect this_info}"
 
-    # We add the fork itself to the relations `history`.
-    this_info = this_info |> add_relation("history", b)
+    # We add the fork itself to the relations `dna`.
+    this_info = this_info |> add_relation("dna", b)
     Logger.debug "fork_data[\"src_ib_gib\"]: #{fork_data["src_ib_gib"]}"
     this_info = this_info |> add_relation("ancestor", fork_data["src_ib_gib"])
     Logger.debug "this_info: #{inspect this_info}"
@@ -215,7 +215,7 @@ defmodule IbGib.Expression do
     # We add the mut8 itself to the `relations`.
     a = a
         |> add_relation("past", original_ib_gib)
-        |> add_relation("history", b)
+        |> add_relation("dna", b)
 
     a_data = Map.get(a, :data, %{})
     b_data = Map.get(b, :data, %{})
@@ -316,8 +316,8 @@ defmodule IbGib.Expression do
     Logger.debug "applying rel8 b to ib_gib a.\na: #{inspect a}\nb: #{inspect b}\n"
     Logger.debug "a[:rel8ns]: #{inspect a[:rel8ns]}"
 
-    # We add the rel8 transform to the history.
-    a = a |> add_relation("history", b)
+    # We add the rel8 transform to the dna.
+    a = a |> add_relation("dna", b)
 
     # We need to know if we are source or destination of this rel8n.
     src_ib_gib = b[:data]["src_ib_gib"]
@@ -365,13 +365,13 @@ defmodule IbGib.Expression do
     this_ib = "queryresult"
     this_info = Map.put(this_info, :ib, this_ib)
     this_data = %{"result_count" => "#{Enum.count(result)}"}
-    this_rel8ns = %{"history" => default_history, "ancestor" => ["queryresult^gib"]}
+    this_rel8ns = %{"dna" => default_dna, "ancestor" => ["queryresult^gib"]}
     this_info =
       this_info
       |> Map.put(:ib, this_ib)
       |> Map.put(:data, this_data)
       |> Map.put(:rel8ns, this_rel8ns)
-      |> add_relation("history", b)
+      |> add_relation("dna", b)
       |> add_relation(
           "result",
           result |> reduce([], fn(ib_gib_model, acc) ->

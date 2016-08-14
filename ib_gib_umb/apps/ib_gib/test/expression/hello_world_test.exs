@@ -202,7 +202,7 @@ defmodule IbGib.Expression.HelloWorldTest do
     hw_info = hw |> get_info!
     Logger.warn "hw_info: #{inspect hw_info}"
 
-    hw_info[:rel8ns]["history"] |> Enum.each(fn (ig) ->
+    hw_info[:rel8ns]["dna"] |> Enum.each(fn (ig) ->
         Logger.info "ig: #{ig}"
         {:ok, ig_pid} = Expression.Supervisor.start_expression(ig)
         ig_info = ig_pid |> Expression.get_info!

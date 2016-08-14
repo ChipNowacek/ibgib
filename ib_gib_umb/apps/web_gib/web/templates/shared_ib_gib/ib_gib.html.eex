@@ -9,7 +9,7 @@
       <%= if (@big) do %>
         <h1 class="ib-green"><%= @ib %></h1>
       <% else %>
-        <p class="ib-green"><%= @ib %></p>
+        <span class="ib-green"><%= @ib %></span>
       <% end %>
       <span class="ib-tooltiptext-big"><%= @gib %></span>
     </div>

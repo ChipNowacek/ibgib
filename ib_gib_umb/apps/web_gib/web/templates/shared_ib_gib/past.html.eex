@@ -1,0 +1,26 @@
+<ol class="breadcrumb ib-no-wrap">
+
+  <%= if @past !== nil do %>
+    <%= for {past_ib_gib, past_idx} <- Enum.with_index(@past) do %>
+
+      <li class="breadcrumb-item">
+        <a href="<%= ib_gib_path(@conn, :show, past_ib_gib) %>">
+          <div class="ib-tooltip-big">
+            <span><%= past_idx %></span>
+            <span class="ib-tooltiptext-big"><%= past_ib_gib %></span>
+          </div>
+        </a>
+      </li>
+
+    <% end %>
+  <% end %>
+
+    <li class="breadcrumb-item active">
+      <div class="ib-tooltip-big">
+        now
+        <!-- <%= @ib %> -->
+        <span class="ib-tooltiptext-big"><%= @gib %></span>
+      </div>
+    </li>
+  <!-- <li class="breadcrumb-item active">Library</li> -->
+</ol>

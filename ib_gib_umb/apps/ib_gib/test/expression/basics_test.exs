@@ -101,7 +101,7 @@ defmodule IbGib.Expression.BasicsTest do
   @tag :capture_log
   test "create text, fork but with same ib" do
     # I'm not sure how this will work, but I think that the fork should go ahead
-    # and take place, and it will be the ib_gib_history that will create a
+    # and take place, and it will be the ib_gib_dna that will create a
     # different gib.
 
     # Randomized to keep unit tests from overlapping.

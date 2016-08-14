@@ -55,6 +55,7 @@ defmodule WebGib.IbGibController do
           |> assign(:thing_data, thing_data)
           |> assign(:thing_relations, thing_relations)
           |> assign(:ancestors, thing_relations["ancestor"])
+          |> assign(:past, thing_relations["past"])
         {:ok, conn}
     end
 

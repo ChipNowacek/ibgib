@@ -22,7 +22,7 @@ defmodule IbGib.Constants do
       # delim hardcoded in!!!!
       def regex_valid_ib_gib, do: ~r/^[\w\d_-\s]+\^[\w\d]+$/
 
-      def default_history, do: ["ib#{delim}gib"]
+      def default_dna, do: ["ib#{delim}gib"]
 
       @doc """
       This key prefix is a helper that indicates some meta action for the

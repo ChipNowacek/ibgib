@@ -17,5 +17,9 @@
   <div>
     <%= render WebGib.SharedIbGibView, "relations.html", [conn: @conn, ib: @ib, gib: @gib, ib_gib: @ib_gib, thing_relations: @thing_relations] %>
   </div>
+  <!-- Past breadcrumb -->
+  <div>
+    <%= render WebGib.SharedIbGibView, "past.html", [conn: @conn, ib: @ib, gib: @gib, ib_gib: @ib_gib, past: @past] %>
+  </div>
 
 </div>

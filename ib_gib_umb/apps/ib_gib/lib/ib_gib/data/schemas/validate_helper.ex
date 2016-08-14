@@ -34,7 +34,7 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
   Is the src being passed in a non-empty map that contains key/values where the
   key is a string and the value is an array of valid ib_gib.
 
-  E.g. %{"history" => ["ib^gib"]}
+  E.g. %{"dna" => ["ib^gib"]}
 
   Returns true if it's a map of valid
   """
@@ -64,7 +64,7 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
   Is the src being passed in a non-empty map that contains key/values where the
   key is a string and the value is an array of valid ib_gib.
 
-  E.g. %{"history" => ["ib^gib"]}
+  E.g. %{"dna" => ["ib^gib"]}
 
   Returns true if it's a map of valid
   """

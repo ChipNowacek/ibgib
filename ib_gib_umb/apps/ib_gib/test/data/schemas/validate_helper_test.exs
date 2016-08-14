@@ -114,7 +114,7 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
   @tag :capture_log
   test "map_of_ib_gib_arrays valid" do
     [
-      %{"history" => ["ib^gib"]},
+      %{"dna" => ["ib^gib"]},
 
       %{"a" => [random_valid_ib_gib]},
 
@@ -132,11 +132,11 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
   @tag :capture_log
   test "map_of_ib_gib_arrays invalid, lengths" do
     [
-      %{"history" => ["ib^"]},
-      %{"history" => ["^gib"]},
-      %{"history" => ["^"]},
-      %{"history" => [""]},
-      %{"history" => ["a#{random_max_id}#{@delim}#{random_max_id}"]},
+      %{"dna" => ["ib^"]},
+      %{"dna" => ["^gib"]},
+      %{"dna" => ["^"]},
+      %{"dna" => [""]},
+      %{"dna" => ["a#{random_max_id}#{@delim}#{random_max_id}"]},
       %{"" => ["ib^gib"]},
 
       %{"a" => [random_valid_ib_gib, ""]},
