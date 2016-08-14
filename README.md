@@ -45,15 +45,6 @@ Once you fork (if contributing), clone and download the source, you will need to
   phoenix server, then perhaps you haven't started the PostgreSQL docker
   container.
 
-### brief poc walkthru
-When you first navigate to `http://localhost:4000`, you will see a link for `ibGib`
-in the jumbotron - click it. 
-
-
-
-This is just a stubbed page. Go ahead and hover over the
-`ib` text. You will see a tooltip that contains it's corresponding `gib`. 
-...working
 ### project structure
 
 #### `ib_gib_umb`
@@ -97,10 +88,6 @@ This is very much a simple POC app to give an interface to the `ib_gib` app.
 #### `random_gib`
 Helper application that I created first when learning the basics of Elixir.
 It provides some simple random functions.
-
-#### `ng2-client`
-Ignore this. I'm still trying to figure out the best way forward for the
-front end.
 
 ## before diving in...why give a s**t about this library?
 
