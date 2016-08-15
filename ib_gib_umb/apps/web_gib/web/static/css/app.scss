@@ -17,7 +17,7 @@ $ibgib_red: #BF0D49;
 /*---------------------------------------------------------------------------*/
 
 .ib-no-margin {
-  margin: 0px !important;
+  margin: 0px;
 }
 
 .ib-horizontal-center {
@@ -28,6 +28,19 @@ $ibgib_red: #BF0D49;
   white-space: nowrap;
   overflow-x: scroll;
 }
+
+.ib-no-scroll-y {
+  overflow-y: hidden;
+}
+
+.ib-padding-sm {
+  padding: 5px;
+}
+
+.ib-scroll-y-rtl {
+  direction: rtl;
+}
+
 /*---------------------------------------------------------------------------*/
 /* Layout */
 /*---------------------------------------------------------------------------*/
@@ -171,6 +184,21 @@ code {
 
 
 /*---------------------------------------------------------------------------*/
+/* Ancestor */
+/*---------------------------------------------------------------------------*/
+.ib-ancestor-breadcrumb {
+  margin: 2px !important;
+  overflow-x: auto;
+}
+
+/*---------------------------------------------------------------------------*/
+/* Past */
+/*---------------------------------------------------------------------------*/
+.ib-past-breadcrumb {
+  margin: 2px !important;
+  overflow-x: auto;
+}
+/*---------------------------------------------------------------------------*/
 /* Borders */
 /*---------------------------------------------------------------------------*/
 
@@ -182,10 +210,10 @@ code {
 // }
 //
 .ib-info-border {
-  margin: 5px;
+  margin: 8px;
   border-width: 1px;
-  border-color: #76963e;
-  border-radius: 5px;
+  border-color: $ibgib_green;
+  border-radius: 10px;
   border-style: solid;
   padding: 5px;
 }
@@ -195,7 +223,7 @@ code {
 /*---------------------------------------------------------------------------*/
 .ib-horizontal-scroll-list
 {
-    overflow-x:scroll;
+    overflow-x:auto;
     overflow-y:hidden;
     height:auto;
     width:100%;

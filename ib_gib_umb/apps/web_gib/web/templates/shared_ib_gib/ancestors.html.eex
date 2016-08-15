@@ -1,27 +1,30 @@
-<ol class="breadcrumb">
+<div class="ib-info-border">
+  <ol class="breadcrumb ib-ancestor-breadcrumb ib-no-wrap ib-no-scroll-y ib-no-margin">
 
-  <%= if @ancestors !== nil do %>
-    <%= for ancestor_ib_gib <- @ancestors do %>
-      <% ancestor_ib = ancestor_ib_gib |> String.split("^") |> Enum.at(0) %>
-      <% ancestor_gib = ancestor_ib_gib |> String.split("^") |> Enum.at(1) %>
+    <%= if @ancestors !== nil do %>
+      <%= for ancestor_ib_gib <- @ancestors do %>
+        <% ancestor_ib = ancestor_ib_gib |> String.split("^") |> Enum.at(0) %>
+        <% ancestor_gib = ancestor_ib_gib |> String.split("^") |> Enum.at(1) %>
 
-      <li class="breadcrumb-item">
-        <a href="<%= ib_gib_path(@conn, :show, ancestor_ib_gib) %>">
+        <li class="breadcrumb-item">
           <div class="ib-tooltip-big">
-            <p><%= ancestor_ib %></p>
+            <a href="<%= ib_gib_path(@conn, :show, ancestor_ib_gib) %>">
+              <span><%= ancestor_ib %></span>
+            </a>
             <span class="ib-tooltiptext-big"><%= ancestor_gib %></span>
           </div>
-        </a>
-      </li>
+        </li>
 
+      <% end %>
     <% end %>
-  <% end %>
 
-    <li class="breadcrumb-item active">
-      <div class="ib-tooltip-big">
-        <%= @ib %>
-        <span class="ib-tooltiptext-big"><%= @gib %></span>
-      </div>
-    </li>
-  <!-- <li class="breadcrumb-item active">Library</li> -->
-</ol>
+      <li class="breadcrumb-item active">
+        <div class="ib-tooltip-big">
+          <%= @ib %>
+          <span class="ib-tooltiptext-big"><%= @gib %></span>
+        </div>
+      </li>
+    <!-- <li class="breadcrumb-item active">Library</li> -->
+  </ol>
+
+</div>

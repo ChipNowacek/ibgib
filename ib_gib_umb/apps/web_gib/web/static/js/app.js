@@ -78,9 +78,7 @@ class App {
 $( () => App.init() )
 
 $( document ).ready(() => {
-  console.log("ready yoooo")
-
-  
+  console.log("ibGib ready.")
 
   let $edit_data_buttons = $( "button[id*='data-btnEdit-']" );
   $edit_data_buttons.on("click", (e) => {
