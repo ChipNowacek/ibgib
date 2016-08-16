@@ -1,0 +1,19 @@
+<!--
+  Based on
+  http://creative-punch.net/2014/02/making-animated-radial-menu-css3-javascript
+  Thanks!
+-->
+
+<nav class="ib-circular-menu ib-circular-menuable" >
+  <div class="ib-circular-menu-links">
+    <a class="ib-circular-menu-link" href=""><span class="glyphicon glyphicon-remove ib-red"></span></a>
+    <a class="ib-circular-menu-link" href=""><span class="glyphicon glyphicon-remove ib-red"></span></a>
+    <a class="ib-circular-menu-link" href=""><span class="glyphicon glyphicon-remove ib-red"></span></a>
+    <a class="ib-circular-menu-link" href=""><span class="glyphicon glyphicon-remove ib-red"></span></a>
+    <a class="ib-circular-menu-link" href=""><span class="glyphicon glyphicon-remove ib-red"></span></a>
+    <a class="ib-circular-menu-link" href=""><span class="glyphicon glyphicon-remove ib-red"></span></a>
+    <a class="ib-circular-menu-link" href=""><span class="glyphicon glyphicon-remove ib-red"></span></a>
+  </div>
+
+  <div class="ib-circular-menu-toggle-button"></div>
+</nav>

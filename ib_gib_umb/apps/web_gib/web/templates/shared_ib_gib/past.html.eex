@@ -17,14 +17,14 @@
       <% end %>
     <% end %>
 
-      <li class="breadcrumb-item active">
-        <div class="ib-tooltip-big">
-          now
-          <!-- <%= @ib %> -->
-          <span class="ib-tooltiptext-big"><%= @gib %></span>
-        </div>
-      </li>
-    <!-- <li class="breadcrumb-item active">Library</li> -->
+    <li class="breadcrumb-item active">
+      <div class="ib-tooltip-big">
+        now
+        <!-- <%= @ib %> -->
+        <span class="ib-tooltiptext-big"><%= @gib %></span>
+      </div>
+    </li>
+
   </ol>
 
 </div>

@@ -4,12 +4,25 @@
 
 $ibgib_green: #76963e;
 $ibgib_red: #BF0D49;
+$ibgib_pink: #F01ABE;
+$ibgib_blue: #1A77F0;
+$ibgib_orange: #FA9200;
+
 
 .ib-green {
   color: $ibgib_green;
 }
 .ib-red {
   color: $ibgib_red;
+}
+.ib-pink {
+  color: $ibgib_pink;
+}
+.ib-blue {
+  color: $ibgib_blue;
+}
+.ib-orange {
+  color: $ibgib_orange;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -39,6 +52,10 @@ $ibgib_red: #BF0D49;
 
 .ib-scroll-y-rtl {
   direction: rtl;
+}
+
+.ib-hidden {
+  display: none;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -104,7 +121,7 @@ $ibgib_red: #BF0D49;
     width: 600px;
     background-color: $ibgib_green;
     color: #fff;
-    text-align: center;
+    text-align: left;
     border-radius: 6px;
     // padding: 5px 0;
 
@@ -218,6 +235,115 @@ code {
   padding: 5px;
 }
 
+
+
+
+
+
+
+/*---------------------------------------------------------------------------*/
+/* Radial Menu */
+/* Thanks!  http://creative-punch.net/2014/02/making-animated-radial-menu-css3-javascript/ */
+/*---------------------------------------------------------------------------*/
+
+// These are duplicated in CircleMenu.initMenuLinks
+$menu_radius: 25px;
+$menu_diam: 2 * $menu_radius;
+$circle_radius: 50px;
+$circle_diam: 2 * $circle_radius;
+$circle_menu_link_radius: 10px;
+$circle_menu_link_diam: 2 * $circle_menu_link_radius;
+$circle_menu_button_radius: 20px;
+$circle_menu_button_diam: 2 * $circle_menu_button_radius;
+$circle_menu_button_opacity: 0.6;
+$circle_transition_ease: all 0.5s ease-out;
+$menu_z_index: 20;
+
+.ib-circular-menuable {
+  // marker interface
+}
+
+.ib-circular-menu {
+  width: $menu_diam;
+  height: $menu_diam;
+  margin: 0 auto;
+  position: absolute;
+  z-index: $menu_z_index;
+}
+
+.ib-circular-menu-links {
+  width: $circle_radius;
+  height: $circle_radius;
+  opacity: 0;
+
+  -webkit-transform: scale(0);
+  -moz-transform: scale(0);
+  transform: scale(0);
+
+  -webkit-transition: $circle_transition_ease;
+  -moz-transition: $circle_transition_ease;
+  transition: $circle_transition_ease;
+  z-index: $menu_z_index;
+}
+
+.open.ib-circular-menu-links {
+  opacity: 1;
+
+  -webkit-transform: scale(1);
+  -moz-transform: scale(1);
+  transform: scale(1);
+}
+
+.ib-circular-menu-link {
+// .circle a {
+  text-decoration: none;
+  color: $ibgib_pink;
+  display: block;
+  height: $circle_menu_link_diam;
+  width: $circle_menu_link_diam;
+  line-height: $circle_menu_link_diam;
+  margin-left: -$circle_menu_link_radius;
+  margin-top: -$circle_menu_link_radius;
+  position: absolute;
+  text-align: center;
+  z-index: $menu_z_index;
+}
+
+.ib-circular-menu-link a:hover {
+  color: $ibgib_blue;
+}
+
+.ib-circular-menu-toggle-button {
+  position: absolute;
+  top: calc(50% - #{$circle_menu_button_radius});
+  left: calc(50% - #{$circle_menu_button_radius});
+  text-decoration: none;
+  text-align: center;
+  vertical-align: middle;
+  color: $ibgib_blue;
+  border-radius: 50%;
+  display: block;
+  height: $circle_menu_button_diam;
+  width: $circle_menu_button_diam;
+  line-height: $circle_menu_button_diam;
+  // padding: 10px;
+  background: $ibgib_green;
+  opacity: $circle_menu_button_opacity;
+  z-index: $menu_z_index;
+}
+
+.ib-circular-menu-toggle-button:hover {
+  background-color: $ibgib_orange;
+}
+
+
+
+
+
+
+
+
+
 /*---------------------------------------------------------------------------*/
 /* Horizontal Scrolling List */
 /*---------------------------------------------------------------------------*/
@@ -239,4 +365,16 @@ code {
 
 .list-inline {
   white-space:nowrap;
+}
+
+
+// Marker interface?
+.ib-gib-element {
+
+}
+
+.ib-gib-element-active {
+  border-color: $ibgib_green;
+  // border-color: $ibgib_orange;
+  border-width: medium;
 }

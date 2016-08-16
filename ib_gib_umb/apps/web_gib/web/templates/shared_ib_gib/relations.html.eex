@@ -17,14 +17,14 @@
           </div>
           <h4><%= rel8n %>:</h4>
 
-          <div class="ib-horizontal-scroll-list">
-            <ul class="list-inline">
+          <div class="ib-horizontal-scroll-list ib-circular-menuable">
+            <ul class="list-inline ib-circular-menuable">
               <%= for {rel8n_ib_gib, rel8n_ib_gib_idx} <- Enum.with_index(rel8n_ib_gib_list) do %>
-                <li class="ib-horizontal-scroll-list-item">
-                  <a href="<%= ib_gib_path(@conn, :show, rel8n_ib_gib) %>">
+                <li class="ib-horizontal-scroll-list-item ib-circular-menuable">
+                  <!-- <a href="<%= ib_gib_path(@conn, :show, rel8n_ib_gib) %>"> -->
                     <% [rel8n_ib, rel8n_gib] = String.split(rel8n_ib_gib, "^") %>
                     <%= render WebGib.SharedIbGibView, "ib_gib.html", [conn: @conn, ib: rel8n_ib, gib: rel8n_gib, ib_gib: rel8n_ib_gib, big: false] %>
-                  </a>
+                  <!-- </a> -->
                 </li>
               <% end %>
             </ul>

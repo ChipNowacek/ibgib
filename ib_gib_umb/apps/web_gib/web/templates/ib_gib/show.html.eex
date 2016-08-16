@@ -1,12 +1,17 @@
+<div id="ib-main-circular-menu" class="ib-hidden">
+  <%= render WebGib.SharedIbGibView, "ib_button.html", [conn: @conn, ib: @ib, gib: @gib, ib_gib: @ib_gib] %>
+</div>
+
 <div>
+
   <!-- Ancestors breadcrumb -->
   <div>
     <%= render WebGib.SharedIbGibView, "ancestors.html", [conn: @conn, ib: @ib, gib: @gib, ib_gib: @ib_gib, ancestors: @ancestors, big: false] %>
   </div>
   <div>
-    <a href="<%= ib_gib_path(@conn, :show, @ib_gib) %>">
+    <!-- <a href="<%= ib_gib_path(@conn, :show, @ib_gib) %>"> -->
       <%= render WebGib.SharedIbGibView, "ib_gib.html", [conn: @conn, ib: @ib, gib: @gib, ib_gib: @ib_gib, big: true] %>
-    </a>
+    <!-- </a> -->
   </div>
   <!--  -->
   <div>

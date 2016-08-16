@@ -11,7 +11,7 @@
 //
 // If you no longer want to use a dependency, remember
 // to also remove its path from "config.paths.watched".
-import "phoenix_html"
+// import "phoenix_html";
 
 // Import local files
 //
@@ -19,11 +19,12 @@ import "phoenix_html"
 // paths "./socket" or full ones "web/static/js/socket".
 
 //import socket from "./socket"
+import { CircleMenu } from "./circlemenu";
 
 class App {
 
   static init(){
-
+    this.circleMenu = new CircleMenu();
     // let socket = new Socket("/socket", {
     //   logger: ((kind, msg, data) => { console.log(`${kind}: ${msg}`, data) })
     // })
@@ -77,9 +78,7 @@ class App {
 
 $( () => App.init() )
 
-$( document ).ready(() => {
-  console.log("ibGib ready.")
-
+function initEditDataButtons() {
   let $edit_data_buttons = $( "button[id*='data-btnEdit-']" );
   $edit_data_buttons.on("click", (e) => {
     console.log(`clicked. target id: ${JSON.stringify(e.currentTarget.id)}`);
@@ -90,16 +89,14 @@ $( document ).ready(() => {
     let valueText = $( `#data-value-${keyIndex}` ).text();
     $( "#mut8n_value[name='mut8n[value]']" ).val(valueText);
   })
-  // $remove_data_buttons.each(x => {
-  //   console.log(JSON.stringify(x));
-  //
-  //   x.on("click", e => {
-  //     console.log(`clicked`);
-  //     // console.log(`clicked: ${x.id}`);
-  //   })
-  // });
-});
+}
 
+$( document ).ready(() => {
+  console.log("ibGib ready.")
+
+  // initRadialMenus(true);
+  initEditDataButtons();
+});
 
 
 export default App
