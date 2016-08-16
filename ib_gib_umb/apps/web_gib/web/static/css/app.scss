@@ -1,29 +1,4 @@
-/*---------------------------------------------------------------------------*/
-/* Colors */
-/*---------------------------------------------------------------------------*/
-
-$ibgib_green: #76963e;
-$ibgib_red: #BF0D49;
-$ibgib_pink: #F01ABE;
-$ibgib_blue: #1A77F0;
-$ibgib_orange: #FA9200;
-
-
-.ib-green {
-  color: $ibgib_green;
-}
-.ib-red {
-  color: $ibgib_red;
-}
-.ib-pink {
-  color: $ibgib_pink;
-}
-.ib-blue {
-  color: $ibgib_blue;
-}
-.ib-orange {
-  color: $ibgib_orange;
-}
+@import 'colors';
 
 /*---------------------------------------------------------------------------*/
 /* Basic */
@@ -58,9 +33,28 @@ $ibgib_orange: #FA9200;
   display: none;
 }
 
+.ib-width-100 {
+  width: 100%;
+}
 /*---------------------------------------------------------------------------*/
 /* Layout */
 /*---------------------------------------------------------------------------*/
+
+.container-fluid {
+  max-width: 400px;
+}
+
+@media (min-width: 630px) {
+  .container-fluid {
+    max-width: 625px;
+  }
+}
+
+@media (min-width: 768px) {
+  .container-fluid {
+    max-width: 730px;
+  }
+}
 
 .logo {
   width: 100%;
@@ -85,53 +79,6 @@ $ibgib_orange: #FA9200;
 }
 
 
-/*---------------------------------------------------------------------------*/
-/* Tooltip */
-/* Thanks w3schools! http://www.w3schools.com/css/css_tooltip.asp */
-/*---------------------------------------------------------------------------*/
-.ib-tooltip {
-    position: relative;
-    display: inline-block;
-    // border-bottom: 1px dotted black;
-}
-.ib-tooltip .ib-tooltiptext {
-    visibility: hidden;
-    width: 200px;
-    background-color: $ibgib_green;
-    color: #fff;
-    text-align: center;
-    border-radius: 6px;
-    // padding: 5px 0;
-
-    /* Position the tooltip */
-    position: absolute;
-    z-index: 1;
-}
-.ib-tooltip:hover .ib-tooltiptext {
-    visibility: visible;
-}
-
-.ib-tooltip-big {
-    position: relative;
-    display: inline-block;
-    // border-bottom: 1px dotted black;
-}
-.ib-tooltip-big .ib-tooltiptext-big {
-    visibility: hidden;
-    width: 600px;
-    background-color: $ibgib_green;
-    color: #fff;
-    text-align: left;
-    border-radius: 6px;
-    // padding: 5px 0;
-
-    /* Position the tooltip */
-    position: absolute;
-    z-index: 1;
-}
-.ib-tooltip-big:hover .ib-tooltiptext-big {
-    visibility: visible;
-}
 
 /*---------------------------------------------------------------------------*/
 /* Settings Button */
@@ -170,12 +117,13 @@ $ibgib_orange: #FA9200;
 /* Tag overrides */
 /*---------------------------------------------------------------------------*/
 
-body > .container {
-  padding: 40px 15px 0;
+body > .container-fluid {
+  padding: 10px 15px 0;
+  min-width: 300px;
 }
 
 form {
-  margin: 0px !important;
+  margin: 5px !important;
 }
 
 input {

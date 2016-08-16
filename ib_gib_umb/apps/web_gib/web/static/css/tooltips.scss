@@ -1,0 +1,55 @@
+@import 'colors';
+
+/*---------------------------------------------------------------------------*/
+/* Tooltip */
+/* Thanks w3schools! http://www.w3schools.com/css/css_tooltip.asp */
+/*---------------------------------------------------------------------------*/
+%ibph-tooltip {
+  position: relative;
+  display: inline-block;
+  // border-bottom: 1px dotted black;
+}
+
+%ibph-tooltip-hover {
+  visibility: visible;
+}
+
+@mixin ibmx-tooltiptext($l_width) {
+  visibility: hidden;
+  width: $l_width;
+  background-color: $ibgib_green;
+  color: $ibgib_white;
+  text-align: center;
+  border-radius: 6px;
+  // padding: 5px 0;
+
+  /* Position the tooltip */
+  position: absolute;
+  z-index: 1;
+}
+
+.ib-tooltip {
+  @extend %ibph-tooltip;
+}
+.ib-tooltip .ib-tooltiptext {
+  @include ibmx-tooltiptext(200px);
+}
+.ib-tooltip:hover .ib-tooltiptext {
+  @extend %ibph-tooltip-hover;
+}
+
+.ib-tooltip-big {
+  @extend %ibph-tooltip;
+}
+.ib-tooltip-big .ib-tooltiptext-big {
+  @include ibmx-tooltiptext(200px);
+}
+.ib-tooltip-big:hover .ib-tooltiptext-big {
+  @extend %ibph-tooltip-hover;
+}
+
+@media (min-width: 768px) {
+  .ib-tooltip-big .ib-tooltiptext-big {
+    @include ibmx-tooltiptext(600px);
+  }
+}

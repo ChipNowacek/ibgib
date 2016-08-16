@@ -10,7 +10,7 @@
   <!-- <a href="<%= ib_gib_path(@conn, :show, @ib_gib) %>"> -->
     <div class="ib-tooltip-big ib-circular-menuable">
       <%= if (@big) do %>
-        <h1 class="ib-green ib-circular-menuable"><%= @ib %></h1>
+        <span class="ib-green ib-circular-menuable ib-big-ibgib-text"><%= @ib %></span>
       <% else %>
         <span class="ib-green ib-circular-menuable"><%= @ib %></span>
       <% end %>
