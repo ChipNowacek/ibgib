@@ -70,7 +70,6 @@ defmodule WebGib.IbGibController do
       |> put_flash(:error, error_msg)
       |> redirect(to: "/ibgib")
     end
-
   end
 
   # ----------------------------------------------------------------------------
@@ -175,6 +174,7 @@ defmodule WebGib.IbGibController do
   # Fork
   # ----------------------------------------------------------------------------
 
+
   def fork(conn, %{"fork_form_data" => %{"dest_ib" => dest_ib, "src_ib_gib" => src_ib_gib}} = params) do
     Logger.debug "conn: #{inspect conn}"
     Logger.debug "conn.params: #{inspect conn.params}"
@@ -189,6 +189,25 @@ defmodule WebGib.IbGibController do
       |> redirect(to: "/ibgib/#{src_ib_gib}")
     end
   end
+  def fork(conn, %{"dest_ib" => dest_ib, "src_ib_gib" => src_ib_gib} = params) do
+    Logger.debug "conn: #{inspect conn}"
+    Logger.debug "conn.params: #{inspect conn.params}"
+    Logger.debug "params: #{inspect params}"
+    msg = "dest_ib: #{dest_ib}"
+
+    if validate(:dest_ib, dest_ib) do
+      do_fork(conn, %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib})
+    else
+      conn
+      |> put_flash(:error, emsg_invalid_dest_ib)
+      |> redirect(to: "/ibgib/#{src_ib_gib}")
+    end
+  end
+  # def fork(conn, params) do
+  #   Logger.warn "conn: #{inspect conn}"
+  #   Logger.warn "conn.params: #{inspect conn.params}"
+  #   Logger.warn "params: #{inspect params}"
+  # end
 
   defp validate(:dest_ib, dest_ib) do
     valid_ib?(dest_ib) or

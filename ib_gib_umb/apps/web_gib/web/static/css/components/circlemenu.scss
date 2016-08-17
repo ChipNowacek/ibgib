@@ -1,0 +1,109 @@
+@import '../colors';
+@import '../sizes';
+
+/*---------------------------------------------------------------------------*/
+/* Radial Menu */
+/* Thanks!  http://creative-punch.net/2014/02/making-animated-radial-menu-css3-javascript/ */
+/*---------------------------------------------------------------------------*/
+
+// These are duplicated in CircleMenu.initMenuLinks
+$circle_menu_radius: 25px;
+$circle_menu_diam: 2 * $circle_menu_radius;
+$circle_radius: 50px;
+$circle_diam: 2 * $circle_radius;
+$circle_menu_btn_radius: 10px;
+$circle_menu_btn_diam: 2 * $circle_menu_btn_radius;
+$circle_menu_toggle_btn_radius: 20px;
+$circle_menu_toggle_btn_diam: 2 * $circle_menu_toggle_btn_radius;
+$circle_menu_toggle_btn_opacity: 0.3;
+$circle_transition_ease: all 0.5s ease-out;
+$menu_z_index: 20;
+
+.ib-circle-menu {
+  width: $circle_menu_diam;
+  height: $circle_menu_diam;
+  margin: 0 auto;
+  position: absolute;
+  z-index: $menu_z_index;
+ }
+
+.ib-circle-menu-btn-ctr {
+  width: $circle_radius;
+  height: $circle_radius;
+  opacity: 0;
+
+  -webkit-transform: scale(0);
+  -moz-transform: scale(0);
+  transform: scale(0);
+
+  -webkit-transition: $circle_transition_ease;
+  -moz-transition: $circle_transition_ease;
+  transition: $circle_transition_ease;
+  z-index: $menu_z_index;
+}
+
+.open.ib-circle-menu-btn-ctr {
+  opacity: 1;
+
+  -webkit-transform: scale(1);
+  -moz-transform: scale(1);
+  transform: scale(1);
+}
+
+.ib-circle-menu-btn {
+// .circle a {
+  text-decoration: none;
+  color: $ibgib_pink;
+  display: block;
+  height: $circle_menu_btn_diam;
+  width: $circle_menu_btn_diam;
+  line-height: $circle_menu_btn_diam;
+  margin-left: -$circle_menu_btn_radius;
+  margin-top: -$circle_menu_btn_radius;
+  position: absolute;
+  text-align: center;
+  z-index: $menu_z_index;
+
+  background-color: $ibgib_pink_light;
+  opacity: 1;
+  border-radius: 10px;
+  // border-color: red;
+  // border-style: dotted;
+  // border-width: 2px;
+}
+
+.ib-circle-menu-btn:hover {
+  color: $ibgib_blue;
+  background-color: $ibgib_pink;
+  opacity: 1;
+}
+
+.ib-circle-menu-btn:click {
+  color: $ibgib_blue;
+  background-color: $ibgib_green;
+  opacity: 1;
+}
+
+.ib-circle-menu-toggle-btn {
+  position: absolute;
+  top: calc(50% - #{$circle_menu_toggle_btn_radius});
+  left: calc(50% - #{$circle_menu_toggle_btn_radius});
+  text-decoration: none;
+  text-align: center;
+  vertical-align: middle;
+  color: $ibgib_blue;
+  border-radius: 50%;
+  display: block;
+  height: $circle_menu_toggle_btn_diam;
+  width: $circle_menu_toggle_btn_diam;
+  line-height: $circle_menu_toggle_btn_diam;
+  // padding: 10px;
+  background: $ibgib_green;
+  opacity: $circle_menu_toggle_btn_opacity;
+  z-index: $menu_z_index;
+}
+
+.ib-circle-menu-toggle-btn:hover {
+  background-color: $ibgib_green;
+  opacity: 0.7;
+}

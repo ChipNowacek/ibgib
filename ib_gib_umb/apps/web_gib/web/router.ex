@@ -24,8 +24,15 @@ defmodule WebGib.Router do
     get "/ibgib", IbGibController, :index
     get "/ibgib/:ib_or_ib_gib", IbGibController, :show
 
-    post "ibgib/api/fork", IbGibController, :fork
-    post "ibgib/api/mut8", IbGibController, :mut8
+    # post "/ibgib/fork", IbGibController, :fork
+    # post "/ibgib/mut8", IbGibController, :mut8
+    #
+
+    get "/ibgib/api/fork", IbGibController, :fork
+    get "/ibgib/api/mut8", IbGibController, :mut8
+    
+    # post "/ibgib/api/fork", IbGibController, :fork
+    # post "/ibgib/api/mut8", IbGibController, :mut8
   end
 
   # Other scopes may use custom stacks.

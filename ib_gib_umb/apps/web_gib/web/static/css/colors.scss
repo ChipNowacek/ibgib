@@ -8,6 +8,9 @@ $ibgib_red: #BF0D49;
 $ibgib_pink: #F01ABE;
 $ibgib_blue: #1A77F0;
 $ibgib_orange: #FA9200;
+$ibgib_yellow: #F5F11B;
+
+$ibgib_pink_light: #CF8CCF;
 
 
 .ib-green {
@@ -24,4 +27,7 @@ $ibgib_orange: #FA9200;
 }
 .ib-orange {
   color: $ibgib_orange;
+}
+.ib-yellow {
+  color: $ibgib_yellow;
 }
