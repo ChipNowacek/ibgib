@@ -69,9 +69,10 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     Logger.debug "query_result_info: #{inspect query_result_info}"
     result_list = query_result_info[:rel8ns]["result"]
     Logger.debug "result_list: #{inspect result_list}"
-    assert Enum.count(result_list) === 1
+    # All results have ib^gib as the first result
+    assert Enum.count(result_list) === 2
 
-    single_result = Enum.at(result_list, 0)
+    single_result = Enum.at(result_list, 1)
     assert single_result === test_ib_gib
     Logger.debug "single result: #{single_result}"
   end
@@ -103,9 +104,10 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     Logger.debug "query_result_info: #{inspect query_result_info}"
     result_list = query_result_info[:rel8ns]["result"]
     Logger.debug "result_list: #{inspect result_list}"
-    assert Enum.count(result_list) === 1
+    # All results have ib^gib as the first result
+    assert Enum.count(result_list) === 2
 
-    single_result = Enum.at(result_list, 0)
+    single_result = Enum.at(result_list, 1)
     assert single_result === test_ib_gib
     Logger.debug "single result: #{single_result}"
   end
@@ -137,7 +139,8 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     Logger.debug "query_result_info: #{inspect query_result_info}"
     result_list = query_result_info[:rel8ns]["result"]
     Logger.debug "result_list: #{inspect result_list}"
-    assert Enum.count(result_list) > 1
+    # All results have ib^gib as the first result
+    assert Enum.count(result_list) > 2
     Logger.info "result_list count: #{Enum.count(result_list)}"
 
     assert !Enum.any?(result_list, fn(res_ib_gib) ->
@@ -180,9 +183,10 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     Logger.debug "query_result_info: #{inspect query_result_info}"
     result_list = query_result_info[:rel8ns]["result"]
     Logger.debug "result_list: #{inspect result_list}"
-    assert Enum.count(result_list) === 1
+    # All results have ib^gib as the first result
+    assert Enum.count(result_list) === 2
 
-    single_result = Enum.at(result_list, 0)
+    single_result = Enum.at(result_list, 1)
     assert single_result === test_ib_gib
     Logger.debug "single result: #{single_result}"
   end
@@ -219,9 +223,10 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     Logger.debug "query_result_info: #{inspect query_result_info}"
     result_list = query_result_info[:rel8ns]["result"]
     Logger.debug "result_list: #{inspect result_list}"
-    assert Enum.count(result_list) === 1
+    # All results have ib^gib as the first result
+    assert Enum.count(result_list) === 2
 
-    single_result = Enum.at(result_list, 0)
+    single_result = Enum.at(result_list, 1)
     assert single_result === test_ib_gib
     Logger.debug "single result: #{single_result}"
   end
@@ -258,9 +263,10 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     Logger.debug "query_result_info: #{inspect query_result_info}"
     result_list = query_result_info[:rel8ns]["result"]
     Logger.debug "result_list: #{inspect result_list}"
-    assert Enum.count(result_list) === 1
+    # All results have ib^gib as the first result
+    assert Enum.count(result_list) === 2
 
-    single_result = Enum.at(result_list, 0)
+    single_result = Enum.at(result_list, 1)
     assert single_result === test_ib_gib
     Logger.debug "single result: #{single_result}"
   end
@@ -298,7 +304,8 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     Logger.debug "query_result_info: #{inspect query_result_info}"
     result_list = query_result_info[:rel8ns]["result"]
     Logger.debug "result_list: #{inspect result_list}"
-    assert Enum.count(result_list) === 1
+    # All results have ib^gib as the first result
+    assert Enum.count(result_list) === 2
     # there are three locations where the data value will be the test value:
     # 1) The mut8 transform which gave the ib_gib the data value
     # 2) The actual ib_gib that we want.
@@ -307,7 +314,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     # So we can either expect 3 results or we can filter by dest_ib
     # (but not gib)
 
-    single_result = Enum.at(result_list, 0)
+    single_result = Enum.at(result_list, 1)
     assert single_result === test_ib_gib
     Logger.debug "single result: #{single_result}"
   end
@@ -337,9 +344,10 @@ defmodule IbGib.Expression.ExpressionQueryTest do
 
     result_list = query_result_info[:rel8ns]["result"]
     Logger.debug "result_list: #{inspect result_list}"
-    assert Enum.count(result_list) === 1
+    # All results have ib^gib as the first result
+    assert Enum.count(result_list) === 2
 
-    single_result = Enum.at(result_list, 0)
+    single_result = Enum.at(result_list, 1)
     assert single_result === test_ib_gib_c
     Logger.debug "single result: #{single_result}"
   end
@@ -370,7 +378,8 @@ defmodule IbGib.Expression.ExpressionQueryTest do
 
     result_list = query_result_info[:rel8ns]["result"]
     Logger.debug "result_list(count=#{Enum.count(result_list)}): #{inspect result_list}"
-    assert Enum.count(result_list) > 1
+    # All results have ib^gib as the first result
+    assert Enum.count(result_list) > 2
 
     # should be everything except test_c
     assert !Enum.any?(result_list, &(&1 === test_ib_gib_c))

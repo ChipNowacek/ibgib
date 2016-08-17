@@ -374,7 +374,7 @@ defmodule IbGib.Expression do
       |> add_relation("dna", b)
       |> add_relation(
           "result",
-          result |> reduce([], fn(ib_gib_model, acc) ->
+          result |> reduce(["ib#{delim}gib"], fn(ib_gib_model, acc) ->
             acc ++ [Helper.get_ib_gib!(ib_gib_model.ib, ib_gib_model.gib)]
           end))
 
