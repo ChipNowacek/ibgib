@@ -1,4 +1,5 @@
 @import 'colors';
+@import 'sizes';
 
 /*---------------------------------------------------------------------------*/
 /* Basic */
@@ -40,21 +41,24 @@
 /* Layout */
 /*---------------------------------------------------------------------------*/
 
+
 .container-fluid {
   max-width: 400px;
 }
 
-@media (min-width: 630px) {
-  .container-fluid {
-    max-width: 625px;
+@mixin ibmx-container-fluid($screen-size) {
+  @media (min-width: $screen-size) {
+    .container-fluid {
+      max-width: ibfn-size-given-screen($screen-size);
+    }
   }
 }
 
-@media (min-width: 768px) {
-  .container-fluid {
-    max-width: 730px;
-  }
-}
+@include ibmx-container-fluid($ib_sm);
+@include ibmx-container-fluid($ib_md);
+@include ibmx-container-fluid($ib_lg);
+@include ibmx-container-fluid($ib_xl);
+
 
 .logo {
   width: 100%;
