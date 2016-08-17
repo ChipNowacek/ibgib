@@ -25,6 +25,7 @@ defmodule IbGibTest do
     assert info.gib == "gib"
   end
 
+  @tag :capture_log
   test "default ib_gib expressions" do
     ["fork", "mut8", "rel8", "query"]
     |> Enum.each(fn(test_ib) ->
