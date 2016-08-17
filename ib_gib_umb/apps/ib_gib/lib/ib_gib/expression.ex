@@ -101,21 +101,19 @@ defmodule IbGib.Expression do
   def init({:ib_gib, {ib, gib}}) when is_bitstring(ib) and is_bitstring(gib) do
     Logger.metadata([x: :ib_gib])
     info =
-      if ib === "ib" and gib === "gib" do
-        Logger.debug "initializing ib_gib root expression."
-        %{
-          :ib => ib,
-          :gib => gib,
-          :rel8ns => %{
-            "dna" => default_dna#,
-            # "ancestor" => ["ib#{delim}gib"],
-            },
-          :data => %{}
-        }
-      else
-        Logger.debug "initializing ib_gib expression by loading data. ib: #{ib}, gib: #{gib}"
-        IbGib.Data.load!(ib, gib)
+      case {ib, gib} do
+        {"ib", "gib"} -> init_default(:root)
+        {"fork", "gib"} -> init_default(:fork)
+        {"mut8", "gib"} -> init_default(:mut8)
+        {"rel8", "gib"} -> init_default(:rel8)
+        {"query", "gib"} -> init_default(:query)
+        _ -> IbGib.Data.load!(ib, gib)
       end
+      # if ib === "ib" and gib === "gib" do
+      # else
+      #   Logger.debug "initializing ib_gib expression by loading data. ib: #{ib}, gib: #{gib}"
+      #   IbGib.Data.load!(ib, gib)
+      # end
     register_result = IbGib.Expression.Registry.register(Helper.get_ib_gib!(ib, gib), self)
     if (register_result === :ok) do
       {:ok, %{:info => info}}
@@ -140,6 +138,35 @@ defmodule IbGib.Expression do
         Logger.error err_msg
         {:error, err_msg}
     end
+  end
+
+  defp init_default(:root) do
+    %{
+      :ib => "ib",
+      :gib => "gib",
+      :rel8ns => %{
+        "dna" => ["ib#{delim}gib"],
+        "ancestor" => ["ib#{delim}gib"],
+        },
+      :data => %{}
+    }
+  end
+  defp init_default(:fork), do: get_default("fork")
+  defp init_default(:mut8), do: get_default("mut8")
+  defp init_default(:rel8), do: get_default("rel8")
+  defp init_default(:query), do: get_default("query")
+
+  defp get_default(ib_string) when is_bitstring(ib_string) do
+    Logger.debug "initializing ib_gib #{ib_string} expression."
+    %{
+      :ib => ib_string,
+      :gib => "gib",
+      :rel8ns => %{
+        "dna" => ["ib#{delim}gib", "ib#{delim}gib"],
+        "ancestor" => ["ib#{delim}gib"],
+        },
+      :data => %{}
+    }
   end
 
   # ----------------------------------------------------------------------------
