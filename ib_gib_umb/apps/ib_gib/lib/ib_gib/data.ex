@@ -207,8 +207,19 @@ defmodule IbGib.Data do
     query
   end
 
-  defp add_time_options(query, time_options) when is_map(time_options) and map_size(time_options) > 0 do
-    query
+  defp add_time_options(query, %{"how" => how} = time_options)
+    when is_map(time_options) and map_size(time_options) > 0 and
+         is_bitstring(how) and how != "" do
+    case how do
+      "most recent" ->
+        query
+        |> order_by(desc: :inserted_at)
+        |> limit(1)
+
+      _ ->
+        Logger.warn "unknown time option. how: #{how}"
+        query
+    end
   end
   defp add_time_options(query, time_options) do
     query

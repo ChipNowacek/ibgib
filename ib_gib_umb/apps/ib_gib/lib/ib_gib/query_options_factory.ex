@@ -107,4 +107,15 @@ defmodule IbGib.QueryOptionsFactory do
     Map.merge(acc_options, options)
   end
 
+  def most_recent_only(acc_options) do
+    options = %{
+      "time" => %{
+        "how" => "most recent"
+      }
+    }
+
+    # Overrides the "time" section of the accumulated options
+    Map.merge(acc_options, options)
+  end
+
 end

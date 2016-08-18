@@ -205,6 +205,7 @@ defmodule IbGib.Helper do
     "0AB8246B11E174B2A4A65F0D8AA50BB4CDF712C48BD8C532F57D1703F3404F33"
 
   """
+  def hash(something)
   @spec hash(map) :: String.t
   def hash(map) when is_map(map) do
     {:ok, json} = Poison.encode(map)

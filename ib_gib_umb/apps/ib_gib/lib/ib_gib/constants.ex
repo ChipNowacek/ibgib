@@ -10,19 +10,19 @@ defmodule IbGib.Constants do
     quote do
       # if change, must also change in regex below
       @delim "^"
-      def delim, do: "^"
-      def min_id_length, do: 1
-      def max_id_length, do: 64
-      def min_ib_gib_length, do: 3 # min + delim + min
-      def max_ib_gib_length, do: 129 # max + delim + max
-      def max_data_size, do: 10_240_000 # 10 MB max internal data
+      defp delim, do: "^"
+      defp min_id_length, do: 1
+      defp max_id_length, do: 64
+      defp min_ib_gib_length, do: 3 # min + delim + min
+      defp max_ib_gib_length, do: 129 # max + delim + max
+      defp max_data_size, do: 10_240_000 # 10 MB max internal data
       # one or more word chars, underscore, dash
-      def regex_valid_ib, do: ~r/^[\w\d_-\s]+$/
-      def regex_valid_gib, do: ~r/^[\w\d]+$/
+      defp regex_valid_ib, do: ~r/^[\w\d_-\s]+$/
+      defp regex_valid_gib, do: ~r/^[\w\d]+$/
       # delim hardcoded in!!!!
-      def regex_valid_ib_gib, do: ~r/^[\w\d_-\s]+\^[\w\d]+$/
+      defp regex_valid_ib_gib, do: ~r/^[\w\d_-\s]+\^[\w\d]+$/
 
-      def default_dna, do: ["ib#{delim}gib"]
+      defp default_dna, do: ["ib#{delim}gib"]
 
       @doc """
       This key prefix is a helper that indicates some meta action for the
@@ -33,8 +33,8 @@ defmodule IbGib.Constants do
       key via a mut8. So if an ib_gib's data has `"a" => "a value"` and I want
       to delete that key/value pair.
       """
-      def map_key_meta_prefix, do: "meta__"
-      def rename_operator, do: ">rename>"
+      defp map_key_meta_prefix, do: "meta__"
+      defp rename_operator, do: ">rename>"
     end
   end
 

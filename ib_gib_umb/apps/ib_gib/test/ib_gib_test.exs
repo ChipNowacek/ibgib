@@ -1,6 +1,9 @@
 defmodule IbGibTest do
   use ExUnit.Case
   require Logger
+
+  use IbGib.Constants, :ib_gib
+
   doctest IbGib
   doctest IbGib.TransformFactory
   doctest IbGib.Helper
