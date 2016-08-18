@@ -1,13 +1,12 @@
 defmodule RandomGib.Mixfile do
   use Mix.Project
 
-  @version "0.0.6"
+  @version "0.0.7"
 
-  @description "Standalone app for some simple (not crypto strong) random things, e.g. RandomGib.Get.some_letters(5), RandomGib.Get.one_of(src), RandomGib.Get.some_of(src)"
+  @description "Standalone app for some simple (not crypto strong) random things, e.g. RandomGib.Get.some_letters(5), RandomGib.Get.one_of(src), RandomGib.Get.some_of(src), RandomGib.Get.some_characters(100)"
 
-  @thing_gib_repo_url "https://github.com/ibgib/thingGib"
-  @thing_gib_elixir_repo_url "https://github.com/ibgib/thingGib/tree/master/elixir/thing_gib"
-  @random_gib_repo_url "https://github.com/ibgib/thingGib/tree/master/elixir/thing_gib/apps/random_gib"
+  @ibgib_repo_url "https://github.com/ibgib/ibgib"
+  @random_gib_url "https://github.com/ibgib/ibgib/tree/master/ib_gib_umb/apps/random_gib"
 
   def project do
     [app: :random_gib,
@@ -59,9 +58,8 @@ defmodule RandomGib.Mixfile do
     [maintainers: ["Bill Raiford", "ibgib@ibgib.com"],
      licenses: ["MIT"],
      links: %{
-              "RandomGibApp" => @random_gib_repo_url,
-              "ThingGibRootRepo" => @thing_gib_repo_url,
-              "ThingGibElixirApps" => @thing_gib_elixir_repo_url
+              "RandomGib App" => @random_gib_url,
+              "IbGib Repo" => @ibgib_repo_url
             }
    ]
   end

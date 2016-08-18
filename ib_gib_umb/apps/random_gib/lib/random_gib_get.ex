@@ -2,6 +2,9 @@ defmodule RandomGib.Get do
   use GenServer
   require Logger
 
+  @letters "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+  @letters_and_characters "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ`~!@\#$%^&*()-_=+[]{}\\|;:'\"<>,.?/"
+
   @doc """
   Starts a worker server with a new seed.
   """
@@ -66,12 +69,25 @@ defmodule RandomGib.Get do
     GenServer.call(__MODULE__, {:some_letters, count})
   end
 
+  @doc """
+  Gets a string of characters with length `count`, drawing from the
+  bitstring `valid_characters`, which defaults to a-z, A-Z and a bunch of
+  special characters.
+
+  ## Examples
+    result = RandomGib.Get.some_characters(5)
+
+    result = RandomGib.Get.some_characters(5, "abcdefgh*^&%")
+  """
+  def some_characters(count, valid_characters \\ @letters_and_characters)
+    when is_integer(count) and is_bitstring(valid_characters) do
+    GenServer.call(__MODULE__, {:some_characters, count, valid_characters})
+  end
 
   # ----------------------------------------------------------------------------
   # Server
   # ----------------------------------------------------------------------------
 
-  @letters "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
   def handle_call({:generate_seed, algorithm}, _from, state) do
     # Logger.debug("handle_call :generate_seed")
@@ -92,6 +108,14 @@ defmodule RandomGib.Get do
     # Logger.debug("handle_call :some_letters")
     result = 1..count
       |> Enum.map(fn _ -> one_of_impl(@letters) end)
+      |> Enum.reduce(fn (a,b) -> a <> b end)
+
+    {:reply, result, state}
+  end
+  def handle_call({:some_characters, count, valid_characters}, _from, state) do
+    # Logger.debug("handle_call :some_letters")
+    result = 1..count
+      |> Enum.map(fn _ -> one_of_impl(valid_characters) end)
       |> Enum.reduce(fn (a,b) -> a <> b end)
 
     {:reply, result, state}

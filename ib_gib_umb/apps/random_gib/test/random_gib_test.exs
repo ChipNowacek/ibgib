@@ -106,4 +106,31 @@ defmodule RandomGibTest do
     result = RandomGib.Get.some_letters(100)
     assert String.length(result) === 100
   end
+
+  @tag :capture_log
+  test "RandomGib.Get.some_characters, count only" do
+    count = 1000
+    result = RandomGib.Get.some_characters(count)
+    assert String.length(result) === count
+  end
+
+  @tag :capture_log
+  test "RandomGib.Get.some_characters, valid_characters)" do
+    count = 1000
+    valid_characters = "abAB^"
+    result = RandomGib.Get.some_characters(count, valid_characters)
+    Logger.debug "result: #{result}"
+    assert String.length(result) === count
+
+    # out of a thousand, there should be a freakin a usually
+    assert String.contains?(result, "a")
+    assert String.contains?(result, "^")
+    # No letters/characters that are not explicitly given in valid_characters
+    assert !String.contains?(result, "c")
+    assert !String.contains?(result, "C")
+    assert !String.contains?(result, "z")
+    assert !String.contains?(result, "&")
+  end
+
+
 end
