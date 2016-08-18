@@ -3,10 +3,38 @@ defmodule IbGib.Helper do
   This module provides helper functions used throughout `ib_gib`, and other
   consuming apps, e.g. `web_gib`.
   """
-  
+
   use IbGib.Constants, :ib_gib
   require Logger
 
+  @doc """
+  Extracts the `:ib` and `:gib` from `info` and combines them to form the
+  `ib_gib`.
+
+  See `get_ib_gib/2` for more info.
+
+  ## Examples
+      iex> info = %{ib: "ib", gib: "gib", rel8ns: %{}, data: %{}}
+      ...> IbGib.Helper.get_ib_gib(info)
+      {:ok, "ib^gib"}
+  """
+  def get_ib_gib(info) when is_map(info) do
+    get_ib_gib(info[:ib], info[:gib])
+  end
+
+  @doc """
+  Bang version of `get_ib_gib/1`.
+
+  See `get_ib_gib/2` for more info.
+
+  ## Examples
+      iex> info = %{ib: "ib", gib: "gib", rel8ns: %{}, data: %{}}
+      ...> IbGib.Helper.get_ib_gib!(info)
+      "ib^gib"
+  """
+  def get_ib_gib!(info) when is_map(info) do
+    get_ib_gib!(info[:ib], info[:gib])
+  end
 
   @doc """
   Combines the two given strings `ib` and `gib` using the `delim/0` constant
