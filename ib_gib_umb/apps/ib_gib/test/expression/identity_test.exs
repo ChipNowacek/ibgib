@@ -145,4 +145,48 @@ defmodule IbGib.Expression.IdentityTest do
     assert existing_session_ib == session_ib
   end
 
+  @tag :capture_log
+  test "query for session with identity module, fails, instance session, mut8 session, query for session, be sure to get the mut8d-latest- one" do
+    {:ok, root_session} = Expression.Supervisor.start_expression({"session", "gib"})
+
+    # Refer to the previous two test cases.
+    # This adds to that. It does it by the Identity module. Then it double checks.
+
+    # Because the `ib` of any ib_gib only allows certain characters, we will
+    # not use the session_id as the ib itself. Instead, we will use the hash
+    # of the session_id.
+    # So note: ib and id are DIFFERENT!
+    # Personally, I pronounce these internally with "id" as "ID" (the
+    # initialism "eye dee") and "ib" as "ib" (the noun).
+    # I note it here because I know this may be confusing for newcomers.
+    session_id = RandomGib.Get.some_characters(30)
+    session_ib = Identity.get_session_ib!(session_id)
+
+    # First, we will try to see if there is an existing session with that ib.
+    # There should NOT be. This mimics when someone first visits us, and/or when
+    # a new session is started.
+    # existing_session_ib_gib = Identity.get_latest
+    existing_session_ib_gib = Identity.get_latest_session_ib_gib!(session_id, root_session)
+    assert existing_session_ib_gib == nil
+
+    # Next, since we didn't find an existing session, we instance a new session.
+    {_, session} = root_session |> instance!(session_ib)
+    session2_value = "2 yoooo"
+    session2 = session |> mut8!(%{"value" => session2_value})
+
+    session_info = session |> get_info!
+    assert session_info[:ib] == session_ib
+
+    session2_info = session2 |> get_info!
+
+    # Now, we check again for the session
+    existing_session_ib_gib = Identity.get_latest_session_ib_gib!(session_id, root_session)
+    assert existing_session_ib_gib != nil
+    {existing_session_ib, existing_session_gib} =
+      Helper.separate_ib_gib!(existing_session_ib_gib)
+
+    assert existing_session_ib == session_ib
+    assert existing_session_gib == session2_info[:gib]
+  end
+
 end
