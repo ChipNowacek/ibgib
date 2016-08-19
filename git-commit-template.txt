@@ -1,0 +1,18 @@
+#proj,proj2: Summary
+
+# Blank line
+
+# Bulleted info
+# * Yo
+#   * Yoo
+
+# Attributes
+# attrs: wip
+# attrs: minor
+# attrs: docs
+# attrs: meta
+# attrs: docs, meta, some other attribute
+
+# Issue tracking
+# #123
+# closes #123
