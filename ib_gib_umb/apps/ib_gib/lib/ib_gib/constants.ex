@@ -43,43 +43,43 @@ defmodule IbGib.Constants do
   """
   def error_msgs do
     quote do
-      def emsg_invalid_relations do
+      defp emsg_invalid_relations do
         "Something about the rel8ns is invalid. :-/"
       end
 
-      def emsg_invalid_data do
+      defp emsg_invalid_data do
         "Something about the data is invalid. :-O"
       end
 
-      def emsg_invalid_id_length do
+      defp emsg_invalid_id_length do
         "invalid id length"
       end
 
-      def emsg_invalid_unknown_src_maybe do
+      defp emsg_invalid_unknown_src_maybe do
         "invalid. unknown src maybe, maybe not an array of string"
       end
 
-      def emsg_invalid_data_value(value) do
+      defp emsg_invalid_data_value(value) do
         "invalid data value: #{inspect value}"
       end
 
-      def emsg_unknown_field do
+      defp emsg_unknown_field do
         "Unknown field. Expected either :data or :rel8ns."
       end
 
-      def emsg_hash_problem do
+      defp emsg_hash_problem do
         "There was a problem hashing the given value."
       end
 
-      def emsg_invalid_arg(arg) do
+      defp emsg_invalid_arg(arg) do
         "Invalid argument: #{inspect arg}"
       end
 
-      def emsg_invalid_args(args) do
+      defp emsg_invalid_args(args) do
         "Invalid argument: #{inspect args}"
       end
 
-      def emsg_query_result_count(count) do
+      defp emsg_query_result_count(count) do
         "Unexpected query result count: #{count}"
       end
     end
