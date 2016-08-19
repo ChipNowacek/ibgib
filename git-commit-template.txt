@@ -2,13 +2,11 @@
 # ib_gib:
 # web_gib:
 # ib_gib, web_gib:
-# *: 
+# *:
 
 # Blank line
 
-# Details
-# * Did X
-#   * WRT Y
+# Details (Use * bullets)
 
 # Attributes
 # attr: wip
