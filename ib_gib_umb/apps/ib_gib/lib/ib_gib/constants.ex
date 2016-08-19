@@ -66,6 +66,22 @@ defmodule IbGib.Constants do
       def emsg_unknown_field do
         "Unknown field. Expected either :data or :rel8ns."
       end
+
+      def emsg_hash_problem do
+        "There was a problem hashing the given value."
+      end
+
+      def emsg_invalid_arg(arg) do
+        "Invalid argument: #{inspect arg}"
+      end
+
+      def emsg_invalid_args(args) do
+        "Invalid argument: #{inspect args}"
+      end
+
+      def emsg_query_result_count(count) do
+        "Unexpected query result count: #{count}"
+      end
     end
   end
 

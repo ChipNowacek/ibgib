@@ -6,6 +6,7 @@ defmodule IbGib.Helper do
 
   use IbGib.Constants, :ib_gib
   require Logger
+  @hash_salt "ib_gib_salt_whaa"
 
   @doc """
   Extracts the `:ib` and `:gib` from `info` and combines them to form the
@@ -159,10 +160,10 @@ defmodule IbGib.Helper do
 
   ## Examples
       iex> IbGib.Helper.hash("abc", %{"ancestor" => ["ib^gib"]}, %{"key" => "value"})
-      "5E7AD2FBFE4CA84E3734A750D2F5092755ABA92F374103DFAE22E649C1548B29"
+      "5B3EE06BCC9E68339B7AC6460D805FF6F110DA572F2590D2C1A395D7C1E2DA1D"
 
       iex> IbGib.Helper.hash("abc", %{"ancestor" => ["ib^gib"]}, %{})
-      "6105DCBE78589383ACEDADDAC75BB85907029542A2923002A74E250D22183505"
+      "9A566CD4F57FBEA31DC3F8DFA1771EDD83C1139AB15008E32DCBB6D93538CE8A"
   """
   @spec hash(String.t, map, map) :: String.t
   def hash(ib, relations, data \\ %{}) when
@@ -217,12 +218,15 @@ defmodule IbGib.Helper do
   ## Examples
 
     iex> IbGib.Helper.hash("oijwfensdfjoIEFas283e7NISWEFJOIwe98wefj")
-    "9BDE0A867929A62CA07A4BB5CC21F8E5BBBE388BA477B0E5FCB4B9B74294268F"
+    "E3F6683D94E3FDD2222055BE047FC80CADAD3BA775B5CC3A7AEC6427850D4F54"
 
   """
   @spec hash(String.t) :: String.t
   def hash(s) when is_bitstring(s) do
-    :crypto.hash(:sha256, s) |> Base.encode16
+    :crypto.hash(:sha256, @hash_salt <> s) |> Base.encode16
+  end
+  def hash(_unknown_type) do
+    :error
   end
 
   @doc """
