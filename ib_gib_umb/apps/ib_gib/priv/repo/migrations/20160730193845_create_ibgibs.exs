@@ -8,7 +8,7 @@ defmodule IbGib.Data.Repo.Migrations.CreateIbgibs do
       add :data, :map
       add :rel8ns, :map
 
-      timestamps
+      timestamps([usec: true])
     end
 
     create index(:ibgibs, [:ib], name: :ibgibs_ib_index)

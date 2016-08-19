@@ -14,7 +14,7 @@ defmodule IbGib.Data.Schemas.IbGibModel do
     field :data, :map
     field :rel8ns, :map
 
-    timestamps
+    timestamps([usec: true])
   end
 
   @required_fields ~w(ib gib rel8ns)

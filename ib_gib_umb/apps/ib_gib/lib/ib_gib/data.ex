@@ -213,7 +213,7 @@ defmodule IbGib.Data do
     case how do
       "most recent" ->
         query
-        |> order_by(asc: :inserted_at)
+        |> order_by(desc: :inserted_at)
         |> limit(1)
 
       _ ->
