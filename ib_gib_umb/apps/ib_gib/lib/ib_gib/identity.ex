@@ -17,9 +17,7 @@ defmodule IbGib.Identity do
   """
 
   use IbGib.Constants, :error_msgs
-  import IbGib.Macros
-  alias IbGib.{Expression, Helper}
-  import IbGib.{Expression, QueryOptionsFactory}
+  import IbGib.{Expression, QueryOptionsFactory, Macros, Helper}
   require Logger
 
   @doc """
@@ -33,7 +31,7 @@ defmodule IbGib.Identity do
   """
   @spec get_session_ib(String.t) :: {:ok, String.t} | {:error, String.t}
   def get_session_ib(session_id) when is_bitstring(session_id) do
-    session_ib = Helper.hash(session_id)
+    session_ib = hash(session_id)
     if session_ib != :error do
       {:ok, session_ib}
     else
@@ -104,4 +102,50 @@ defmodule IbGib.Identity do
     bang(get_latest_session_ib_gib(session_id, query_off_of))
   end
 
+  @doc """
+  Checks for an existing session ib_gib. If does not exist, creates one.
+
+  Returns {:ok, session_ib_gib} or {:error, reason}
+  """
+  @spec start_or_resume_session(String.t) :: {:ok, String.t}
+  def start_or_resume_session(session_id) when is_bitstring(session_id) do
+    case IbGib.Expression.Supervisor.start_expression({"session", "gib"}) do
+      {:ok, root_session} ->
+        case get_session_ib(session_id) do
+          {:ok, session_ib} ->
+            case get_latest_session_ib_gib(session_id, root_session) do
+              {:ok, nil} ->
+                case (root_session |> instance(session_ib)) do
+                  {:ok, {_, session}} ->
+                    case session |> get_info do
+                      {:ok, session_info} ->
+                        case get_ib_gib(session_info) do
+                          {:ok, session_ib_gib} -> {:ok, session_ib_gib}
+                          {:error, reason} -> {:error, reason}
+                        end
+                      {:error, reason} -> {:error, reason}
+                    end
+                  {:error, reason} -> {:error, reason}
+                end
+
+              {:ok, existing_session_ib_gib} -> {:ok, existing_session_ib_gib}
+
+              {:error, reason} -> {:error, reason}
+            end
+          {:error, reason} -> {:error, reason}
+        end
+      {:error, reason} -> {:error, reason}
+    end
+  end
+  def start_or_resume_session(unknown_arg) do
+    {:error, emsg_invalid_arg(unknown_arg)}
+  end
+
+  @doc """
+  Bang version of `start_or_resume_session/1`.
+  """
+  @spec start_or_resume_session!(String.t) :: String.t
+  def start_or_resume_session!(session_id) do
+    bang(start_or_resume_session(session_id))
+  end
 end

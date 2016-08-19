@@ -189,4 +189,20 @@ defmodule IbGib.Expression.IdentityTest do
     assert existing_session_gib == session2_info[:gib]
   end
 
+  @tag :capture_log
+  test "Identity start_or_resume_session" do
+    {:ok, root_session} = Expression.Supervisor.start_expression({"session", "gib"})
+
+    session_id = RandomGib.Get.some_characters(30)
+
+    {:ok, session_ib_gib} = Identity.start_or_resume_session(session_id)
+
+    assert session_ib_gib != nil
+
+    {:ok, session} = Expression.Supervisor.start_expression(session_ib_gib)
+
+    session_info = session |> get_info!
+
+    assert session_info[:ib] == Identity.get_session_ib!(session_id)
+  end
 end
