@@ -7,6 +7,7 @@ defmodule IbGibTest do
   doctest IbGib
   doctest IbGib.TransformFactory
   doctest IbGib.Helper
+  doctest IbGib.Identity
   import IbGib.Expression
 
   setup context do

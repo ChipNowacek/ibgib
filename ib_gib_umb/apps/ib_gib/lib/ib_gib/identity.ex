@@ -25,6 +25,10 @@ defmodule IbGib.Identity do
   @doc """
   Gets the session ib based on the given `session_id`.
 
+  ## Examples
+      iex> IbGib.Identity.get_session_ib("some-id_here234987SD(^&@{%})")
+      {:ok, "6C111BD527531D047C90AE259852F4122E358ECFAAE9F78DAFF81F24B0CA1678"}
+
   Returns {:ok, session_ib} if ok, else {:error, reason}
   """
   @spec get_session_ib(String.t) :: {:ok, String.t} | {:error, String.t}
@@ -42,13 +46,13 @@ defmodule IbGib.Identity do
 
   @doc """
   Bang version of `get_session_ib/1`.
+
+  ## Examples
+      iex> IbGib.Identity.get_session_ib!("some-id_here234987SD(^&@{%})")
+      "6C111BD527531D047C90AE259852F4122E358ECFAAE9F78DAFF81F24B0CA1678"
   """
   def get_session_ib!(session_id) do
     bang(get_session_ib(session_id))
-    # case get_session_ib do
-    #   {:ok, value} -> value
-    #   {:error, reason} -> raise reason
-    # end
   end
 
   @doc """
@@ -99,4 +103,5 @@ defmodule IbGib.Identity do
   def get_latest_session_ib_gib!(session_id, query_off_of) do
     bang(get_latest_session_ib_gib(session_id, query_off_of))
   end
+
 end
