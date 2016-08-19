@@ -200,7 +200,7 @@ defmodule IbGib.Expression do
       "dna" => a_dna,
       "ancestor" => a_ancestor
     }
-    Logger.warn "this_rel8ns: #{inspect this_rel8ns}"
+    Logger.debug "this_rel8ns: #{inspect this_rel8ns}"
     this_info = Map.put(this_info, :rel8ns, this_rel8ns)
     Logger.debug "this_info: #{inspect this_info}"
 
@@ -251,8 +251,8 @@ defmodule IbGib.Expression do
     b_new_data_metadata =
       b_data["new_data"]
       |>Enum.filter(fn(entry) ->
-        Logger.warn "creating metadata. entry: #{inspect entry}"
-          Logger.warn "entry: #{inspect entry}"
+        Logger.debug "creating metadata. entry: #{inspect entry}"
+          Logger.debug "entry: #{inspect entry}"
           {entry_key, _} = entry
           entry_key |> String.starts_with?(map_key_meta_prefix)
         end)
@@ -268,7 +268,7 @@ defmodule IbGib.Expression do
     b_new_data =
       b_data["new_data"]
       |>Enum.filter(fn(entry) ->
-          Logger.warn "creating data without metadata. entry: #{inspect entry}"
+          Logger.debug "creating data without metadata. entry: #{inspect entry}"
           {entry_key, _} = entry
           !String.starts_with?(entry_key, map_key_meta_prefix)
         end)
@@ -386,7 +386,7 @@ defmodule IbGib.Expression do
   defp apply_query(a, b) do
     query_options = b[:data]["options"]
     result = IbGib.Data.query(query_options)
-    Logger.warn "query result: #{inspect result}"
+    Logger.debug "query result: #{inspect result}"
 
     this_info = %{}
     this_ib = "queryresult"
@@ -574,6 +574,12 @@ defmodule IbGib.Expression do
   actually populates the results of the query. These results are then stored
   in another ib_gib.
 
+  ATOW (2016/08/16), it does not conceptually matter what expr_pid you use for
+  this. This uses no state from the source `expr_pid`. But if we always use
+  ib^gib, then it's going to bottle neck (though in the future, I plan on
+  addressing this). But currently, I just do the query on whatever is available
+  and makes some kind of sense. But it doesn't "really" matter.
+
   ## Returns
   Returns `{:ok, qry_results_expr_pid}` which is the reference to the newly
   generated queryresults ib_gib (not the query "transform" ib_gib).
@@ -726,7 +732,7 @@ defmodule IbGib.Expression do
     {:reply, instance_impl(dest_ib, state), state}
   end
   def handle_call({:query, query_options}, _from, state) do
-    Logger.warn "query_options: #{inspect query_options}"
+    Logger.debug "query_options: #{inspect query_options}"
     {:reply, query_impl(query_options, state), state}
   end
   def handle_call(:get_info, _from, state) do

@@ -98,7 +98,7 @@ defmodule IbGib.Data do
 
     result = model |> Repo.all
 
-    Logger.warn "data query result yo-=------------------------\n#{inspect result}"
+    Logger.debug "data query result yo-=------------------------\n#{inspect result}"
     result
   end
 
@@ -110,7 +110,7 @@ defmodule IbGib.Data do
     ib_options)
     when is_map(ib_options) and map_size(ib_options) > 0 and
          is_bitstring(search_term) and is_bitstring(method) do
-    Logger.warn "yoooooooooooooooo"
+    # Logger.warn "yoooooooooooooooo"
 
     case method do
       "is" ->
@@ -213,7 +213,7 @@ defmodule IbGib.Data do
     case how do
       "most recent" ->
         query
-        |> order_by(desc: :inserted_at)
+        |> order_by(asc: :inserted_at)
         |> limit(1)
 
       _ ->
@@ -248,7 +248,7 @@ defmodule IbGib.Data do
          |> Repo.insert do
 
       {:ok, model} ->
-        Logger.warn "Inserted changeset.\nib: #{info[:ib]}\ngib: #{info[:gib]}\nmodel: #{inspect model}"
+        Logger.debug "Inserted changeset.\nib: #{info[:ib]}\ngib: #{info[:gib]}\nmodel: #{inspect model}"
         {:ok, model}
 
       {:error, changeset} ->

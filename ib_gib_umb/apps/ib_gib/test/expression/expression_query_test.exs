@@ -8,7 +8,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
 
   use ExUnit.Case
   use IbGib.Constants, :ib_gib
-  # alias IbGib.{Expression, Helper}
+  alias IbGib.Helper
   # alias IbGib.Data.Repo
   import IbGib.Expression
   import IbGib.QueryOptionsFactory
@@ -383,6 +383,47 @@ defmodule IbGib.Expression.ExpressionQueryTest do
 
     # should be everything except test_c
     assert !Enum.any?(result_list, &(&1 === test_ib_gib_c))
+  end
+
+  # @tag :capture_log
+  test "Fork, mut8, query most recent only" do
+    test_count = 5
+    {:ok, root} = IbGib.Expression.Supervisor.start_expression()
+
+
+    a_ib = RandomGib.Get.some_letters(5)
+    a = root |> fork!(a_ib)
+    Logger.configure(level: :info)
+
+    {a_n, a_n_gib} =
+      1..test_count
+      |> Enum.reduce({a, nil}, fn(n, {a_m, _}) ->
+           Process.sleep(100)
+           new_a = a_m |> mut8!(%{"value" => "#{n}"})
+           Process.sleep(100)
+           new_a_info = new_a |> get_info!
+           Logger.warn "new_a_info[:ib]: #{new_a_info[:ib]}"
+           Logger.warn "new_a_info[:gib]: #{new_a_info[:gib]}"
+           {new_a, new_a_info[:gib]}
+         end)
+    Logger.configure(level: :debug)
+    Process.sleep(100)
+
+    query_opts =
+      do_query
+      |> where_ib("is", a_ib)
+      |> most_recent_only
+    query_result_info = a |> query!(query_opts) |> get_info!
+    Logger.debug "query_result_info: #{inspect query_result_info}"
+
+    result_list = query_result_info[:rel8ns]["result"]
+    Logger.debug "result_list(count=#{Enum.count(result_list)}): #{inspect result_list}"
+    # All results have ib^gib as the first result, so ignore one of the list
+    assert Enum.count(result_list) === 2
+    single_result = Enum.at(result_list, 1)
+
+    {_, single_result_gib} = Helper.separate_ib_gib!(single_result)
+    assert single_result_gib == a_n_gib
   end
 
 end
