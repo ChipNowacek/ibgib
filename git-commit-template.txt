@@ -1,17 +1,21 @@
-#proj,proj2: Summary
+# Project(s): Summary
+# ib_gib:
+# web_gib:
+# ib_gib, web_gib:
+# *: 
 
 # Blank line
 
-# Bulleted info
-# * Yo
-#   * Yoo
+# Details
+# * Did X
+#   * WRT Y
 
 # Attributes
-# attrs: wip
-# attrs: minor
-# attrs: docs
-# attrs: meta
-# attrs: docs, meta, some other attribute
+# attr: wip
+# attr: minor
+# attr: docs
+# attr: meta
+# attr: something else
 
 # Issue tracking
 # #123
