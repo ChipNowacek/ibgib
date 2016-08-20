@@ -5,11 +5,20 @@ defmodule WebGib.Constants do
   for consuming the constants in a module.
   """
 
+  def keys do
+    quote do
+      # I'm prepending ib_gib_ to differentiate from any other possible name
+      # conflict.
+      @ib_gib_session_id_key :ib_gib_session_id
+      @session_ib_gib_key :session_ib_gib
+    end
+  end
+
   def error_msgs do
     quote do
-      def emsg_invalid_dest_ib do
-        "Only letters, numbers, spaces, dashes, underscores are allowed for the destination ib. Just hit the back button to return."
-      end
+      @emsg_invalid_dest_ib "Only letters, numbers, spaces, dashes, underscores are allowed for the destination ib. Just hit the back button to return."
+
+      @emsg_invalid_session "There is a problem with the session. Try logging out, refreshing your browser, and then logging back in."
     end
   end
   def fork do
