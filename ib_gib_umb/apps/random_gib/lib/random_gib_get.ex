@@ -156,7 +156,7 @@ defmodule RandomGib.Get do
     # Enum.at(list, :rand.uniform(Enum.count(list)))
     percent = :rand.uniform()
     result = Enum.filter(src, fn _item -> :rand.uniform() > percent end)
-    if (Enum.count(result) === 0) do
+    if Enum.count(result) === 0 do
       Logger.debug("Recursing some_of")
       some_of_impl(src)
     else

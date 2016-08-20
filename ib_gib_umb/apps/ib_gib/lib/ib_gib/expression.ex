@@ -115,7 +115,7 @@ defmodule IbGib.Expression do
       #   IbGib.Data.load!(ib, gib)
       # end
     register_result = IbGib.Expression.Registry.register(Helper.get_ib_gib!(ib, gib), self)
-    if (register_result === :ok) do
+    if register_result == :ok do
       {:ok, %{:info => info}}
     else
       Logger.error "Register expression error: #{inspect register_result}"
@@ -250,16 +250,16 @@ defmodule IbGib.Expression do
 
     b_new_data_metadata =
       b_data["new_data"]
-      |>Enum.filter(fn(entry) ->
-        Logger.debug "creating metadata. entry: #{inspect entry}"
-          Logger.debug "entry: #{inspect entry}"
-          {entry_key, _} = entry
-          entry_key |> String.starts_with?(map_key_meta_prefix)
-        end)
-      |>Enum.reduce(%{}, fn(entry, acc) ->
-          {key, value} = entry
-          acc |> Map.put(key, value)
-        end)
+      |> Enum.filter(fn(entry) ->
+         Logger.debug "creating metadata. entry: #{inspect entry}"
+           Logger.debug "entry: #{inspect entry}"
+           {entry_key, _} = entry
+           entry_key |> String.starts_with?(map_key_meta_prefix)
+         end)
+      |> Enum.reduce(%{}, fn(entry, acc) ->
+           {key, value} = entry
+           acc |> Map.put(key, value)
+         end)
     Logger.debug "b_new_data_metadata: #{inspect b_new_data_metadata}"
 
     a_data = a_data |> apply_mut8_metadata(b_new_data_metadata)
@@ -267,20 +267,20 @@ defmodule IbGib.Expression do
 
     b_new_data =
       b_data["new_data"]
-      |>Enum.filter(fn(entry) ->
-          Logger.debug "creating data without metadata. entry: #{inspect entry}"
-          {entry_key, _} = entry
-          !String.starts_with?(entry_key, map_key_meta_prefix)
-        end)
-      |>Enum.reduce(%{}, fn(entry, acc) ->
-          {key, value} = entry
-          acc |> Map.put(key, value)
-        end)
+      |> Enum.filter(fn(entry) ->
+           Logger.debug "creating data without metadata. entry: #{inspect entry}"
+           {entry_key, _} = entry
+           !String.starts_with?(entry_key, map_key_meta_prefix)
+         end)
+      |> Enum.reduce(%{}, fn(entry, acc) ->
+           {key, value} = entry
+           acc |> Map.put(key, value)
+         end)
     Logger.debug "b_new_data: #{inspect b_new_data}"
     Logger.debug "a_data: #{inspect a_data}"
 
     merged_data =
-      if (map_size(b_new_data) > 0) do
+      if map_size(b_new_data) > 0 do
         Map.merge(a_data, b_new_data)
       else
         a_data
@@ -309,29 +309,29 @@ defmodule IbGib.Expression do
     Logger.warn "rename_key: #{rename_key}"
 
     b_new_data_metadata
-    |>Enum.reduce(a_data, fn(entry, acc) ->
-        {key, value} = entry
-        Logger.debug "key: #{key}"
-        cond do
-          key === remove_key ->
-            Logger.debug "remove_key. {key, value}: {#{key}, #{value}}"
-            acc = Map.drop(acc, [value])
+    |> Enum.reduce(a_data, fn(entry, acc) ->
+         {key, value} = entry
+         Logger.debug "key: #{key}"
+         cond do
+           key === remove_key ->
+             Logger.debug "remove_key. {key, value}: {#{key}, #{value}}"
+             acc = Map.drop(acc, [value])
 
-          key === rename_key ->
-            Logger.debug "rename_key. {key, value}: {#{key}, #{value}}"
-            [old_key_name, new_key_name] = String.split(value, rename_operator)
-            Logger.debug "old_key_name: #{old_key_name}, new: #{new_key_name}"
-            data_value = a_data |> Map.get(old_key_name)
-            acc =
-              acc
-              |> Map.drop([old_key_name])
-              |> Map.put(new_key_name, data_value)
+           key === rename_key ->
+             Logger.debug "rename_key. {key, value}: {#{key}, #{value}}"
+             [old_key_name, new_key_name] = String.split(value, rename_operator)
+             Logger.debug "old_key_name: #{old_key_name}, new: #{new_key_name}"
+             data_value = a_data |> Map.get(old_key_name)
+             acc =
+               acc
+               |> Map.drop([old_key_name])
+               |> Map.put(new_key_name, data_value)
 
-          true ->
-            Logger.error "Unknown mut8_metadata key: #{key}"
-            a_data
-        end
-      end)
+           true ->
+             Logger.error "Unknown mut8_metadata key: #{key}"
+             a_data
+         end
+       end)
   end
   defp apply_mut8_metadata(a_data, b_new_data_metadata)
     when map_size(b_new_data_metadata) === 0 do
@@ -354,7 +354,7 @@ defmodule IbGib.Expression do
     a_ib_gib = Helper.get_ib_gib!(a[:ib], a[:gib])
 
     {new_relations, other_ib_gib} =
-      if (a_ib_gib === src_ib_gib) do
+      if a_ib_gib == src_ib_gib do
         {b[:data]["src_rel8ns"], dest_ib_gib}
       else
         {b[:data]["dest_rel8ns"], src_ib_gib}
@@ -434,7 +434,7 @@ defmodule IbGib.Expression do
     b_is_list_of_ib_gib =
       b |> all?(fn(item) -> Helper.valid_ib_gib?(item) end)
 
-    if (b_is_list_of_ib_gib) do
+    if b_is_list_of_ib_gib do
       Logger.debug "Adding relation #{relation_name} to a_info. a_info[:rel8ns]: #{inspect a_info[:rel8ns]}"
       a_relations = a_info[:rel8ns]
 
@@ -466,7 +466,7 @@ defmodule IbGib.Expression do
            :ok <- IbGib.Expression.Registry.register(ib_gib, self),
         do: :ok
 
-    if (result === :ok) do
+    if result == :ok do
       Logger.debug "Saved and registered ok. info: #{inspect info}"
       {:ok, %{:info => info}}
     else

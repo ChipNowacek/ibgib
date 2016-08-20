@@ -1,11 +1,18 @@
 defmodule IbGib.Expression.Supervisor do
+  @moduledoc """
+  Besides obviously supervising `IbGib.Expression` process, this is actually
+  in practice with `start_expression/1` and `start_expression/2`.
+
+  Each of these child processes represents the immutable state of an ib_gib
+  "snapshot" in time, with the `ib` acting usually as the id, and the `gib`
+  acting usually as the hash.
+  """
+
   use Supervisor
   require Logger
 
+  use IbGib.Constants, :ib_gib
   alias IbGib.{Helper, Expression.Registry}
-
-  @delim "^"
-  @root_ib_gib "ib#{@delim}gib"
 
   def start_link do
     Supervisor.start_link(__MODULE__, :ok, name: IbGib.Expression.Supervisor)
@@ -44,7 +51,7 @@ defmodule IbGib.Expression.Supervisor do
 
 
     {get_result, expr_pid} = Registry.get_process(expr_ib_gib)
-    if (get_result === :ok) do
+    if get_result == :ok do
       Logger.debug "already started expr: #{expr_ib_gib}"
       {:ok, expr_pid}
     else

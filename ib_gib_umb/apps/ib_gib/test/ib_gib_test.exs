@@ -8,6 +8,7 @@ defmodule IbGibTest do
   doctest IbGib.TransformFactory
   doctest IbGib.Helper
   doctest IbGib.Identity
+  doctest IbGib.Data.Schemas.ValidateHelper
   import IbGib.Expression
 
   setup context do

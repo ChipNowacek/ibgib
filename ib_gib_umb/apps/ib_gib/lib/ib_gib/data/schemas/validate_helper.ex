@@ -1,54 +1,37 @@
 defmodule IbGib.Data.Schemas.ValidateHelper do
+  @moduledoc """
+  These are helper functions used in validating the
+  `IbGib.Data.Schemas.IbGibModel`.
+  """
   require Logger
 
   use IbGib.Constants, :ib_gib
   use IbGib.Constants, :error_msgs
 
-  # @doc """
-  # I'm not sure about the implementation here. I know I made these to make
-  # sure that the thing being passed in was an array of strings, and that
-  # the strings were valid id strings.
-  # """
-  # def id_array(field, src)
-  # def id_array(field, src) when is_list(src) and length(src) === 0 do
-  #   # empty array is valid
-  #   []
-  # end
-  # def id_array(field, src) when is_list(src) do
-  #   # Already assumed that it is list of strings per schema declaration
-  #   has_invalid_length = Enum.any?(src, fn id ->
-  #     len = String.length(id)
-  #     len < min_id_length or len > max_id_length
-  #   end)
-  #
-  #   cond do
-  #     has_invalid_length -> [{field, invalid_id_length_msg}]
-  #     true -> []
-  #   end
-  # end
-  # def id_array(field, src) do
-  #   [{field, invalid_unknown_msg}]
-  # end
-
   @doc """
   Is the src being passed in a non-empty map that contains key/values where the
   key is a string and the value is an array of valid ib_gib.
 
-  E.g. %{"dna" => ["ib^gib"]}
+  ## Examples
+      iex> test = %{"dna" => ["ib^gib", "fork^gib"]}
+      ...> IbGib.Data.Schemas.ValidateHelper.map_of_ib_gib_arrays?(:some_field, test)
+      true
 
-  Returns true if it's a map of valid
+      iex> test = %{:not_a_string => ["ib^gib", "fork^gib"]}
+      ...> IbGib.Data.Schemas.ValidateHelper.map_of_ib_gib_arrays?(:some_field, test)
+      false
+
+      iex> test = %{"dna" => "not an array of ib^gib"}
+      ...> IbGib.Data.Schemas.ValidateHelper.map_of_ib_gib_arrays?(:some_field, test)
+      false
+
+  Returns true if it's a map of valid ib^gib arrays.
   """
   def map_of_ib_gib_arrays?(_field, src)
     when is_map(src) and map_size(src) > 0 do
     src
     |> Enum.all?(
-      fn(item) ->
-        Logger.debug "item: #{inspect item}"
-        {key, value} = item
-
-        # Logger.debug "key: #{inspect key}\nvalue: #{inspect value}"
-        # Logger.debug "is_list(value): #{is_list(value)}"
-
+      fn({key, value}) ->
         is_bitstring(key) and
         String.length(key) > 0 and
         is_list(value) and
@@ -102,13 +85,13 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
 
         # Logger.debug "key: #{inspect key}\nvalue: #{inspect value}"
         # Logger.debug "is_list(value): #{is_list(value)}"
-        if (is_bitstring(key)) do
+        if is_bitstring(key) do
           key_length = key |> String.length
 
           key_valid? =
             is_bitstring(key) and key_length > 0 and key_length <= max_id_length
 
-          if (key_valid?) do
+          if key_valid? do
             value_valid? =
               cond do
                 is_nil(value) ->
@@ -120,7 +103,7 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
                   # then check to see if we've gotten too big for our britches.
                   value_length = value |> String.length
                   new_running_size = acc + key_length + value_length
-                  if (new_running_size <= max_size) do
+                  if new_running_size <= max_size do
                     Logger.debug "new_running_size: #{new_running_size}, max_size: #{max_size}"
                     {:cont, new_running_size}
                   else
@@ -132,7 +115,7 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
                   # Call the get_map_size recursively, passing in our current
                   # acc value as the starting point.
                   new_running_size = get_map_size(value, acc + key_length, max_size)
-                  if (new_running_size === -1) do
+                  if new_running_size === -1 do
                     # Internal map has put us over the top
                     {:halt, -1}
                   else
@@ -152,7 +135,7 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
                           {:halt, -1}
                       end
                     end)
-                    if (new_running_size === -1) do
+                    if new_running_size === -1 do
                       # Internal map has put us over the top
                       {:halt, -1}
                     else

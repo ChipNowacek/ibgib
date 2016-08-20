@@ -1,4 +1,9 @@
 defmodule IbGib.Data.Cache do
+  @moduledoc """
+  This is a cache for persisting ib_gib in something slightly more permanent
+  than the processes themselves, but not as permanent as the repo itself.
+  """
+  
   use GenServer
   require Logger
 
@@ -76,7 +81,7 @@ defmodule IbGib.Data.Cache do
   defp put_impl(items, key, value) do
     Logger.debug "key: #{key}\nvalue: #{inspect value}"
     insert_result = :ets.insert_new(items, {key, value})
-    if (insert_result) do
+    if insert_result do
       {:ok, :ok}
     else
       Logger.warn "Attempted to insert duplicate key in cache. key: #{key}"

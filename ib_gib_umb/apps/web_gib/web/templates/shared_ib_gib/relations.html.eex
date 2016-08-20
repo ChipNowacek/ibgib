@@ -7,7 +7,7 @@
     <% special_rel8ns = ["ancestor", "past"] #, "dna", "past"]%>
     <%= for {rel8n, rel8n_ib_gib_list} <- @thing_relations do %>
 
-      <%= if (not Enum.member?(special_rel8ns, rel8n)) do %>
+      <%= if !Enum.member?(special_rel8ns, rel8n) do %>
 
         <div class="ib-info-border ib-hoverable">
           <div class="ib-hover-btn">

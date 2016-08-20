@@ -1,4 +1,10 @@
 defmodule IbGib.QueryOptionsFactory do
+  @moduledoc """
+  This module provides factory functions to build queries to pass to the
+  `IbGib.Expression.query/2` function.
+
+  See `IbGib.Expression.ExpressionQueryTest` for examples on how to use it.
+  """
   require Logger
 
   use IbGib.Constants, :ib_gib

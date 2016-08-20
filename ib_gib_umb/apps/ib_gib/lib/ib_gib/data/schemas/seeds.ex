@@ -1,4 +1,8 @@
 defmodule IbGib.Data.Schemas.Seeds do
+  @moduledoc """
+  Utility functions to aid seeding ecto db.
+  """
+  
   require Logger
   use IbGib.Constants, :ib_gib
   alias IbGib.Data.Repo

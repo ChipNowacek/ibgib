@@ -59,7 +59,7 @@ defmodule WebGib.IbGibController do
         {:ok, conn}
     end
 
-    if (result === :ok) do
+    if result == :ok do
       conn = result_term
       conn
       |> render "show.html"
@@ -275,7 +275,7 @@ defmodule WebGib.IbGibController do
          src_ib_gib !== "" and dest_ib !== "" do
     Logger.warn "dest_ib: #{dest_ib}"
     src =
-      if (src_ib_gib === "" or src_ib_gib === @root_ib_gib) do
+      if (src_ib_gib == "") or (src_ib_gib == @root_ib_gib) do
         root
       else
         {:ok, thing} = IbGib.Expression.Supervisor.start_expression(src_ib_gib)

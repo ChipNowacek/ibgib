@@ -1,4 +1,10 @@
 defmodule IbGib.Expression.Registry do
+  @moduledoc """
+  This registry keeps track of `IbGib.Expression` processes corresponding to
+  each process's `ib^gib` unique identifier. So, it maps the `ib^gib` to
+  an `ib_gib` pid.
+  """
+
   use GenServer
   require Logger
 

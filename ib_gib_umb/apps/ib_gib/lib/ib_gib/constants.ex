@@ -1,4 +1,9 @@
 defmodule IbGib.Constants do
+  @moduledoc """
+  This module contains constants used in various aspects throughout the
+  applications. Each function is a scope of constants and contains instructions
+  for consuming the constants in a module.
+  """
 
   @doc """
   Use this with `use IbGib.Constants, :ib_gib`
@@ -10,6 +15,8 @@ defmodule IbGib.Constants do
     quote do
       # if change, must also change in regex below
       @delim "^"
+      @root_ib_gib "ib#{@delim}gib"
+
       defp delim, do: "^"
       defp min_id_length, do: 1
       defp max_id_length, do: 64

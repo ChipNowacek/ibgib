@@ -15,12 +15,8 @@ defmodule IbGib.TestHelper do
       {:error, changeset} ->
         error_map = Enum.into(changeset.errors, %{})
 
-        if (expected_validation_msg != nil) do
+        if expected_validation_msg != nil do
           {_atom, result} = Map.fetch(error_map, field)
-          # IO.puts "error_map"
-          # IO.inspect error_map
-          # IO.puts "atom, result"
-          # IO.inspect {atom, result}
           case result do
             {err_msg, _type} -> assert err_msg === expected_validation_msg
             err_msg -> assert err_msg === expected_validation_msg

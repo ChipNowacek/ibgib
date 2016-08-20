@@ -1,4 +1,12 @@
 defmodule IbGib.TransformFactory do
+  @moduledoc """
+  This factory module generates ib_gib info maps for the fundamental transforms:
+  fork, mut8, rel8, and query.
+
+  These functions are used by the `IbGib.Expression` module itself, so ATOW
+  (2016/08/20) no other consumers need to use these.
+  """
+
   alias IbGib.Helper
   use IbGib.Constants, :ib_gib
 
@@ -81,6 +89,10 @@ defmodule IbGib.TransformFactory do
     }
   end
 
+  @doc """
+  Creates a `query` transform ib_gib info map containing the given
+  `query_options`.
+  """
   def query(query_options)
     when is_map(query_options) do
 

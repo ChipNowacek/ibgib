@@ -1,4 +1,8 @@
 defmodule IbGib.Data do
+  @moduledoc """
+  This acts as a data layer abstraction. Here you can save, load, and query
+  data. 
+  """
   require Logger
   import Ecto.Query
 
@@ -197,7 +201,7 @@ defmodule IbGib.Data do
           Logger.warn "unknown {with_or_without, method}: {#{with_or_without}, #{method}}"
           query
       end
-      # if (with_or_without == "with") do
+      # if with_or_without == "with" do
       #
       # else
       #   query
@@ -237,21 +241,24 @@ defmodule IbGib.Data do
   # Returns {:ok, model} or {:error, changeset}
   defp insert_into_repo(info) when is_map(info) do
     Logger.debug "inserting into repo. info: #{inspect info}"
-    case IbGibModel.changeset(%IbGibModel{}, %{
+    insert_result =
+      %IbGibModel{}
+      |> IbGibModel.changeset(%{
            ib: info[:ib],
            gib: info[:gib],
            data: info[:data],
            rel8ns: info[:rel8ns]
          })
-         |> Repo.insert do
-
+     |> Repo.insert
+    case insert_result do
       {:ok, model} ->
         Logger.debug "Inserted changeset.\nib: #{info[:ib]}\ngib: #{info[:gib]}\nmodel: #{inspect model}"
         {:ok, model}
 
       {:error, changeset} ->
         already_error = {"has already been taken", []}
-        if (Enum.count(changeset.errors) === 1 and changeset.errors[:ib] === already_error) do
+        if Enum.count(changeset.errors) == 1 and
+           changeset.errors[:ib] == already_error do
           Logger.warn "Did NOT insert changeset. Already exists.\nib: #{info[:ib]}\ngib: #{info[:gib]}\nchangeset: #{inspect changeset}"
           {:error, :already}
         else
@@ -268,7 +275,7 @@ defmodule IbGib.Data do
       |> Repo.one
 
     Logger.debug "got model: #{inspect model}"
-    if (model === nil) do
+    if model == nil do
       {:error, :not_found}
     else
       %{:ib => ^ib, :gib => ^gib, :data => data, :rel8ns => rel8ns} = model

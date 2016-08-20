@@ -223,7 +223,9 @@ defmodule IbGib.Helper do
   """
   @spec hash(String.t) :: String.t
   def hash(s) when is_bitstring(s) do
-    :crypto.hash(:sha256, @hash_salt <> s) |> Base.encode16
+    :sha256
+    |> :crypto.hash(@hash_salt <> s)
+    |> Base.encode16
   end
   def hash(_unknown_type) do
     :error

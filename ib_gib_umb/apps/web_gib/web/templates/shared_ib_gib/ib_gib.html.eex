@@ -9,7 +9,7 @@
 
   <!-- <a href="<%= ib_gib_path(@conn, :show, @ib_gib) %>"> -->
     <div class="ib-tooltip-big ib-circular-menuable">
-      <%= if (@big) do %>
+      <%= if @big do %>
         <span class="ib-green ib-circular-menuable ib-big-ibgib-text"><%= @ib %></span>
       <% else %>
         <span class="ib-green ib-circular-menuable"><%= @ib %></span>
@@ -18,7 +18,7 @@
     </div>
   <!-- </a> -->
 
-  <%= if (@big) do %>
+  <%= if @big do %>
     <div>
       <%= form_for @conn, ib_gib_path(@conn, :fork), [as: :fork_form_data, class: "ib-circular-menuable"], fn f -> %>
         <%= text_input f, :dest_ib %>
