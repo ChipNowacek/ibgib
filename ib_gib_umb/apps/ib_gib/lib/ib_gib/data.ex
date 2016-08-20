@@ -269,7 +269,7 @@ defmodule IbGib.Data do
       |> where(ib: ^ib, gib: ^gib)
       |> Repo.one
 
-    Logger.warn "got model: #{inspect model}"
+    Logger.debug "got model: #{inspect model}"
     if (model === nil) do
       {:error, :not_found}
     else

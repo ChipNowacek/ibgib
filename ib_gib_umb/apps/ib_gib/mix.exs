@@ -40,9 +40,10 @@ defmodule IbGib.Mixfile do
   defp deps do
     [
       {:postgrex, ">= 0.0.0"},
-      {:ecto, "== 2.0.2"}, # frozen at this point because ecto migrate fails at 2.0.4
+      {:ecto, ">= 2.0.2"}, # frozen at this point because ecto migrate fails at 2.0.4
       {:poison, "~> 2.1"},
-      {:random_gib, in_umbrella: true}
+      {:random_gib, in_umbrella: true},
+      {:happy, "~> 1.3.1"}
     ]
   end
 

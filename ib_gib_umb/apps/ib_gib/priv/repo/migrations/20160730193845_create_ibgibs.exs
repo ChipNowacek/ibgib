@@ -2,7 +2,9 @@ defmodule IbGib.Data.Repo.Migrations.CreateIbgibs do
   use Ecto.Migration
 
   def change do
-    create table(:ibgibs, comment: "Primary table for ibGib data.") do
+    # v2.0.4 has a problem with the comment in the migration.
+    # create table(:ibgibs, comment: "Primary table for ibGib data.") do
+    create table(:ibgibs) do
       add :ib, :string
       add :gib, :string
       add :data, :map

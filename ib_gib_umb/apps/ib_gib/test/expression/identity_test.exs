@@ -199,10 +199,14 @@ defmodule IbGib.Expression.IdentityTest do
 
     assert session_ib_gib != nil
 
+    # Get the actual process to be sure that the new session object actually
+    # exists
     {:ok, session} = Expression.Supervisor.start_expression(session_ib_gib)
 
     session_info = session |> get_info!
 
+    # verify completely separately from the process that it is the correct
+    # session id.
     assert session_info[:ib] == Identity.get_session_ib!(session_id)
   end
 end

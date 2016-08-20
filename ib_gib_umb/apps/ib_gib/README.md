@@ -136,3 +136,85 @@ be an "immutable" process identified uniquely by its `ib` + `gib` fields.
 This design has **extremely** interesting implications, but that returns us to
 wacky conceptual abstractedness, so I'll leave it for another time. For now,
 let's keep going with the mechanics.
+
+
+## Pyramid of doom with branching case statement in the middle
+
+def start_or_resume_session(session_id) when is_bitstring(session_id) do
+  case IbGib.Expression.Supervisor.start_expression({"session", "gib"}) do
+    {:ok, root_session} ->
+      case get_session_ib(session_id) do
+        {:ok, session_ib} ->
+          case get_latest_session_ib_gib(session_id, root_session) do
+            {:ok, nil} ->
+              case (root_session |> instance(session_ib)) do
+                {:ok, {_, session}} ->
+                  case session |> get_info do
+                    {:ok, session_info} ->
+                      case get_ib_gib(session_info) do
+                        {:ok, session_ib_gib} -> {:ok, session_ib_gib}
+                        {:error, reason} -> {:error, reason}
+                      end
+                    {:error, reason} -> {:error, reason}
+                  end
+                {:error, reason} -> {:error, reason}
+              end
+
+            {:ok, existing_session_ib_gib} -> {:ok, existing_session_ib_gib}
+
+            {:error, reason} -> {:error, reason}
+          end
+        {:error, reason} -> {:error, reason}
+      end
+    {:error, reason} -> {:error, reason}
+  end
+end
+
+## Attempt with nesting `with` (doesn't compile)
+def start_or_resume_session(session_id) when is_bitstring(session_id) do
+  with {:ok, root_session} <- IbGib.Expression.Supervisor.start_expression({"session", "gib"}),
+    {:ok, session_ib} <- get_session_ib(session_id),
+    {:ok, session_ib_gib} <-
+      case get_latest_session_ib_gib(session_id, root_session) do
+        {:ok, nil} ->
+          with {:ok, {_, session}} <- root_session |> instance(session_ib),
+            {:ok, session_info} <- session |> get_info,
+            {:ok, session_ib_gib} <- get_ib_gib(session_info) do
+            {:ok, session_ib_gib}
+          else
+            {:error, reason} -> {:error, reason}
+          end
+
+        {:ok, existing_session_ib_gib} -> {:ok, existing_session_ib_gib}
+
+        {:error, reason} -> {:error, reason}
+      end,
+      do: {:ok, session_ib_gib}
+  else
+    {:error, reason} -> {:error, reason}
+  end
+end
+
+## Attempt with nesting `happy_path` (works, I think)
+def start_or_resume_session(session_id) when is_bitstring(session_id) do
+  happy_path do
+    {:ok, root_session} = IbGib.Expression.Supervisor.start_expression({"session", "gib"})
+    {:ok, session_ib} = get_session_ib(session_id)
+    {:ok, existing_session_ib_gib} = get_latest_session_ib_gib(session_id, root_session)
+    {:ok, session_ib_gib} =
+      if (existing_session_ib_gib == nil) do
+        Logger.debug "nil case...are we still on happy path?"
+        # it's nil, so create a new one and return that
+        # Are we still on the happy_path?  No. So nest another path?
+        happy_path do
+          {:ok, {_, session}} = root_session |> instance(session_ib)
+          {:ok, session_info} = session |> get_info
+          {:ok, session_ib_gib} = get_ib_gib(session_info)
+          {:ok, session_ib_gib}
+        end
+      else
+        {:ok, existing_session_ib_gib}
+      end
+    {:ok, session_ib_gib}
+  end
+end
