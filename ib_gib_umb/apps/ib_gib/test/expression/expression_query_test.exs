@@ -395,7 +395,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     a = root |> fork!(a_ib)
     Logger.configure(level: :info)
 
-    {a_n, a_n_gib} =
+    {_a_n, a_n_gib} =
       1..test_count
       |> Enum.reduce({a, nil}, fn(n, {a_m, _}) ->
            new_a = a_m |> mut8!(%{"value" => "#{n}"})
@@ -433,9 +433,9 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     a = root |> fork!(a_ib)
     Logger.configure(level: :info)
 
-    {a_n, a_n_gib} =
+    {_a_n, a_n_gib} =
       1..test_count
-      |> Enum.reduce({a, nil}, fn(n, {a_m, _}) ->
+      |> Enum.reduce({a, nil}, fn(_n, {a_m, _}) ->
            new_a = a_m |> fork!(a_ib)
            new_a_info = new_a |> get_info!
           #  Logger.warn "new_a_info[:ib]: #{new_a_info[:ib]}"

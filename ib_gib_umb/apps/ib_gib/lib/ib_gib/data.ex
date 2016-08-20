@@ -85,7 +85,7 @@ defmodule IbGib.Data do
     keys: "regex", "is", "in"
     value: bitstring, e.g. "some ib", "[A-Za-z0]+"
   """
-  def query(%{"ib" => ib_options, "data" => data_options, "rel8ns" => rel8ns_options, "time" => time_options, "meta" => meta_options} = options) do
+  def query(%{"ib" => ib_options, "data" => data_options, "rel8ns" => rel8ns_options, "time" => time_options, "meta" => meta_options}) do
 
     model =
       IbGibModel
@@ -131,7 +131,7 @@ defmodule IbGib.Data do
         query
     end
   end
-  defp add_ib_options(query, ib_options) do
+  defp add_ib_options(query, _) do
     query
   end
 
@@ -174,7 +174,7 @@ defmodule IbGib.Data do
         query
     end
   end
-  defp add_data_options(query, data_options) do
+  defp add_data_options(query, _) do
     query
   end
 
@@ -203,7 +203,7 @@ defmodule IbGib.Data do
       #   query
       # end
   end
-  defp add_rel8ns_options(query, rel8ns_options) do
+  defp add_rel8ns_options(query, _) do
     query
   end
 
@@ -221,22 +221,20 @@ defmodule IbGib.Data do
         query
     end
   end
-  defp add_time_options(query, time_options) do
+  defp add_time_options(query, _) do
     query
   end
 
   defp add_meta_options(query, meta_options) when is_map(meta_options) and map_size(meta_options) > 0 do
     query
   end
-  defp add_meta_options(query, meta_options) do
+  defp add_meta_options(query, _) do
     query
   end
 
-  @doc """
-  Inserts ib_gib info into the repo.
-
-  Returns {:ok, model} or {:error, changeset}
-  """
+  # Inserts ib_gib info into the repo.
+  #
+  # Returns {:ok, model} or {:error, changeset}
   defp insert_into_repo(info) when is_map(info) do
     Logger.debug "inserting into repo. info: #{inspect info}"
     case IbGibModel.changeset(%IbGibModel{}, %{

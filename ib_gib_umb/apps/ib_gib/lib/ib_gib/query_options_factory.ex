@@ -1,7 +1,6 @@
 defmodule IbGib.QueryOptionsFactory do
   require Logger
 
-  alias IbGib.Helper
   use IbGib.Constants, :ib_gib
 
   # I would prefer to have this in IbGib.Constants, but I can't figure out

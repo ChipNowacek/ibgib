@@ -1,10 +1,10 @@
 defmodule IbGib.Expression.ExtraMut8Test do
   use ExUnit.Case
-  alias IbGib.Helper
+  require Logger
+
   alias IbGib.TransformFactory.Mut8Factory
   # alias IbGib.Data.Repo
   import IbGib.Expression
-  require Logger
 
   @delim "^"
 

@@ -46,7 +46,7 @@ defmodule IbGib.Expression.Registry do
   # Server Callbacks
   # ----------------------------------------------------------------------------
 
-  def init(srv_name) do
+  def init(_srv_name) do
     # Logger.debug "srv_name: #{srv_name}"
 
     # `expressions` maps expr_ib_gib to expression pid
@@ -59,7 +59,6 @@ defmodule IbGib.Expression.Registry do
     # `refs` maps process monitor to expr_ib_gib, b/c `handle_info` will give the ref
     refs = %{}
     {:ok, {expressions, refs}}
-    # {:ok, {expressions, refs, srv_name}}
   end
 
   def handle_call({:register, {expr_ib_gib, expr_pid}}, _from, {expressions, refs}) do
@@ -102,7 +101,7 @@ defmodule IbGib.Expression.Registry do
 
   defp register_impl(expressions, expr_ib_gib, expr_pid, refs) do
     case get_process_impl(expressions, expr_ib_gib) do
-      {:ok, pid} ->
+      {:ok, _pid} ->
         # Already exists.
         Logger.debug "expr_ib_gib (#{expr_ib_gib}) already exists"
         {:ok, {expressions, refs}}

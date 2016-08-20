@@ -262,7 +262,7 @@ defmodule IbGib.Helper do
       ib_length <= max_id_length and
       Regex.match?(regex_valid_ib, ib)
   end
-  def valid_ib?(ib) do
+  def valid_ib?(_) do
     false
   end
 
@@ -302,7 +302,7 @@ defmodule IbGib.Helper do
       gib_length <= max_id_length and
       Regex.match?(regex_valid_gib, gib)
   end
-  def valid_gib?(gib) do
+  def valid_gib?(_) do
     false
   end
 
@@ -354,7 +354,7 @@ defmodule IbGib.Helper do
       ib_gib_length <= max_ib_gib_length and
       Regex.match?(regex_valid_ib_gib, ib_gib)
   end
-  def valid_ib_gib?(ib_gib) do
+  def valid_ib_gib?(_) do
     false
   end
 

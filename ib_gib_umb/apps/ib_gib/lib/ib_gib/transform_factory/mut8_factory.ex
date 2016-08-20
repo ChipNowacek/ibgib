@@ -4,7 +4,6 @@ defmodule IbGib.TransformFactory.Mut8Factory do
   `IbGib.Expression.mut8/2`.
   """
 
-  alias IbGib.Helper
   use IbGib.Constants, :ib_gib
 
   @doc """

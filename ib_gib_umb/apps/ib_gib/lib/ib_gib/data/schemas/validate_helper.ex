@@ -72,16 +72,16 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
   def valid_data?(_field, src, max_size) when is_map(src) and map_size(src) > 0 do
     get_map_size(src, 0, max_size) !== -1
   end
-  def valid_data?(_field, src, max_size)
+  def valid_data?(_field, src, _max_size)
     when is_map(src) and map_size(src) === 0 do
     Logger.debug "empty map"
     true
   end
-  def valid_data?(_field, src, max_size) when src === nil do
+  def valid_data?(_field, src, _max_size) when src === nil do
     Logger.debug "nil map"
     true
   end
-  def valid_data?(_field, _src, max_size) do
+  def valid_data?(_field, _src, _max_size) do
     Logger.debug "other"
     false
   end
@@ -203,7 +203,7 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
     ib_length >= min_id_length && ib_length <= max_id_length and
     gib_length >= min_id_length && gib_length <= max_id_length
   end
-  def valid_ib_gib?(ib_gib) do
+  def valid_ib_gib?(_) do
     false
   end
 

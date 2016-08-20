@@ -38,7 +38,7 @@ defmodule IbGib.Data.Cache do
   Returns {:ok, value} or {:error, reason}
   """
   def get(key, name \\ @srv_name) do
-    GenServer.call(name, {:get, {key, name}})
+    GenServer.call(name, {:get, key})
   end
 
 
@@ -59,7 +59,7 @@ defmodule IbGib.Data.Cache do
 
     {:reply, put_impl(items, key, value), {items}}
   end
-  def handle_call({:get, {key, name}}, _from, {items}) do
+  def handle_call({:get, key}, _from, {items}) do
     Logger.debug "inspect items: #{inspect items}"
 
     {:reply, get_impl(items, key), {items}}
