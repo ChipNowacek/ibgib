@@ -1,4 +1,12 @@
 defmodule RandomGib.Get do
+  @moduledoc """
+  GenServer that contains simple functions for getting random things like
+  letters, characters, etc.
+
+  I created this when first learning Elixir. It probably should not be a
+  GenServer and I'll probably need to change that, but I like my syntax.
+  """
+
   use GenServer
   require Logger
 
@@ -88,24 +96,19 @@ defmodule RandomGib.Get do
   # Server
   # ----------------------------------------------------------------------------
 
-
   def handle_call({:generate_seed, algorithm}, _from, state) do
-    # Logger.debug("handle_call :generate_seed")
     :rand.seed_s(algorithm)
     {:reply, :ok, state}
   end
   def handle_call({:one_of, src}, _from, state) do
-    # Logger.debug("handle_call :one_of")
     result = one_of_impl(src)
     {:reply, result, state}
   end
   def handle_call({:some_of, src}, _from, state) do
-    # Logger.debug("handle_call :some_of")
     result = some_of_impl(src)
     {:reply, result, state}
   end
   def handle_call({:some_letters, count}, _from, state) do
-    # Logger.debug("handle_call :some_letters")
     result = 1..count
       |> Enum.map(fn _ -> one_of_impl(@letters) end)
       |> Enum.reduce(fn (a,b) -> a <> b end)
@@ -113,7 +116,6 @@ defmodule RandomGib.Get do
     {:reply, result, state}
   end
   def handle_call({:some_characters, count, valid_characters}, _from, state) do
-    # Logger.debug("handle_call :some_letters")
     result = 1..count
       |> Enum.map(fn _ -> one_of_impl(valid_characters) end)
       |> Enum.reduce(fn (a,b) -> a <> b end)
@@ -122,38 +124,31 @@ defmodule RandomGib.Get do
   end
 
   defp one_of_impl([]) do
-    # Logger.debug("one_of_impl []")
     nil
   end
   defp one_of_impl(src) when is_list(src) do
-    # Logger.debug("one_of_impl list")
     Enum.random(src)
   end
   defp one_of_impl("") do
-    # Logger.debug("one_of_impl \"\"")
     ""
   end
   defp one_of_impl(src) when is_bitstring(src)  do
-    # Logger.debug("one_of_impl bitstring")
     length = String.length(src)
-    cond do
-      length == 0 -> nil
-      length > 0 -> String.at(src, :rand.uniform(length)-1)
+    if length === 0 do
+      nil
+    else
+      String.at(src, :rand.uniform(length) - 1)
     end
   end
 
 
   defp some_of_impl([]) do
-    # Logger.debug("some_of []")
     []
   end
   defp some_of_impl("") do
-    # Logger.debug("some_of \"\"")
     ""
   end
   defp some_of_impl(src) when is_list(src) do
-    # Logger.debug("some_of list")
-    # Enum.at(list, :rand.uniform(Enum.count(list)))
     percent = :rand.uniform()
     result = Enum.filter(src, fn _item -> :rand.uniform() > percent end)
     if Enum.count(result) === 0 do
@@ -164,15 +159,16 @@ defmodule RandomGib.Get do
     end
   end
   defp some_of_impl(src) when is_bitstring(src)  do
-    # Logger.debug("some_of bitstring")
     length = String.length(src)
     percent = :rand.uniform()
-    result = cond do
-      length == 0 -> nil
-      length > 0 -> for <<c <- src>>, :rand.uniform() > percent, into: "", do: <<c>>
-    end
+
+    result =
+      if length === 0 do
+        nil
+      else
+        for <<c <- src>>, :rand.uniform() > percent, into: "", do: <<c>>
+      end
     if result === "" do
-      # Logger.debug("Recursing some_of")
       some_of_impl(src)
     else
       result
