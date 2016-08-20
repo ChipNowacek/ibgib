@@ -1,4 +1,8 @@
 defmodule WebGib do
+  @moduledoc """
+  Application module for web_gib.
+  """
+
   use Application
 
   # See http://elixir-lang.org/docs/stable/elixir/Application.html

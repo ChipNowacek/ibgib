@@ -1,4 +1,8 @@
 defmodule WebGib.IbGibController do
+  @moduledoc """
+  Controller related to ib_gib code.
+  """
+
   use WebGib.Web, :controller
   require Logger
 
@@ -7,8 +11,8 @@ defmodule WebGib.IbGibController do
   import IbGib.Helper
   alias IbGib.TransformFactory.Mut8Factory
 
-  @delim "^"
-  @root_ib_gib "ib#{@delim}gib"
+  # @delim "^"
+  # @root_ib_gib "ib#{@delim}gib"
 
   # ----------------------------------------------------------------------------
   # Controller Commands
@@ -25,7 +29,7 @@ defmodule WebGib.IbGibController do
     |> assign(:ib, "ib")
     |> assign(:gib, "gib")
     |> assign(:ib_gib, @root_ib_gib)
-    |> render "index.html"
+    |> render("index.html")
   end
 
   @doc """
@@ -62,7 +66,7 @@ defmodule WebGib.IbGibController do
     if result == :ok do
       conn = result_term
       conn
-      |> render "show.html"
+      |> render("show.html")
     else
       error_msg = dgettext "error", "Hmmm...took a wrong turn somewhere :-/"
       Logger.error "#{error_msg}. (#{inspect result_term})"
@@ -275,7 +279,7 @@ defmodule WebGib.IbGibController do
          src_ib_gib !== "" and dest_ib !== "" do
     Logger.warn "dest_ib: #{dest_ib}"
     src =
-      if (src_ib_gib == "") or (src_ib_gib == @root_ib_gib) do
+      if src_ib_gib == "" or src_ib_gib == @root_ib_gib do
         root
       else
         {:ok, thing} = IbGib.Expression.Supervisor.start_expression(src_ib_gib)

@@ -1,4 +1,8 @@
 defmodule WebGib.Plugs.IbGibDefaults do
+  @moduledoc """
+  Injects default common info used with ib_gib functions.
+  """
+  
   require Logger
   import Plug.Conn
 

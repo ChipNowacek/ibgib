@@ -1,4 +1,10 @@
 defmodule WebGib.Constants do
+  @moduledoc """
+  This module contains constants used in various aspects throughout the
+  applications. Each function is a scope of constants and contains instructions
+  for consuming the constants in a module.
+  """
+
   def error_msgs do
     quote do
       def emsg_invalid_dest_ib do
