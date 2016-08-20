@@ -23,9 +23,9 @@ defmodule IbGib.Expression.IdentityTest do
 
   @tag :capture_log
   test "user, session, email gib exist" do
-    {:ok, root_user} = Expression.Supervisor.start_expression({"user", "gib"})
-    {:ok, root_session} = Expression.Supervisor.start_expression({"session", "gib"})
-    {:ok, root_email} = Expression.Supervisor.start_expression({"email", "gib"})
+    {:ok, _root_user} = Expression.Supervisor.start_expression({"user", "gib"})
+    {:ok, _root_session} = Expression.Supervisor.start_expression({"session", "gib"})
+    {:ok, _root_email} = Expression.Supervisor.start_expression({"email", "gib"})
   end
 
   @tag :capture_log
@@ -139,7 +139,7 @@ defmodule IbGib.Expression.IdentityTest do
     # Now, we check again for the session
     existing_session_ib_gib = Identity.get_latest_session_ib_gib!(session_id, root_session)
     assert existing_session_ib_gib != nil
-    {existing_session_ib, existing_session_gib} =
+    {existing_session_ib, _existing_session_gib} =
       Helper.separate_ib_gib!(existing_session_ib_gib)
 
     assert existing_session_ib == session_ib
@@ -191,8 +191,6 @@ defmodule IbGib.Expression.IdentityTest do
 
   @tag :capture_log
   test "Identity start_or_resume_session" do
-    {:ok, root_session} = Expression.Supervisor.start_expression({"session", "gib"})
-
     session_id = RandomGib.Get.some_characters(30)
 
     {:ok, session_ib_gib} = Identity.start_or_resume_session(session_id)

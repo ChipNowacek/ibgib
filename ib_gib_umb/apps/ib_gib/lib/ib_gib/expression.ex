@@ -383,7 +383,7 @@ defmodule IbGib.Expression do
     on_new_expression_completed(ib, new_gib, a)
   end
 
-  defp apply_query(a, b) do
+  defp apply_query(_, b) do
     query_options = b[:data]["options"]
     result = IbGib.Data.query(query_options)
     Logger.debug "query result: #{inspect result}"

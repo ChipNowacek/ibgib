@@ -19,7 +19,6 @@ defmodule IbGib.Identity do
   use IbGib.Constants, :error_msgs
   import IbGib.{Expression, QueryOptionsFactory, Macros, Helper}
 
-  import Happy
   require Logger
 
   @doc """
@@ -111,29 +110,31 @@ defmodule IbGib.Identity do
   """
   @spec start_or_resume_session(String.t) :: {:ok, String.t}
   def start_or_resume_session(session_id) when is_bitstring(session_id) do
-    happy_path do
-      {:ok, root_session} = IbGib.Expression.Supervisor.start_expression({"session", "gib"})
-      {:ok, session_ib} = get_session_ib(session_id)
-      {:ok, existing_session_ib_gib} = get_latest_session_ib_gib(session_id, root_session)
-      {:ok, session_ib_gib} =
-        if (existing_session_ib_gib == nil) do
-          Logger.debug "nil case...are we still on happy path?"
-          # it's nil, so create a new one and return that
-          # Are we still on the happy_path?  No. So nest another path?
-          happy_path do
-            {:ok, {_, session}} = root_session |> instance(session_ib)
-            {:ok, session_info} = session |> get_info
-            {:ok, session_ib_gib} = get_ib_gib(session_info)
-            {:ok, session_ib_gib}
-          end
-        else
-          {:ok, existing_session_ib_gib}
-        end
+    with {:ok, root_session} <- IbGib.Expression.Supervisor.start_expression({"session", "gib"}),
+      {:ok, session_ib} <- get_session_ib(session_id),
+      {:ok, latest} <- get_latest_session_ib_gib(session_id, root_session),
+      {:ok, session_ib_gib} <- create_session_if_needed(latest, root_session, session_ib) do
       {:ok, session_ib_gib}
+    else
+      {:error, reason} -> {:error, reason}
     end
   end
   def start_or_resume_session(unknown_arg) do
     {:error, emsg_invalid_arg(unknown_arg)}
+  end
+
+  defp create_session_if_needed(existing, root_session, session_ib)
+    when is_nil(existing) do
+    with {:ok, {_, session}} <- root_session |> instance(session_ib),
+      {:ok, session_info} <- session |> get_info,
+      {:ok, session_ib_gib} <- get_ib_gib(session_info) do
+      {:ok, session_ib_gib}
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+  defp create_session_if_needed(existing, _, _) do
+    {:ok, existing}
   end
 
   @doc """
