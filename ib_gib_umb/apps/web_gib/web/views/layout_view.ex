@@ -16,9 +16,7 @@ defmodule WebGib.LayoutView do
       body do
         div class: "container-fluid ib-width-100" do
           header class: "header" do
-            a href: "/" do
-              span class: "logo"
-            end
+            a [href: "/"], do: span class: "logo"
           end
 
           p get_flash(@conn, :info), class: "alert alert-info", role: "alert"
