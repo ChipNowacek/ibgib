@@ -43,7 +43,8 @@ defmodule WebGib.Mixfile do
      {:gettext, "~> 0.11"},
      {:cowboy, "~> 1.0"},
      {:random_gib, in_umbrella: true},
-     {:ib_gib, in_umbrella: true}
+     {:ib_gib, in_umbrella: true},
+     {:marker, "~> 2.0"}
     ]
   end
 
