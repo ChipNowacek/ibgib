@@ -793,7 +793,7 @@ defmodule IbGib.Expression do
 
   defp instance_impl(dest_ib, state) do
     Logger.debug "_state_: #{inspect state}"
-    Logger.warn "dest_ib: #{dest_ib}"
+    Logger.debug "dest_ib: #{dest_ib}"
 
     # I think when we instance, we're just going to keep the same ib. It will
     # of course create a new gib hash. I think this is what we want to do...

@@ -277,7 +277,7 @@ defmodule WebGib.IbGibController do
   defp fork_impl(root, src_ib_gib, dest_ib)
     when is_bitstring(src_ib_gib) and is_bitstring(dest_ib) and
          src_ib_gib !== "" and dest_ib !== "" do
-    Logger.warn "dest_ib: #{dest_ib}"
+    Logger.debug "dest_ib: #{dest_ib}"
     src =
       if src_ib_gib == "" or src_ib_gib == @root_ib_gib do
         root

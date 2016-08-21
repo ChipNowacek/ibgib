@@ -1,4 +1,8 @@
 defmodule IbGib.Expression.IdentityTest do
+  @moduledoc """
+  See `IbGib.Identity`.
+  """
+  
   use ExUnit.Case
   use IbGib.Constants, :ib_gib
 
