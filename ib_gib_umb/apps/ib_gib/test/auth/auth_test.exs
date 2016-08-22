@@ -1,12 +1,13 @@
-defmodule IbGib.Expression.IdentityTest do
+defmodule IbGib.Auth.AuthTest do
   @moduledoc """
-  See `IbGib.Identity`.
+  See `IbGib.Auth.Identity`, `IbGib.Auth.Session`.
   """
-  
+
   use ExUnit.Case
   use IbGib.Constants, :ib_gib
 
-  alias IbGib.{Expression, Helper, Identity}
+  alias IbGib.{Expression, Helper}
+  alias IbGib.Auth.{Session, Identity}
   import IbGib.{Expression, QueryOptionsFactory}
   require Logger
 
@@ -26,8 +27,8 @@ defmodule IbGib.Expression.IdentityTest do
   end
 
   @tag :capture_log
-  test "user, session, email gib exist" do
-    {:ok, _root_user} = Expression.Supervisor.start_expression({"user", "gib"})
+  test "identity, session, email gib exist" do
+    {:ok, _root_identity} = Expression.Supervisor.start_expression({"identity", "gib"})
     {:ok, _root_session} = Expression.Supervisor.start_expression({"session", "gib"})
     {:ok, _root_email} = Expression.Supervisor.start_expression({"email", "gib"})
   end
@@ -49,7 +50,7 @@ defmodule IbGib.Expression.IdentityTest do
   test "query for session manually, fails, instance session, query for session, succeeds" do
     {:ok, root_session} = Expression.Supervisor.start_expression({"session", "gib"})
 
-    # This particular test does not use `IbGib.Identity`. This is so that it
+    # This particular test does not use `IbGib.Auth.Session`. This is so that it
     # can check to be sure that it is getting the **latest** session ib_gib.
     # I already caught a bug (not using microseconds in schema).
 
@@ -61,7 +62,7 @@ defmodule IbGib.Expression.IdentityTest do
     # initialism "eye dee") and "ib" as "ib" (the noun).
     # I note it here because I know this may be confusing for newcomers.
     session_id = RandomGib.Get.some_characters(30)
-    session_ib = Identity.get_session_ib!(session_id)
+    session_ib = Session.get_session_ib!(session_id)
 
     # First, we will try to see if there is an existing session with that ib.
     # There should NOT be. This mimics when someone first visits us, and/or when
@@ -95,7 +96,7 @@ defmodule IbGib.Expression.IdentityTest do
     assert session_info[:ib] == session_ib
 
 
-    # Now, we run the query again, mimicking when a user has returned. Only
+    # Now, we run the query again, mimicking when an identity has returned. Only
     # this time, it should be successful.
     # (We reuse the same query_options)
     query_result_info = root_session |> query!(query_options) |> get_info!
@@ -124,13 +125,13 @@ defmodule IbGib.Expression.IdentityTest do
     # initialism "eye dee") and "ib" as "ib" (the noun).
     # I note it here because I know this may be confusing for newcomers.
     session_id = RandomGib.Get.some_characters(30)
-    session_ib = Identity.get_session_ib!(session_id)
+    session_ib = Session.get_session_ib!(session_id)
 
     # First, we will try to see if there is an existing session with that ib.
     # There should NOT be. This mimics when someone first visits us, and/or when
     # a new session is started.
-    # existing_session_ib_gib = Identity.get_latest
-    existing_session_ib_gib = Identity.get_latest_session_ib_gib!(session_id, root_session)
+    # existing_session_ib_gib = Session.get_latest
+    existing_session_ib_gib = Session.get_latest_session_ib_gib!(session_id, root_session)
     assert existing_session_ib_gib == nil
 
     # Next, since we didn't find an existing session, we instance a new session.
@@ -141,7 +142,7 @@ defmodule IbGib.Expression.IdentityTest do
 
 
     # Now, we check again for the session
-    existing_session_ib_gib = Identity.get_latest_session_ib_gib!(session_id, root_session)
+    existing_session_ib_gib = Session.get_latest_session_ib_gib!(session_id, root_session)
     assert existing_session_ib_gib != nil
     {existing_session_ib, _existing_session_gib} =
       Helper.separate_ib_gib!(existing_session_ib_gib)
@@ -164,13 +165,13 @@ defmodule IbGib.Expression.IdentityTest do
     # initialism "eye dee") and "ib" as "ib" (the noun).
     # I note it here because I know this may be confusing for newcomers.
     session_id = RandomGib.Get.some_characters(30)
-    session_ib = Identity.get_session_ib!(session_id)
+    session_ib = Session.get_session_ib!(session_id)
 
     # First, we will try to see if there is an existing session with that ib.
     # There should NOT be. This mimics when someone first visits us, and/or when
     # a new session is started.
-    # existing_session_ib_gib = Identity.get_latest
-    existing_session_ib_gib = Identity.get_latest_session_ib_gib!(session_id, root_session)
+    # existing_session_ib_gib = Session.get_latest
+    existing_session_ib_gib = Session.get_latest_session_ib_gib!(session_id, root_session)
     assert existing_session_ib_gib == nil
 
     # Next, since we didn't find an existing session, we instance a new session.
@@ -184,7 +185,7 @@ defmodule IbGib.Expression.IdentityTest do
     session2_info = session2 |> get_info!
 
     # Now, we check again for the session
-    existing_session_ib_gib = Identity.get_latest_session_ib_gib!(session_id, root_session)
+    existing_session_ib_gib = Session.get_latest_session_ib_gib!(session_id, root_session)
     assert existing_session_ib_gib != nil
     {existing_session_ib, existing_session_gib} =
       Helper.separate_ib_gib!(existing_session_ib_gib)
@@ -194,10 +195,10 @@ defmodule IbGib.Expression.IdentityTest do
   end
 
   @tag :capture_log
-  test "Identity start_or_resume_session" do
+  test "Identity get_session" do
     session_id = RandomGib.Get.some_characters(30)
 
-    {:ok, session_ib_gib} = Identity.start_or_resume_session(session_id)
+    {:ok, session_ib_gib} = Session.get_session(session_id)
 
     assert session_ib_gib != nil
 
@@ -209,6 +210,6 @@ defmodule IbGib.Expression.IdentityTest do
 
     # verify completely separately from the process that it is the correct
     # session id.
-    assert session_info[:ib] == Identity.get_session_ib!(session_id)
+    assert session_info[:ib] == Session.get_session_ib!(session_id)
   end
 end

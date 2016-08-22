@@ -38,11 +38,11 @@ defmodule WebGib.Plugs.IbGibSession do
         Logger.debug "Session existed. session id: #{session_id}"
         {session_id, conn}
       end
-    conn = case IbGib.Identity.start_or_resume_session(session_id) do
+    conn = case IbGib.Auth.Session.get_session(session_id) do
       {:ok, session_ib_gib} ->
         assign(conn, @session_ib_gib_key, session_ib_gib)
       error ->
-        raise WebGib.Exceptions.BadSession
+        raise WebGib.Errors.SessionError
     end
 
     conn

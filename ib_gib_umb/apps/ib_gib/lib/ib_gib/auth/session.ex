@@ -1,16 +1,9 @@
-defmodule IbGib.Identity do
+defmodule IbGib.Auth.Session do
   @moduledoc """
-  This module relates to handling identity with respect to ib_gib.
+  This module relates to handling sessions.
 
-  I am starting out with the following fundamental things:
-    session^gib
-    user^gib
-    email^gib
-
-  Each of these will be instanced, mut8d and rel8d.
-
-  For the session, I am using the ib as the hash of the session_id. So given
-  a session id of `12345`, the actual session ib will be some large hash
+  I am using the session ib as the hash of the session_id. So given
+  a session id of `12345`, the actual session *ib* will be some large hash
   like `ABCDEFGHIJKLMNOSDFOIWEFHISDFJSDJFNDSF1234`. This way it is content-
   addressable and can be checked for easily. I don't plan on storing the
   session id itself.
@@ -25,7 +18,7 @@ defmodule IbGib.Identity do
   Gets the session ib based on the given `session_id`.
 
   ## Examples
-      iex> IbGib.Identity.get_session_ib("some-id_here234987SD(^&@{%})")
+      iex> IbGib.Auth.Session.get_session_ib("some-id_here234987SD(^&@{%})")
       {:ok, "6C111BD527531D047C90AE259852F4122E358ECFAAE9F78DAFF81F24B0CA1678"}
 
   Returns {:ok, session_ib} if ok, else {:error, reason}
@@ -47,7 +40,7 @@ defmodule IbGib.Identity do
   Bang version of `get_session_ib/1`.
 
   ## Examples
-      iex> IbGib.Identity.get_session_ib!("some-id_here234987SD(^&@{%})")
+      iex> IbGib.Auth.Session.get_session_ib!("some-id_here234987SD(^&@{%})")
       "6C111BD527531D047C90AE259852F4122E358ECFAAE9F78DAFF81F24B0CA1678"
   """
   def get_session_ib!(session_id) do
@@ -108,8 +101,8 @@ defmodule IbGib.Identity do
 
   Returns {:ok, session_ib_gib} or {:error, reason}
   """
-  @spec start_or_resume_session(String.t) :: {:ok, String.t}
-  def start_or_resume_session(session_id) when is_bitstring(session_id) do
+  @spec get_session(String.t) :: {:ok, String.t}
+  def get_session(session_id) when is_bitstring(session_id) do
     with {:ok, root_session} <- IbGib.Expression.Supervisor.start_expression({"session", "gib"}),
       {:ok, session_ib} <- get_session_ib(session_id),
       {:ok, latest} <- get_latest_session_ib_gib(session_id, root_session),
@@ -119,7 +112,7 @@ defmodule IbGib.Identity do
       {:error, reason} -> {:error, reason}
     end
   end
-  def start_or_resume_session(unknown_arg) do
+  def get_session(unknown_arg) do
     {:error, emsg_invalid_arg(unknown_arg)}
   end
 
@@ -138,10 +131,18 @@ defmodule IbGib.Identity do
   end
 
   @doc """
-  Bang version of `start_or_resume_session/1`.
+  Bang version of `get_session/1`.
   """
-  @spec start_or_resume_session!(String.t) :: String.t
-  def start_or_resume_session!(session_id) do
-    bang(start_or_resume_session(session_id))
+  @spec get_session!(String.t) :: String.t
+  def get_session!(session_id) do
+    bang(get_session(session_id))
+  end
+
+  @doc """
+
+  """
+  def get_identity(context, credientials)
+  def get_identity(context = :session, session_id) do
+    :error
   end
 end

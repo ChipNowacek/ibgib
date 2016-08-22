@@ -9,9 +9,13 @@ defmodule WebGib.Constants do
     quote do
       # I'm prepending ib_gib_ to differentiate from any other possible name
       # conflict.
+      # See `WebGib.Plugs.IbGibSession`
       @session_id_key :ib_gib_session_id
       @session_ib_gib_key :session_ib_gib
-      @identity_ib_gib_key :identity_ib_gib
+
+      # key to array of identities associated with current session.
+      # See `WebGib.Plugs.IbGibIdentity`
+      @identity_ib_gibs_key :identity_ib_gibs
     end
   end
 
@@ -19,7 +23,9 @@ defmodule WebGib.Constants do
     quote do
       @emsg_invalid_dest_ib "Only letters, numbers, spaces, dashes, underscores are allowed for the destination ib. Just hit the back button to return."
 
-      @emsg_invalid_session "There is a problem with the session. Try logging out, refreshing your browser, and then logging back in."
+      @refresh_msg "Try logging out, refreshing your browser, and then logging back in."
+      @emsg_invalid_session "There is a problem with the session. #{@refresh_msg}"
+      @emsg_invalid_authentication "There is a problem with authentication. #{@refresh_msg}"
     end
   end
   def fork do

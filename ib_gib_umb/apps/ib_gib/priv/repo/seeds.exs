@@ -8,6 +8,6 @@ alias IbGib.Data.Schemas.Seeds
 :ok = Seeds.insert(:query)
 
 # Identity
-Seeds.insert(:user)
+Seeds.insert(:identity)
 Seeds.insert(:session)
 Seeds.insert(:email)

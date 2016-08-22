@@ -1,4 +1,9 @@
 defmodule IbGibTest do
+  @moduledoc """
+  Test things common to the entire app.
+
+  This is also where I've imported doctests.
+  """
   use ExUnit.Case
   require Logger
 
@@ -7,7 +12,8 @@ defmodule IbGibTest do
   doctest IbGib
   doctest IbGib.TransformFactory
   doctest IbGib.Helper
-  doctest IbGib.Identity
+  doctest IbGib.Auth.Identity
+  doctest IbGib.Auth.Session
   doctest IbGib.Data.Schemas.ValidateHelper
   import IbGib.Expression
 

@@ -1,4 +1,4 @@
-defmodule WebGib.Exceptions.BadSession do
+defmodule WebGib.Errors.SessionError do
   @moduledoc """
   Exception to raise when there is a problem with session.
 
