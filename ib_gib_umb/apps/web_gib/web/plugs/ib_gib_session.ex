@@ -27,12 +27,12 @@ defmodule WebGib.Plugs.IbGibSession do
     Inject the session ib^gib into assigns.
   """
   def call(conn, options) do
-    session_id = get_session(conn, @ib_gib_session_id_key)
+    session_id = get_session(conn, @session_id_key)
     {session_id, conn} =
       if session_id == nil do
         session_id = IbGib.Helper.new_id
         Logger.debug "Session did not exist. Putting new session id: #{session_id}"
-        conn = put_session(conn, @ib_gib_session_id_key, session_id)
+        conn = put_session(conn, @session_id_key, session_id)
         {session_id, conn}
       else
         Logger.debug "Session existed. session id: #{session_id}"

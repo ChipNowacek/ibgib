@@ -9,8 +9,9 @@ defmodule WebGib.Constants do
     quote do
       # I'm prepending ib_gib_ to differentiate from any other possible name
       # conflict.
-      @ib_gib_session_id_key :ib_gib_session_id
+      @session_id_key :ib_gib_session_id
       @session_ib_gib_key :session_ib_gib
+      @identity_ib_gib_key :identity_ib_gib
     end
   end
 

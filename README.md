@@ -14,9 +14,9 @@ Once you fork (if contributing), clone and download the source, you will need to
    * In the `ib_gib_umb` directory, run:
      * `mix deps.gets`
      * `mix deps.compile`  
-   * In the `ib_gib_umb/apps/web_gib` directory, run: 
+   * In the `ib_gib_umb/apps/web_gib` directory, run:
      * `npm install`
-2. Setup and run a PostgreSQL docker container for the repo(s). 
+2. Setup and run a PostgreSQL docker container for the repo(s).
    * [Docker must be installed.](https://docs.docker.com/engine/installation/)
    * Download the official `postgres` image.
      * `docker run --name postgres-ctr -e [POSTGRES_USER=postgres,POSTGRES_PASSWORD=postgres,POSTGRES_DB=ib_gib_db_dev] -d postgres`
@@ -29,7 +29,7 @@ Once you fork (if contributing), clone and download the source, you will need to
    * Run the same commands in the `ib_gib_umb/apps/web_gib/` folder:
      * `mix ecto.create`
      * `mix ecto.migrate`
-  
+
 4. If you want to check out the POC web app, `web_gib`, you will need to run
    the phoenix web server, which once running, you should be able to point your browser to http://localhost/4000.
    * In the `web_gib` directory, run `mix phoenix.server` if you just want to
@@ -61,9 +61,10 @@ arrays, etc., once the initial framework is up and running. More on this later.
 
 Here is my recommended order of perusing the test files, as well as a brief
 description of each:
-1. `data/data_test.exs`
+
+1. `data/data_test.exs`  
    * Just to give you an idea of how simple the one and only data construct
-     that exists is.
+     that exists is.  
 2. `expression/basics_test.exs`  
    * This builds up from first creating the root `ib_gib` process, then moving
      on to exercising the fundamental transforms: `fork`, `mut8`, and `rel8`.
@@ -71,10 +72,10 @@ description of each:
    * These tests are where we start to build more complex constructs (`ib_gib`,
      or often just `ib`), i.e. exercising "Hello World" possibilities.
 4. `expression/expression_query_test.exs`  
-   * Tests for creating and executing queries against `ib_gib`.
+   * Tests for creating and executing queries against `ib_gib`.  
    * Queries are actually pretty neat, since each query is itself an `ib_gib`
-     that creates a query result `ib_gib`. More on this later.
-5. `expression/extra_mut8_test.exs`
+     that creates a query result `ib_gib`. More on this later.  
+5. `expression/extra_mut8_test.exs`  
    * Some additional `mut8` transforms that remove and rename keys in the
      `ib_gib`'s internal `:data` map.
 
