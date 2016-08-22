@@ -25,19 +25,24 @@ defmodule WebGib.Plugs.IbGibDefaults do
   Inject the root ib ("ib^gib") into conn assigns.
   """
   def call(conn, options) do
-    Logger.debug("conn: #{inspect conn}")
-    Logger.debug "inspect options: #{inspect options}"
+    # Logger.debug("conn: #{inspect conn}")
+    # Logger.debug "inspect options: #{inspect options}"
     {:ok, root} = IbGib.Expression.Supervisor.start_expression
-    Logger.debug "assigning root in plug. root: #{inspect root}"
+    # Logger.debug "assigning root in plug. root: #{inspect root}"
     conn = assign(conn, :root, root)
 
-    session_id = get_session(conn, @ib_gib_session_id_key)
+    # session_key = @ib_gib_session_id_key
+    session_id_key = :session_id_huh
+    session_id = get_session(conn, session_id_key)
     Logger.warn "1 session_id: #{inspect session_id}"
     {session_id, conn} =
       if session_id == nil do
         session_id = IbGib.Helper.new_id
         Logger.warn "Session did not exist. Putting new session id: #{session_id}"
-        put_session(conn, @ib_gib_session_id_key, session_id)
+        conn = put_session(conn, session_id_key, session_id)
+        # session_id_key = :session_id_huh
+        # session_id = get_session(conn, session_id_key)
+        # Logger.warn "just after putting session id: #{inspect session_id}"
         {session_id, conn}
       else
         Logger.warn "Session existed. session id: #{session_id}"

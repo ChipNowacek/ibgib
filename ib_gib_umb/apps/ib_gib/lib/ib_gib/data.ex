@@ -1,7 +1,7 @@
 defmodule IbGib.Data do
   @moduledoc """
   This acts as a data layer abstraction. Here you can save, load, and query
-  data. 
+  data.
   """
   require Logger
   import Ecto.Query
@@ -259,7 +259,7 @@ defmodule IbGib.Data do
         already_error = {"has already been taken", []}
         if Enum.count(changeset.errors) == 1 and
            changeset.errors[:ib] == already_error do
-          Logger.warn "Did NOT insert changeset. Already exists.\nib: #{info[:ib]}\ngib: #{info[:gib]}\nchangeset: #{inspect changeset}"
+          Logger.debug "Did NOT insert changeset. Already exists.\nib: #{info[:ib]}\ngib: #{info[:gib]}\nchangeset: #{inspect changeset}"
           {:error, :already}
         else
           Logger.error "Error inserting changeset.\nib: #{info[:ib]}\ngib: #{info[:gib]}\nchangeset: #{inspect changeset}"

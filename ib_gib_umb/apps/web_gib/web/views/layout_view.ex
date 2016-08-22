@@ -10,7 +10,7 @@ defmodule WebGib.LayoutView do
         meta name: "description", content: ""
         meta name: "author", content: ""
 
-        title "Hello MarkerPhoenixExample!"
+        title "ibGib"
         link rel: "stylesheet", href: static_path(@conn, "/css/app.css")
       end
       body do
