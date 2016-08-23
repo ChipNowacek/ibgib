@@ -689,50 +689,28 @@ defmodule IbGib.Expression do
 
   def handle_call({:contact, other_expr_pid}, _from, state) do
     Logger.metadata([x: :contact])
-    Logger.debug ":ib_gib"
     {:reply, contact_impl(other_expr_pid, state), state}
   end
   def handle_call({:fork, dest_ib}, _from, state) do
+    Logger.metadata([x: :fork])
     {:reply, fork_impl(dest_ib, state), state}
   end
   def handle_call({:mut8, new_data}, _from, state) do
     Logger.metadata([x: :mut8])
-    Logger.debug "state: #{inspect state}"
-    info = state[:info]
-    Logger.debug "info: #{inspect info}"
-    ib = info[:ib]
-    gib = info[:gib]
-    Logger.debug "ib: #{inspect ib}"
-
-    # 1. Create transform
-    mut8_info = TransformFactory.mut8(Helper.get_ib_gib!(ib, gib), new_data)
-    Logger.debug "mut8_info: #{inspect mut8_info}"
-
-    # 2. Save transform
-    {:ok, :ok} = IbGib.Data.save(mut8_info)
-
-    # 3. Create instance process of mut8
-    Logger.debug "mut8 saved. Now trying to create mut8 transform expression process"
-    {:ok, mut8} = IbGib.Expression.Supervisor.start_expression({mut8_info[:ib], mut8_info[:gib]})
-
-    # 4. Apply transform
-    Logger.debug "will ib_gib the mut8..."
-    contact_result = contact_impl(mut8, state)
-    Logger.debug "contact_result: #{inspect contact_result}"
-
-    {:reply, contact_result, state}
+    {:reply, mut8_impl(new_data, state), state}
   end
   def handle_call({:rel8, other_pid, src_rel8ns, dest_rel8ns}, _from, state) do
+    Logger.metadata([x: :rel8])
     {:ok, {new_this, new_other}} =
       rel8_impl(other_pid, src_rel8ns, dest_rel8ns, state)
     {:reply, {:ok, {new_this, new_other}}, state}
   end
   def handle_call({:instance, dest_ib}, _from, state) do
-    Logger.debug "dest_ib: #{dest_ib}"
+    Logger.metadata([x: :instance])
     {:reply, instance_impl(dest_ib, state), state}
   end
   def handle_call({:query, query_options}, _from, state) do
-    Logger.debug "query_options: #{inspect query_options}"
+    Logger.metadata([x: :query])
     {:reply, query_impl(query_options, state), state}
   end
   def handle_call(:get_info, _from, state) do
@@ -761,6 +739,25 @@ defmodule IbGib.Expression do
     contact_result = contact_impl(fork, state)
     Logger.debug "contact_result: #{inspect contact_result}"
     contact_result
+  end
+
+  defp mut8_impl(new_data, state) do
+    info = state[:info]
+    ib = info[:ib]
+    gib = info[:gib]
+
+    # 1. Create transform
+    mut8_info = TransformFactory.mut8(Helper.get_ib_gib!(ib, gib), new_data)
+    Logger.debug "mut8_info: #{inspect mut8_info}"
+
+    # 2. Save transform
+    {:ok, :ok} = IbGib.Data.save(mut8_info)
+
+    # 3. Create instance process of mut8
+    {:ok, mut8} = IbGib.Expression.Supervisor.start_expression({mut8_info[:ib], mut8_info[:gib]})
+
+    # 4. Apply transform
+    contact_result = contact_impl(mut8, state)
   end
 
   defp rel8_impl(other_pid, src_rel8ns, dest_rel8ns, state) do
