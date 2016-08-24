@@ -43,6 +43,12 @@ defmodule IbGib.Constants do
     end
   end
 
+  def transforms do
+    quote do
+      @default_transform_options %{:gib_stamp => false}
+    end
+  end
+
   @doc """
   Use this with `use IbGib.Constants, :error_msgs`
   """

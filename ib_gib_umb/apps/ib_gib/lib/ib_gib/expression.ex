@@ -63,6 +63,7 @@ defmodule IbGib.Expression do
   import Enum
 
   use IbGib.Constants, :ib_gib
+  use IbGib.Constants, :transforms
   alias IbGib.{TransformFactory, Helper}
   alias IbGib.TransformFactory.Mut8Factory
 
@@ -522,9 +523,10 @@ defmodule IbGib.Expression do
 
   See `IbGib.TransformFactory.Mut8Factory` for more details.
   """
-  @spec mut8(pid, map) :: {:ok, pid} | {:error, any}
-  def mut8(expr_pid, new_data) when is_pid(expr_pid) and is_map(new_data) do
-    GenServer.call(expr_pid, {:mut8, new_data})
+  @spec mut8(pid, map, map) :: {:ok, pid} | {:error, any}
+  def mut8(expr_pid, new_data, opts \\ @default_transform_options)
+    when is_pid(expr_pid) and is_map(new_data) and is_map(opts) do
+    GenServer.call(expr_pid, {:mut8, new_data, opts})
   end
 
   @doc """
@@ -695,9 +697,9 @@ defmodule IbGib.Expression do
     Logger.metadata([x: :fork])
     {:reply, fork_impl(dest_ib, state), state}
   end
-  def handle_call({:mut8, new_data}, _from, state) do
+  def handle_call({:mut8, new_data, opts}, _from, state) do
     Logger.metadata([x: :mut8])
-    {:reply, mut8_impl(new_data, state), state}
+    {:reply, mut8_impl(new_data, opts, state), state}
   end
   def handle_call({:rel8, other_pid, src_rel8ns, dest_rel8ns}, _from, state) do
     Logger.metadata([x: :rel8])
@@ -741,7 +743,7 @@ defmodule IbGib.Expression do
     contact_result
   end
 
-  defp mut8_impl(new_data, state) do
+  defp mut8_impl(new_data, opts, state) do
     info = state[:info]
     ib = info[:ib]
     gib = info[:gib]

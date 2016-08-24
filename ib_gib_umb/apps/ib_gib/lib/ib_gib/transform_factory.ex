@@ -9,6 +9,7 @@ defmodule IbGib.TransformFactory do
 
   alias IbGib.Helper
   use IbGib.Constants, :ib_gib
+  use IbGib.Constants, :transforms
 
   @doc """
   Creates a fork with source `src_ib_gib` and dest_ib of given `dest_ib`. In
@@ -35,21 +36,35 @@ defmodule IbGib.TransformFactory do
   Creates a mut8 transform that will mut8 the internal `data` map of the given
   `src_ib_gib`. This will perform a merge of the given `new_data` map onto the
   existing `data` map, replacing any identical keys.
+
+  If `opts` :gib_stamp is true, then we will "stamp" the gib, showing that the
+  gib was done by our engine and not by a user.
   """
-  @spec mut8(String.t, map) :: map
-  def mut8(src_ib_gib, new_data) when is_bitstring(src_ib_gib) and is_map(new_data) do
+  @spec mut8(String.t, map, map) :: map
+  def mut8(src_ib_gib, new_data, opts \\ @default_transform_options)
+    when is_bitstring(src_ib_gib) and is_map(new_data) do
     ib = "mut8"
     relations = %{
       "dna" => ["ib#{delim}gib", "mut8#{delim}gib"]
     }
     data = %{"src_ib_gib" => src_ib_gib, "new_data" => new_data}
-    gib = Helper.hash(ib, relations, data)
+    gib = Helper.hash(ib, relations, data) |> stamp_if_needed(opts.gib_stamp)
+    if
     %{
       ib: ib,
       gib: gib,
       rel8ns: relations,
       data: data
     }
+  end
+
+  @spec stamp_if_needed(boolean) :: String.t
+  defp stamp_if_needed(gib, is_needed) do
+    if is_needed do
+      # left off here...need to implement a string replace.
+    else
+      gib
+    end
   end
 
   @default_rel8ns ["rel8d"]
