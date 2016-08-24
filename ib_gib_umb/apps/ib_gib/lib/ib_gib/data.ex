@@ -65,6 +65,7 @@ defmodule IbGib.Data do
   Returns the **map** of the `IbGib.Data.Schemas.IbGibModel` if found in
   either the cache or the repo, `{:ok, map}`. If not found, `{:error, :not_found}`.
   """
+  @spec load(String.t, String.t) :: {:ok, any} | {:error, any}
   def load(ib, gib) when is_bitstring(ib) and is_bitstring(gib) do
     key = IbGib.Helper.get_ib_gib!(ib, gib)
     # For now, simply gets the value from the cache
@@ -77,6 +78,7 @@ defmodule IbGib.Data do
   @doc """
   Bang version of `load/2`.
   """
+  @spec load!(String.t, String.t) :: any
   def load!(ib, gib) when is_bitstring(ib) and is_bitstring(gib) do
     case load(ib, gib) do
       {:ok, value} -> value
@@ -89,11 +91,13 @@ defmodule IbGib.Data do
     keys: "regex", "is", "in"
     value: bitstring, e.g. "some ib", "[A-Za-z0]+"
   """
-  def query(%{"ib" => ib_options, "data" => data_options, "rel8ns" => rel8ns_options, "time" => time_options, "meta" => meta_options}) do
+  @spec query(map) :: any
+  def query(%{"ib" => ib_options, "gib" => gib_options, "data" => data_options, "rel8ns" => rel8ns_options, "time" => time_options, "meta" => meta_options}) do
 
     model =
       IbGibModel
       |> add_ib_options(ib_options)
+      |> add_gib_options(gib_options)
       |> add_data_options(data_options)
       |> add_rel8ns_options(rel8ns_options)
       |> add_time_options(time_options)
@@ -114,7 +118,6 @@ defmodule IbGib.Data do
     ib_options)
     when is_map(ib_options) and map_size(ib_options) > 0 and
          is_bitstring(search_term) and is_bitstring(method) do
-    # Logger.warn "yoooooooooooooooo"
 
     case method do
       "is" ->
@@ -126,7 +129,12 @@ defmodule IbGib.Data do
           query |> where(fragment("ib != ?", ^search_term))
         query
       "like" ->
-        wrapped_search_term = "%#{search_term}%"
+        wrapped_search_term =
+          if String.contains?(search_term, "%") do
+            search_term
+          else
+            "%#{search_term}%"
+          end
         query =
           query |> where([x], ilike(x.ib, ^wrapped_search_term))
         query
@@ -136,6 +144,39 @@ defmodule IbGib.Data do
     end
   end
   defp add_ib_options(query, _) do
+    query
+  end
+
+  defp add_gib_options(query, %{"what" => search_term, "how" => method} =
+    gib_options)
+    when is_map(gib_options) and map_size(gib_options) > 0 and
+         is_bitstring(search_term) and is_bitstring(method) do
+
+    case method do
+      "is" ->
+        query =
+          query |> where(gib: ^search_term)
+        query
+      "isnt" ->
+        query =
+          query |> where(fragment("gib != ?", ^search_term))
+        query
+      "like" ->
+        wrapped_search_term =
+          if String.contains?(search_term, "%") do
+            search_term
+          else
+            "%#{search_term}%"
+          end
+        query =
+          query |> where([x], ilike(x.gib, ^wrapped_search_term))
+        query
+      _ ->
+        Logger.info("Unknown method: #{method}. search_term: #{search_term}")
+        query
+    end
+  end
+  defp add_gib_options(query, _) do
     query
   end
 

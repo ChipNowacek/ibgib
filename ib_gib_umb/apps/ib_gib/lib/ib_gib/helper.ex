@@ -5,6 +5,8 @@ defmodule IbGib.Helper do
   """
 
   use IbGib.Constants, :ib_gib
+  use IbGib.Constants, :error_msgs
+  import IbGib.Macros
   require Logger
   @hash_salt "ib_gib_salt_whaa"
 
@@ -253,8 +255,8 @@ defmodule IbGib.Helper do
       iex> IbGib.Helper.valid_ib?("")
       false
 
-      # This one is too long. 64 character max
-      iex> IbGib.Helper.valid_ib?("12345678901234567890123456789012345678901234567890123456789012345")
+      # This one is too long. 76 character max
+      iex> IbGib.Helper.valid_ib?("12345678901234567890123456789012345678901234567890123456789012345678901234567")
       false
   """
   def valid_ib?(ib) when is_bitstring(ib) do
@@ -293,8 +295,8 @@ defmodule IbGib.Helper do
       iex> IbGib.Helper.valid_gib?("")
       false
 
-      # This one is too long. 64 character max
-      iex> IbGib.Helper.valid_gib?("12345678901234567890123456789012345678901234567890123456789012345")
+      # This one is too long. 76 character max
+      iex> IbGib.Helper.valid_gib?("12345678901234567890123456789012345678901234567890123456789012345678901234567")
       false
   """
   def valid_gib?(gib) when is_bitstring(gib) do
@@ -338,15 +340,15 @@ defmodule IbGib.Helper do
       false
 
       # max valid length
-      iex> IbGib.Helper.valid_ib_gib?("1234567890123456789012345678901234567890123456789012345678901234^1234567890123456789012345678901234567890123456789012345678901234")
+      iex> IbGib.Helper.valid_ib_gib?("1234567890123456789012345678901234567890123456789012345678901234567890123456^1234567890123456789012345678901234567890123456789012345678901234567890123456")
       true
 
-      # ib is too long. 64 character max
-      iex> IbGib.Helper.valid_ib_gib?("12345678901234567890123456789012345678901234567890123456789012345^1234567890123456789012345678901234567890123456789012345678901234")
+      # ib is too long. 76 character max
+      iex> IbGib.Helper.valid_ib_gib?("12345678901234567890123456789012345678901234567890123456789012345678901234567^1234567890123456789012345678901234567890123456789012345678901234567890123456")
       false
 
       # gib is too long. 64 character max
-      iex> IbGib.Helper.valid_ib_gib?("1234567890123456789012345678901234567890123456789012345678901234^12345678901234567890123456789012345678901234567890123456789012345")
+      iex> IbGib.Helper.valid_ib_gib?("1234567890123456789012345678901234567890123456789012345678901234567890123456^12345678901234567890123456789012345678901234567890123456789012345678901234567")
       false
   """
   def valid_ib_gib?(ib_gib) when is_bitstring(ib_gib) do
@@ -357,6 +359,60 @@ defmodule IbGib.Helper do
       Regex.match?(regex_valid_ib_gib, ib_gib)
   end
   def valid_ib_gib?(_) do
+    false
+  end
+
+  @doc """
+  Creates an "official" stamp on the given `gib`.
+
+  ## Examples
+    iex> IbGib.Helper.stamp_gib("someGIB")
+    {:ok, "ibGib_someGIB_ibGib"}
+
+    iex> {result, _emsg} = IbGib.Helper.stamp_gib("")
+    ...> result
+    :error
+  """
+  def stamp_gib(gib) when is_bitstring(gib) and gib != "" do
+    {:ok, "#{@gib_stamp}_#{gib}_#{@gib_stamp}"}
+  end
+  def stamp_gib(unknown_arg) do
+    {:error, emsg_invalid_arg(unknown_arg)}
+  end
+
+  @doc """
+  Bang version of `stamp_gib/1`.
+
+  ## Examples
+    iex> IbGib.Helper.stamp_gib!("someGIB")
+    "ibGib_someGIB_ibGib"
+  """
+  def stamp_gib!(gib) when is_bitstring(gib) and gib != "" do
+    bang(stamp_gib(gib))
+  end
+
+  @doc """
+  Checks if a given `gib` is "officially" stamped by ibGib.
+
+  ## Examples
+    iex> IbGib.Helper.gib_stamped?("ibGib_someGIB_ibGib")
+    true
+
+    iex> IbGib.Helper.gib_stamped?("someGIB")
+    false
+
+    iex> IbGib.Helper.gib_stamped?("")
+    false
+
+    iex> IbGib.Helper.gib_stamped?(%{"not" => "a bitstring"})
+    false
+  """
+  def gib_stamped?(gib) when is_bitstring(gib) and gib != "" do
+    String.length(gib) > 12 and
+    String.starts_with?(gib, @gib_stamp) and
+    String.ends_with?(gib, @gib_stamp)
+  end
+  def gib_stamped?(gib) do
     false
   end
 

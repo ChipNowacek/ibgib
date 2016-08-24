@@ -31,7 +31,7 @@ defmodule IbGib.QueryOptionsFactory do
     quote do: unquote(with_or_without) in @with_or_without
   end
 
-  @key_and_or_value ["key", "value", "keyvalue"] #, "regex"] not implemented yet
+  @key_and_or_value ["key", "value", "keyvalue"]
   defmacro is_valid_key_and_or_value(arg) do
     quote do: unquote(arg) in @key_and_or_value
   end
@@ -39,6 +39,7 @@ defmodule IbGib.QueryOptionsFactory do
   def do_query() do
     %{
       "ib" => %{},
+      "gib" => %{},
       "data" => %{},
       "rel8ns" => %{},
       "time" => %{},
@@ -58,6 +59,30 @@ defmodule IbGib.QueryOptionsFactory do
     }
     # %{
     #   "ib" => ib_options,
+    #   "gib" => gib_options,
+    #   "data" => data_options,
+    #   "rel8ns" => rel8ns_options,
+    #   "time" => time_options,
+    #   "meta" => meta_options
+    # }
+
+    # Overrides the "ib" section of the accumulated options
+    Map.merge(acc_options, options)
+  end
+
+  def where_gib(acc_options, method, search_term)
+    when is_map(acc_options) and is_bitstring(search_term) and
+         is_bitstring(method) and is_valid_ib_method(method) do
+
+    options = %{
+      "gib" => %{
+        "what" => search_term,
+        "how" => method
+      }
+    }
+    # %{
+    #   "ib" => ib_options,
+    #   "gib" => gib_options,
     #   "data" => data_options,
     #   "rel8ns" => rel8ns_options,
     #   "time" => time_options,

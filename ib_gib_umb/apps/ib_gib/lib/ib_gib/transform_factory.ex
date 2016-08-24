@@ -7,9 +7,13 @@ defmodule IbGib.TransformFactory do
   (2016/08/20) no other consumers need to use these.
   """
 
+  require Logger
+
   alias IbGib.Helper
   use IbGib.Constants, :ib_gib
   use IbGib.Constants, :transforms
+
+  @default_rel8ns ["rel8d"]
 
   @doc """
   Creates a fork with source `src_ib_gib` and dest_ib of given `dest_ib`. In
@@ -17,13 +21,17 @@ defmodule IbGib.TransformFactory do
   random `ib`.
   """
   @spec fork(String.t, String.t) :: map
-  def fork(src_ib_gib \\ "ib#{delim}gib", dest_ib \\ Helper.new_id) when is_bitstring(src_ib_gib) and is_bitstring(dest_ib) do
+  def fork(src_ib_gib \\ "ib#{delim}gib",
+           dest_ib \\ Helper.new_id,
+           opts \\ @default_transform_options)
+    when is_bitstring(src_ib_gib) and is_bitstring(dest_ib) and is_map(opts) do
+    Logger.warn "opts: #{inspect opts}"
     ib = "fork"
     relations = %{
       "dna" => ["ib#{delim}gib", "fork#{delim}gib"]
     }
     data = %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib}
-    gib = Helper.hash(ib, relations, data)
+    gib = Helper.hash(ib, relations, data) |> stamp_if_needed(opts[:gib_stamp])
     %{
       ib: ib,
       gib: gib,
@@ -41,15 +49,16 @@ defmodule IbGib.TransformFactory do
   gib was done by our engine and not by a user.
   """
   @spec mut8(String.t, map, map) :: map
-  def mut8(src_ib_gib, new_data, opts \\ @default_transform_options)
+  def mut8(src_ib_gib,
+           new_data,
+           opts \\ @default_transform_options)
     when is_bitstring(src_ib_gib) and is_map(new_data) do
     ib = "mut8"
     relations = %{
       "dna" => ["ib#{delim}gib", "mut8#{delim}gib"]
     }
     data = %{"src_ib_gib" => src_ib_gib, "new_data" => new_data}
-    gib = Helper.hash(ib, relations, data) |> stamp_if_needed(opts.gib_stamp)
-    if
+    gib = Helper.hash(ib, relations, data) |> stamp_if_needed(opts[:gib_stamp])
     %{
       ib: ib,
       gib: gib,
@@ -57,17 +66,6 @@ defmodule IbGib.TransformFactory do
       data: data
     }
   end
-
-  @spec stamp_if_needed(boolean) :: String.t
-  defp stamp_if_needed(gib, is_needed) do
-    if is_needed do
-      # left off here...need to implement a string replace.
-    else
-      gib
-    end
-  end
-
-  @default_rel8ns ["rel8d"]
 
   @doc """
   Creates a rel8 transform that will rel8 the given `src_ib_gib` to the given
@@ -79,12 +77,18 @@ defmodule IbGib.TransformFactory do
   `dest-rel8n` will add a relation to the dest.
   """
   @spec rel8(String.t, String.t, list(String.t), list(String.t)) :: map
-  def rel8(src_ib_gib, dest_ib_gib, src_rel8ns \\ @default_rel8ns, dest_rel8ns \\ @default_rel8ns)
+  def rel8(src_ib_gib,
+           dest_ib_gib,
+           src_rel8ns \\ @default_rel8ns,
+           dest_rel8ns \\ @default_rel8ns,
+           opts \\ @default_transform_options)
     when is_bitstring(src_ib_gib) and is_bitstring(dest_ib_gib) and
          src_ib_gib !== dest_ib_gib and
-         src_ib_gib !== "ib#{@delim}gib" and dest_ib_gib !== "ib#{@delim}gib" and
+         src_ib_gib !== "ib#{@delim}gib" and
+         dest_ib_gib !== "ib#{@delim}gib" and
          is_list(src_rel8ns) and length(src_rel8ns) >= 1 and
-         is_list(dest_rel8ns) and length(dest_rel8ns) >= 1  do
+         is_list(dest_rel8ns) and length(dest_rel8ns) >= 1 and
+         is_map(opts) do
     ib = "rel8"
     relations = %{
       "dna" => ["ib#{delim}gib", "rel8#{delim}gib"]
@@ -95,7 +99,7 @@ defmodule IbGib.TransformFactory do
       "src_rel8ns" => src_rel8ns |> Enum.concat(@default_rel8ns) |> Enum.uniq,
       "dest_rel8ns" => dest_rel8ns |> Enum.concat(@default_rel8ns) |> Enum.uniq
     }
-    gib = Helper.hash(ib, relations, data)
+    gib = Helper.hash(ib, relations, data) |> stamp_if_needed(opts[:gib_stamp])
     %{
       ib: ib,
       gib: gib,
@@ -126,4 +130,21 @@ defmodule IbGib.TransformFactory do
       data: data
     }
   end
+
+  # Stamping a gib means that it is "official", since a user doesn't (shouldn't)
+  # have the ability to create their own gib.
+  @spec stamp_if_needed(String.t, boolean) :: String.t
+  defp stamp_if_needed(gib, is_needed) when is_boolean(is_needed) do
+    if is_needed do
+      # I'm both prepending and appending for visual purposes. When querying,
+      # I only need to search for: where gib `LIKE` "#{gib_stamp}%"
+      gib = Helper.stamp_gib!(gib)
+    else
+      gib
+    end
+  end
+  defp stamp_if_needed(gib, is_needed) do
+    gib
+  end
+
 end

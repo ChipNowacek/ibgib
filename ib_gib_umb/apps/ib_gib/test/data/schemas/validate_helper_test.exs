@@ -1,4 +1,8 @@
 defmodule IbGib.Data.Schemas.ValidateHelperTest do
+  @moduledoc """
+  Test the ValidateHelper module.
+  """
+
   use ExUnit.Case, async: true
   require Logger
   alias RandomGib.Get
@@ -6,16 +10,10 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
   alias IbGib.Data.Schemas.ValidateHelper
   use IbGib.Constants, :ib_gib
 
-  @min 1
-  @max 64
-  @min_ib_gib (@min*2)+1
-  @max_ib_gib (@max*2)+1
-  @delim "^"
+  def random_min_id, do: Get.some_letters(min_id_length)
+  def random_max_id, do: Get.some_letters(max_id_length)
 
-  def random_min_id, do: Get.some_letters(@min)
-  def random_max_id, do: Get.some_letters(@max)
-
-  def too_long_id, do: Get.some_letters(@max+1)
+  def too_long_id, do: Get.some_letters(max_id_length + 1)
   def too_short_id, do: ""
 
   def random_mid_id, do: Get.some_letters(10)
@@ -202,7 +200,7 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
 
   @tag :capture_log
   test "valid_data?, valid, at max data size" do
-    test_max_size = 100000
+    test_max_size = 100_000
     test_value_length = div(test_max_size, 2) - 1 # reserve 1 length for key
     test_value = Enum.reduce(1..test_value_length, "", fn(_, acc) -> "a" <> acc end)
     Logger.debug "test_value: #{test_value}"
@@ -216,7 +214,7 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
 
   @tag :capture_log
   test "valid_data?, invalid, key puts it just over max data size" do
-    test_max_size = 100000
+    test_max_size = 100_000
     test_value_length = div(test_max_size, 2) - 1 # reserve 1 length for key
     test_value = Enum.reduce(1..test_value_length, "", fn(_, acc) -> "a" <> acc end)
     Logger.debug "test_value: #{test_value}"
@@ -231,7 +229,7 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
 
   @tag :capture_log
   test "valid_data?, invalid, value puts it just over max data size" do
-    test_max_size = 100000
+    test_max_size = 100_000
     test_value_length = div(test_max_size, 2) - 2
     test_value = Enum.reduce(1..test_value_length, "", fn(_, acc) -> "a" <> acc end)
     Logger.debug "test_value: #{test_value}"

@@ -32,6 +32,7 @@ defmodule IbGib.Auth.Identity do
   to the user, or more generally speaking, which UX is presented to the user.
   """
 
+  use IbGib.Constants, :ib_gib
   use IbGib.Constants, :error_msgs
   import IbGib.{Expression, QueryOptionsFactory, Macros, Helper}
 
@@ -123,7 +124,7 @@ defmodule IbGib.Auth.Identity do
   ## Examples
       iex> identity_info = %{"some_key" => "some-id_here234987SD(^&@{%})"}
       iex> IbGib.Auth.Identity.get_identity_ib(identity_info)
-      {:ok, "6C111BD527531D047C90AE259852F4122E358ECFAAE9F78DAFF81F24B0CA1678"}
+      {:ok, "93B8AA0EE0495D24CEBE1322AC705B0143945CA14B92D6B1B840630AC3251F3F"}
 
   Returns {:ok, identity_ib} if ok, else {:error, reason}
   """
@@ -145,8 +146,9 @@ defmodule IbGib.Auth.Identity do
   Bang version of `get_identity_ib/1`.
 
   ## Examples
-      iex> IbGib.Auth.Session.get_identity_ib!("some-id_here234987SD(^&@{%})")
-      "6C111BD527531D047C90AE259852F4122E358ECFAAE9F78DAFF81F24B0CA1678"
+      iex> identity_info = %{"some_key" => "some-id_here234987SD(^&@{%})"}
+      iex> IbGib.Auth.Identity.get_identity_ib!(identity_info)
+      "93B8AA0EE0495D24CEBE1322AC705B0143945CA14B92D6B1B840630AC3251F3F"
   """
   def get_identity_ib!(identity_id) do
     bang(get_identity_ib(identity_id))
@@ -167,7 +169,10 @@ defmodule IbGib.Auth.Identity do
     when is_bitstring(identity_ib) and is_pid(query_off_of) do
 
     query_options =
-      do_query |> where_ib("is", identity_ib) |> most_recent_only
+      do_query
+      |> where_ib("is", identity_ib)
+      |> where_gib("like", "#{@gib_stamp}%")
+      |> most_recent_only
 
     query_result_info =
       query_off_of |> query!(query_options) |> get_info!

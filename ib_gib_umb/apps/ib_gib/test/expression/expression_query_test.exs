@@ -152,6 +152,117 @@ defmodule IbGib.Expression.ExpressionQueryTest do
   end
 
   @tag :capture_log
+  test "Fork a couple ib, query, gib is" do
+    test_count = 5
+    {:ok, root} = IbGib.Expression.Supervisor.start_expression()
+
+    # Create some random other ib_gib
+    a = root |> fork!
+
+    Logger.configure(level: :info)
+    1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}")))
+    Logger.configure(level: :debug)
+
+    # Create the one ib_gib we want to query for
+    test_ib = "hey this is a test ib"
+    {:ok, {_test, _test_info, test_ib_gib}} = root |> gib(:fork, test_ib)
+    {_, test_gib} = Helper.separate_ib_gib!(test_ib_gib)
+
+    query_options =
+      do_query
+      |> where_gib("is", test_gib)
+
+    {:ok, query_result} = root |> query(query_options)
+    Logger.debug "query_result: #{inspect query_result}"
+    query_result_info = query_result |> get_info!
+    Logger.debug "query_result_info: #{inspect query_result_info}"
+    result_list = query_result_info[:rel8ns]["result"]
+    Logger.debug "result_list: #{inspect result_list}"
+    # All results have ib^gib as the first result
+    assert Enum.count(result_list) === 2
+
+    single_result = Enum.at(result_list, 1)
+    assert single_result === test_ib_gib
+    Logger.debug "single result: #{single_result}"
+  end
+
+  @tag :capture_log
+  test "Fork a couple ib, query, gib like" do
+    test_count = 5
+    {:ok, root} = IbGib.Expression.Supervisor.start_expression()
+
+    # Create some random other ib_gib
+    a = root |> fork!
+
+    Logger.configure(level: :info)
+    1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}")))
+    Logger.configure(level: :debug)
+
+    # Create the one ib_gib we want to query for
+    test_ib = "hey this is a test ib"
+    {:ok, {_test, _test_info, test_ib_gib}} = root |> gib(:fork, test_ib)
+    {_, test_gib} = Helper.separate_ib_gib!(test_ib_gib)
+
+    search_term = String.slice(test_gib, 2..25)
+    query_options =
+      do_query
+      |> where_gib("like", search_term)
+
+    {:ok, query_result} = root |> query(query_options)
+    Logger.debug "query_result: #{inspect query_result}"
+    query_result_info = query_result |> get_info!
+    Logger.debug "query_result_info: #{inspect query_result_info}"
+    result_list = query_result_info[:rel8ns]["result"]
+    Logger.debug "result_list: #{inspect result_list}"
+    # All results have ib^gib as the first result
+    assert Enum.count(result_list) === 2
+
+    single_result = Enum.at(result_list, 1)
+    assert single_result === test_ib_gib
+    Logger.debug "single result: #{single_result}"
+  end
+
+  @tag :capture_log
+  test "Fork a couple ib, query, gib isnt" do
+    test_count = 5
+    {:ok, root} = IbGib.Expression.Supervisor.start_expression()
+
+    # Create some random other ib_gib
+    a = root |> fork!
+
+    Logger.configure(level: :info)
+    1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}")))
+    Logger.configure(level: :debug)
+
+    # Create the one ib_gib we want to query for
+    test_ib = "hey this is a test ib"
+    {:ok, {_test, _test_info, test_ib_gib}} = root |> gib(:fork, test_ib)
+    {_, test_gib} = Helper.separate_ib_gib!(test_ib_gib)
+
+    # search_term = test_ib
+    query_options =
+      do_query
+      |> where_gib("isnt", test_gib)
+
+    {:ok, query_result} = root |> query(query_options)
+    Logger.debug "query_result: #{inspect query_result}"
+    query_result_info = query_result |> get_info!
+    Logger.debug "query_result_info: #{inspect query_result_info}"
+    result_list = query_result_info[:rel8ns]["result"]
+    Logger.debug "result_list: #{inspect result_list}"
+    # All results have ib^gib as the first result
+    assert Enum.count(result_list) > 2
+    Logger.info "result_list count: #{Enum.count(result_list)}"
+
+    assert !Enum.any?(result_list, fn(res_ib_gib) ->
+        # Logger.warn "res_ib_gib: #{res_ib_gib}"
+        {:ok, res_instance} = IbGib.Expression.Supervisor.start_expression(res_ib_gib)
+        res_info = res_instance |> IbGib.Expression.get_info!
+        res_info[:gib] === test_gib
+      end)
+  end
+
+  @tag :capture_log
   test "Fork a couple ib, query, data key is" do
     test_count = 5
     {:ok, root} = IbGib.Expression.Supervisor.start_expression()

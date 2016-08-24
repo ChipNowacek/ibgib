@@ -19,9 +19,9 @@ defmodule IbGib.Constants do
 
       defp delim, do: "^"
       defp min_id_length, do: 1
-      defp max_id_length, do: 64
+      defp max_id_length, do: 76
       defp min_ib_gib_length, do: 3 # min + delim + min
-      defp max_ib_gib_length, do: 129 # max + delim + max
+      defp max_ib_gib_length, do: 153 # max + delim + max
       defp max_data_size, do: 10_240_000 # 10 MB max internal data
       # one or more word chars, underscore, dash
       defp regex_valid_ib, do: ~r/^[\w\d_-\s]+$/
@@ -30,6 +30,10 @@ defmodule IbGib.Constants do
       defp regex_valid_ib_gib, do: ~r/^[\w\d_-\s]+\^[\w\d]+$/
 
       defp default_dna, do: ["ib#{delim}gib"]
+
+      # This "stamp" added to gib means that we have generated the ib_gib,
+      # and not a user.
+      @gib_stamp "ibGib"
 
       # This key prefix is a helper that indicates some meta action for the
       # corresponding key/value entry in a map.
