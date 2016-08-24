@@ -76,7 +76,7 @@ defmodule IbGib.TransformFactory do
   `src_rel8n` will add a relation to the src with this name of the rel8n, and
   `dest-rel8n` will add a relation to the dest.
   """
-  @spec rel8(String.t, String.t, list(String.t), list(String.t)) :: map
+  @spec rel8(String.t, String.t, list(String.t), list(String.t), map) :: map
   def rel8(src_ib_gib,
            dest_ib_gib,
            src_rel8ns \\ @default_rel8ns,
@@ -86,9 +86,22 @@ defmodule IbGib.TransformFactory do
          src_ib_gib !== dest_ib_gib and
          src_ib_gib !== "ib#{@delim}gib" and
          dest_ib_gib !== "ib#{@delim}gib" and
-         is_list(src_rel8ns) and length(src_rel8ns) >= 1 and
-         is_list(dest_rel8ns) and length(dest_rel8ns) >= 1 and
+         is_list(src_rel8ns) and
+         is_list(dest_rel8ns) and
          is_map(opts) do
+
+    src_rel8ns =
+      if length(src_rel8ns) == 0 do
+        @default_rel8ns
+      else
+        src_rel8ns
+      end
+    dest_rel8ns =
+      if length(dest_rel8ns) == 0 do
+        @default_rel8ns
+      else
+        dest_rel8ns
+      end
     ib = "rel8"
     relations = %{
       "dna" => ["ib#{delim}gib", "rel8#{delim}gib"]

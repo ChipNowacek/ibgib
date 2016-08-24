@@ -543,8 +543,9 @@ defmodule IbGib.Expression do
     when is_pid(expr_pid) and is_bitstring(dest_ib) and is_map(opts) do
     bang(fork(expr_pid, dest_ib, opts))
   end
-  def fork!(expr_pid, dest_ib, _opts)
+  def fork!(expr_pid, dest_ib, opts)
     when is_pid(expr_pid) and is_bitstring(dest_ib) do
+    Logger.warn "bad opts: #{inspect opts}"
     bang(fork(expr_pid, dest_ib, %{}))
   end
 
@@ -557,8 +558,14 @@ defmodule IbGib.Expression do
   """
   @spec mut8(pid, map, map) :: {:ok, pid} | {:error, any}
   def mut8(expr_pid, new_data, opts \\ @default_transform_options)
+  def mut8(expr_pid, new_data, opts)
     when is_pid(expr_pid) and is_map(new_data) and is_map(opts) do
     GenServer.call(expr_pid, {:mut8, new_data, opts})
+  end
+  def mut8(expr_pid, new_data, opts)
+    when is_pid(expr_pid) and is_map(new_data) do
+    Logger.warn "bad opts: #{inspect opts}"
+    GenServer.call(expr_pid, {:mut8, new_data, %{}})
   end
 
   @doc """
@@ -566,12 +573,14 @@ defmodule IbGib.Expression do
   """
   @spec mut8!(pid, map, map) :: pid | any
   def mut8!(expr_pid, new_data, opts \\ @default_transform_options)
+  def mut8!(expr_pid, new_data, opts)
     when is_pid(expr_pid) and is_map(new_data) and is_map(opts) do
       bang(mut8(expr_pid, new_data, opts))
-    # case mut8(expr_pid, new_data) do
-    #   {:ok, new_pid} -> new_pid
-    #   {:error, reason} -> raise "#{inspect reason}"
-    # end
+  end
+  def mut8!(expr_pid, new_data, opts)
+    when is_pid(expr_pid) and is_map(new_data) do
+      Logger.warn "bad opts: #{inspect opts}"
+      bang(mut8(expr_pid, new_data, %{}))
   end
 
   @default_rel8ns ["rel8d"]
@@ -582,11 +591,19 @@ defmodule IbGib.Expression do
            src_rel8ns \\ @default_rel8ns,
            dest_rel8ns \\ @default_rel8ns,
            opts \\ @default_transform_options)
+  def rel8(expr_pid, other_pid, src_rel8ns, dest_rel8ns, opts)
     when is_pid(expr_pid) and is_pid(other_pid) and expr_pid !== other_pid and
          is_list(src_rel8ns) and length(src_rel8ns) >= 1 and
          is_list(dest_rel8ns) and length(dest_rel8ns) >= 1 and
          is_map(opts) do
     GenServer.call(expr_pid, {:rel8, other_pid, src_rel8ns, dest_rel8ns, opts})
+  end
+  def rel8(expr_pid, other_pid, src_rel8ns, dest_rel8ns, opts)
+    when is_pid(expr_pid) and is_pid(other_pid) and expr_pid !== other_pid and
+         is_list(src_rel8ns) and length(src_rel8ns) >= 1 and
+         is_list(dest_rel8ns) and length(dest_rel8ns) >= 1 do
+    Logger.warn "bad opts: #{inspect opts}"
+    GenServer.call(expr_pid, {:rel8, other_pid, src_rel8ns, dest_rel8ns, %{}})
   end
 
   @doc """
@@ -598,15 +615,19 @@ defmodule IbGib.Expression do
             src_rel8ns \\ @default_rel8ns,
             dest_rel8ns \\ @default_rel8ns,
             opts \\ @default_transform_options)
+  def rel8!(expr_pid, other_pid, src_rel8ns, dest_rel8ns, opts)
     when is_pid(expr_pid) and is_pid(other_pid) and expr_pid !== other_pid and
          is_list(src_rel8ns) and length(src_rel8ns) >= 1 and
          is_list(dest_rel8ns) and length(dest_rel8ns) >= 1 and
          is_map(opts) do
     bang(rel8(expr_pid, other_pid, src_rel8ns, dest_rel8ns, opts))
-    # case rel8(expr_pid, other_pid, src_rel8ns, dest_rel8ns) do
-    #   {:ok, {new_expr_pid, new_other_pid}} -> {new_expr_pid, new_other_pid}
-    #   {:error, reason} -> raise "#{inspect reason}"
-    # end
+  end
+  def rel8!(expr_pid, other_pid, src_rel8ns, dest_rel8ns, opts)
+    when is_pid(expr_pid) and is_pid(other_pid) and expr_pid !== other_pid and
+         is_list(src_rel8ns) and length(src_rel8ns) >= 1 and
+         is_list(dest_rel8ns) and length(dest_rel8ns) >= 1 do
+    Logger.warn "bad opts: #{inspect opts}"
+    bang(rel8(expr_pid, other_pid, src_rel8ns, dest_rel8ns, %{}))
   end
 
   # ----------------------------------------------------------------------------
@@ -666,8 +687,14 @@ defmodule IbGib.Expression do
     def instance(expr_pid,
                  dest_ib \\ Helper.new_id,
                  opts \\ @default_transform_options)
+    def instance(expr_pid, dest_ib, opts)
       when is_pid(expr_pid) and is_bitstring(dest_ib) and is_map(opts) do
       GenServer.call(expr_pid, {:instance, dest_ib, opts})
+    end
+    def instance(expr_pid, dest_ib, opts)
+      when is_pid(expr_pid) and is_bitstring(dest_ib) do
+      Logger.warn "bad opts: #{inspect opts}"
+      GenServer.call(expr_pid, {:instance, dest_ib, %{}})
     end
 
     @doc """
@@ -677,12 +704,14 @@ defmodule IbGib.Expression do
     def instance!(expr_pid,
                   dest_ib \\ Helper.new_id,
                   opts \\ @default_transform_options)
+    def instance!(expr_pid, dest_ib, opts)
       when is_pid(expr_pid) and is_bitstring(dest_ib) and is_map(opts) do
-        bang(instance(expr_pid, dest_ib, opts))
-      # case instance(expr_pid, dest_ib) do
-      #   {:ok, {new_expr_pid, instance_pid}} -> {new_expr_pid, instance_pid}
-      #   {:error, reason} -> raise "#{inspect reason}"
-      # end
+      bang(instance(expr_pid, dest_ib, opts))
+    end
+    def instance!(expr_pid, dest_ib, opts)
+      when is_pid(expr_pid) and is_bitstring(dest_ib) do
+      Logger.warn "bad opts: #{inspect opts}"
+      bang(instance(expr_pid, dest_ib, %{}))
     end
 
   # ----------------------------------------------------------------------------
