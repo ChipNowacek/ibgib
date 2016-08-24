@@ -7,23 +7,46 @@ defmodule RandomGib.Get do
   GenServer and I'll probably need to change that, but I like my syntax.
   """
 
+  use GenServer
   require Logger
 
   @letters "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
   @letters_and_characters "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ`~!@\#$%^&*()-_=+[]{}\\|;:'\"<>,.?/"
+
+  @doc """
+  Starts a worker server with a new seed.
+  """
+  def start_link(name) do
+    # Logger.debug("GenServer starting...")
+    # Agent.start_link(__MODULE__, fn -> %{} end, [name: name])
+    # arg1: Where the callbacks are implemented.
+    # arg2: Init argument (passed to `init`)
+    # arg3: List of options, e.g. name of server
+    result = GenServer.start_link(__MODULE__, :ok, name: name)
+    # Logger.debug("GenServer started.")
+    result
+  end
+
+  def init(:ok) do
+    {:ok, %{}}
+  end
+
+
+  # ----------------------------------------------------------------------------
+  # Client API
+  # ----------------------------------------------------------------------------
 
   @doc ~S"""
     Generates a new seed.
 
   ## Examples
 
-    iex> RandomGib.Get.generate_seed()
+    iex> RandomGib.generate_seed()
     :ok
 
   """
   def generate_seed(algorithm \\ :exs1024) do
-    :rand.seed_s(algorithm)
-    :ok
+    GenServer.call(__MODULE__, {:generate_seed, algorithm})
   end
 
   @doc """
@@ -31,14 +54,14 @@ defmodule RandomGib.Get do
   """
   # def one_of(src)
   def one_of(src) do
-    one_of_impl(src)
+    GenServer.call(__MODULE__, {:one_of, src})
   end
 
   @doc """
   Gets some subset of a given source list or bitstring string.
   """
   def some_of(src) do
-    some_of_impl(src)
+    GenServer.call(__MODULE__, {:some_of, src})
   end
 
   @doc ~S"""
@@ -51,9 +74,7 @@ defmodule RandomGib.Get do
   """
   @spec some_letters(pos_integer) :: String.t
   def some_letters(count) when count > 0 do
-    1..count
-      |> Enum.map(fn _ -> one_of_impl(@letters) end)
-      |> Enum.reduce(fn (a,b) -> a <> b end)
+    GenServer.call(__MODULE__, {:some_letters, count})
   end
 
   @doc """
@@ -68,9 +89,38 @@ defmodule RandomGib.Get do
   """
   def some_characters(count, valid_characters \\ @letters_and_characters)
     when is_integer(count) and is_bitstring(valid_characters) do
-    1..count
+    GenServer.call(__MODULE__, {:some_characters, count, valid_characters})
+  end
+
+  # ----------------------------------------------------------------------------
+  # Server
+  # ----------------------------------------------------------------------------
+
+  def handle_call({:generate_seed, algorithm}, _from, state) do
+    :rand.seed_s(algorithm)
+    {:reply, :ok, state}
+  end
+  def handle_call({:one_of, src}, _from, state) do
+    result = one_of_impl(src)
+    {:reply, result, state}
+  end
+  def handle_call({:some_of, src}, _from, state) do
+    result = some_of_impl(src)
+    {:reply, result, state}
+  end
+  def handle_call({:some_letters, count}, _from, state) do
+    result = 1..count
+      |> Enum.map(fn _ -> one_of_impl(@letters) end)
+      |> Enum.reduce(fn (a,b) -> a <> b end)
+
+    {:reply, result, state}
+  end
+  def handle_call({:some_characters, count, valid_characters}, _from, state) do
+    result = 1..count
       |> Enum.map(fn _ -> one_of_impl(valid_characters) end)
       |> Enum.reduce(fn (a,b) -> a <> b end)
+
+    {:reply, result, state}
   end
 
   defp one_of_impl([]) do

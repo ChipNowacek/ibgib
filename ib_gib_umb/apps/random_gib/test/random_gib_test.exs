@@ -1,7 +1,11 @@
 defmodule RandomGibTest do
+  @moduledoc """
+  For testing RandomGib functions. Most tests are here.
+  """
+
   use ExUnit.Case
   require Logger
-  doctest RandomGib
+  doctest RandomGib.Get
 
   setup do
     :ok

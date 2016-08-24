@@ -1,9 +1,10 @@
 defmodule RandomGib.Mixfile do
   use Mix.Project
 
-  @version "0.0.7"
+  @version "0.0.8"
 
-  @description "Standalone app for some simple (not crypto strong) random things, e.g. RandomGib.Get.some_letters(5), RandomGib.Get.one_of(src), RandomGib.Get.some_of(src), RandomGib.Get.some_characters(100)"
+  @description "Just a single module for some simple (not crypto strong) random things, e.g. RandomGib.Get.some_letters(5), RandomGib.Get.one_of(src), RandomGib.Get.some_of(src), RandomGib.Get.some_characters(100). Probably
+    not for use in production."
 
   @ibgib_repo_url "https://github.com/ibgib/ibgib"
   @random_gib_url "https://github.com/ibgib/ibgib/tree/master/ib_gib_umb/apps/random_gib"
@@ -33,8 +34,9 @@ defmodule RandomGib.Mixfile do
   #
   # Type "mix help compile.app" for more information
   def application do
-    [applications: [:logger],
-     mod: {RandomGib, []}]
+    [applications: [:logger]
+     ]
+    #  mod: {RandomGib, []}]
   end
 
   # Dependencies can be Hex packages:

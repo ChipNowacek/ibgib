@@ -5,7 +5,7 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.12.0">
-    <title>RandomGib.Get – random_gib v0.0.7</title>
+    <title>RandomGib.Get – random_gib v0.0.8</title>
     <link rel="stylesheet" href="dist/app-88251e7c81.css" />
     
       <link rel="canonical" href="https://hexdocs.pm/random_gib/RandomGib.Get.html" />
@@ -27,7 +27,7 @@
         random_gib
       </h1>
       <h2 class="sidebar-projectVersion">
-        v0.0.7
+        v0.0.8
       </h2>
     </div>
     
@@ -60,12 +60,20 @@
 
 
       <h1>
-        <small class="visible-xs">random_gib v0.0.7</small>
+        <small class="visible-xs">random_gib v0.0.8</small>
         RandomGib.Get
         
         
       </h1>
 
+      
+        <section id="moduledoc" class="docstring">
+          <p>GenServer that contains simple functions for getting random things like
+letters, characters, etc.</p>
+<p>I created this when first learning Elixir. It probably should not be a
+GenServer and I’ll probably need to change that, but I like my syntax.</p>
+
+        </section>
       
 
       
@@ -131,15 +139,6 @@ special characters</p>
 </div>
   
 </div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#start_link/1">start_link(name)</a>
-  </div>
-  
-    <div class="summary-synopsis"><p>Starts a worker server with a new seed</p>
-</div>
-  
-</div>
 
   </div>
 
@@ -174,7 +173,7 @@ special characters</p>
   <section class="docstring">
     <p>  Generates a new seed.</p>
 <h2>Examples</h2>
-<p>  iex&gt; RandomGib.generate_seed()
+<p>  iex&gt; RandomGib.Get.generate_seed()
   :ok</p>
 
   </section>
@@ -253,21 +252,6 @@ special characters.</p>
   
   <section class="docstring">
     <p>Gets some subset of a given source list or bitstring string.</p>
-
-  </section>
-</div>
-<div class="detail" id="start_link/1">
-  <div class="detail-header">
-    <a href="#start_link/1" class="detail-link" title="Link to this function">
-      <i class="icon-link"></i>
-    </a>
-    <span class="signature">start_link(name)</span>
-    
-    
-  </div>
-  
-  <section class="docstring">
-    <p>Starts a worker server with a new seed.</p>
 
   </section>
 </div>
