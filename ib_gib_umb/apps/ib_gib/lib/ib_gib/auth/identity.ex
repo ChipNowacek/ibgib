@@ -190,6 +190,7 @@ defmodule IbGib.Auth.Identity do
         {:ok, Enum.at(result_list, 1)}
         # All queries return ib^gib itself as the first result.
         # So if two results, then the second will be our identity ib^gib
+
       count ->
         {:error, emsg_query_result_count(count)}
     end
@@ -200,7 +201,8 @@ defmodule IbGib.Auth.Identity do
 
   defp create_identity_if_needed(existing_ib_gib, root_identity, identity_ib)
     when is_nil(existing_ib_gib) do
-    with {:ok, {_, identity}} <- root_identity |> instance(identity_ib),
+    with {:ok, {_, identity}} <-
+           root_identity |> instance(identity_ib, %{:gib_stamp => true}),
       {:ok, identity_info} <- identity |> get_info,
       {:ok, identity_ib_gib} <- get_ib_gib(identity_info) do
       {:ok, {identity_ib_gib, identity_info, identity}}
@@ -221,12 +223,24 @@ defmodule IbGib.Auth.Identity do
 
   @doc """
   Looks at the existing `identity_info` and compares it to the given
-  `identity_data`. If it's the same, then it simply returns the
+  `identity_data`. If it's the same, then it simply returns the identity
   """
   defp update_data(identity_info, identity_data, identity, identity_ib_gib)
     when is_map(identity_info) and is_map(identity_data) and
          is_pid(identity) and is_bitstring(identity_ib_gib) do
-    :not_implemented
+    if Map.equal?(identity_info[:data], identity_data) do
+      {:ok, identity_ib_gib}
+    else
+      opts = %{:gib_stamp => true}
+      with {:ok, new_identity} <- identity |> mut8(identity_data, opts),
+        {:ok, new_identity_info} <- new_identity |> get_info,
+        {:ok, new_identity_ib_gib} <- new_identity_info |> get_ib_gib do
+        {:ok, new_identity_ib_gib}
+      else
+        {:error, reason} -> {:error, reason}
+        error -> {:error, error}
+      end
+    end
   end
 
 end
