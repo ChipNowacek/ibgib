@@ -32,6 +32,11 @@ defmodule WebGib.IbGibController do
     |> render("index.html")
   end
 
+  def login(conn, params) do
+    conn
+    |> render("index.html")
+  end
+
   @doc """
   This should show the given `ib^gib`. If only the `ib` is given, then this
   should show what? The most "recent" `gib` hash?

@@ -23,6 +23,7 @@ defmodule WebGib.Router do
     post "/", PageController, :index
 
     get "/ibgib", IbGibController, :index
+    post "/ibgib/login", IbGibController, :login
     get "/ibgib/:ib_or_ib_gib", IbGibController, :show
 
     get "/ibgib/api/fork", IbGibController, :fork
