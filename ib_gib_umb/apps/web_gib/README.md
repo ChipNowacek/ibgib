@@ -33,6 +33,9 @@ Ready to run in production? Please [check our deployment guides](http://www.phoe
 `iex -S mix phoenix.server`
 
 
+## This is what a form output looks like. I'm using this for use with
+[Marker](https://github.com/zambal/marker).
+
 <form accept-charset="UTF-8" action="/ibgib/api/fork" class="ib-circular-menuable" method="post">
   <input name="_csrf_token" type="hidden" value="dCYHb0MuNn9gHzhcJ3xGEyoVHRstAAAACwU9wDyP8hn3cNpbXLkwEg==">
   <input name="_utf8" type="hidden" value="✓">        

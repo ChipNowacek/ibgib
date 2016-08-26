@@ -1,5 +1,6 @@
 defmodule WebGib.IbGibView do
   use WebGib.Web, :view
+  use WebGib.Web, :controller
 
   # import WebGib.Web.Components.Login
 

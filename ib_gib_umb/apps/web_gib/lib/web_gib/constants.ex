@@ -7,15 +7,16 @@ defmodule WebGib.Constants do
 
   def keys do
     quote do
-      # I'm prepending ib_gib_ to differentiate from any other possible name
+      # I'm prepending ib to differentiate from any other possible name
       # conflict.
       # See `WebGib.Plugs.IbGibSession`
-      @session_id_key :ib_gib_session_id
-      @session_ib_gib_key :session_ib_gib
+      @ib_session_id_key "ib_session_id"
+      @ib_session_ib_gib_key "ib_session_ib_gib"
 
-      # key to array of identities associated with current session.
+      # key to array of identities associated with current ib_gib session,
+      # stored in session.
       # See `WebGib.Plugs.IbGibIdentity`
-      @identity_ib_gibs_key :identity_ib_gibs
+      @ib_identity_ib_gibs_key :identity_ib_gibs
     end
   end
 

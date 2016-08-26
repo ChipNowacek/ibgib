@@ -3,6 +3,10 @@ defmodule WebGib.IbGibController do
   Controller related to ib_gib code.
   """
 
+  # ----------------------------------------------------------------------------
+  # Usings, imports, etc.
+  # ----------------------------------------------------------------------------
+
   use WebGib.Web, :controller
   require Logger
 
@@ -10,9 +14,6 @@ defmodule WebGib.IbGibController do
   use WebGib.Constants, :error_msgs
   import IbGib.Helper
   alias IbGib.TransformFactory.Mut8Factory
-
-  # @delim "^"
-  # @root_ib_gib "ib#{@delim}gib"
 
   # ----------------------------------------------------------------------------
   # Controller Commands
@@ -33,8 +34,51 @@ defmodule WebGib.IbGibController do
   end
 
   def login(conn, params) do
+    Logger.debug "index. params: #{inspect params}"
+    # conn = init_session(conn)
+    Logger.debug "root: #{inspect conn.assigns[:root]}"
     conn
+    |> assign(:ib, "ib")
+    |> assign(:gib, "gib")
+    |> assign(:ib_gib, @root_ib_gib)
     |> render("index.html")
+    # If we have not already started an ib_session, then we need to send the
+    # visitor to the home page to read the notice immediately. We cannot allow
+    # the user to interact with our LITL data system without seeing the vision,
+    # notices, etc.
+
+      # user already has read the vision, notices, etc. on the home page, as
+      # they already have a session started.
+
+      # get current ib_gib session identity/identities.
+      # current_identities = conn |> get_session(@ib_identity_ib_gibs_key)
+      # current_identities =
+      #   if (current_identities == nil) do
+      #     ib_session_id = RandomGib.Get.some_characters(30)
+      #     priv_data = %{
+      #       @ib_session_id_key => ib_session_id
+      #     }
+      #
+      #     # ip = "1.2.3.4"
+      #     pub_data = %{
+      #       # "ip" => ip
+      #     }
+
+          # case Identity.get_identity(priv_data, pub_data) do
+          #   {:ok, identity_ib_gib} ->
+          #   {:error, reason} ->
+          #   error ->
+          # end
+
+
+          # {:ok, identity} = Expression.Supervisor.start_expression(identity_ib_gib)
+          # identity_info = identity |> get_info!
+          #
+          # Logger.debug "identity_info: #{inspect identity_info}"
+
+          # {_identity_ib, identity_gib} = Helper.separate_ib_gib!(identity_ib_gib)
+          # assert Helper.gib_stamped?(identity_gib)
+
   end
 
   @doc """
