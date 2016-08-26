@@ -25,8 +25,8 @@ defmodule WebGib.Constants do
       @emsg_invalid_dest_ib "Only letters, numbers, spaces, dashes, underscores are allowed for the destination ib. Just hit the back button to return."
 
       @refresh_msg "Try logging out, refreshing your browser, and then logging back in."
-      @emsg_invalid_session "There is a problem with the session. #{@refresh_msg}"
-      @emsg_invalid_authentication "There is a problem with authentication. #{@refresh_msg}"
+      @emsg_invalid_session "There is a problem with the session.\n#{@refresh_msg}"
+      @emsg_invalid_identity "There is a problem with authenticating your identity.\n#{@refresh_msg}"
     end
   end
   def fork do

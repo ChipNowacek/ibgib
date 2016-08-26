@@ -21,7 +21,7 @@ defmodule WebGib.PageView do
       end
 
       div [class: "ib-litl-data-notice"] do
-        h3 "ibGib Vision: Please Read (seriously)!"
+        h3 "ibGib Vision: Please (Actually) Read!"
 
         p [class: "ib-bold"] do
           "This site uses cookies and tracks information, almost all of which is and/or will be publicly available. ***** If privacy and security are primary concerns for you, then we ask that you please do not use our site. *****"

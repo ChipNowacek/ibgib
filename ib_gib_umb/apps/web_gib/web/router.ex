@@ -16,7 +16,7 @@ defmodule WebGib.Router do
 
   pipeline :ib_gib_pipe do
     plug WebGib.Plugs.EnsureIbGibSession
-    # plug WebGib.Plugs.IbGibIdentity
+    plug WebGib.Plugs.IbGibIdentity
     plug WebGib.Plugs.IbGibRoot
   end
 
@@ -38,8 +38,9 @@ defmodule WebGib.Router do
     pipe_through [:browser, :ib_gib_pipe]
 
     get "/", IbGibController, :index
-    get "/login", IbGibController, :login
-    post "/login", IbGibController, :login
+    post "/", IbGibController, :index
+    # get "/login", IbGibController, :login
+    # post "/login", IbGibController, :login
   end
 
   # Other scopes may use custom stacks.
