@@ -1,4 +1,8 @@
 defmodule IbGib.Expression.GibStampsTest do
+  @moduledoc """
+  Test stamping the `gib` of an ib_gib to be "official".
+  """
+
   use ExUnit.Case
   import IbGib.Expression
   alias IbGib.{Expression, Helper}
@@ -252,7 +256,7 @@ defmodule IbGib.Expression.GibStampsTest do
     test_base = root |> fork!
 
     test_ib = "test ib here uh hrm"
-    {new_test_base, test} = test_base |> instance!(test_ib, %{:gib_stamp => true})
+    {_new_test_base, test} = test_base |> instance!(test_ib, %{:gib_stamp => true})
     test_info = test |> get_info!
     test_gib = test_info[:gib]
 
@@ -266,7 +270,7 @@ defmodule IbGib.Expression.GibStampsTest do
 
     test_ib = "test ib here uh hrm"
     # opts = nada
-    {new_test_base, test} = test_base |> instance!(test_ib)
+    {_new_test_base, test} = test_base |> instance!(test_ib)
     test_info = test |> get_info!
     test_gib = test_info[:gib]
 
@@ -280,7 +284,7 @@ defmodule IbGib.Expression.GibStampsTest do
 
     test_ib = "test ib here uh hrm"
     opts = %{:gib_stamp => false}
-    {new_test_base, test} = test_base |> instance!(test_ib, opts)
+    {_new_test_base, test} = test_base |> instance!(test_ib, opts)
     test_info = test |> get_info!
     test_gib = test_info[:gib]
 
@@ -294,7 +298,7 @@ defmodule IbGib.Expression.GibStampsTest do
 
     test_ib = "test ib here uh hrm"
     opts = %{}
-    {new_test_base, test} = test_base |> instance!(test_ib, opts)
+    {_new_test_base, test} = test_base |> instance!(test_ib, opts)
     test_info = test |> get_info!
     test_gib = test_info[:gib]
 
@@ -308,7 +312,7 @@ defmodule IbGib.Expression.GibStampsTest do
 
     test_ib = "test ib here uh hrm"
     opts = nil
-    {new_test_base, test} = test_base |> instance!(test_ib, opts)
+    {_new_test_base, test} = test_base |> instance!(test_ib, opts)
     test_info = test |> get_info!
     test_gib = test_info[:gib]
 

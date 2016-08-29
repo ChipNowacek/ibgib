@@ -9,7 +9,6 @@ defmodule IbGib.Expression.ExpressionQueryTest do
   use ExUnit.Case
   use IbGib.Constants, :ib_gib
   alias IbGib.Helper
-  # alias IbGib.Data.Repo
   import IbGib.Expression
   import IbGib.QueryOptionsFactory
   require Logger
@@ -32,7 +31,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
 
     a = root |> fork!
     Logger.configure(level: :info)
-    1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}")))
+      1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}") |> fork!("ib2_#{&1}")))
     Logger.configure(level: :debug)
 
     query_options = do_query

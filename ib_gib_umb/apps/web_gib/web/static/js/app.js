@@ -19,12 +19,18 @@
 // paths "./socket" or full ones "web/static/js/socket".
 
 //import socket from "./socket"
-import { CircleMenu } from "./circlemenu";
+// import { CircleMenu } from "./circlemenu";
+// import { IbScape } from "./ibscape-three";
+import { IbScape } from "./ibscape-pixi";
 
 class App {
 
   static init(){
-    this.circleMenu = new CircleMenu();
+    // this.circleMenu = new CircleMenu();
+    // debugger;
+    let canvasDiv = document.getElementsByName("ib-div-test")[0];
+    this.ibScape = new IbScape(canvasDiv);
+    this.ibScape.animate();
     // let socket = new Socket("/socket", {
     //   logger: ((kind, msg, data) => { console.log(`${kind}: ${msg}`, data) })
     // })
@@ -77,26 +83,5 @@ class App {
 }
 
 $( () => App.init() )
-
-function initEditDataButtons() {
-  let $edit_data_buttons = $( "button[id*='data-btnEdit-']" );
-  $edit_data_buttons.on("click", (e) => {
-    console.log(`clicked. target id: ${JSON.stringify(e.currentTarget.id)}`);
-    // Set the key/value input boxes to the text in the key
-    let keyIndex = e.currentTarget.value;
-    let keyText = $( `#data-key-${keyIndex}` ).text();
-    $( "#mut8n_key[name='mut8n[key]']" ).val(keyText);
-    let valueText = $( `#data-value-${keyIndex}` ).text();
-    $( "#mut8n_value[name='mut8n[value]']" ).val(valueText);
-  })
-}
-
-$( document ).ready(() => {
-  console.log("ibGib ready.")
-
-  // initRadialMenus(true);
-  initEditDataButtons();
-});
-
 
 export default App

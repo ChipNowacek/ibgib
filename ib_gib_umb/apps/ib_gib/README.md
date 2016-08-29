@@ -136,3 +136,7 @@ be an "immutable" process identified uniquely by its `ib` + `gib` fields.
 This design has **extremely** interesting implications, but that returns us to
 wacky conceptual abstractedness, so I'll leave it for another time. For now,
 let's keep going with the mechanics.
+
+## Visualixir
+
+1..10 |> Enum.map(fn x -> root |> fork!("#{x}") |> fork!("#{x}2") end)

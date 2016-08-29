@@ -654,7 +654,7 @@ defmodule IbGib.Expression do
   @spec query(pid, map) :: {:ok, pid} | {:error, any}
   def query(expr_pid, query_options)
     when is_pid(expr_pid) and is_map(query_options) do
-    GenServer.call(expr_pid, {:query, query_options})
+    GenServer.call(expr_pid, {:query, query_options}, 30_000) # 30 sec timeout
   end
 
   @doc """

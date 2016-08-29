@@ -6,9 +6,8 @@ defmodule IbGib.Auth.AuthTest do
   use ExUnit.Case
   use IbGib.Constants, :ib_gib
 
-  alias IbGib.{Expression, Helper}
-  alias IbGib.Auth.{Session, Identity}
-  import IbGib.{Expression, QueryOptionsFactory}
+  alias IbGib.{Expression, Helper, Auth.Identity}
+  import IbGib.Expression
   require Logger
 
   setup context do
@@ -59,7 +58,7 @@ defmodule IbGib.Auth.AuthTest do
   test "get_identity, email, token, baby steps" do
 
     # This is the token that we would generate in the email sent to the user.
-    token = RandomGib.Get.some_characters(30)
+    # token = RandomGib.Get.some_characters(30)
     # This is the email address we send the login link to
     email = "example@emailaddr.essyoo"
 

@@ -36,6 +36,7 @@ defmodule WebGib.Plugs.EnsureIbGibSession do
       conn
       |> put_flash(:error, gettext "Please read ibGib's vision before using our application!")
       |> redirect(to: "/")
+      |> halt
     else
       Logger.debug "current ib session exists"
       conn

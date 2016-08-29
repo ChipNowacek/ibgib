@@ -13,7 +13,7 @@ defmodule IbGibTest do
   doctest IbGib.TransformFactory
   doctest IbGib.Helper
   doctest IbGib.Auth.Identity
-  doctest IbGib.Auth.Session
+  # doctest IbGib.Auth.Session
   doctest IbGib.Data.Schemas.ValidateHelper
   import IbGib.Expression
 

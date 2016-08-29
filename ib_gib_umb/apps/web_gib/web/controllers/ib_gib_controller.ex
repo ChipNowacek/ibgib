@@ -30,7 +30,12 @@ defmodule WebGib.IbGibController do
     |> assign(:ib, "ib")
     |> assign(:gib, "gib")
     |> assign(:ib_gib, @root_ib_gib)
+    |> add_meta_query
     |> render("index.html")
+  end
+
+  defp add_meta_query(conn) do
+    conn |> assign(:meta_query, "yo ho ho")
   end
 
   @doc """
