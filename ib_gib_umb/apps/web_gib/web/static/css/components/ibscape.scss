@@ -1,0 +1,31 @@
+@import '../colors';
+@import '../sizes';
+
+/*---------------------------------------------------------------------------*/
+/* Main oy vey */
+/*---------------------------------------------------------------------------*/
+
+.ib-scape-main-div {
+  width: 100%;
+  height: 200px;
+}
+
+
+/*---------------------------------------------------------------------------*/
+/* Svg Components: Circle, Line */
+/*---------------------------------------------------------------------------*/
+
+.ib-svg-circle1 {
+  stroke: $ibgib_green;
+  stroke-width: 1;
+  fill: $ibgib_yellow;
+}
+
+.ib-svg-text1 {
+  fill: $ibgib_green;
+}
+
+.ib-svg-line1 {
+  stroke: $ibgib_green;
+  stroke-width: 1;
+}
