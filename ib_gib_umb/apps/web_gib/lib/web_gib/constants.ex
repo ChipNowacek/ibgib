@@ -17,6 +17,8 @@ defmodule WebGib.Constants do
       # stored in session.
       # See `WebGib.Plugs.IbGibIdentity`
       @ib_identity_ib_gibs_key :identity_ib_gibs
+
+      @ib_meta_query_ib_gib_key :ib_meta_query_ib_gib
     end
   end
 

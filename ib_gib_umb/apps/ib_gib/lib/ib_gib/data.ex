@@ -92,7 +92,16 @@ defmodule IbGib.Data do
     value: bitstring, e.g. "some ib", "[A-Za-z0]+"
   """
   @spec query(map) :: any
-  def query(%{"ib" => ib_options, "gib" => gib_options, "data" => data_options, "rel8ns" => rel8ns_options, "time" => time_options, "meta" => meta_options}) do
+  def query(info) do
+    Logger.warn "query yo. info: #{inspect info}"
+
+    {_, first} = info |> Enum.at(0)
+    Logger.debug "first: #{inspect first}"
+    query_iteration(first)
+  end
+
+  def query_iteration(%{"ib" => ib_options, "gib" => gib_options, "data" => data_options, "rel8ns" => rel8ns_options, "time" => time_options, "meta" => meta_options}) do
+    Logger.warn "query iteration yo"
 
     model =
       IbGibModel
@@ -117,24 +126,11 @@ defmodule IbGib.Data do
 
   # Options is a map of maps. Each internal map is itself a where clause
   # description.
-  defp add_ib_options(query, ib_options)
-    when is_map(ib_options) and map_size(ib_options) > 0 do
-      Logger.warn "adding ib_options: #{inspect ib_options}"
-    query =
-      ib_options
-      |> Enum.reduce(query, fn({_, details}, qry) ->
-           Logger.warn "details: #{inspect details}"
-           add_ib_clause(qry, details)
-         end)
-  end
-  defp add_ib_options(query, _) do
-    query
-  end
-
-  defp add_ib_clause(query, %{"what" => search_term, "how" => method} =
-    ib_details)
-    when is_map(ib_details) and map_size(ib_details) > 0 and
+  defp add_ib_options(query, %{"what" => search_term, "how" => method} =
+    ib_options)
+    when is_map(ib_options) and map_size(ib_options) > 0 and
          is_bitstring(search_term) and is_bitstring(method) do
+    Logger.warn "adding ib_options: #{inspect ib_options}"
 
     case method do
       "is" ->
@@ -160,8 +156,7 @@ defmodule IbGib.Data do
         query
     end
   end
-  defp add_ib_clause(query, _ib_details) do
-    Logger.warn "Could not make clause. Non-matching ib_details."
+  defp add_ib_options(query, _) do
     query
   end
 
