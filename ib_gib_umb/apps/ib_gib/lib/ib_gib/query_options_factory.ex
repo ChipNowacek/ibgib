@@ -21,7 +21,7 @@ defmodule IbGib.QueryOptionsFactory do
     quote do: unquote(method) in @data_search_methods
   end
 
-  @rel8ns_search_methods ["ib", "ib_gib"]
+  @rel8ns_search_methods ["ib", "ibgib"]
   defmacro is_valid_rel8ns_method(method) do
     quote do: unquote(method) in @rel8ns_search_methods
   end

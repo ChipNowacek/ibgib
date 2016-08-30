@@ -230,14 +230,31 @@ defmodule IbGib.Data do
          is_bitstring(search_term) and is_bitstring(method) and
          is_bitstring(where) and is_bitstring(with_or_without)do
       case {with_or_without, method} do
-        {"with", "ib_gib"} ->
+
+        {"with", "ibgib"} ->
           Logger.warn "with ib_gib. where: #{where}. search_term: #{search_term}"
           query
           |> where(fragment("? IN (SELECT jsonb_array_elements_text(rel8ns -> ?))", ^search_term, ^where))
-        {"without", "ib_gib"} ->
+
+        {"without", "ibgib"} ->
           Logger.warn "with ib_gib. where: #{where}. search_term: #{search_term}"
           query
           |> where(fragment("? NOT IN (SELECT jsonb_array_elements_text(rel8ns -> ?))", ^search_term, ^where))
+
+        {"with", "ib"} ->
+          Logger.warn "with ib. where: #{where}. search_term: #{search_term}"
+          regex = ""
+          query
+          |> where(fragment("? IN (SELECT substring( jsonb_array_elements_text(rel8ns -> ?) FROM '^[^^]+'))", ^search_term, ^where))
+
+        # not going to worry about implementing this right now since low
+        # priority
+        # {"without", "ib"} ->
+        #   Logger.warn "with ib. where: #{where}. search_term: #{search_term}"
+        #   regex = ""
+        #   query
+        #   |> where(fragment("? NOT IN (SELECT substring( jsonb_array_elements_text(rel8ns -> ?) FROM '^[^^]+'))", ^search_term, ^where))
+
         _ ->
           Logger.warn "unknown {with_or_without, method}: {#{with_or_without}, #{method}}"
           query
