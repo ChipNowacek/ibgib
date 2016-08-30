@@ -698,4 +698,65 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     assert single_result_gib == a_n_gib
   end
 
+
+  @tag :capture_log
+  test "Fork, mut8s, union 2 query most recent only" do
+    test_count = 5
+    {:ok, root} = IbGib.Expression.Supervisor.start_expression()
+
+
+    a_ib = RandomGib.Get.some_letters(5)
+    a = root |> fork!(a_ib)
+    Logger.configure(level: :info)
+
+    {_a_n, a_n_gib} =
+      1..test_count
+      |> Enum.reduce({a, nil}, fn(n, {a_m, _}) ->
+           new_a = a_m |> mut8!(%{"value" => "#{n}"})
+           new_a_info = new_a |> get_info!
+          #  Logger.warn "new_a_info[:ib]: #{new_a_info[:ib]}"
+           Logger.warn "new_a_info[:gib]: #{new_a_info[:gib]}"
+           {new_a, new_a_info[:gib]}
+         end)
+    Logger.configure(level: :debug)
+
+    b_ib = RandomGib.Get.some_letters(5)
+    b = root |> fork!(b_ib)
+    Logger.configure(level: :info)
+
+    {_b_n, b_n_gib} =
+      1..test_count
+      |> Enum.reduce({b, nil}, fn(n, {b_m, _}) ->
+           new_b = b_m |> mut8!(%{"value" => "#{n}"})
+           new_b_info = new_b |> get_info!
+          #  Logger.warn "new_b_info[:ib]: #{new_b_info[:ib]}"
+           Logger.warn "new_b_info[:gib]: #{new_b_info[:gib]}"
+           {new_b, new_b_info[:gib]}
+         end)
+    Logger.configure(level: :debug)
+
+    query_opts =
+      do_query
+      |> where_ib("is", a_ib)
+      |> most_recent_only
+      |> union
+      |> where_ib("is", b_ib)
+      |> most_recent_only
+
+    query_result_info = a |> query!(query_opts) |> get_info!
+    Logger.debug "query_result_info: #{inspect query_result_info}"
+
+    result_list = query_result_info[:rel8ns]["result"]
+    Logger.debug "result_list(count=#{Enum.count(result_list)}): #{inspect result_list}"
+    # All results have ib^gib as the first result, so ignore one of the list
+    assert Enum.count(result_list) === 3
+
+    first_result = Enum.at(result_list, 1)
+    {_, first_result_gib} = Helper.separate_ib_gib!(first_result)
+    assert first_result_gib == a_n_gib
+
+    second_result = Enum.at(result_list, 2)
+    {_, second_result_gib} = Helper.separate_ib_gib!(second_result)
+    assert second_result_gib == b_n_gib
+  end
 end

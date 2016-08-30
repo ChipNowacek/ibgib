@@ -72,7 +72,9 @@ defmodule IbGib.QueryOptionsFactory do
         "meta" => %{}
       }
 
-    Map.put(acc_options, next_key, options)
+    result = Map.put(acc_options, "#{next_key}", options)
+    Logger.debug "union result: #{inspect result}"
+    result
   end
 
   def where_ib(acc_options, method, search_term)
@@ -112,49 +114,58 @@ defmodule IbGib.QueryOptionsFactory do
     when is_map(acc_options) and is_bitstring(search_term) and
          is_bitstring(method) and is_valid_ib_method(method) do
 
-    options = %{
-      "gib" => %{
-        "what" => search_term,
-        "how" => method
-      }
-    }
-    # %{
-    #    "1" => %{
-    #     "ib" => ib_options,
-    #     "gib" => gib_options,
-    #     "data" => data_options,
-    #     "rel8ns" => rel8ns_options,
-    #     "time" => time_options,
-    #     "meta" => meta_options
-    #   }
-    # }
+    Logger.warn "acc_options: #{inspect acc_options}"
 
-    # Overrides the "gib" section of the accumulated options
-    # for the current query union clause
-    current_key = map_size(acc_options)
+    current_key = "#{map_size(acc_options)}"
     current_options = acc_options[current_key]
-    current_options = Map.merge(current_options, options)
-    Map.put(acc_options, current_key, current_options)
+    current_details = current_options["gib"]
+    if map_size(current_details) > 0 do
+      Logger.warn "Tried to do more than one where gib statement"
+    end
+
+    this_details = %{
+      "what" => search_term,
+      "how" => method
+    }
+
+    Logger.warn "this_details: #{inspect this_details}"
+    current_options = Map.put(current_options, "gib", this_details)
+
+    # result = Map.merge(acc_options, %{"ib" => ib_options})
+    # for the current query union clause
+    result = Map.put(acc_options, current_key, current_options)
+
+    Logger.warn "result of where_gib: #{inspect result}"
+    result
   end
 
   def where_data(acc_options, where, method, search_term)
     when is_map(acc_options) and is_bitstring(search_term) and
          is_bitstring(method) and is_valid_data_method(method) and
          is_bitstring(where) and is_valid_key_and_or_value(where) do
-    options = %{
-      "data" => %{
-        "what" => search_term,
-        "how" => method,
-        "where" => where
-      }
+
+    Logger.warn "acc_options: #{inspect acc_options}"
+
+    current_key = "#{map_size(acc_options)}"
+    current_options = acc_options[current_key]
+    current_details = current_options["gib"]
+    if map_size(current_details) > 0 do
+      Logger.warn "Tried to do more than one where data statement"
+    end
+
+    this_details = %{
+      "what" => search_term,
+      "how" => method,
+      "where" => where
     }
 
-    # Overrides the "data" section of the accumulated options
-    # for the current query union clause
-    current_key = map_size(acc_options)
-    current_options = acc_options[current_key]
-    current_options = Map.merge(current_options, options)
-    Map.put(acc_options, current_key, current_options)
+    Logger.warn "this_details: #{inspect this_details}"
+    current_options = Map.put(current_options, "data", this_details)
+
+    result = Map.put(acc_options, current_key, current_options)
+
+    Logger.warn "result of where_data: #{inspect result}"
+    result
   end
 
   @doc """
@@ -172,34 +183,54 @@ defmodule IbGib.QueryOptionsFactory do
     when is_map(acc_options) and is_bitstring(rel8n_name) and
          is_valid_with_or_without(with_or_without) and
          is_valid_rel8ns_method(method) and is_bitstring(search_term) do
-    options = %{
-      "rel8ns" => %{
-        "where" => rel8n_name,
-        "extra" => with_or_without,
-        "how" => method,
-        "what" => search_term,
-      }
+    Logger.warn "acc_options: #{inspect acc_options}"
+
+    current_key = "#{map_size(acc_options)}"
+    current_options = acc_options[current_key]
+    current_details = current_options["gib"]
+    if map_size(current_details) > 0 do
+      Logger.warn "Tried to do more than one where data statement"
+    end
+
+    this_details = %{
+      "where" => rel8n_name,
+      "extra" => with_or_without,
+      "how" => method,
+      "what" => search_term,
     }
 
-    # Overrides the "rel8ns" section of the accumulated options
-    current_key = map_size(acc_options)
-    current_options = acc_options[current_key]
-    current_options = Map.merge(current_options, options)
-    Map.put(acc_options, current_key, current_options)
+    Logger.warn "this_details: #{inspect this_details}"
+    current_options = Map.put(current_options, "rel8ns", this_details)
+
+    result = Map.put(acc_options, current_key, current_options)
+
+    Logger.warn "result of where_rel8ns: #{inspect result}"
+    result
   end
 
   def most_recent_only(acc_options) do
-    options = %{
-      "time" => %{
+    Logger.warn "acc_options: #{inspect acc_options}"
+
+    current_key = "#{map_size(acc_options)}"
+    current_options = acc_options[current_key]
+    current_details = current_options["gib"]
+    if map_size(current_details) > 0 do
+      Logger.warn "Tried to do more than one where data statement"
+    end
+
+    this_details = %{
+      # "time" => %{
         "how" => "most recent"
-      }
+      # }
     }
 
-    # Overrides the "time" section of the accumulated options
-    current_key = map_size(acc_options)
-    current_options = acc_options[current_key]
-    current_options = Map.merge(current_options, options)
-    Map.put(acc_options, current_key, current_options)
+    Logger.warn "this_details: #{inspect this_details}"
+    current_options = Map.put(current_options, "time", this_details)
+
+    result = Map.put(acc_options, current_key, current_options)
+
+    Logger.warn "result of where_rel8ns: #{inspect result}"
+    result
   end
 
 end

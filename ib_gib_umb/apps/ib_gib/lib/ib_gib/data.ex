@@ -95,9 +95,18 @@ defmodule IbGib.Data do
   def query(info) do
     Logger.warn "query yo. info: #{inspect info}"
 
-    {_, first} = info |> Enum.at(0)
-    Logger.debug "first: #{inspect first}"
-    query_iteration(first)
+    models_array =
+      info
+      |> Enum.reduce([], fn({i, query_opts}, acc) ->
+        Logger.warn "iteration number: #{i}"
+        iter_result = query_iteration(query_opts)
+        acc ++ iter_result
+      end)
+      |> Enum.uniq_by(&(&1.ib <> &1.gib))
+      # |> Enum.sort(&(&1.inserted_at < &2.inserted_at))
+
+    Logger.debug "models_array: #{inspect models_array}"
+    models_array
   end
 
   def query_iteration(%{"ib" => ib_options, "gib" => gib_options, "data" => data_options, "rel8ns" => rel8ns_options, "time" => time_options, "meta" => meta_options}) do
@@ -116,7 +125,8 @@ defmodule IbGib.Data do
 
     result = model |> Repo.all
 
-    Logger.debug "data query result yo-=------------------------\n#{inspect result}"
+    # Logger.debug "data query result yo-=------------------------\n#{inspect result}"
+    # result is an array of IbGibModel structs
     result
   end
 
