@@ -3,7 +3,9 @@ defmodule IbGib.QueryOptionsFactory do
   This module provides factory functions to build queries to pass to the
   `IbGib.Expression.query/2` function.
 
-  See `IbGib.Expression.ExpressionQueryTest` for examples on how to use it.
+  * See `IbGib.Expression.ExpressionQueryTest` for examples on how to use it.
+  * See `IbGib.Data` to see where these are finally consumed in the data
+  access layer.
   """
   require Logger
 
@@ -26,9 +28,9 @@ defmodule IbGib.QueryOptionsFactory do
     quote do: unquote(method) in @rel8ns_search_methods
   end
 
-  @with_or_without ["with", "without"]
-  defmacro is_valid_with_or_without(with_or_without) do
-    quote do: unquote(with_or_without) in @with_or_without
+  @rel8n_query_type ["with", "without", "withany"]
+  defmacro is_valid_rel8n_query_type(rel8n_query_type) do
+    quote do: unquote(rel8n_query_type) in @rel8n_query_type
   end
 
   @key_and_or_value ["key", "value", "keyvalue"]
@@ -36,11 +38,18 @@ defmodule IbGib.QueryOptionsFactory do
     quote do: unquote(arg) in @key_and_or_value
   end
 
+
+  # ----------------------------------------------------------------------------
+  # Common
+  # do_query, union
+  # ----------------------------------------------------------------------------
+
   @doc """
   Creates an initial query clause with no query constraints.
-  Each subsequent call is considered an AND where constraint (or order_by).
+  Executing this would get all ib_gib in the entire persistence store.
 
-  If you want to union with another query statement, use `or/1`.
+  Each subsequent piped fluent call is considered an AND where constraint
+  (or order_by). If you want to union with another query statement, use `union/1`.
   """
   def do_query() do
     %{
@@ -77,81 +86,65 @@ defmodule IbGib.QueryOptionsFactory do
     result
   end
 
+  # ----------------------------------------------------------------------------
+  # Add details
+  # where clauses, time
+  # ----------------------------------------------------------------------------
+
   def where_ib(acc_options, method, search_term)
     when is_map(acc_options) and is_bitstring(search_term) and
          is_bitstring(method) and is_valid_ib_method(method) do
 
-    Logger.warn "acc_options: #{inspect acc_options}"
+    {current_key, current_options, current_details} =
+      get_current(acc_options, "ib")
 
-    current_key = "#{map_size(acc_options)}"
-    current_options = acc_options[current_key]
-    current_details = current_options["ib"]
-    if map_size(current_details) > 0 do
-      Logger.warn "Tried to do more than one where ib statement"
-    end
-
-    Logger.warn "current_key: #{current_key}"
-    Logger.warn "current_options: #{inspect current_options}"
-    Logger.warn "current_details: #{inspect current_details}"
 
     this_details = %{
       "what" => search_term,
       "how" => method
     }
 
-    Logger.warn "this_details: #{inspect this_details}"
-    current_options = Map.put(current_options, "ib", this_details)
-
-    # result = Map.merge(acc_options, %{"ib" => ib_options})
-    # for the current query union clause
-    result = Map.put(acc_options, current_key, current_options)
-
-    Logger.warn "result of where_ib: #{inspect result}"
-    result
+    insert_details(acc_options, current_key, current_options, "ib", this_details)
   end
 
+  @doc """
+  Adds a where clause to test if a `gib` "is" or "like" a given `search_term`.
+
+  E.g.
+    where_gib("is", "someGIBhere1234")
+
+    # Implicit `%`s
+    where_gib("like", "GIBhere")
+      which is equivalent to
+    where_gib("like", "%GIBhere%")
+
+    # Explicit `%`s
+    where_gib("like", "s%here%")
+  """
   def where_gib(acc_options, method, search_term)
     when is_map(acc_options) and is_bitstring(search_term) and
          is_bitstring(method) and is_valid_ib_method(method) do
 
-    Logger.warn "acc_options: #{inspect acc_options}"
-
-    current_key = "#{map_size(acc_options)}"
-    current_options = acc_options[current_key]
-    current_details = current_options["gib"]
-    if map_size(current_details) > 0 do
-      Logger.warn "Tried to do more than one where gib statement"
-    end
+    {current_key, current_options, current_details} =
+      get_current(acc_options, "gib")
 
     this_details = %{
       "what" => search_term,
       "how" => method
     }
 
-    Logger.warn "this_details: #{inspect this_details}"
-    current_options = Map.put(current_options, "gib", this_details)
-
-    # result = Map.merge(acc_options, %{"ib" => ib_options})
-    # for the current query union clause
-    result = Map.put(acc_options, current_key, current_options)
-
-    Logger.warn "result of where_gib: #{inspect result}"
-    result
+    insert_details(acc_options, current_key, current_options, "gib", this_details)
   end
 
+  @doc """
+
+  """
   def where_data(acc_options, where, method, search_term)
     when is_map(acc_options) and is_bitstring(search_term) and
          is_bitstring(method) and is_valid_data_method(method) and
          is_bitstring(where) and is_valid_key_and_or_value(where) do
-
-    Logger.warn "acc_options: #{inspect acc_options}"
-
-    current_key = "#{map_size(acc_options)}"
-    current_options = acc_options[current_key]
-    current_details = current_options["gib"]
-    if map_size(current_details) > 0 do
-      Logger.warn "Tried to do more than one where data statement"
-    end
+    {current_key, current_options, current_details} =
+      get_current(acc_options, "data")
 
     this_details = %{
       "what" => search_term,
@@ -159,13 +152,7 @@ defmodule IbGib.QueryOptionsFactory do
       "where" => where
     }
 
-    Logger.warn "this_details: #{inspect this_details}"
-    current_options = Map.put(current_options, "data", this_details)
-
-    result = Map.put(acc_options, current_key, current_options)
-
-    Logger.warn "result of where_data: #{inspect result}"
-    result
+    insert_details(acc_options, current_key, current_options, "data", this_details)
   end
 
   @doc """
@@ -179,44 +166,27 @@ defmodule IbGib.QueryOptionsFactory do
   `search_term` should be either a valid ib or valid ib_gib:
   e.g. "some ib here", or "some ib here^SOMEHASH01982347fkj"
   """
-  def where_rel8ns(acc_options, rel8n_name, with_or_without, method, search_term)
+  def where_rel8ns(acc_options, rel8n_name, rel8n_query_type, method, search_term)
     when is_map(acc_options) and is_bitstring(rel8n_name) and
-         is_valid_with_or_without(with_or_without) and
+         is_valid_rel8n_query_type(rel8n_query_type) and
          is_valid_rel8ns_method(method) and is_bitstring(search_term) do
-    Logger.warn "acc_options: #{inspect acc_options}"
 
-    current_key = "#{map_size(acc_options)}"
-    current_options = acc_options[current_key]
-    current_details = current_options["gib"]
-    if map_size(current_details) > 0 do
-      Logger.warn "Tried to do more than one where data statement"
-    end
+    {current_key, current_options, current_details} =
+      get_current(acc_options, "rel8ns")
 
     this_details = %{
       "where" => rel8n_name,
-      "extra" => with_or_without,
+      "extra" => rel8n_query_type,
       "how" => method,
       "what" => search_term,
     }
 
-    Logger.warn "this_details: #{inspect this_details}"
-    current_options = Map.put(current_options, "rel8ns", this_details)
-
-    result = Map.put(acc_options, current_key, current_options)
-
-    Logger.warn "result of where_rel8ns: #{inspect result}"
-    result
+    insert_details(acc_options, current_key, current_options, "rel8ns", this_details)
   end
 
   def most_recent_only(acc_options) do
-    Logger.warn "acc_options: #{inspect acc_options}"
-
-    current_key = "#{map_size(acc_options)}"
-    current_options = acc_options[current_key]
-    current_details = current_options["gib"]
-    if map_size(current_details) > 0 do
-      Logger.warn "Tried to do more than one where data statement"
-    end
+    {current_key, current_options, current_details} =
+      get_current(acc_options, "time")
 
     this_details = %{
       # "time" => %{
@@ -224,13 +194,43 @@ defmodule IbGib.QueryOptionsFactory do
       # }
     }
 
-    Logger.warn "this_details: #{inspect this_details}"
-    current_options = Map.put(current_options, "time", this_details)
+    insert_details(acc_options, current_key, current_options, "time", this_details)
+  end
 
+  # ----------------------------------------------------------------------------
+  # Helper
+  # ----------------------------------------------------------------------------
+
+  # All of these fluent factory functions have the same basic structure.
+  # This part extracts the current stuff out of the accumulated options
+  # (`acc_options`).
+  defp get_current(acc_options, category) do
+    Logger.warn "acc_options: #{inspect acc_options}"
+    current_key = "#{map_size(acc_options)}"
+    current_options = acc_options[current_key]
+    current_details = current_options[category]
+    if map_size(current_details) > 0 do
+      Logger.warn "Tried to do more than one where data statement"
+    end
+
+    Logger.warn "current_key: #{current_key}"
+    Logger.warn "current_options: #{inspect current_options}"
+    Logger.warn "current_details: #{inspect current_details}"
+
+    {current_key, current_options, current_details}
+  end
+
+  defp insert_details(acc_options, current_key, current_options, category, details) do
+    Logger.warn "details: #{inspect details}"
+    current_options = Map.put(current_options, category, details)
+
+    # result = Map.merge(acc_options, %{"ib" => ib_options})
+    # for the current query union clause
     result = Map.put(acc_options, current_key, current_options)
 
-    Logger.warn "result of where_rel8ns: #{inspect result}"
+    Logger.warn "result of where_ib: #{inspect result}"
     result
   end
+
 
 end
