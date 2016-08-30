@@ -51,23 +51,25 @@ defmodule IbGib.QueryOptionsFactory do
     when is_map(acc_options) and is_bitstring(search_term) and
          is_bitstring(method) and is_valid_ib_method(method) do
 
-    options = %{
-      "ib" => %{
-        "what" => search_term,
-        "how" => method
-      }
+    existing_details_count = map_size(acc_options["ib"])
+    key = "#{existing_details_count + 1}"
+    details = %{
+      "what" => search_term,
+      "how" => method
     }
-    # %{
-    #   "ib" => ib_options,
-    #   "gib" => gib_options,
-    #   "data" => data_options,
-    #   "rel8ns" => rel8ns_options,
-    #   "time" => time_options,
-    #   "meta" => meta_options
-    # }
+
+    existing_ib_map = acc_options["ib"]
+    Logger.warn "existing_ib_map: #{inspect existing_ib_map}"
+    this_ib_map = %{key => details}
+    ib_options = Map.merge(existing_ib_map, this_ib_map)
+
+
 
     # Overrides the "ib" section of the accumulated options
-    Map.merge(acc_options, options)
+    result = Map.merge(acc_options, %{"ib" => ib_options})
+
+    Logger.warn "result of where_ib: #{inspect result}"
+    result
   end
 
   def where_gib(acc_options, method, search_term)

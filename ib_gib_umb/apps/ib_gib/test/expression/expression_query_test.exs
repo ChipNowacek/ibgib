@@ -9,8 +9,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
   use ExUnit.Case
   use IbGib.Constants, :ib_gib
   alias IbGib.Helper
-  import IbGib.Expression
-  import IbGib.QueryOptionsFactory
+  import IbGib.{Expression, QueryOptionsFactory}
   require Logger
 
   setup context do

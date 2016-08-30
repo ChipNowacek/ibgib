@@ -409,10 +409,10 @@ defmodule IbGib.Expression do
     Logger.debug "query result: #{inspect result}"
 
     this_info = %{}
-    this_ib = "queryresult"
+    this_ib = "query_result"
     this_info = Map.put(this_info, :ib, this_ib)
     this_data = %{"result_count" => "#{Enum.count(result)}"}
-    this_rel8ns = %{"dna" => default_dna, "ancestor" => ["queryresult^gib"]}
+    this_rel8ns = %{"dna" => default_dna, "ancestor" => ["query_result#{delim}gib"]}
     this_info =
       this_info
       |> Map.put(:ib, this_ib)

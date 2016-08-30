@@ -102,7 +102,8 @@ defmodule IbGib.Data do
       |> add_rel8ns_options(rel8ns_options)
       |> add_time_options(time_options)
       |> add_meta_options(meta_options)
-      |> select([:ib, :gib, :inserted_at, :data])
+      # |> select([:ib, :gib, :inserted_at, :data]) # why include data? debug?
+      |> select([:ib, :gib, :inserted_at])
 
     result = model |> Repo.all
 
@@ -114,9 +115,25 @@ defmodule IbGib.Data do
   # Private Functions
   # ----------------------------------------------------------------------------
 
-  defp add_ib_options(query, %{"what" => search_term, "how" => method} =
-    ib_options)
-    when is_map(ib_options) and map_size(ib_options) > 0 and
+  # Options is a map of maps. Each internal map is itself a where clause
+  # description.
+  defp add_ib_options(query, ib_options)
+    when is_map(ib_options) and map_size(ib_options) > 0 do
+      Logger.warn "adding ib_options: #{inspect ib_options}"
+    query =
+      ib_options
+      |> Enum.reduce(query, fn({_, details}, qry) ->
+           Logger.warn "details: #{inspect details}"
+           add_ib_clause(qry, details)
+         end)
+  end
+  defp add_ib_options(query, _) do
+    query
+  end
+
+  defp add_ib_clause(query, %{"what" => search_term, "how" => method} =
+    ib_details)
+    when is_map(ib_details) and map_size(ib_details) > 0 and
          is_bitstring(search_term) and is_bitstring(method) do
 
     case method do
@@ -143,9 +160,11 @@ defmodule IbGib.Data do
         query
     end
   end
-  defp add_ib_options(query, _) do
+  defp add_ib_clause(query, _ib_details) do
+    Logger.warn "Could not make clause. Non-matching ib_details."
     query
   end
+
 
   defp add_gib_options(query, %{"what" => search_term, "how" => method} =
     gib_options)
