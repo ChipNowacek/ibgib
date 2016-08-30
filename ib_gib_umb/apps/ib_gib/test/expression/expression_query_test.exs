@@ -506,7 +506,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     Logger.configure(level: :debug)
 
     test_ib_b = "hey this is a test ib yuk yuk"
-    {:ok, {test_b, _test_info_b, test_ib_gib_b}} = a |> gib(:fork, test_ib_b)
+    {:ok, {test_b, _test_info_b, _test_ib_gib_b}} = a |> gib(:fork, test_ib_b)
     test_ib_c = "this is c"
     {:ok, {_test_c, _test_info_c, test_ib_gib_c}} = test_b |> gib(:fork, test_ib_c)
 
@@ -543,7 +543,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     Logger.configure(level: :debug)
 
     test_ib_b = "hey this is a test ib yuk yuk"
-    {:ok, {test_b, _test_info_b, test_ib_gib_b}} = a |> gib(:fork, test_ib_b)
+    {:ok, {test_b, _test_info_b, _test_ib_gib_b}} = a |> gib(:fork, test_ib_b)
     test_ib_c = "this is c"
     {:ok, {_test_c, _test_info_c, test_ib_gib_c}} = test_b |> gib(:fork, test_ib_c)
     test_ib_d = "this is d"
@@ -580,46 +580,48 @@ defmodule IbGib.Expression.ExpressionQueryTest do
 
   end
 
+  # not going to worry about implementing this right now since low
+  # priority
   # @tag :capture_log
-  test "Fork a couple ib, fork b, then c from b, query, rel8n ancestor without ib b" do
-    test_count = 5
-    {:ok, root} = IbGib.Expression.Supervisor.start_expression()
-
-    a = root |> fork!
-    Logger.configure(level: :info)
-    1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}")))
-    Logger.configure(level: :debug)
-
-    # b = a |> fork!
-    test_ib_b = "hey this is a test ib b"
-    {:ok, {test_b, _test_info_b, test_ib_gib_b}} = a |> gib(:fork, test_ib_b)
-    test_ib_c = "this is c"
-    {:ok, {_test_c, _test_info_c, test_ib_gib_c}} = test_b |> gib(:fork, test_ib_c)
-
-    query_options =
-      do_query
-      |> where_rel8ns("ancestor", "without", "ib", test_ib_b)
-    {:ok, query_result} = root |> query(query_options)
-    Logger.debug "query_result: #{inspect query_result}"
-    query_result_info = query_result |> get_info!
-    Logger.info "query_result_info: #{inspect query_result_info}"
-
-    result_list = query_result_info[:rel8ns]["result"]
-    Logger.debug "result_list(count=#{Enum.count(result_list)}): #{inspect result_list}"
-    # All results have ib^gib as the first result
-    assert Enum.count(result_list) > 2
-
-    # should be everything except test_c
-    assert Enum.each(result_list, fn (res_ib_gib) ->
-      {:ok, res} = IbGib.Expression.Supervisor.start_expression(res_ib_gib)
-      res_info = res |> get_info!
-      res_info[:rel8ns] |> Enum.each(fn (rel8n) ->
-
-        end)
-      {res_ib, _res_gib} = Helper.separate_ib_gib!(res_ib_gib)
-      res_ib === test_ib_b
-      end)
-  end
+  # test "Fork a couple ib, fork b, then c from b, query, rel8n ancestor without ib b" do
+  #   test_count = 5
+  #   {:ok, root} = IbGib.Expression.Supervisor.start_expression()
+  #
+  #   a = root |> fork!
+  #   Logger.configure(level: :info)
+  #   1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}")))
+  #   Logger.configure(level: :debug)
+  #
+  #   # b = a |> fork!
+  #   test_ib_b = "hey this is a test ib b"
+  #   {:ok, {test_b, _test_info_b, test_ib_gib_b}} = a |> gib(:fork, test_ib_b)
+  #   test_ib_c = "this is c"
+  #   {:ok, {_test_c, _test_info_c, test_ib_gib_c}} = test_b |> gib(:fork, test_ib_c)
+  #
+  #   query_options =
+  #     do_query
+  #     |> where_rel8ns("ancestor", "without", "ib", test_ib_b)
+  #   {:ok, query_result} = root |> query(query_options)
+  #   Logger.debug "query_result: #{inspect query_result}"
+  #   query_result_info = query_result |> get_info!
+  #   Logger.info "query_result_info: #{inspect query_result_info}"
+  #
+  #   result_list = query_result_info[:rel8ns]["result"]
+  #   Logger.debug "result_list(count=#{Enum.count(result_list)}): #{inspect result_list}"
+  #   # All results have ib^gib as the first result
+  #   assert Enum.count(result_list) > 2
+  #
+  #   # should be everything except test_c
+  #   assert Enum.each(result_list, fn (res_ib_gib) ->
+  #     {:ok, res} = IbGib.Expression.Supervisor.start_expression(res_ib_gib)
+  #     res_info = res |> get_info!
+  #     res_info[:rel8ns] |> Enum.each(fn (rel8n) ->
+  #
+  #       end)
+  #     {res_ib, _res_gib} = Helper.separate_ib_gib!(res_ib_gib)
+  #     res_ib === test_ib_b
+  #     end)
+  # end
 
   @tag :capture_log
   test "Fork, mut8s, query most recent only" do
