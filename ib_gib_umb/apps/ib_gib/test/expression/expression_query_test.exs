@@ -813,7 +813,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     assert result_ib_gib_list == expected_result_list
   end
 
-  # @tag :capture_log
+  @tag :capture_log
   test "two identities, rel8 to forks, query all rel8d to either identity" do
     # -------------------------------------------------------------------------
     Logger.disable(self)
@@ -874,6 +874,78 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     Logger.debug "result_ib_gib_list: #{inspect result_ib_gib_list}"
 
     expected_result_list = ["ib", "2", "3", "4", "6", "8", "9", "10"] |> Enum.sort
+    Logger.debug "expected_result_list: #{inspect expected_result_list}"
+    assert result_ib_gib_list == expected_result_list
+  end
+
+  @tag :capture_log
+  test "two identities, rel8 to forks, query all rel8d to BOTH identities, use ANDing of rel8ns" do
+    # -------------------------------------------------------------------------
+    Logger.disable(self)
+    {:ok, root} = IbGib.Expression.Supervisor.start_expression()
+
+    priv_data = %{"yo" => "this is some private data hrmm"}
+    pub_data = %{"public" => "public data hizzah"}
+    {:ok, identity_ib_gib} = Identity.get_identity(priv_data, pub_data)
+    {:ok, identity} = IbGib.Expression.Supervisor.start_expression(identity_ib_gib)
+
+    priv_data2 = %{"yo2" => "this is some private data hrmm2"}
+    pub_data2 = %{"public2" => "public data hizzah2"}
+    {:ok, identity_ib_gib2} = Identity.get_identity(priv_data2, pub_data2)
+    {:ok, identity2} = IbGib.Expression.Supervisor.start_expression(identity_ib_gib2)
+
+    test_ibgibs = %{}
+    test_rel8n = "identity_rel8n"
+
+    # We're going to create some test ibgibs. The even ones we'll rel8
+    # to the test identity. The others will not be rel8d.
+    test_count = 10
+    1..test_count
+    |> Enum.each(fn(i) ->
+         test = root |> fork!("#{i}")
+         test_info = test |> get_info!
+         test_ib_gib = test_info |> Helper.get_ib_gib!
+         cond do
+           # 4,8
+           rem(i, 4) == 0 ->
+             {new_test, _new_identity} = IbGib.Expression.rel8!(test, identity, [test_rel8n])
+             IbGib.Expression.rel8!(new_test, identity2, [test_rel8n])
+
+           # 2,6,10
+           rem(i, 2) == 0 ->
+             IbGib.Expression.rel8!(test, identity, [test_rel8n])
+
+           # 3,9 (6 already matched)
+           rem(i, 3) == 0 ->
+             IbGib.Expression.rel8!(test, identity2, [test_rel8n])
+
+           # 1,5,7
+           true ->
+             # do nothing
+         end
+       end)
+    Logger.enable(self)
+    # -------------------------------------------------------------------------
+
+    query_opts =
+      do_query
+      |> where_rel8ns(test_rel8n, "with", "ibgib", identity_ib_gib)
+      |> where_rel8ns(test_rel8n, "with", "ibgib", identity_ib_gib2)
+
+    query_result_info = identity |> query!(query_opts) |> get_info!
+    Logger.debug "query_result_info: #{inspect query_result_info}"
+
+    result_ib_gib_list =
+      query_result_info[:rel8ns]["result"]
+      |> Enum.map(fn(res_ib_gib) ->
+           {res_ib, _res_ib_gib} = Helper.separate_ib_gib!(res_ib_gib)
+           res_ib
+         end)
+      |> Enum.sort
+
+    Logger.debug "result_ib_gib_list: #{inspect result_ib_gib_list}"
+
+    expected_result_list = ["ib", "4", "8"] |> Enum.sort
     Logger.debug "expected_result_list: #{inspect expected_result_list}"
     assert result_ib_gib_list == expected_result_list
   end
