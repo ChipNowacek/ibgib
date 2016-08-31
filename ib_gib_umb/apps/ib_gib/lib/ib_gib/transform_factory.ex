@@ -25,7 +25,7 @@ defmodule IbGib.TransformFactory do
            dest_ib \\ Helper.new_id,
            opts \\ @default_transform_options)
     when is_bitstring(src_ib_gib) and is_bitstring(dest_ib) and is_map(opts) do
-    Logger.warn "opts: #{inspect opts}"
+    Logger.debug "opts: #{inspect opts}"
     ib = "fork"
     relations = %{
       "dna" => ["ib#{delim}gib", "fork#{delim}gib"]

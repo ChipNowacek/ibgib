@@ -8,7 +8,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
 
   use ExUnit.Case
   use IbGib.Constants, :ib_gib
-  alias IbGib.Helper
+  alias IbGib.{Helper, Auth.Identity}
   import IbGib.{Expression, QueryOptionsFactory}
   require Logger
 
@@ -21,6 +21,10 @@ defmodule IbGib.Expression.ExpressionQueryTest do
 
     test_name = "#{context.test}" |> String.replace(" ", "_") |> String.replace(",", "_")
     {:ok, test_name: String.to_atom(test_name)}
+
+    Logger.disable(self)
+    Code.load_file("../../apps/ib_gib/priv/repo/seeds.exs")
+    Logger.enable(self)
   end
 
   @tag :capture_log
@@ -698,7 +702,6 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     assert single_result_gib == a_n_gib
   end
 
-
   @tag :capture_log
   test "Fork, mut8s, union 2 query most recent only" do
     test_count = 5
@@ -758,5 +761,55 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     second_result = Enum.at(result_list, 2)
     {_, second_result_gib} = Helper.separate_ib_gib!(second_result)
     assert second_result_gib == b_n_gib
+  end
+
+  @tag :capture_log
+  test "single identity, rel8 to forks, query all rel8d to identity" do
+    # -------------------------------------------------------------------------
+    Logger.disable(self)
+    {:ok, root} = IbGib.Expression.Supervisor.start_expression()
+
+    priv_data = %{"yo" => "this is some private data hrmm"}
+    pub_data = %{"public" => "public data hizzah"}
+    {:ok, identity_ib_gib} = Identity.get_identity(priv_data, pub_data)
+    {:ok, identity} = IbGib.Expression.Supervisor.start_expression(identity_ib_gib)
+
+    test_ibgibs = %{}
+    test_rel8n = "identity_rel8n"
+
+    # We're going to create some test ibgibs. The even ones we'll rel8
+    # to the test identity. The others will not be rel8d.
+    test_count = 10
+    1..test_count
+    |> Enum.each(fn(i) ->
+         test = root |> fork!("#{i}")
+         test_info = test |> get_info!
+         test_ib_gib = test_info |> Helper.get_ib_gib!
+         if rem(i, 2) == 0 do
+           IbGib.Expression.rel8!(test, identity, [test_rel8n])
+         end
+       end)
+    Logger.enable(self)
+    # -------------------------------------------------------------------------
+
+    query_opts =
+      do_query
+      |> where_rel8ns(test_rel8n, "withany", "ibgib", [identity_ib_gib])
+      # |> where_rel8ns(test_rel8n, "with", "ibgib", identity_ib_gib)
+    query_result_info = identity |> query!(query_opts) |> get_info!
+    Logger.debug "query_result_info: #{inspect query_result_info}"
+
+    result_ib_gib_list =
+      query_result_info[:rel8ns]["result"]
+      |> Enum.map(fn(res_ib_gib) ->
+           {res_ib, _res_ib_gib} = Helper.separate_ib_gib!(res_ib_gib)
+           res_ib
+         end)
+      |> Enum.sort
+
+    expected_result_list = ["ib", "2", "4", "6", "8", "10"] |> Enum.sort
+    Logger.debug "result_ib_gib_list: #{inspect result_ib_gib_list}"
+
+    assert result_ib_gib_list == expected_result_list
   end
 end

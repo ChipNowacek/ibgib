@@ -247,9 +247,22 @@ defmodule IbGib.Data do
     query
   end
 
-  defp add_rel8ns_options(query,  rel8ns_options)
-  defp add_rel8ns_options(query, %{"what" => search_term, "how" => method,
-    "where" => where, "extra" => with_or_without} = rel8ns_options)
+  # This allows multiple ANDed clauses.
+  defp add_rel8ns_options(query, rel8ns_options)
+  defp add_rel8ns_options(query, rel8ns_options)
+    when is_map(rel8ns_options) and map_size(rel8ns_options) > 0 do
+    rel8ns_options
+    |> Enum.reduce(query, fn({_iteration, opts}, qry) ->
+         add_rel8ns_options_iteration(qry, opts)
+       end)
+  end
+  defp add_rel8ns_options(query, _) do
+    query
+  end
+
+  # This overload is for is_bitstring(search_term)
+  defp add_rel8ns_options_iteration(query, %{"what" => search_term, "how" =>
+    method, "where" => where, "extra" => with_or_without} = rel8ns_options)
     when is_map(rel8ns_options) and map_size(rel8ns_options) > 0 and
          is_bitstring(search_term) and is_bitstring(method) and
          is_bitstring(where) and is_bitstring(with_or_without)do
@@ -283,13 +296,34 @@ defmodule IbGib.Data do
           Logger.warn "unknown {with_or_without, method}: {#{with_or_without}, #{method}}"
           query
       end
-      # if with_or_without == "with" do
-      #
-      # else
-      #   query
-      # end
   end
-  defp add_rel8ns_options(query, _) do
+  # This overload is for is_list(search_term)
+  defp add_rel8ns_options_iteration(query, %{"what" => search_term, "how" =>
+    method, "where" => where, "extra" => with_or_without} = rel8ns_options)
+    when is_map(rel8ns_options) and map_size(rel8ns_options) > 0 and
+         is_list(search_term) and is_bitstring(method) and
+         is_bitstring(where) and is_bitstring(with_or_without)do
+
+      Logger.warn "add_rel8ns_options_iteration with search_term as list"
+
+      case {with_or_without, method} do
+
+        {"withany", "ibgib"} ->
+          Logger.warn "with ib_gib. where: #{where}. search_term: #{search_term}"
+          query
+          |> where(
+               fragment(
+                 "? && ARRAY(SELECT jsonb_array_elements_text(rel8ns -> ?))", ^search_term, ^where
+               )
+             )
+
+        _ ->
+          Logger.warn "unknown {with_or_without, method}: {#{with_or_without}, #{method}}"
+          query
+      end
+  end
+  defp add_rel8ns_options_iteration(query, opts) do
+    Logger.warn "unknown rel8ns options: #{inspect opts}"
     query
   end
 

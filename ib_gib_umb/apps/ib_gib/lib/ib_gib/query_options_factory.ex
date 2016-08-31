@@ -167,21 +167,56 @@ defmodule IbGib.QueryOptionsFactory do
   e.g. "some ib here", or "some ib here^SOMEHASH01982347fkj"
   """
   def where_rel8ns(acc_options, rel8n_name, rel8n_query_type, method, search_term)
+  # This overload is for bitstring search terms
+  def where_rel8ns(acc_options, rel8n_name, rel8n_query_type, method, search_term)
     when is_map(acc_options) and is_bitstring(rel8n_name) and
          is_valid_rel8n_query_type(rel8n_query_type) and
-         is_valid_rel8ns_method(method) and is_bitstring(search_term) do
+         is_valid_rel8ns_method(method) and
+         is_bitstring(search_term) do
 
     {current_key, current_options, current_details} =
       get_current(acc_options, "rel8ns")
 
+    current_details_size = map_size(current_details)
+    details_key = "#{current_details_size + 1}"
     this_details = %{
       "where" => rel8n_name,
       "extra" => rel8n_query_type,
       "how" => method,
       "what" => search_term,
     }
+    new_details = current_details |> Map.put(details_key, this_details)
 
-    insert_details(acc_options, current_key, current_options, "rel8ns", this_details)
+    insert_details(acc_options, current_key, current_options, "rel8ns", new_details)
+  end
+  # This overload is for list(bitstring) search terms
+  def where_rel8ns(acc_options, rel8n_name, rel8n_query_type, method, search_term_list)
+    when is_map(acc_options) and is_bitstring(rel8n_name) and
+         is_valid_rel8n_query_type(rel8n_query_type) and
+         is_valid_rel8ns_method(method) and
+         is_list(search_term_list) do
+
+    if Enum.all?(search_term_list, &(is_bitstring(&1))) do
+      {current_key, current_options, current_details} =
+        get_current(acc_options, "rel8ns")
+
+      current_details_size = map_size(current_details)
+      details_key = "#{current_details_size + 1}"
+      this_details = %{
+        "where" => rel8n_name,
+        "extra" => rel8n_query_type,
+        "how" => method,
+        "what" => search_term_list,
+      }
+      new_details = current_details |> Map.put(details_key, this_details)
+
+      insert_details(acc_options, current_key, current_options, "rel8ns", new_details)
+    else
+      # Not all search terms are bitstrings, so it's an invalid call
+      # Just return the accumulated options
+      Logger.error("Invalid search_term_list: #{inspect search_term_list}")
+      acc_options
+    end
   end
 
   def most_recent_only(acc_options) do
@@ -228,7 +263,7 @@ defmodule IbGib.QueryOptionsFactory do
     # for the current query union clause
     result = Map.put(acc_options, current_key, current_options)
 
-    Logger.warn "result of where_ib: #{inspect result}"
+    Logger.warn "result of insert_details: #{inspect result}"
     result
   end
 

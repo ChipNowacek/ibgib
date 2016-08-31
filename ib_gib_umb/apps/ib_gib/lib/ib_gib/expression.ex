@@ -524,11 +524,11 @@ defmodule IbGib.Expression do
            opts \\ @default_transform_options)
   def fork(expr_pid, dest_ib, opts)
     when is_pid(expr_pid) and is_bitstring(dest_ib) and is_map(opts) do
-    Logger.warn "opts: #{inspect opts}"
     GenServer.call(expr_pid, {:fork, dest_ib, opts})
   end
-  def fork(expr_pid, dest_ib, _opts)
+  def fork(expr_pid, dest_ib, opts)
     when is_pid(expr_pid) and is_bitstring(dest_ib) do
+    Logger.warn "bad opts: #{inspect opts}"
     GenServer.call(expr_pid, {:fork, dest_ib, %{}})
   end
 
@@ -585,6 +585,24 @@ defmodule IbGib.Expression do
 
   @default_rel8ns ["rel8d"]
 
+  @doc """
+  Relates the given source `expr_pid` to the destination `other_pid`. It will
+  add `src_rel8ns` to the `expr_pid` rel8ns, and the similarly the `dest_rel8ns`
+  will be added to the destination `other_pid`. The `opts` is currently used
+  for "stamping" the gib.
+
+  For example, say you want to relate A (A^gib) and B (B^gib) using the default
+  rel8nship,
+  which is "rel8d". You could simply call rel8(A_pid, B_pid), which will return
+  {A_pid2, B_pid2}. A_pid2 info["rel8ns"] (a map) will now include the
+  "rel8d" => ["B^gib"], and conversely B_pid2 info["rel8ns"] now has
+  "rel8d" => ["A^gib"].
+
+  Note that each of these relationships points to the other ib^gib **before**
+  that ib_gib was rel8d. In other words, B2 will point to A1 and not A2, and
+  vice versa. I'm still not sure of the implications of this, because it's a
+  tough cookie to understand (chicken and egg issue).
+  """
   @spec rel8(pid, pid, list(String.t), list(String.t), map) :: {:ok, {pid, pid}} | {:error, any}
   def rel8(expr_pid,
            other_pid,
