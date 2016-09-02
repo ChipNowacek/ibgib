@@ -419,6 +419,7 @@ defmodule IbGib.Expression do
       |> Map.put(:data, this_data)
       |> Map.put(:rel8ns, this_rel8ns)
       |> add_relation("dna", b)
+      |> add_relation("query", b)
       |> add_relation(
           "result",
           result |> reduce(["ib#{delim}gib"], fn(ib_gib_model, acc) ->

@@ -240,7 +240,7 @@ defmodule IbGib.QueryOptionsFactory do
   # This part extracts the current stuff out of the accumulated options
   # (`acc_options`).
   defp get_current(acc_options, category) do
-    Logger.warn "acc_options: #{inspect acc_options}"
+    Logger.debug "acc_options: #{inspect acc_options}"
     current_key = "#{map_size(acc_options)}"
     current_options = acc_options[current_key]
     current_details = current_options[category]
@@ -248,22 +248,22 @@ defmodule IbGib.QueryOptionsFactory do
       Logger.warn "Tried to do more than one where data statement"
     end
 
-    Logger.warn "current_key: #{current_key}"
-    Logger.warn "current_options: #{inspect current_options}"
-    Logger.warn "current_details: #{inspect current_details}"
+    # Logger.debug "current_key: #{current_key}"
+    # Logger.debug "current_options: #{inspect current_options}"
+    # Logger.debug "current_details: #{inspect current_details}"
 
     {current_key, current_options, current_details}
   end
 
   defp insert_details(acc_options, current_key, current_options, category, details) do
-    Logger.warn "details: #{inspect details}"
+    Logger.debug "details: #{inspect details}"
     current_options = Map.put(current_options, category, details)
 
     # result = Map.merge(acc_options, %{"ib" => ib_options})
     # for the current query union clause
     result = Map.put(acc_options, current_key, current_options)
 
-    Logger.warn "result of insert_details: #{inspect result}"
+    Logger.debug "result of insert_details: #{inspect result}"
     result
   end
 

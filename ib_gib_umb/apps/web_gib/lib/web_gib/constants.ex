@@ -18,7 +18,8 @@ defmodule WebGib.Constants do
       # See `WebGib.Plugs.IbGibIdentity`
       @ib_identity_ib_gibs_key :identity_ib_gibs
 
-      @ib_meta_query_ib_gib_key :ib_meta_query_ib_gib
+      @meta_query_ib_gib_key :meta_query_ib_gib
+      @meta_query_result_ib_gib_key :meta_query_result_ib_gib
     end
   end
 
