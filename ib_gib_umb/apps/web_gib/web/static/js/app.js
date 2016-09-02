@@ -18,7 +18,8 @@
 // Local files can be imported directly using relative
 // paths "./socket" or full ones "web/static/js/socket".
 
-//import socket from "./socket"
+import socket from "./socket"
+
 // import { CircleMenu } from "./circlemenu";
 // import { IbScape } from "./ibscape-three";
 import { IbScape } from "./ibscape-pixi";

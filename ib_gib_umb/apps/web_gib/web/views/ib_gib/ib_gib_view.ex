@@ -12,6 +12,13 @@ defmodule WebGib.IbGibView do
       p do
         "Yo this is the ibgib index template. #{@meta_query}"
       end
+      div do
+        div [id: "messages"] do
+          
+        end
+        input [id: "chat-input", type: "text", value: "chat input here"]
+      end
+
       div [class: "ib-info-border"] do
         p ["Meta Query"]
         WebGib.Web.Components.IbScape.ib_scape([conn: @conn, canvas_div_name: "ib-div-meta-query"])
