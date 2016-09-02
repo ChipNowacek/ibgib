@@ -152,12 +152,7 @@ defmodule IbGib.Data do
           query |> where(fragment("ib != ?", ^search_term))
         query
       "like" ->
-        wrapped_search_term =
-          if String.contains?(search_term, "%") do
-            search_term
-          else
-            "%#{search_term}%"
-          end
+        wrapped_search_term = wrap_if_needed(search_term)
         query =
           query |> where([x], ilike(x.ib, ^wrapped_search_term))
         query
@@ -169,7 +164,6 @@ defmodule IbGib.Data do
   defp add_ib_options(query, _) do
     query
   end
-
 
   defp add_gib_options(query, %{"what" => search_term, "how" => method} =
     gib_options)
@@ -186,12 +180,7 @@ defmodule IbGib.Data do
           query |> where(fragment("gib != ?", ^search_term))
         query
       "like" ->
-        wrapped_search_term =
-          if String.contains?(search_term, "%") do
-            search_term
-          else
-            "%#{search_term}%"
-          end
+        wrapped_search_term = wrap_if_needed(search_term)
         query =
           query |> where([x], ilike(x.gib, ^wrapped_search_term))
         query
@@ -220,7 +209,7 @@ defmodule IbGib.Data do
         query
       {"key", "like"} ->
         Logger.warn "key like"
-        wrapped_search_term = "%#{search_term}%"
+        wrapped_search_term = wrap_if_needed(search_term)
         query =
           query
           |> where(fragment("(SELECT count(*) FROM jsonb_each_text(data) WHERE key ILIKE ?) > 0", ^wrapped_search_term))
@@ -233,7 +222,7 @@ defmodule IbGib.Data do
         query
       {"value", "like"} ->
         Logger.warn "key like"
-        wrapped_search_term = "%#{search_term}%"
+        wrapped_search_term = wrap_if_needed(search_term)
         query =
           query
           |> where(fragment("(SELECT count(*) FROM jsonb_each_text(data) WHERE value ILIKE ?) > 0", ^wrapped_search_term))
@@ -396,6 +385,16 @@ defmodule IbGib.Data do
     else
       %{:ib => ^ib, :gib => ^gib, :data => data, :rel8ns => rel8ns} = model
       {:ok, %{:ib => ib, :gib => gib, :data => data, :rel8ns => rel8ns}}
+    end
+  end
+
+  # Wraps the search_term in `%`s for use with LIKE clauses, but only if it
+  # doesn't already contain a `%` sign.
+  defp wrap_if_needed(search_term) do
+    if String.contains?(search_term, "%") do
+      search_term
+    else
+      "%#{search_term}%"
     end
   end
 end
