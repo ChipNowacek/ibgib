@@ -411,7 +411,14 @@ defmodule IbGib.Expression do
     this_info = %{}
     this_ib = "query_result"
     this_info = Map.put(this_info, :ib, this_ib)
-    this_data = %{"result_count" => "#{Enum.count(result)}"}
+    result_count =
+      if Enum.any?(result, &(&1.ib == "ib" and &1.gib == "gib")) do
+        Enum.count(result)
+      else
+        # all results will include ib^gib
+        Enum.count(result) + 1
+      end
+    this_data = %{"result_count" => "#{result_count}"}
     this_rel8ns = %{"dna" => default_dna, "ancestor" => ["query_result#{delim}gib"]}
     this_info =
       this_info
