@@ -44,6 +44,14 @@ defmodule WebGib.Router do
     # post "/login", IbGibController, :login
   end
 
+  scope "/api", WebGib do
+    pipe_through [:api]
+
+    # Get ibgibs via just ib
+    # get "/ib/:ib", IbGibController, :get
+    get "/ibgib/:ib_gib", IbGibController, :get
+  end
+
   # Other scopes may use custom stacks.
   # scope "/api", WebGib do
   #   pipe_through :api

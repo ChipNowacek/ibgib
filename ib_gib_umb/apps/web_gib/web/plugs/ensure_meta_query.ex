@@ -33,8 +33,9 @@ defmodule WebGib.Plugs.EnsureMetaQuery do
     current = conn |> get_session(@meta_query_result_ib_gib_key)
 
     if current == nil do
-      Logger.debug "current meta query ib_gib is nil"
+      Logger.debug "current meta query ib_gib is nil. conn: #{inspect conn}"
       identity_ib_gibs = conn |> get_session(@identity_ib_gibs_key)
+      Logger.warn "identity_ib_gibs: #{inspect identity_ib_gibs}"
 
       conn =
         with {:ok, query_opts} <- get_meta_query_opts(identity_ib_gibs),
@@ -48,10 +49,12 @@ defmodule WebGib.Plugs.EnsureMetaQuery do
 
           Logger.warn "meta_query_result_ib_gib: #{meta_query_result_ib_gib}"
           Logger.warn "meta_query_result_info: #{inspect meta_query_result_info}"
-          conn |> put_session(@meta_query_ib_gib_key,
-                              meta_query_ib_gib)
-          conn |> put_session(@meta_query_result_ib_gib_key,
-                              meta_query_result_ib_gib)
+          conn =
+            conn
+            |> put_session(@meta_query_ib_gib_key, meta_query_ib_gib)
+            |> put_session(@meta_query_result_ib_gib_key,
+                           meta_query_result_ib_gib)
+
           Logger.debug "inserted meta query ib^gib into session: #{meta_query_ib_gib}"
           Logger.debug "inserted meta query result ib^gib into session: #{meta_query_result_ib_gib}"
           conn
@@ -59,7 +62,7 @@ defmodule WebGib.Plugs.EnsureMetaQuery do
           error ->
             Logger.error "Error: #{inspect error}"
             conn
-            |> put_flash(:error, gettext "There was a problem getting your meta query (Oh no!). Do you have a lot of them? Maybe it timed out.")
+            |> put_flash(:error, gettext "There was a problem getting your meta query.")
             |> redirect(to: "/")
             |> halt
         end
@@ -80,7 +83,12 @@ defmodule WebGib.Plugs.EnsureMetaQuery do
     {:ok, query_opts}
   end
 
-  defp get_first_identity(identity_ib_gibs) do
+  defp get_first_identity(identity_ib_gibs)
+    when is_bitstring(identity_ib_gibs) do
+    identity_ib_gibs
+  end
+  defp get_first_identity(identity_ib_gibs)
+    when is_list(identity_ib_gibs) do
     first_identity_ib_gib = Enum.at(identity_ib_gibs, 0)
     first_identity =
       IbGib.Expression.Supervisor.start_expression(first_identity_ib_gib)

@@ -12,7 +12,7 @@ defmodule WebGib.IbGibChannel do
     # Anyone can join this one. I think we'll end up commenting this one out.
     {:ok, socket}
   end
-  def join("ibgib:" <> user_token, _params, _socket) do
+  def join("ibgib:" <> user_token, _params, socket) do
     # Explore this when we've got it set up, because we need to authorize
     # channels.
     {:ok, socket}

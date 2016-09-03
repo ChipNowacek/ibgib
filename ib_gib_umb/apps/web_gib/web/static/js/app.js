@@ -18,7 +18,7 @@
 // Local files can be imported directly using relative
 // paths "./socket" or full ones "web/static/js/socket".
 
-import socket from "./socket"
+import { IbGibChannel } from "./socket"
 
 // import { CircleMenu } from "./circlemenu";
 // import { IbScape } from "./ibscape-three";
@@ -32,6 +32,10 @@ class App {
     let canvasDiv = document.getElementsByName("ib-div-test")[0];
     this.ibScape = new IbScape(canvasDiv);
     this.ibScape.animate();
+
+    this.ibGibChannel = new IbGibChannel();
+    this.ibGibChannel.connect();
+
     // let socket = new Socket("/socket", {
     //   logger: ((kind, msg, data) => { console.log(`${kind}: ${msg}`, data) })
     // })

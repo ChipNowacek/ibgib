@@ -1,7 +1,11 @@
 defmodule IbGib.Data do
   @moduledoc """
-  This acts as a data layer abstraction. Here you can save, load, and query
+  This acts as a data layer abstraction. Here you can `save/1`, `load/1`, and `query/1`
   data.
+
+  This also contains the dynamic query implementation. So it takes a query
+  information object and actually performs the query of the data.
+  See `query/1` for more details.
   """
   require Logger
   import Ecto.Query
@@ -87,9 +91,11 @@ defmodule IbGib.Data do
   end
 
   @doc """
-  ib_options:
-    keys: "regex", "is", "in"
-    value: bitstring, e.g. "some ib", "[A-Za-z0]+"
+  This takes a query `info` map, converts that information into an actual
+  query, using the pipe (`|>`) operator, and performs the query. This will
+  always return a unique array of `IbGib.Data.Schemas.IbGibModel`.
+
+  See `IbGib.QueryOptionsFactory` for individual options.
   """
   @spec query(map) :: any
   def query(info) do

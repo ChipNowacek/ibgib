@@ -14,13 +14,16 @@ defmodule WebGib.IbGibView do
       end
       div do
         div [id: "messages"] do
-          
+
         end
         input [id: "chat-input", type: "text", value: "chat input here"]
       end
 
       div [class: "ib-info-border"] do
         p ["Meta Query"]
+        p ["meta_query_ib_gib: #{@meta_query_ib_gib}"]
+        p ["meta_query_result_ib_gib: #{@meta_query_result_ib_gib}"]
+
         WebGib.Web.Components.IbScape.ib_scape([conn: @conn, canvas_div_name: "ib-div-meta-query"])
       end
       div [class: "ib-info-border"] do

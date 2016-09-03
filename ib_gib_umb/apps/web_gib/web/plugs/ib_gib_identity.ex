@@ -27,7 +27,7 @@ defmodule WebGib.Plugs.IbGibIdentity do
   """
   def call(conn, options) do
     Logger.debug "uh huh hrm....whaaa"
-    identity_ib_gibs = get_session(conn, @identity_ib_gibs_key)
+    identity_ib_gibs = get_session(conn, @ib_identity_ib_gibs_key)
 
     if identity_ib_gibs == nil do
       Logger.debug "no identity ib gibs (nil)"
@@ -56,7 +56,7 @@ defmodule WebGib.Plugs.IbGibIdentity do
 
   defp get_priv_and_pub_data(conn, session_ib_gib) do
     priv_data = %{
-      @session_ib_gib_key => session_ib_gib
+      @ib_session_ib_gib_key => session_ib_gib
     }
 
     # Thanks http://blog.danielberkompas.com/elixir/2015/06/16/rate-limiting-a-phoenix-api.html
@@ -69,7 +69,7 @@ defmodule WebGib.Plugs.IbGibIdentity do
   end
 
   # This creates a new session identity ib_gib, then stores it in BOTH the
-  # @session_ib_gib_key and @identity_ib_gibs_key (array). 
+  # @session_ib_gib_key and @identity_ib_gibs_key (array).
   defp get_and_put_session_identity(conn, priv_data, pub_data) do
     case Identity.get_identity(priv_data, pub_data) do
       {:ok, identity_ib_gib} ->
@@ -77,8 +77,8 @@ defmodule WebGib.Plugs.IbGibIdentity do
         # {:ok, identity} = Expression.Supervisor.start_expression(identity_ib_gib)
 
         conn
-        |> put_session(@session_ib_gib_key, identity_ib_gib)
-        |> put_session(@identity_ib_gibs_key, [identity_ib_gib])
+        |> put_session(@ib_session_ib_gib_key, identity_ib_gib)
+        |> put_session(@ib_identity_ib_gibs_key, [identity_ib_gib])
 
       {:error, reason} when is_bitstring(reason) ->
         Logger.error "Error with identity. Reason: #{reason}"

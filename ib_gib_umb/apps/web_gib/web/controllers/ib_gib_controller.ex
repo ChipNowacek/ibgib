@@ -15,6 +15,7 @@ defmodule WebGib.IbGibController do
   import IbGib.Helper
   alias IbGib.TransformFactory.Mut8Factory
 
+
   # ----------------------------------------------------------------------------
   # Controller Commands
   # ----------------------------------------------------------------------------
@@ -23,19 +24,26 @@ defmodule WebGib.IbGibController do
   This should show the "Home" ib^gib.
   """
   def index(conn, params) do
+    Logger.warn "conn: #{inspect conn}"
     Logger.debug "index. params: #{inspect params}"
     # conn = init_session(conn)
     Logger.debug "root: #{inspect conn.assigns[:root]}"
+    Logger.debug "meta_query_ib_gib: #{@meta_query_ib_gib}"
+    Logger.debug "meta_query_result_ib_gib: #{@meta_query_result_ib_gib}"
+
     conn
     |> assign(:ib, "ib")
     |> assign(:gib, "gib")
     |> assign(:ib_gib, @root_ib_gib)
+    |> assign(:meta_query_ib_gib, conn |> get_session(@meta_query_ib_gib_key))
+    |> assign(:meta_query_result_ib_gib,
+              conn |> get_session(@meta_query_result_ib_gib_key))
     |> add_meta_query
     |> render("index.html")
   end
 
   defp add_meta_query(conn) do
-    conn |> assign(:meta_query, "yo ho ho")
+    conn |> assign(:meta_query, "yo ho hasdfasdfo")
   end
 
   @doc """
@@ -80,6 +88,26 @@ defmodule WebGib.IbGibController do
       |> put_flash(:error, error_msg)
       |> redirect(to: "/ibgib")
     end
+  end
+
+  # ----------------------------------------------------------------------------
+  # JSON Api
+  # ----------------------------------------------------------------------------
+
+  def get(conn, %{"ib_gib" => ib_gib} = params) do
+    Logger.warn "JSON get. conn: #{inspect conn}"
+    Logger.warn "JSON get. params: #{inspect params}"
+    with {:ok, root} <- IbGib.Expression.Supervisor.start_expression(ib_gib),
+      {:ok, root_info} <- root |> IbGib.Expression.get_info do
+      json(conn, root_info)
+    else
+      error -> json(conn, %{error: "#{inspect error}"})
+    end
+  end
+  def get(conn, params) do
+    Logger.warn "JSON get. conn: #{inspect conn}"
+    Logger.warn "JSON get. params: #{inspect params}"
+    json(conn, %{error: @emsg_invalid_ibgib_url})
   end
 
   # ----------------------------------------------------------------------------

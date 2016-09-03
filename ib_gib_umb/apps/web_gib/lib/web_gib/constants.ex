@@ -16,10 +16,10 @@ defmodule WebGib.Constants do
       # key to array of identities associated with current ib_gib session,
       # stored in session.
       # See `WebGib.Plugs.IbGibIdentity`
-      @ib_identity_ib_gibs_key :identity_ib_gibs
+      @ib_identity_ib_gibs_key "identity_ib_gibs"
 
-      @meta_query_ib_gib_key :meta_query_ib_gib
-      @meta_query_result_ib_gib_key :meta_query_result_ib_gib
+      @meta_query_ib_gib_key "meta_query_ib_gib"
+      @meta_query_result_ib_gib_key "meta_query_result_ib_gib"
     end
   end
 
@@ -30,6 +30,8 @@ defmodule WebGib.Constants do
       @refresh_msg "Try logging out, refreshing your browser, and then logging back in."
       @emsg_invalid_session "There is a problem with the session.\n#{@refresh_msg}"
       @emsg_invalid_identity "There is a problem with authenticating your identity.\n#{@refresh_msg}"
+
+      @emsg_invalid_ibgib_url "Invalid ib_gib given in URL"
     end
   end
   def fork do
