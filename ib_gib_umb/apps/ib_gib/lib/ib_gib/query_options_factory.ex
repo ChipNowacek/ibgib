@@ -3,6 +3,8 @@ defmodule IbGib.QueryOptionsFactory do
   This module provides factory functions to build queries to pass to the
   `IbGib.Expression.query/2` function.
 
+
+
   * See `IbGib.Expression.ExpressionQueryTest` for examples on how to use it.
   * See `IbGib.Data` to see where these are finally consumed in the data
   access layer.
@@ -10,6 +12,11 @@ defmodule IbGib.QueryOptionsFactory do
   require Logger
 
   use IbGib.Constants, :ib_gib
+
+
+  # ----------------------------------------------------------------------------
+  # Macros (used in guards)
+  # ----------------------------------------------------------------------------
 
   # I would prefer to have this in IbGib.Constants, but I can't figure out
   # how to put it in the guard.
@@ -91,6 +98,23 @@ defmodule IbGib.QueryOptionsFactory do
   # where clauses, time
   # ----------------------------------------------------------------------------
 
+  @doc """
+  Use this to add a where clause regarding the `IbGib.Data.Schemas.IbGibModel` `ib` field.
+
+  ## Examples
+
+  where_ib("is", "some IB here 1234")
+
+  # Implicit `%`s
+  where_ib("like", "IB here")
+    # which is equivalent to
+  where_ib("like", "%IB here%")
+
+  # Explicit `%`s
+  where_ib("like", "s%here%")
+
+  See `IbGib.Expression.ExpressionQueryTest` for more examples.
+  """
   def where_ib(acc_options, method, search_term)
     when is_map(acc_options) and is_bitstring(search_term) and
          is_bitstring(method) and is_valid_ib_method(method) do
@@ -110,7 +134,8 @@ defmodule IbGib.QueryOptionsFactory do
   @doc """
   Adds a where clause to test if a `gib` "is" or "like" a given `search_term`.
 
-  E.g.
+  ## Examples
+
     where_gib("is", "someGIBhere1234")
 
     # Implicit `%`s
@@ -137,7 +162,37 @@ defmodule IbGib.QueryOptionsFactory do
   end
 
   @doc """
+  The `IbGib.Data.Schemas.IbGibModel` has a map property for `data`.
+  This is a key/value map, so the `where_data/4` function can query
+  against that map.
 
+  ## Examples
+
+    ### data keys
+    where_data("key", "is", "some key here")
+
+    # Implicit `%`s
+    where_data("key", "like", "ome ke")
+      which is equivalent to
+    where_data("key", "like", "%ome ke%")
+
+    # Explicit `%`s
+    where_data("key", "like", "s%key here")
+    where_data("key", "like", "s%key here")
+    where_data("key", "like", "s%k%h%e")
+
+    ### data values (ATOW 2016/09/02 the same as keys, just pass "value")
+    where_data("value", "is", "some value here")
+
+    # Implicit `%`s
+    where_data("value", "like", "ome va")
+      which is equivalent to
+    where_data("value", "like", "%ome va%")
+
+    # Explicit `%`s
+    where_data("value", "like", "s%value here")
+    where_data("value", "like", "s%value here")
+    where_data("value", "like", "s%v%h%e")
   """
   def where_data(acc_options, where, method, search_term)
     when is_map(acc_options) and is_bitstring(search_term) and
@@ -156,15 +211,60 @@ defmodule IbGib.QueryOptionsFactory do
   end
 
   @doc """
-  Search for ib_gib with rel8ns to a given `ib` or `ib_gib`.
-  For example, if a user's ib_gib is `bob^ABCD` and you want a query of
-  all of the user's ib_gib, then the `rel8n_name` should be `"user"`, method
-  should be `"ib_gib"` and the `search_term` should be `bob^ABCD`. (I think, I
-  haven't implemented "user" just yet but that is the plan.)
+  Rel8ns are at the heart of all ib_gib. This is how "prototype aggregation"
+  is implemented. In an OOP language, or even a data struct in an FP language,
+  you might add a property in some sort of declaration file.
 
-  `method` is either `"ib"` or `"ib_gib"`
-  `search_term` should be either a valid ib or valid ib_gib:
-  e.g. "some ib here", or "some ib here^SOMEHASH01982347fkj"
+  In IbGib, this act of you, the developer, "adding" a property thing is
+  captured in "code/data" via a rel8n. Say for instance, you have created two
+  ib_gib: "Shape" and "Color", with the `ib^gib` being something like
+  "Shape^S1" and "Color^C1". You could "attach" the color to the shape
+  via a rel8n in multiple ways. If you were creating a Shape class, you could
+  add a rel8n like (pseudo-code)`shape.rel8(color, "property")` which would
+  create a new Shape, "Shape^S2" with one of its rel8ns now "property" =>
+  ["Color^GIB345"]. Or perhaps you could do it more organically by simply
+  calling the rel8n "color", e.g. "color" => ["Color^GIB345"]. So now, the Shape
+  ib_gib is rel8d to the color ib_gib and will be going forward in "time".
+
+  To search for ib_gib with these rel8ns, we can provide either just the `ib`,
+  or the full `ib^gib`.
+
+  Also, rel8ns can be ANDed in queries (this is not implemented yet for data
+  ATOW 2016/09/02). So you can add multiple rel8n query where clauses.
+
+  ## Examples
+    query_opts =
+      do_query
+      |> where_rel8ns("property", "with", "ibgib", "Color^C1")
+
+    query_opts =
+      do_query
+      |> where_rel8ns("property", "with", "ibgib", "Color^C1")
+      |> where_rel8ns("identity", "with", "ibgib", "cool usernameish ib^ibGib_SOMEGIB1234_ibGib")
+
+    query_opts =
+      do_query
+      |> where_rel8ns("color", "with", "ibgib", "Color^C1")
+
+    query_opts =
+      do_query
+      |> where_rel8ns("property", "with", "ib", "Color")
+
+    query_opts =
+      do_query
+      |> where_rel8ns("ancestor", "with", "ibgib", "some ib^SOMEGIB1234")
+
+    query_opts =
+      do_query
+      |> where_rel8ns("identity", "with", "ibgib", "cool usernameish ib^ibGib_SOMEGIB1234_ibGib")
+
+    query_opts =
+      do_query
+      |> where_rel8ns("ancestor", "without", "ibgib", "some ib^SOMEGIB1234")
+
+    query_opts =
+      do_query
+      |> where_rel8ns("ancestor", "with", "ib", "some ib here")
   """
   def where_rel8ns(acc_options, rel8n_name, rel8n_query_type, method, search_term)
   # This overload is for bitstring search terms
@@ -219,14 +319,16 @@ defmodule IbGib.QueryOptionsFactory do
     end
   end
 
+  @doc """
+  Get only the most recent result. This is equivalent to
+  sorting by `inserted_at` and limiting to 1.
+  """
   def most_recent_only(acc_options) do
     {current_key, current_options, current_details} =
       get_current(acc_options, "time")
 
     this_details = %{
-      # "time" => %{
-        "how" => "most recent"
-      # }
+      "how" => "most recent"
     }
 
     insert_details(acc_options, current_key, current_options, "time", this_details)
