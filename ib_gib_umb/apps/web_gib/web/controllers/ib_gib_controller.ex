@@ -8,13 +8,8 @@ defmodule WebGib.IbGibController do
   # ----------------------------------------------------------------------------
 
   use WebGib.Web, :controller
-  require Logger
 
-  use IbGib.Constants, :ib_gib
-  use WebGib.Constants, :error_msgs
-  import IbGib.Helper
   alias IbGib.TransformFactory.Mut8Factory
-
 
   # ----------------------------------------------------------------------------
   # Controller Commands
@@ -26,24 +21,27 @@ defmodule WebGib.IbGibController do
   def index(conn, params) do
     Logger.warn "conn: #{inspect conn}"
     Logger.debug "index. params: #{inspect params}"
-    # conn = init_session(conn)
-    Logger.debug "root: #{inspect conn.assigns[:root]}"
-    Logger.debug "meta_query_ib_gib: #{@meta_query_ib_gib}"
-    Logger.debug "meta_query_result_ib_gib: #{@meta_query_result_ib_gib}"
 
     conn
     |> assign(:ib, "ib")
     |> assign(:gib, "gib")
     |> assign(:ib_gib, @root_ib_gib)
-    |> assign(:meta_query_ib_gib, conn |> get_session(@meta_query_ib_gib_key))
-    |> assign(:meta_query_result_ib_gib,
-              conn |> get_session(@meta_query_result_ib_gib_key))
     |> add_meta_query
     |> render("index.html")
   end
 
   defp add_meta_query(conn) do
-    conn |> assign(:meta_query, "yo ho hasdfasdfo")
+    Logger.debug "meta_query_ib_gib: #{@meta_query_ib_gib_key}"
+    Logger.debug "meta_query_result_ib_gib: #{@meta_query_result_ib_gib_key}"
+
+    meta_query_ib_gib =
+      conn |> get_session(@meta_query_ib_gib_key)
+    meta_query_result_ib_gib =
+      conn |> get_session(@meta_query_result_ib_gib_key)
+
+    conn
+    |> assign(:meta_query_ib_gib, meta_query_ib_gib)
+    |> assign(:meta_query_result_ib_gib, meta_query_result_ib_gib)
   end
 
   @doc """

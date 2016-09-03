@@ -34,7 +34,7 @@ defmodule WebGib.Plugs.EnsureMetaQuery do
 
     if current == nil do
       Logger.debug "current meta query ib_gib is nil. conn: #{inspect conn}"
-      identity_ib_gibs = conn |> get_session(@identity_ib_gibs_key)
+      identity_ib_gibs = conn |> get_session(@ib_identity_ib_gibs_key)
       Logger.warn "identity_ib_gibs: #{inspect identity_ib_gibs}"
 
       conn =
@@ -73,7 +73,14 @@ defmodule WebGib.Plugs.EnsureMetaQuery do
     end
   end
 
-  defp get_meta_query_opts(identity_ib_gibs) do
+  defp get_meta_query_opts(identity_ib_gibs)
+    when is_bitstring(identity_ib_gibs) do
+      # Getting an array from session with a single value for some reason
+      # returns the single value and not the array with a single value. :-/
+      get_meta_query_opts([identity_ib_gibs])
+  end
+  defp get_meta_query_opts(identity_ib_gibs)
+    when is_list(identity_ib_gibs) do
     # We need to create the user's most recent
     query_opts =
       do_query
@@ -85,6 +92,8 @@ defmodule WebGib.Plugs.EnsureMetaQuery do
 
   defp get_first_identity(identity_ib_gibs)
     when is_bitstring(identity_ib_gibs) do
+      # Getting an array from session with a single value for some reason
+      # returns the single value and not the array with a single value. :-/
     identity_ib_gibs
   end
   defp get_first_identity(identity_ib_gibs)

@@ -1,6 +1,5 @@
 defmodule WebGib.IbGibView do
   use WebGib.Web, :view
-  use WebGib.Web, :controller
 
   import WebGib.Web.Components.Login
   import WebGib.Web.Components.IbCircle1
@@ -10,7 +9,7 @@ defmodule WebGib.IbGibView do
   template :index do
     div do
       p do
-        "Yo this is the ibgib index template. #{@meta_query}"
+        "Yo this is the ibgib index template."
       end
       div do
         div [id: "messages"] do

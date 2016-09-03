@@ -30,12 +30,19 @@ defmodule WebGib.Web do
     quote do
       use Phoenix.Controller
 
+      require Logger
+
       alias WebGib.Repo
       import Ecto
       import Ecto.Query
 
       import WebGib.Router.Helpers
       import WebGib.Gettext
+
+      use IbGib.Constants, :ib_gib
+      use WebGib.Constants, :error_msgs
+      use WebGib.Constants, :keys
+      import IbGib.Helper
     end
   end
 
