@@ -8,6 +8,8 @@
     "watch": "brunch watch --stdin"
   },
   "dependencies": {
+    "d3": "^4.2.2",
+    "d3-force": "^1.0.2",
     "glslify": "^5.1.0",
     "phoenix": "file:../../deps/phoenix",
     "phoenix-socket": "^1.1.3",

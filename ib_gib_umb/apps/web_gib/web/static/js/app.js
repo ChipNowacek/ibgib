@@ -24,6 +24,8 @@ import { IbGibChannel } from "./socket"
 // import { IbScape } from "./ibscape-three";
 import { IbScape } from "./ibscape-pixi";
 
+import "./d3_collapse_force";
+
 class App {
 
   static init(){
@@ -35,6 +37,7 @@ class App {
 
     this.ibGibChannel = new IbGibChannel();
     this.ibGibChannel.connect();
+
 
     // let socket = new Socket("/socket", {
     //   logger: ((kind, msg, data) => { console.log(`${kind}: ${msg}`, data) })

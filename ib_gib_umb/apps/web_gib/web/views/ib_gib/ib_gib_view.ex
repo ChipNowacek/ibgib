@@ -22,7 +22,9 @@ defmodule WebGib.IbGibView do
         p ["Meta Query"]
         p ["meta_query_ib_gib: #{@meta_query_ib_gib}"]
         p ["meta_query_result_ib_gib: #{@meta_query_result_ib_gib}"]
+        canvas [id: "ib-d3-graph"] do
 
+        end
         WebGib.Web.Components.IbScape.ib_scape([conn: @conn, canvas_div_name: "ib-div-meta-query"])
       end
       div [class: "ib-info-border"] do

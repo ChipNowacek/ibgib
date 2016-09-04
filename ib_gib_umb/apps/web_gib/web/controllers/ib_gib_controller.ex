@@ -93,8 +93,10 @@ defmodule WebGib.IbGibController do
   # ----------------------------------------------------------------------------
 
   def get(conn, %{"ib_gib" => ib_gib} = params) do
-    Logger.warn "JSON get. conn: #{inspect conn}"
-    Logger.warn "JSON get. params: #{inspect params}"
+    Logger.warn "mimicking latency....don't do this in production!"
+    Process.sleep(1000)
+    Logger.debug "JSON get. conn: #{inspect conn}"
+    Logger.debug "JSON get. params: #{inspect params}"
     with {:ok, root} <- IbGib.Expression.Supervisor.start_expression(ib_gib),
       {:ok, root_info} <- root |> IbGib.Expression.get_info do
       json(conn, root_info)
@@ -103,8 +105,9 @@ defmodule WebGib.IbGibController do
     end
   end
   def get(conn, params) do
-    Logger.warn "JSON get. conn: #{inspect conn}"
-    Logger.warn "JSON get. params: #{inspect params}"
+    Logger.debug "JSON get. conn: #{inspect conn}"
+    Logger.debug "JSON get. params: #{inspect params}"
+    Logger.error @emsg_invalid_ibgib_url
     json(conn, %{error: @emsg_invalid_ibgib_url})
   end
 
