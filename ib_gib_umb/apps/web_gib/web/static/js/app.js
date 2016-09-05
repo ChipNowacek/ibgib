@@ -22,22 +22,35 @@ import { IbGibChannel } from "./socket"
 
 // import { CircleMenu } from "./circlemenu";
 // import { IbScape } from "./ibscape-three";
-import { IbScape } from "./ibscape-pixi";
+// import { IbScape } from "./ibscape-pixi";
 
-import "./d3_collapse_force";
+import { IbScape } from "./d3_collapse_force";
+
+import { getData } from './miserables.js';
 
 class App {
 
   static init(){
     // this.circleMenu = new CircleMenu();
     // debugger;
-    let canvasDiv = document.getElementsByName("ib-div-test")[0];
-    this.ibScape = new IbScape(canvasDiv);
-    this.ibScape.animate();
+    // let canvasDiv = document.getElementsByName("ib-div-test")[0];
+    let divMetaQueryIbGib = document.querySelector("#metaqueryibgib");
+    let query = divMetaQueryIbGib.getAttribute("data-metaqueryibgib");
+    let queryResult = divMetaQueryIbGib.getAttribute("data-metaqueryresultibgib");
+    let jsonPath = divMetaQueryIbGib.getAttribute("data-path");
+    // debugger;
+
+    let graphDiv = document.querySelector("#ib-d3-graph-div");
+    let graphCanvas = document.querySelector("#ib-d3-graph-canvas");
+    this.ibScape = new IbScape(graphDiv, graphCanvas);
+    // debugger;
+    // let data = jsonPath + query;
+    let data = jsonPath + queryResult;
+    // data = "images/miserables.json";
+    this.ibScape.init(data);
 
     this.ibGibChannel = new IbGibChannel();
     this.ibGibChannel.connect();
-
 
     // let socket = new Socket("/socket", {
     //   logger: ((kind, msg, data) => { console.log(`${kind}: ${msg}`, data) })
@@ -79,6 +92,9 @@ class App {
     // })
   }
 
+  getJsonPath(ibGib) {
+
+  }
   // static sanitize(html){ return $("<div/>").text(html).html() }
   //
   // static messageTemplate(msg){

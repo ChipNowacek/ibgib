@@ -56,6 +56,7 @@ defmodule WebGib.Web do
       # Use all HTML functionality (forms, tags, etc)
       # use Phoenix.HTML
       use Marker
+      use WebGib.MarkerElements
 
       import WebGib.Router.Helpers
       import WebGib.ErrorHelpers

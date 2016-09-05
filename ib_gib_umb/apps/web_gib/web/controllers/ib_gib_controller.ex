@@ -11,6 +11,7 @@ defmodule WebGib.IbGibController do
 
   alias IbGib.TransformFactory.Mut8Factory
 
+
   # ----------------------------------------------------------------------------
   # Controller Commands
   # ----------------------------------------------------------------------------
@@ -94,12 +95,12 @@ defmodule WebGib.IbGibController do
 
   def get(conn, %{"ib_gib" => ib_gib} = params) do
     Logger.warn "mimicking latency....don't do this in production!"
-    Process.sleep(1000)
+    # Process.sleep(5000)
     Logger.debug "JSON get. conn: #{inspect conn}"
     Logger.debug "JSON get. params: #{inspect params}"
-    with {:ok, root} <- IbGib.Expression.Supervisor.start_expression(ib_gib),
-      {:ok, root_info} <- root |> IbGib.Expression.get_info do
-      json(conn, root_info)
+    with {:ok, pid} <- IbGib.Expression.Supervisor.start_expression(ib_gib),
+      {:ok, info} <- pid |> IbGib.Expression.get_info do
+      json(conn, info)
     else
       error -> json(conn, %{error: "#{inspect error}"})
     end
@@ -110,6 +111,79 @@ defmodule WebGib.IbGibController do
     Logger.error @emsg_invalid_ibgib_url
     json(conn, %{error: @emsg_invalid_ibgib_url})
   end
+
+  def getd3(conn, %{"ib_gib" => ib_gib} = params) do
+    Logger.warn "mimicking latency....don't do this in production!"
+    # Process.sleep(5000)
+    Logger.debug "JSON get. conn: #{inspect conn}"
+    Logger.debug "JSON get. params: #{inspect params}"
+    with {:ok, pid} <- IbGib.Expression.Supervisor.start_expression(ib_gib),
+      {:ok, info} <- pid |> IbGib.Expression.get_info,
+      {:ok, d3_info} <- convert_to_d3(info) do
+      json(conn, d3_info)
+    else
+      error -> json(conn, %{error: "#{inspect error}"})
+    end
+  end
+  def getd3(conn, params) do
+    Logger.debug "JSON get. conn: #{inspect conn}"
+    Logger.debug "JSON get. params: #{inspect params}"
+    Logger.error @emsg_invalid_ibgib_url
+    json(conn, %{error: @emsg_invalid_ibgib_url})
+  end
+
+  defp convert_to_d3(info) do
+    ib_gib_node = %{"id" => "ib#{@delim}gib", "name" => "ib", "cat" => "ibGib"}
+    ib_node = %{"id" => get_ib_gib!(info), "name" => info["ib"], "cat" => "ib"}
+
+    nodes = [ib_gib_node, ib_node]
+
+    links = []
+
+    Logger.warn "info[:rel8ns]: #{inspect info[:rel8ns]}"
+    {nodes, links} =
+      Enum.reduce(info[:rel8ns],
+                  {nodes, links},
+                  fn({rel8n, rel8n_ibgibs}, {acc_nodes, acc_links}) ->
+
+        # First get the node representing the rel8n itself.
+        {group_node, group_link} = create_rel8n_group_node_and_link(rel8n, ib_node)
+
+        # Now get the node and links for each ib^gib that belonds to that
+        # rel8n.
+        {item_nodes, item_links} = Enum.reduce(rel8n_ibgibs, {[],[]}, fn(r_ibgib, {acc2_nodes, acc2_links}) ->
+          {item_node, item_link} = create_rel8n_item_node_and_link(r_ibgib, rel8n)
+          {acc2_nodes ++ [item_node], acc2_links ++ [item_link]}
+        end)
+
+        # Return the accumulated {nodes, links}
+        {
+          acc_nodes ++ [group_node] ++ item_nodes,
+          acc_links ++ [group_link] ++ item_links
+        }
+      end)
+
+    {:ok, %{"nodes" => nodes, "links" => links}}
+  end
+
+  defp create_rel8n_group_node_and_link(rel8n, ib_node) do
+    rel8n_node = %{"id" => rel8n, "name" => rel8n, "cat" => "rel8n"}
+    # {"source": "Champtercier", "target": "Myriel", "value": 1},
+    rel8n_link = %{"source" => ib_node["id"], "target" => rel8n, "value" => 1}
+    result = {rel8n_node, rel8n_link}
+    Logger.debug "group node: #{inspect result}"
+    result
+  end
+
+  defp create_rel8n_item_node_and_link(ibgib, rel8n) do
+    {ib, _gib} = separate_ib_gib!(ibgib)
+    item_node = %{"id" => "#{rel8n}: #{ibgib}", "name" => ib, "cat" => rel8n}
+    item_link = %{"source" => rel8n, "target" => "#{rel8n}: #{ibgib}", "value" => 1}
+    result = {item_node, item_link}
+    Logger.debug "item node: #{inspect result}"
+    result
+  end
+
 
   # ----------------------------------------------------------------------------
   # Mut8

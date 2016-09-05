@@ -50,6 +50,7 @@ defmodule WebGib.Router do
     # Get ibgibs via just ib
     # get "/ib/:ib", IbGibController, :get
     get "/ibgib/:ib_gib", IbGibController, :get
+    get "/ibgib/d3/:ib_gib", IbGibController, :getd3
   end
 
   # Other scopes may use custom stacks.
