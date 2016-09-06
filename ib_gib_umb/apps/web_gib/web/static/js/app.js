@@ -41,8 +41,9 @@ class App {
     // debugger;
 
     let graphDiv = document.querySelector("#ib-d3-graph-div");
-    let graphCanvas = document.querySelector("#ib-d3-graph-canvas");
-    this.ibScape = new IbScape(graphDiv, graphCanvas);
+    // let graphCanvas = document.querySelector("#ib-d3-graph-area");
+    // this.ibScape = new IbScape(graphDiv, graphCanvas);
+    this.ibScape = new IbScape(graphDiv);
     // debugger;
     // let data = jsonPath + query;
     let data = jsonPath + queryResult;

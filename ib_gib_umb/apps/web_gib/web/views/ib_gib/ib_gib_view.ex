@@ -27,16 +27,9 @@ defmodule WebGib.IbGibView do
           "data-path": "#{WebGib.Router.Helpers.ib_gib_path(WebGib.Endpoint, :getd3, "")}",
           "visibility": "hidden"
         ]
-        p ["meta_query_ib_gib: #{@meta_query_ib_gib}"]
-        p ["meta_query_result_ib_gib: #{@meta_query_result_ib_gib}"]
-        div [id: "ib-d3-graph-div"] do
-          # canvas [id: "ib-d3-graph-canvas"] do
-          #
-          # end
-          svg [id: "ib-d3-graph-canvas"] do
-
-          end
-        end
+        # p ["meta_query_ib_gib: #{@meta_query_ib_gib}"]
+        # p ["meta_query_result_ib_gib: #{@meta_query_result_ib_gib}"]
+        div [id: "ib-d3-graph-div"]
         WebGib.Web.Components.IbScape.ib_scape([conn: @conn, canvas_div_name: "ib-div-meta-query"])
       end
       div [class: "ib-info-border"] do

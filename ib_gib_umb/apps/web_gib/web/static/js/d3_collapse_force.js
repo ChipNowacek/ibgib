@@ -1,11 +1,12 @@
-import * as d3 from "d3";
+import * as d3 from 'd3';
+import { d3Scales, d3Colors } from './d3params';
 
 export class IbScape {
-  constructor(graphDiv, graphCanvas) {
+  // constructor(graphDiv, graphElement) {
+  constructor(graphDiv) {
     this.graphDiv = graphDiv;
-    this.graphCanvas = graphCanvas;
 
-    this.circleRadius = 20;
+    this.circleRadius = 10;
 
     window.onresize = () => {
       const debounceMs = 250;
@@ -28,19 +29,23 @@ export class IbScape {
     t.width = t.graphDiv.scrollWidth;
     t.height = t.graphDiv.scrollHeight;
     // t.center = {x: t.width / 2, y: t.height / 2}
+    // t.graphElement = document.createElement('svg');
+    // t.graphDiv.appendChild(t.graphElement);
+    // t.graphElement.style.width = `${t.width}px`;
+    // t.graphElement.style.height = `${t.height}px`;
+    // t.graphElement.setAttribute('id', "ib-d3-graph-area");
+    // // t.graphElement.setAttribute('width', t.width);
+    // // t.graphElement.setAttribute('height', t.height);
+    // t.graphElement.setAttribute("viewBox", `0 0 ${t.width} ${t.height}`);
 
-    if (t.graphCanvas.getAttribute('width')) {
-      t.graphCanvas.setAttribute('width', t.width);
-      t.graphCanvas.setAttribute('height', t.height);
-    } else if (t.graphCanvas.viewBox) {
-      t.graphCanvas.setAttribute("viewBox", `0 0 ${t.width} ${t.height}`);
-    }
+    var svg = d3.select("#ib-d3-graph-div")
+        .append("svg")
+        .attr('id', "ib-d3-graph-area")
+        .attr('width', t.width)
+        .attr('height', t.height);
 
-    // var svg = d3.select("svg"),
-    // let svg = t.graphCanvas;
-    var svg = d3.select("#ib-d3-graph-canvas");
-    let width = t.width; //svg.attr("width");
-    let height = t.height; //svg.attr("height");
+    let width = t.width;
+    let height = t.height;
 
     var color = d3.scaleOrdinal(d3.schemeCategory20);
 
@@ -48,9 +53,9 @@ export class IbScape {
         .velocityDecay(0.55)
         .force("link", d3.forceLink().id(function(d) { return d.id; }))
         .force("charge", d3.forceManyBody().distanceMin(5))
-        .force("collide", d3.forceCollide(2 * t.circleRadius))
+        .force("collide", d3.forceCollide(4 * t.circleRadius))
         .force("center", d3.forceCenter(width / 2, height / 2));
-    this.simulation = simulation;
+    t.simulation = simulation;
 
     d3.json(data, function(error, graph) {
       if (error) throw error;
@@ -67,8 +72,7 @@ export class IbScape {
         .selectAll("circle")
         .data(graph.nodes)
         .enter().append("circle")
-          .attr("r", t.circleRadius)
-          // .attr("fill", function(d) { return color(d.group); })
+          .attr("r", getRadius)
           .attr("fill", getColor)
           .on("click", clicked)
           .call(d3.drag()
@@ -101,18 +105,48 @@ export class IbScape {
     });
 
     function getColor(d) {
-      console.log(`getColor: ${JSON.stringify(d)}`);
-      console.log(`cat: ${d.cat}`)
-      if (d.cat === "rel8n") {
-        return color(3);
-      } else if (d.cat === "ib") {
-        return color(4);
-      } else if (d.cat === "ibGib") {
-        console.warn("whaaa")
-        return color(9);
-      } else {
-        return color(2);
+      let color = d3Colors[d.cat];
+      if (!color) {
+        color = "green";
       }
+      return color;
+    }
+
+    function getRadius(d) {
+      let scale = 1;
+      let multiplier = d3Scales[d.cat];
+      if (multiplier || multiplier === 0) {
+        scale *= multiplier
+      }
+      return scale * t.circleRadius;
+      // switch (d.cat) {
+      //   case "rel8n":
+      //     scale *= 1.5;
+      //     break;
+      //   case "dna":
+      //   scale *= 1;
+      //     break;
+      //   case "ancestor":
+      //   scale *= 1;
+      //     break;
+      //   case "past":
+      //   // scale *= 1;
+      //     break;
+      //   case "ib":
+      //   scale *= 3;
+      //     break;
+      //   case "ibGib":
+      //   scale *= 2;
+      //     break;
+      //   case "result":
+      //   scale *= 2;
+      //     break;
+      //   default:
+      //   // scale *= 1;
+      //     break;
+      // }
+
+      return scale * t.circleRadius;
     }
 
     function clicked(d) {
@@ -138,12 +172,13 @@ export class IbScape {
   }
 
   destroyStuff() {
+    d3.select("#ib-d3-graph-area").remove();
+
     delete(this.simulation);
     delete(this.context);
     delete(this.height);
     delete(this.width);
   }
-
 
   // {
   //   "rel8ns": {
