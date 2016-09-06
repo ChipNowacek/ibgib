@@ -31,22 +31,19 @@ import { getData } from './miserables.js';
 class App {
 
   static init(){
-    // this.circleMenu = new CircleMenu();
-    // debugger;
-    // let canvasDiv = document.getElementsByName("ib-div-test")[0];
-    let divMetaQueryIbGib = document.querySelector("#metaqueryibgib");
-    let query = divMetaQueryIbGib.getAttribute("data-metaqueryibgib");
-    let queryResult = divMetaQueryIbGib.getAttribute("data-metaqueryresultibgib");
-    let jsonPath = divMetaQueryIbGib.getAttribute("data-path");
-    // debugger;
+    console.warn(`init app. Now: ${Date.now()}`);
+
+    let divIbGibData = document.querySelector("#ibgib-data");
+    let query = divIbGibData.getAttribute("data-metaqueryibgib");
+    let queryResult = divIbGibData.getAttribute("data-metaqueryresultibgib");
+    let ibgib = divIbGibData.getAttribute("ibgib");
+    let jsonPath = divIbGibData.getAttribute("data-path");
 
     let graphDiv = document.querySelector("#ib-d3-graph-div");
-    // let graphCanvas = document.querySelector("#ib-d3-graph-area");
-    // this.ibScape = new IbScape(graphDiv, graphCanvas);
     this.ibScape = new IbScape(graphDiv);
-    // debugger;
     // let data = jsonPath + query;
-    let data = jsonPath + queryResult;
+    // let data = jsonPath + queryResult;
+    let data = jsonPath + ibgib;
     // data = "images/miserables.json";
     this.ibScape.init(data);
 

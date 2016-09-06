@@ -23,12 +23,15 @@ defmodule WebGib.IbGibController do
     Logger.warn "conn: #{inspect conn}"
     Logger.debug "index. params: #{inspect params}"
 
+
     conn
     |> assign(:ib, "ib")
     |> assign(:gib, "gib")
     |> assign(:ib_gib, @root_ib_gib)
     |> add_meta_query
-    |> render("index.html")
+    |> redirect(to: ib_gib_path(WebGib.Endpoint, :show, get_session(conn, @meta_query_result_ib_gib_key)))
+    # |> redirect()
+    # |> render("index.html")
   end
 
   defp add_meta_query(conn) do
@@ -66,6 +69,7 @@ defmodule WebGib.IbGibController do
         Logger.warn "thing_relations: #{inspect thing_relations}"
         conn =
           conn
+          |> add_meta_query
           |> assign(:ib, ib)
           |> assign(:gib, gib)
           |> assign(:ib_gib, ib_gib)
@@ -133,8 +137,9 @@ defmodule WebGib.IbGibController do
   end
 
   defp convert_to_d3(info) do
-    ib_gib_node = %{"id" => "ib#{@delim}gib", "name" => "ib", "cat" => "ibGib"}
-    ib_node = %{"id" => get_ib_gib!(info), "name" => info["ib"], "cat" => "ib"}
+    ib_node_ibgib = get_ib_gib!(info)
+    ib_gib_node = %{"id" => "ib#{@delim}gib", "name" => "ib", "cat" => "ibGib", "ibgib" => "ib#{@delim}gib"}
+    ib_node = %{"id" => ib_node_ibgib, "name" => info["ib"], "cat" => "ib", "ibgib" => ib_node_ibgib}
 
     nodes = [ib_gib_node, ib_node]
 
@@ -177,7 +182,7 @@ defmodule WebGib.IbGibController do
 
   defp create_rel8n_item_node_and_link(ibgib, rel8n) do
     {ib, _gib} = separate_ib_gib!(ibgib)
-    item_node = %{"id" => "#{rel8n}: #{ibgib}", "name" => ib, "cat" => rel8n}
+    item_node = %{"id" => "#{rel8n}: #{ibgib}", "name" => ib, "cat" => rel8n, "ibgib" => "#{ibgib}"}
     item_link = %{"source" => rel8n, "target" => "#{rel8n}: #{ibgib}", "value" => 1}
     result = {item_node, item_link}
     Logger.debug "item node: #{inspect result}"

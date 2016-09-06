@@ -6,25 +6,24 @@ defmodule WebGib.IbGibView do
   import WebGib.Web.Components.IbLine1
   import WebGib.Web.Components.IbScape
 
-  template :index do
+  template :show do
     div do
-      p do
-        "Yo this is the ibgib index template."
-      end
-      div do
-        div [id: "messages"] do
-
-        end
-        input [id: "chat-input", type: "text", value: "chat input here"]
-      end
+      # div do
+      #   div [id: "messages"] do
+      #
+      #   end
+      #   input [id: "chat-input", type: "text", value: "chat input here"]
+      # end
 
       div [class: "ib-info-border"] do
-        p ["Meta Query"]
+        # p ["Meta Query"]
         div [
-          id: "metaqueryibgib",
+          id: "ibgib-data",
+          "ibgib": "#{@ib_gib}",
           "data-metaqueryibgib": "#{@meta_query_ib_gib}",
           "data-metaqueryresultibgib": "#{@meta_query_result_ib_gib}",
           "data-path": "#{WebGib.Router.Helpers.ib_gib_path(WebGib.Endpoint, :getd3, "")}",
+          "data-open-path": "#{WebGib.Router.Helpers.ib_gib_path(WebGib.Endpoint, :show, "")}",
           "visibility": "hidden"
         ]
         # p ["meta_query_ib_gib: #{@meta_query_ib_gib}"]
@@ -41,12 +40,12 @@ defmodule WebGib.IbGibView do
       div [class: "ib-info-border"] do
         WebGib.Web.Components.IbLine1.ib_line_1([conn: @conn])
       end
-      div [class: "ib-info-border"] do
-        WebGib.Web.Components.IbScape.ib_scape([conn: @conn, canvas_div_name: "ib-div-test"])
-      end
+      # div [class: "ib-info-border"] do
+      #   WebGib.Web.Components.IbScape.ib_scape([conn: @conn, canvas_div_name: "ib-div-test"])
+      # end
 
     end
   end
 
-  def render("index.html", assigns), do: index(assigns)
+  def render("show.html", assigns), do: show(assigns)
 end

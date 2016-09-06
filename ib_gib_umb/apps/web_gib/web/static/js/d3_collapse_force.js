@@ -52,8 +52,8 @@ export class IbScape {
     var simulation = d3.forceSimulation()
         .velocityDecay(0.55)
         .force("link", d3.forceLink().id(function(d) { return d.id; }))
-        .force("charge", d3.forceManyBody().distanceMin(5))
-        .force("collide", d3.forceCollide(4 * t.circleRadius))
+        .force("charge", d3.forceManyBody().distanceMin(25))
+        .force("collide", d3.forceCollide(3.5 * t.circleRadius))
         .force("center", d3.forceCenter(width / 2, height / 2));
     t.simulation = simulation;
 
@@ -73,7 +73,7 @@ export class IbScape {
         .data(graph.nodes)
         .enter().append("circle")
           .attr("r", getRadius)
-          .attr("fill", getColor)
+          .attr("fill", d => d3Colors[d.cat] || d3Colors["default"])
           .on("click", clicked)
           .call(d3.drag()
               .on("start", dragstarted)
@@ -104,14 +104,6 @@ export class IbScape {
       }
     });
 
-    function getColor(d) {
-      let color = d3Colors[d.cat];
-      if (!color) {
-        color = "green";
-      }
-      return color;
-    }
-
     function getRadius(d) {
       let scale = 1;
       let multiplier = d3Scales[d.cat];
@@ -119,38 +111,17 @@ export class IbScape {
         scale *= multiplier
       }
       return scale * t.circleRadius;
-      // switch (d.cat) {
-      //   case "rel8n":
-      //     scale *= 1.5;
-      //     break;
-      //   case "dna":
-      //   scale *= 1;
-      //     break;
-      //   case "ancestor":
-      //   scale *= 1;
-      //     break;
-      //   case "past":
-      //   // scale *= 1;
-      //     break;
-      //   case "ib":
-      //   scale *= 3;
-      //     break;
-      //   case "ibGib":
-      //   scale *= 2;
-      //     break;
-      //   case "result":
-      //   scale *= 2;
-      //     break;
-      //   default:
-      //   // scale *= 1;
-      //     break;
-      // }
-
-      return scale * t.circleRadius;
     }
 
     function clicked(d) {
       console.log(`clicked: ${JSON.stringify(d)}`);
+      // I apologize for poor naming.
+      let divIbGibData = document.querySelector("#ibgib-data");
+      let openPath = divIbGibData.getAttribute("data-open-path");
+      if (d.cat !== "rel8n" && d.ibgib !== "ib^gib" && d.cat !== "ib") {
+        console.log(`clicked ibgib: ${d.ibgib}`)
+        location.href = openPath + d.ibgib;
+      }
     }
 
     function dragstarted(d) {
@@ -179,18 +150,4 @@ export class IbScape {
     delete(this.height);
     delete(this.width);
   }
-
-  // {
-  //   "rel8ns": {
-  //     "result":["ib^gib"],
-  //     "query":["query^EBF6C1403C60DCE7B0DD59719A742BE81C55101CA27EDCEABB03AEB126B92EBE"],
-  //     "dna":["ib^gib","query^EBF6C1403C60DCE7B0DD59719A742BE81C55101CA27EDCEABB03AEB126B92EBE"],
-  //     "ancestor":["query_result^gib"]
-  //   },
-  //
-  //   "ib":"query_result",
-  //   "gib":"642E17932EBD7BB5135B0550E1260DF1D3EC9A821E675EA416F75BD5F38D0F82",
-  //   "data":{"result_count":"1"}
-  // }
-
 }
