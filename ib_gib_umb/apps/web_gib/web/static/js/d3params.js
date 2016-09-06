@@ -9,7 +9,7 @@ let d3Scales = {
 };
 
 let d3Colors = {
-  "rel8n": "#C3ECFA",
+  // "rel8n": "#C3ECFA",
   "dna": "#FFD5CC",
   "ancestor": "gray",
   "past": "black",

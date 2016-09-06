@@ -7,7 +7,8 @@ defmodule WebGib.IbGibView do
   import WebGib.Web.Components.IbScape
 
   template :show do
-    div do
+    div [class: "ib-height-100"] do
+    # div do
       # div do
       #   div [id: "messages"] do
       #
@@ -15,9 +16,11 @@ defmodule WebGib.IbGibView do
       #   input [id: "chat-input", type: "text", value: "chat input here"]
       # end
 
-      div [class: "ib-info-border"] do
+      div [class: "ib-info-border ib-height-100"] do
+      # div [class: "ib-info-border"] do
         # p ["Meta Query"]
-        div [
+        WebGib.Web.Components.IbScape.ib_scape([conn: @conn, canvas_div_name: "ib-div-meta-query", class: "ib-height-100"])
+        span [
           id: "ibgib-data",
           "ibgib": "#{@ib_gib}",
           "data-metaqueryibgib": "#{@meta_query_ib_gib}",
@@ -26,20 +29,18 @@ defmodule WebGib.IbGibView do
           "data-open-path": "#{WebGib.Router.Helpers.ib_gib_path(WebGib.Endpoint, :show, "")}",
           "visibility": "hidden"
         ]
-        # p ["meta_query_ib_gib: #{@meta_query_ib_gib}"]
-        # p ["meta_query_result_ib_gib: #{@meta_query_result_ib_gib}"]
-        div [id: "ib-d3-graph-div"]
-        WebGib.Web.Components.IbScape.ib_scape([conn: @conn, canvas_div_name: "ib-div-meta-query"])
+        # div [id: "ib-d3-graph-div ib-height-100"]
+        # div [, class: "ib-height-100"] do
       end
-      div [class: "ib-info-border"] do
-        WebGib.Web.Components.Login.login([conn: @conn])
-      end
-      div [class: "ib-info-border"] do
-        WebGib.Web.Components.IbCircle1.ib_circle_1([conn: @conn])
-      end
-      div [class: "ib-info-border"] do
-        WebGib.Web.Components.IbLine1.ib_line_1([conn: @conn])
-      end
+      # div [class: "ib-info-border"] do
+      #   WebGib.Web.Components.Login.login([conn: @conn])
+      # end
+      # div [class: "ib-info-border"] do
+      #   WebGib.Web.Components.IbCircle1.ib_circle_1([conn: @conn])
+      # end
+      # div [class: "ib-info-border"] do
+      #   WebGib.Web.Components.IbLine1.ib_line_1([conn: @conn])
+      # end
       # div [class: "ib-info-border"] do
       #   WebGib.Web.Components.IbScape.ib_scape([conn: @conn, canvas_div_name: "ib-div-test"])
       # end

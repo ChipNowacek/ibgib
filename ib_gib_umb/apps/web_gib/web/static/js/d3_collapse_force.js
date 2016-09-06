@@ -28,21 +28,31 @@ export class IbScape {
     t.data = data;
     t.width = t.graphDiv.scrollWidth;
     t.height = t.graphDiv.scrollHeight;
-    // t.center = {x: t.width / 2, y: t.height / 2}
-    // t.graphElement = document.createElement('svg');
-    // t.graphDiv.appendChild(t.graphElement);
-    // t.graphElement.style.width = `${t.width}px`;
-    // t.graphElement.style.height = `${t.height}px`;
-    // t.graphElement.setAttribute('id', "ib-d3-graph-area");
-    // // t.graphElement.setAttribute('width', t.width);
-    // // t.graphElement.setAttribute('height', t.height);
-    // t.graphElement.setAttribute("viewBox", `0 0 ${t.width} ${t.height}`);
+
 
     var svg = d3.select("#ib-d3-graph-div")
         .append("svg")
         .attr('id', "ib-d3-graph-area")
         .attr('width', t.width)
         .attr('height', t.height);
+
+    var view = svg.append("rect")
+        .attr("fill", "#C6FABB")
+        .attr("class", "view")
+        .attr("x", 0.5)
+        .attr("y", 0.5)
+        .attr("width", t.width - 1)
+        .attr("height", t.height - 1);
+
+    var vis = svg
+        .append('svg:g');
+
+    var zoom = d3.zoom()
+        // .scaleExtent([1, 40])
+        // .translateExtent([[-100, -100], [width + 90, height + 100]])
+        .on("zoom", zoomed);
+    view.call(zoom);
+    vis.call(zoom);
 
     let width = t.width;
     let height = t.height;
@@ -60,20 +70,23 @@ export class IbScape {
     d3.json(data, function(error, graph) {
       if (error) throw error;
 
-      var link = svg.append("g")
+      var link = vis.append("g")
+      // var link = svg.append("g")
           .attr("class", "links")
         .selectAll("line")
         .data(graph.links)
         .enter().append("line")
           .attr("stroke-width", function(d) { return Math.sqrt(d.value); });
 
-      var node = svg.append("g")
+      // var node = svg.append("g")
+      var node = vis.append("g")
           .attr("class", "nodes")
         .selectAll("circle")
         .data(graph.nodes)
         .enter().append("circle")
           .attr("r", getRadius)
           .attr("fill", d => d3Colors[d.cat] || d3Colors["default"])
+          .attr("fill", getColor)
           .on("click", clicked)
           .call(d3.drag()
               .on("start", dragstarted)
@@ -104,6 +117,18 @@ export class IbScape {
       }
     });
 
+    function zoomed() {
+      // debugger;
+      console.log(`zoomed. ${d3.event.transform.k}`);
+
+
+      vis.attr("transform",
+        // "translate(" + d3.event.translate + ")" +
+        // " " +
+        "scale(" + d3.event.transform.k + ")"
+      );
+    }
+
     function getRadius(d) {
       let scale = 1;
       let multiplier = d3Scales[d.cat];
@@ -111,6 +136,22 @@ export class IbScape {
         scale *= multiplier
       }
       return scale * t.circleRadius;
+    }
+
+    function getColor(d) {
+      let index = d.cat;
+      if (d.ibgib === "ib^gib") {
+        index = "ibGib";
+      } else if (d.cat === "rel8n") {
+        index = d.id;
+      }
+      // let index = d.cat === "rel8n" ? d.id : d.cat;
+      // if ()
+      return d3Colors[index] || d3Colors["default"];
+      // if (d.cat === "rel8n") {
+      // } else {
+      //   return d3Colors[d.cat] || d3Colors["default"];
+      // }
     }
 
     function clicked(d) {
