@@ -24,32 +24,32 @@ export class IbScape {
     t.data = data;
     t.width = t.graphDiv.scrollWidth;
     t.height = t.graphDiv.scrollHeight;
-    // debugger;
-
-    let width = t.width;
-    let height = t.height;
-
+    t.center = {x: t.width / 2, y: t.height / 2};
 
     // graph area
-    var svg = d3.select("#ib-d3-graph-div")
+    let svg = d3.select("#ib-d3-graph-div")
         .append("svg")
         .attr('id', "ib-d3-graph-area")
         .attr('width', t.width)
         .attr('height', t.height);
+    t.svg = svg;
 
     // background
-    var view = svg.append("rect")
+    let view = svg.append("rect")
         .attr("fill", "#E4F7DC")
         .attr("class", "view")
         .attr("x", 0.5)
         .attr("y", 0.5)
-        .attr("width", width - 1)
-        .attr("height", height - 1);
+        .attr("width", t.width - 1)
+        .attr("height", t.height - 1)
+        .on("click", backgroundClicked);
+    t.view = view;
 
     // Holds child components (nodes, links)
     // Need this for zooming.
     let vis = svg
         .append('svg:g');
+    t.vis = vis;
 
     let zoom = d3.zoom().on("zoom", () => {
       vis.attr("transform",
@@ -57,15 +57,16 @@ export class IbScape {
         `scale(${d3.event.transform.k})`);
     });
     view.call(zoom);
-    
+
     let simulation = d3.forceSimulation()
         .velocityDecay(0.55)
         .force("link", d3.forceLink().id(function(d) { return d.id; }))
         .force("charge", d3.forceManyBody().distanceMin(25))
         .force("collide", d3.forceCollide(3.5 * d3CircleRadius))
-        .force("center", d3.forceCenter(width / 2, height / 2));
+        .force("center", d3.forceCenter(t.width / 2, t.height / 2));
     t.simulation = simulation;
 
+    // Initialize the d3 chart with our data given.
     d3.json(data, function(error, graph) {
       if (error) throw error;
 
@@ -113,6 +114,8 @@ export class IbScape {
       }
     });
 
+    this.initMenu();
+
     /** Gets the radius of the circle, depending on the data category. */
     function getRadius(d) {
       let scale = 1;
@@ -137,15 +140,44 @@ export class IbScape {
       return d3Colors[index] || d3Colors["default"];
     }
 
+    function backgroundClicked(d) {
+      console.log("background clicked");
+
+      d3.select("#ib-d3-graph-menu-div")
+        .style("left", t.center.x + "px")
+        .style("top", t.center.y + "px")
+        .style("visibility", "hidden")
+        .attr("z-index", -1);
+
+      d3.event.preventDefault();
+    }
+
     function clicked(d) {
       console.log(`clicked: ${JSON.stringify(d)}`);
       // I apologize for poor naming.
-      let divIbGibData = document.querySelector("#ibgib-data");
-      let openPath = divIbGibData.getAttribute("data-open-path");
-      if (d.cat !== "rel8n" && d.ibgib !== "ib^gib" && d.cat !== "ib") {
-        console.log(`clicked ibgib: ${d.ibgib}`)
-        location.href = openPath + d.ibgib;
-      }
+      // let divIbGibData = document.querySelector("#ibgib-data");
+      // let openPath = divIbGibData.getAttribute("data-open-path");
+      // if (d.cat !== "rel8n" && d.ibgib !== "ib^gib" && d.cat !== "ib") {
+      //   console.log(`clicked ibgib: ${d.ibgib}`)
+      //   location.href = openPath + d.ibgib;
+      // }
+
+
+      let transition =
+        d3.transition()
+          .duration(150)
+          .ease(d3.easeLinear);
+
+      // let position = d3.mouse(this);
+      let position = d3.mouse(view.node());
+      d3.select("#ib-d3-graph-menu-div")
+        .transition(transition)
+          .style("left", position[0] + "px")
+          .style("top", position[1] + "px")
+          .style("visibility", null)
+          .attr("z-index", 1000);
+
+      d3.event.preventDefault();
     }
 
     function dragstarted(d) {
@@ -166,12 +198,50 @@ export class IbScape {
     }
   }
 
+
   destroyStuff() {
     d3.select("#ib-d3-graph-area").remove();
+    d3.select("#ib-d3-graph-menu-div").remove();
 
+    delete(this.svg);
+    delete(this.view);
+    delete(this.vis);
     delete(this.simulation);
-    delete(this.context);
     delete(this.height);
     delete(this.width);
   }
+
+  initMenu() {
+    this.menu =
+      d3.select("#ib-d3-graph-div")
+        .append('div')
+        		.attr("id", "ib-d3-graph-menu-div")
+        		.style('position','absolute')
+            .style("top", 200 + "px")
+            .style("left", 200 + "px")
+            // .style("display", "block")
+            .style("visibility", "hidden")
+            // .style("class", "ib-hidden")
+            .attr("z-index", 100)
+        		.style('width', 150 + "px")
+        		.style('height', 150 + "px")
+        		.style('background-color', "pink")
+        		// add mouseover effect to change background color to black
+        		.on('mouseover', function() {
+        			d3.select("#ib-d3-graph-menu-div")
+        			.style('background-color','black')
+        		})
+        		.on('mouseout', function () {
+        			d3.select("#ib-d3-graph-menu-div")
+        			.style('background-color', "pink")
+        		})
+
+    //   // graph area
+    // var svg = d3.select("#ib-d3-graph-menu-div")
+    //     .append("svg")
+    //     .attr('id', "ib-d3-graph-menu-area")
+    //     .attr('width', t.width)
+    //     .attr('height', t.height);
+  }
+
 }
