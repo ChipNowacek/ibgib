@@ -52,7 +52,7 @@ export class IbScape {
         // .translateExtent([[-100, -100], [width + 90, height + 100]])
         .on("zoom", zoomed);
     view.call(zoom);
-    vis.call(zoom);
+    // vis.call(zoom);
 
     let width = t.width;
     let height = t.height;
@@ -123,9 +123,9 @@ export class IbScape {
 
 
       vis.attr("transform",
-        // "translate(" + d3.event.translate + ")" +
-        // " " +
-        "scale(" + d3.event.transform.k + ")"
+        `translate(${d3.event.transform.x}, ${d3.event.transform.y})` +
+        " " +
+        `scale(${d3.event.transform.k})`
       );
     }
 
