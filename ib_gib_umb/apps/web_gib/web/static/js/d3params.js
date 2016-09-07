@@ -1,3 +1,5 @@
+var d3CircleRadius = 10;
+
 let d3Scales = {
   "rel8n": 1.2,
   "dna": .5,
@@ -19,4 +21,14 @@ let d3Colors = {
   "default": "#ECC3FA"
 };
 
-export { d3Scales, d3Colors };
+let d3Menu = {
+  "nodes": [
+    {
+      "id": "help", 
+      "name": "help",
+      "text": "help"
+    }
+  ]
+}
+
+export { d3CircleRadius, d3Scales, d3Colors };

@@ -1,8 +1,7 @@
 import * as d3 from 'd3';
-import { d3Scales, d3Colors } from './d3params';
+import { d3CircleRadius, d3Scales, d3Colors } from './d3params';
 
 export class IbScape {
-  // constructor(graphDiv, graphElement) {
   constructor(graphDiv) {
     this.graphDiv = graphDiv;
 
@@ -14,11 +13,8 @@ export class IbScape {
       if (this.resizeTimer) { clearTimeout(this.resizeTimer); }
 
       this.resizeTimer = setTimeout(() => {
-
-        console.log("resized yo");
         this.destroyStuff();
         this.init(this.data);
-
       }, debounceMs);
     };
   }
@@ -28,64 +24,64 @@ export class IbScape {
     t.data = data;
     t.width = t.graphDiv.scrollWidth;
     t.height = t.graphDiv.scrollHeight;
+    // debugger;
+
+    let width = t.width;
+    let height = t.height;
 
 
+    // graph area
     var svg = d3.select("#ib-d3-graph-div")
         .append("svg")
         .attr('id', "ib-d3-graph-area")
         .attr('width', t.width)
         .attr('height', t.height);
 
+    // background
     var view = svg.append("rect")
-        .attr("fill", "#C6FABB")
+        .attr("fill", "#E4F7DC")
         .attr("class", "view")
         .attr("x", 0.5)
         .attr("y", 0.5)
-        .attr("width", t.width - 1)
-        .attr("height", t.height - 1);
+        .attr("width", width - 1)
+        .attr("height", height - 1);
 
-    var vis = svg
+    // Holds child components (nodes, links)
+    // Need this for zooming.
+    let vis = svg
         .append('svg:g');
 
-    var zoom = d3.zoom()
-        // .scaleExtent([1, 40])
-        // .translateExtent([[-100, -100], [width + 90, height + 100]])
-        .on("zoom", zoomed);
+    let zoom = d3.zoom().on("zoom", () => {
+      vis.attr("transform",
+        `translate(${d3.event.transform.x}, ${d3.event.transform.y})` + " " +
+        `scale(${d3.event.transform.k})`);
+    });
     view.call(zoom);
-    // vis.call(zoom);
-
-    let width = t.width;
-    let height = t.height;
-
-    var color = d3.scaleOrdinal(d3.schemeCategory20);
-
-    var simulation = d3.forceSimulation()
+    
+    let simulation = d3.forceSimulation()
         .velocityDecay(0.55)
         .force("link", d3.forceLink().id(function(d) { return d.id; }))
         .force("charge", d3.forceManyBody().distanceMin(25))
-        .force("collide", d3.forceCollide(3.5 * t.circleRadius))
+        .force("collide", d3.forceCollide(3.5 * d3CircleRadius))
         .force("center", d3.forceCenter(width / 2, height / 2));
     t.simulation = simulation;
 
     d3.json(data, function(error, graph) {
       if (error) throw error;
 
-      var link = vis.append("g")
-      // var link = svg.append("g")
+      let link = vis.append("g")
           .attr("class", "links")
         .selectAll("line")
         .data(graph.links)
         .enter().append("line")
           .attr("stroke-width", function(d) { return Math.sqrt(d.value); });
 
-      // var node = svg.append("g")
-      var node = vis.append("g")
+      let node = vis.append("g")
           .attr("class", "nodes")
         .selectAll("circle")
         .data(graph.nodes)
         .enter().append("circle")
           .attr("r", getRadius)
-          .attr("fill", d => d3Colors[d.cat] || d3Colors["default"])
           .attr("fill", getColor)
           .on("click", clicked)
           .call(d3.drag()
@@ -117,27 +113,20 @@ export class IbScape {
       }
     });
 
-    function zoomed() {
-      // debugger;
-      console.log(`zoomed. ${d3.event.transform.k}`);
-
-
-      vis.attr("transform",
-        `translate(${d3.event.transform.x}, ${d3.event.transform.y})` +
-        " " +
-        `scale(${d3.event.transform.k})`
-      );
-    }
-
+    /** Gets the radius of the circle, depending on the data category. */
     function getRadius(d) {
       let scale = 1;
       let multiplier = d3Scales[d.cat];
       if (multiplier || multiplier === 0) {
         scale *= multiplier
       }
-      return scale * t.circleRadius;
+      return scale * d3CircleRadius;
     }
 
+    /**
+     * Gets the color of the circle, depending mostly on the category with
+     * some special exceptions (ibGib, ib).
+     */
     function getColor(d) {
       let index = d.cat;
       if (d.ibgib === "ib^gib") {
@@ -145,13 +134,7 @@ export class IbScape {
       } else if (d.cat === "rel8n") {
         index = d.id;
       }
-      // let index = d.cat === "rel8n" ? d.id : d.cat;
-      // if ()
       return d3Colors[index] || d3Colors["default"];
-      // if (d.cat === "rel8n") {
-      // } else {
-      //   return d3Colors[d.cat] || d3Colors["default"];
-      // }
     }
 
     function clicked(d) {

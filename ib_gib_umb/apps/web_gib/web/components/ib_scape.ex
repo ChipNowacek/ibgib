@@ -10,17 +10,12 @@ defmodule WebGib.Web.Components.IbScape do
   import WebGib.Gettext
 
   component :ib_scape do
-    p ["ib scape"]
     div [name: @canvas_div_name,
          id: "ib-d3-graph-div",
-         class: "ib-scape-main-div ib-height-100"] do
-      # canvas
-      # svg [width: 100, height: 100] do
-      #   # line [class: "ib-svg-line1, x1: 0, y1: 0, x2: 50, y2: 50, stroke: "green", "stroke-width": 1] do
-      #   line [class: "ib-svg-line1", x1: 0, y1: 0, x2: 50, y2: 50] do
-      #   end
-      # end
-
+         class: "ib-height-100"] do
+      # div [id: "ib-d3-graph-menu-div"] do
+        
+      # end       
     end
   end
 
