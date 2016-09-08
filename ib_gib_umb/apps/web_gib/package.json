@@ -7,6 +7,10 @@
     "deploy": "brunch build --production",
     "watch": "brunch watch --stdin"
   },
+  "scripts": {
+    "preserver": "docker start c",
+    "server": "iex -S mix phoenix.server"
+  },
   "dependencies": {
     "d3": "^4.2.2",
     "d3-force": "^1.0.2",
