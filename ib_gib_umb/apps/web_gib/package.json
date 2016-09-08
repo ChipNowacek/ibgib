@@ -10,6 +10,7 @@
   "dependencies": {
     "d3": "^4.2.2",
     "d3-force": "^1.0.2",
+    "font-awesome": "^4.6.3",
     "glslify": "^5.1.0",
     "phoenix": "file:../../deps/phoenix",
     "phoenix-socket": "^1.1.3",

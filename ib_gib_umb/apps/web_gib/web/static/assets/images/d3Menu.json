@@ -1,0 +1,22 @@
+{
+  "nodes": [
+    {
+      "id": "menu-help",
+      "name": "help",
+      "text": "Help",
+      "icon": "question-sign"
+    },
+    {
+      "id": "menu-fork",
+      "name": "fork",
+      "text": "Fork",
+      "icon": "tower"
+    },
+    {
+      "id": "menu-mut8",
+      "name": "mut8",
+      "text": "Mut8",
+      "icon": "edit"
+    }
+  ]
+}

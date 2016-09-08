@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { d3CircleRadius, d3Scales, d3Colors } from './d3params';
+import { d3CircleRadius, d3Scales, d3Colors, d3Menu } from './d3params';
 
 export class IbScape {
   constructor(graphDiv) {
@@ -48,7 +48,8 @@ export class IbScape {
     // Holds child components (nodes, links)
     // Need this for zooming.
     let vis = svg
-        .append('svg:g');
+        .append('svg:g')
+          .attr("id", "d3vis");
     t.vis = vis;
 
     let zoom = d3.zoom().on("zoom", () => {
@@ -82,9 +83,13 @@ export class IbScape {
         .selectAll("circle")
         .data(graph.nodes)
         .enter().append("circle")
+          .attr("id", d => {
+            // debugger;
+            return d.js_id || null;
+          })
           .attr("r", getRadius)
           .attr("fill", getColor)
-          .on("click", clicked)
+          .on("click", nodeClicked)
           .call(d3.drag()
               .on("start", dragstarted)
               .on("drag", dragged)
@@ -143,6 +148,8 @@ export class IbScape {
     function backgroundClicked(d) {
       console.log("background clicked");
 
+      t.clearSelectedNode();
+
       d3.select("#ib-d3-graph-menu-div")
         .style("left", t.center.x + "px")
         .style("top", t.center.y + "px")
@@ -152,8 +159,8 @@ export class IbScape {
       d3.event.preventDefault();
     }
 
-    function clicked(d) {
-      console.log(`clicked: ${JSON.stringify(d)}`);
+    function nodeClicked(d) {
+      console.log(`nodeClicked: ${JSON.stringify(d)}`);
       // I apologize for poor naming.
       // let divIbGibData = document.querySelector("#ibgib-data");
       // let openPath = divIbGibData.getAttribute("data-open-path");
@@ -162,20 +169,8 @@ export class IbScape {
       //   location.href = openPath + d.ibgib;
       // }
 
-
-      let transition =
-        d3.transition()
-          .duration(150)
-          .ease(d3.easeLinear);
-
-      // let position = d3.mouse(this);
-      let position = d3.mouse(view.node());
-      d3.select("#ib-d3-graph-menu-div")
-        .transition(transition)
-          .style("left", position[0] + "px")
-          .style("top", position[1] + "px")
-          .style("visibility", null)
-          .attr("z-index", 1000);
+      t.clearSelectedNode();
+      t.selectNode(d);
 
       d3.event.preventDefault();
     }
@@ -198,6 +193,153 @@ export class IbScape {
     }
   }
 
+  clearSelectedNode() {
+    d3.select("#d3vis")
+      .selectAll("circle")
+        .style("opacity", 1);
+
+    if (this.selectedNode) {
+      this.tearDownMenu();
+    }
+  }
+
+  selectNode(d) {
+    d3.select("#d3vis")
+      .selectAll("circle")
+        .style("opacity", 0.3);
+
+    this.buildMenu();
+
+    this.selectedNode = d3.select("#" + d.js_id);
+    let top =
+      d3.select("#" + d.js_id)
+          .style("opacity", 1)
+          .attr("stroke", "yellow")
+          .attr("stroke-width", "10px")
+          ;
+
+    let transition =
+      d3.transition()
+        .duration(150)
+        .ease(d3.easeLinear);
+
+    let mousePosition = d3.mouse(this.view.node());
+    let position = this.getMenuPosition(mousePosition);
+    d3.select("#ib-d3-graph-menu-div")
+      .transition(transition)
+        .style("left", position.x + "px")
+        .style("top", position.y + "px")
+        .style("visibility", null)
+        .attr("z-index", 1000);
+  }
+
+  buildMenu() {
+    let t = this;
+    t.menuButtonRadius = 30;
+
+    t.menuDiv = d3.select("#ib-d3-graph-menu-div");
+
+    t.menuArea =
+      t.menuDiv
+        .append("svg")
+          .attr("id", "ib-d3-graph-menu-area")
+          .style("width", this.menuDiam)
+          .style("height", this.menuDiam);
+
+    t.menuView =
+      t.menuArea.append("circle")
+        .attr("width", this.menuDiam)
+        .attr("height", this.menuDiam)
+        .style("fill", "blue");
+        // .style("background-color", "transparent");
+
+    t.menuVis = t.menuArea
+      .append("svg:g")
+        .attr("id", "d3menuvis");
+
+    t.menuSimulation = d3.forceSimulation()
+        .velocityDecay(0.07)
+        .force("x", d3.forceX().strength(0.02))
+        .force("y", d3.forceY().strength(0.02))
+        .force("center", d3.forceCenter(t.menuRadius, t.menuRadius))
+        .force("collide",
+               d3.forceCollide().radius(t.menuButtonRadius).iterations(2));
+
+    // If i put the json file in another folder, it won't get loaded.
+    // Maybe something to do with brunch, I don't know.
+    d3.json("../images/d3Menu.json", function(error, graph) {
+
+      let node = t.menuVis.append("g")
+          .attr("class", "nodes")
+        .selectAll("circle")
+        .data(graph.nodes)
+        .enter();
+
+      let nodeCircle =
+        node
+          .append("circle")
+          .attr("id", d => d.id)
+          .attr("r", t.menuButtonRadius)
+          .on("click", menuNodeClicked)
+          .attr("fill", "transparent");
+
+      node.append("text")
+            .attr("dx", 12)
+            .attr("dy", ".35em")
+            .attr("font-size", "10px")
+            .text(function(d) { return d.name });
+
+      node.append("title")
+          .text(d => d.text);
+
+      let nodes = graph.nodes;
+
+      t.menuSimulation
+          .nodes(graph.nodes)
+          .on("tick", tickedMenu);
+
+      function tickedMenu() {
+        nodeCircle
+            .attr("cx", function(d) { return d.x; })
+            .attr("cy", function(d) { return d.y; });
+      }
+
+      function menuNodeClicked(d) {
+        console.log(`menu node clicked. d: ${JSON.stringify(d)}`);
+      }
+    });
+
+  }
+
+  tearDownMenu() {
+    if (this.menuArea) { d3.select("#ib-d3-graph-menu-area").remove(); }
+  }
+
+  getMenuPosition(mousePosition) {
+    // Start our position away from right where we click.
+    let bufferAwayFromClickPoint = 75;
+
+    let x = mousePosition[0] - bufferAwayFromClickPoint;
+    if (x > this.width - this.menuDiam) {
+       x = this.width - this.menuDiam;
+    }
+    if (x < this.menuDiam) {
+      x = this.menuDiam;
+    }
+
+    let y = mousePosition[1] - bufferAwayFromClickPoint;
+    if (y > this.height - this.menuDiam) {
+      y = this.height - this.menuDiam;
+    }
+    if (y < this.menuDiam) {
+      y = this.menuDiam;
+    }
+
+    return {
+      x: x,
+      y: y
+    }
+  }
 
   destroyStuff() {
     d3.select("#ib-d3-graph-area").remove();
@@ -212,36 +354,39 @@ export class IbScape {
   }
 
   initMenu() {
-    this.menu =
-      d3.select("#ib-d3-graph-div")
-        .append('div')
-        		.attr("id", "ib-d3-graph-menu-div")
-        		.style('position','absolute')
-            .style("top", 200 + "px")
-            .style("left", 200 + "px")
-            // .style("display", "block")
-            .style("visibility", "hidden")
-            // .style("class", "ib-hidden")
-            .attr("z-index", 100)
-        		.style('width', 150 + "px")
-        		.style('height', 150 + "px")
-        		.style('background-color', "pink")
-        		// add mouseover effect to change background color to black
-        		.on('mouseover', function() {
-        			d3.select("#ib-d3-graph-menu-div")
-        			.style('background-color','black')
-        		})
-        		.on('mouseout', function () {
-        			d3.select("#ib-d3-graph-menu-div")
-        			.style('background-color', "pink")
-        		})
+    let t = this;
+    this.menuRadius = 100;
+    this.menuDiam = 2 * this.menuRadius;
+    this.menuBackgroundColor = "#2B572E";
+    this.menuOpacity = 0.7;
 
-    //   // graph area
-    // var svg = d3.select("#ib-d3-graph-menu-div")
-    //     .append("svg")
-    //     .attr('id', "ib-d3-graph-menu-area")
-    //     .attr('width', t.width)
-    //     .attr('height', t.height);
+    d3.select("#ib-d3-graph-div")
+      .append('div')
+        .attr("id", "ib-d3-graph-menu-div")
+        .style('position','absolute')
+        .style("top", 200 + "px")
+        .style("left", 200 + "px")
+        .style("visibility", "hidden")
+        .style("opacity", this.menuOpacity)
+        .attr("z-index", 100)
+        .style('width', `${this.menuDiam}px`)
+        .style('height', `${this.menuDiam}px`)
+        .style('background-color', this.menuBackgroundColor)
+        .style("border-radius", "50%")
+        .on('mouseover', () => {
+          d3.select("#ib-d3-graph-menu-div")
+          .style('background-color',this.menuBackgroundColor)
+          .style("opacity", 1);
+        })
+        .on('mouseout', () => {
+          d3.select("#ib-d3-graph-menu-div")
+          .style('background-color', "transparent")
+          .style("opacity", this.menuOpacity);
+        });
+  }
+
+  buildMenuJson(node, data) {
+
   }
 
 }

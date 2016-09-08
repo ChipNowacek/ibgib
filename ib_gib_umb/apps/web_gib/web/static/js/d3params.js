@@ -21,14 +21,4 @@ let d3Colors = {
   "default": "#ECC3FA"
 };
 
-let d3Menu = {
-  "nodes": [
-    {
-      "id": "help", 
-      "name": "help",
-      "text": "help"
-    }
-  ]
-}
-
 export { d3CircleRadius, d3Scales, d3Colors };

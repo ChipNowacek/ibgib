@@ -136,10 +136,11 @@ defmodule WebGib.IbGibController do
     json(conn, %{error: @emsg_invalid_ibgib_url})
   end
 
+  defp get_js_id(), do: "#{RandomGib.Get.some_letters(10)}"
   defp convert_to_d3(info) do
     ib_node_ibgib = get_ib_gib!(info)
-    ib_gib_node = %{"id" => "ib#{@delim}gib", "name" => "ib", "cat" => "ibGib", "ibgib" => "ib#{@delim}gib"}
-    ib_node = %{"id" => ib_node_ibgib, "name" => info["ib"], "cat" => "ib", "ibgib" => ib_node_ibgib}
+    ib_gib_node = %{"id" => "ib#{@delim}gib", "name" => "ib", "cat" => "ibGib", "ibgib" => "ib#{@delim}gib", "js_id" => get_js_id}
+    ib_node = %{"id" => ib_node_ibgib, "name" => info["ib"], "cat" => "ib", "ibgib" => ib_node_ibgib, "js_id" => get_js_id}
 
     nodes = [ib_gib_node, ib_node]
 
@@ -172,7 +173,7 @@ defmodule WebGib.IbGibController do
   end
 
   defp create_rel8n_group_node_and_link(rel8n, ib_node) do
-    rel8n_node = %{"id" => rel8n, "name" => rel8n, "cat" => "rel8n"}
+    rel8n_node = %{"id" => rel8n, "name" => rel8n, "cat" => "rel8n", "js_id" => get_js_id}
     # {"source": "Champtercier", "target": "Myriel", "value": 1},
     rel8n_link = %{"source" => ib_node["id"], "target" => rel8n, "value" => 1}
     result = {rel8n_node, rel8n_link}
@@ -182,7 +183,7 @@ defmodule WebGib.IbGibController do
 
   defp create_rel8n_item_node_and_link(ibgib, rel8n) do
     {ib, _gib} = separate_ib_gib!(ibgib)
-    item_node = %{"id" => "#{rel8n}: #{ibgib}", "name" => ib, "cat" => rel8n, "ibgib" => "#{ibgib}"}
+    item_node = %{"id" => "#{rel8n}: #{ibgib}", "name" => ib, "cat" => rel8n, "ibgib" => "#{ibgib}", "js_id" => get_js_id}
     item_link = %{"source" => rel8n, "target" => "#{rel8n}: #{ibgib}", "value" => 1}
     result = {item_node, item_link}
     Logger.debug "item node: #{inspect result}"
