@@ -4,19 +4,22 @@
       "id": "menu-help",
       "name": "help",
       "text": "Help",
-      "icon": "question-sign"
+      "icon": "\uf128",
+      "color": "blue"
     },
     {
       "id": "menu-fork",
       "name": "fork",
       "text": "Fork",
-      "icon": "tower"
+      "icon": "tower",
+      "color": "red"
     },
     {
       "id": "menu-mut8",
       "name": "mut8",
       "text": "Mut8",
-      "icon": "edit"
+      "icon": "edit",
+      "color": "yellow"
     }
   ]
 }

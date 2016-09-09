@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { d3CircleRadius, d3Scales, d3Colors, d3Menu } from './d3params';
+import { d3CircleRadius, d3Scales, d3Colors } from './d3params';
 
 export class IbScape {
   constructor(graphDiv) {
@@ -269,28 +269,44 @@ export class IbScape {
     // Maybe something to do with brunch, I don't know.
     d3.json("../images/d3Menu.json", function(error, graph) {
 
-      let node = t.menuVis.append("g")
+      let nodeGroup =
+        t.menuVis.append("g")
           .attr("class", "nodes")
-        .selectAll("circle")
-        .data(graph.nodes)
-        .enter();
+          .selectAll("circle")
+          .data(graph.nodes)
+          .enter();
 
-      let nodeCircle =
-        node
+      let nodeCircles =
+        nodeGroup
           .append("circle")
           .attr("id", d => d.id)
           .attr("r", t.menuButtonRadius)
           .on("click", menuNodeClicked)
-          .attr("fill", "transparent");
+          .attr("fill", d => d.color);
 
-      node.append("text")
-            .attr("dx", 12)
-            .attr("dy", ".35em")
-            .attr("font-size", "10px")
-            .text(function(d) { return d.name });
-
-      node.append("title")
+      nodeCircles
+          .append("title")
           .text(d => d.text);
+
+      let nodeTextsGroup =
+        t.menuVis.append("g")
+          .attr("class", "nodeTexts")
+          .selectAll("text")
+          .data(graph.nodes)
+          .enter();
+
+      let nodeTexts =
+        nodeTextsGroup
+          .append("text")
+          // .attr("font-family", "sans-serif")
+          .attr("font-size", "20px")
+          .attr("fill", "green")
+          .attr("text-anchor", "middle")
+          .on("click", menuNodeClicked)
+          .text(d => d.text)
+          .attr('dominant-baseline', 'central')
+          .attr('font-family', 'FontAwesome')
+          .text(function(d) { return d.icon });
 
       let nodes = graph.nodes;
 
@@ -299,13 +315,29 @@ export class IbScape {
           .on("tick", tickedMenu);
 
       function tickedMenu() {
-        nodeCircle
+        nodeCircles
             .attr("cx", function(d) { return d.x; })
             .attr("cy", function(d) { return d.y; });
+
+        let posTweak = 5;
+        nodeTexts
+          .attr("x", d => d.x)
+          .attr("y", d => d.y + posTweak);
       }
 
       function menuNodeClicked(d) {
         console.log(`menu node clicked. d: ${JSON.stringify(d)}`);
+
+        let transition =
+          d3.transition()
+            .duration(150)
+            .ease(d3.easeLinear);
+
+        d3.select(`#${d.id}`)
+          .transition(transition)
+            .attr("r", 1.2 * t.menuButtonRadius)
+          .transition()
+            .attr("r", t.menuButtonRadius);
       }
     });
 
