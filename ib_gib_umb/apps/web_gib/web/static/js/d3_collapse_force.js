@@ -298,7 +298,6 @@ export class IbScape {
       let nodeTexts =
         nodeTextsGroup
           .append("text")
-          // .attr("font-family", "sans-serif")
           .attr("font-size", "20px")
           .attr("fill", "green")
           .attr("text-anchor", "middle")
@@ -306,7 +305,7 @@ export class IbScape {
           .text(d => d.text)
           .attr('dominant-baseline', 'central')
           .attr('font-family', 'FontAwesome')
-          .text(function(d) { return d.icon });
+          .text(d => d.icon);
 
       let nodes = graph.nodes;
 
@@ -322,7 +321,7 @@ export class IbScape {
         let posTweak = 5;
         nodeTexts
           .attr("x", d => d.x)
-          .attr("y", d => d.y + posTweak);
+          .attr("y", d => d.y);
       }
 
       function menuNodeClicked(d) {
