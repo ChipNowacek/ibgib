@@ -57,6 +57,27 @@
       "color": "purple"
     },
     {
+      "id": "menu-pic",
+      "name": "pic",
+      "text": "Pic",
+      "icon": "\uf03e",
+      "color": "darkorange"
+    },
+    {
+      "id": "menu-meta",
+      "name": "meta",
+      "text": "Meta",
+      "icon": "\uf013",
+      "color": "lightgray"
+    },
+    {
+      "id": "menu-info",
+      "name": "info",
+      "text": "Info",
+      "icon": "\uf05a",
+      "color": "lightblue"
+    },
+    {
       "id": "menu-add",
       "name": "add",
       "text": "Add",

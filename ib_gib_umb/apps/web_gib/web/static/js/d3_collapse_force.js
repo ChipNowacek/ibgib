@@ -36,7 +36,7 @@ export class IbScape {
 
     // background
     let view = svg.append("rect")
-        .attr("fill", "#E4F7DC")
+        .attr("fill", "#E7F0E4")
         .attr("class", "view")
         .attr("x", 0.5)
         .attr("y", 0.5)
@@ -229,7 +229,8 @@ export class IbScape {
         .ease(d3.easeLinear);
 
     let mousePosition = d3.mouse(this.view.node());
-    let position = this.getMenuPosition(mousePosition);
+    let targetNode = d3.event.target;
+    let position = this.getMenuPosition(mousePosition, targetNode);
     d3.select("#ib-d3-graph-menu-div")
       .transition(transition)
         .style("left", position.x + "px")
@@ -363,24 +364,29 @@ export class IbScape {
       .style("visibility", "hidden");
   }
 
-  getMenuPosition(mousePosition) {
+  getMenuPosition(mousePosition, targetNode) {
     // Start our position away from right where we click.
-    let bufferAwayFromClickPoint = 75;
 
-    let x = mousePosition[0] - bufferAwayFromClickPoint;
-    if (x > this.width - this.menuDiam) {
-       x = this.width - this.menuDiam;
-    }
-    if (x < this.menuDiam) {
-      x = this.menuDiam;
+    // let bufferAwayFromClickPoint = this.menuRadius;
+    let bufferAwayFromClickPoint = 30; //magic number :-/
+    let $graphDivPos = $(`#${this.graphDiv.id}`).position();
+
+    let mousePosIsOnLeftSide = mousePosition[0] < this.width/2;
+    let x = mousePosIsOnLeftSide ?
+            $graphDivPos.left + mousePosition[0] + bufferAwayFromClickPoint :
+            $graphDivPos.left + mousePosition[0] - this.menuDiam;
+    if (x < $graphDivPos.left) { x = $graphDivPos.left; }
+    if (x > $graphDivPos.left + this.width - this.menuDiam) {
+      x = $graphDivPos.left + this.width - this.menuDiam;
     }
 
-    let y = mousePosition[1] - bufferAwayFromClickPoint;
-    if (y > this.height - this.menuDiam) {
-      y = this.height - this.menuDiam;
-    }
-    if (y < this.menuDiam) {
-      y = this.menuDiam;
+    let mousePosIsInTopHalf = mousePosition[1] < (this.height/2);
+    let y = mousePosIsInTopHalf ?
+            $graphDivPos.top + mousePosition[1] + bufferAwayFromClickPoint :
+            $graphDivPos.top + mousePosition[1] - this.menuDiam;
+    if (y < $graphDivPos.top) { y = $graphDivPos.top; }
+    if (y > $graphDivPos.top + this.height - this.menuDiam) {
+      y = $graphDivPos.top + this.height - this.menuDiam;
     }
 
     return {
@@ -403,8 +409,9 @@ export class IbScape {
 
   initMenu() {
     let t = this;
-    this.menuRadius = 100;
+    this.menuRadius = 120;
     this.menuDiam = 2 * this.menuRadius;
+    this.menuDivSize = this.menuDiam;
     this.menuBackgroundColor = "#2B572E";
     this.menuOpacity = 0.7;
 
@@ -417,8 +424,8 @@ export class IbScape {
         .style("visibility", "hidden")
         .style("opacity", this.menuOpacity)
         .attr("z-index", 100)
-        .style('width', `${this.menuDiam}px`)
-        .style('height', `${this.menuDiam}px`)
+        .style('width', `${this.menuDivSize}px`)
+        .style('height', `${this.menuDivSize}px`)
         .style('background-color', this.menuBackgroundColor)
         .style("border-radius", "50%")
         .on('mouseover', () => {
@@ -432,9 +439,4 @@ export class IbScape {
           .style("opacity", this.menuOpacity);
         });
   }
-
-  buildMenuJson(node, data) {
-
-  }
-
 }
