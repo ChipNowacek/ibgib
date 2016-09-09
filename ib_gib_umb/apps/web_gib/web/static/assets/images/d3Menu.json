@@ -4,22 +4,64 @@
       "id": "menu-help",
       "name": "help",
       "text": "Help",
-      "icon": "\uf128",
+      "icon": "\uf29c",
       "color": "blue"
     },
     {
       "id": "menu-fork",
       "name": "fork",
       "text": "Fork",
-      "icon": "tower",
-      "color": "red"
+      "icon": "\uf259",
+      "color": "lightgreen"
     },
     {
       "id": "menu-mut8",
       "name": "mut8",
       "text": "Mut8",
-      "icon": "edit",
+      "icon": "\uf040",
       "color": "yellow"
+    },
+    {
+      "id": "menu-share",
+      "name": "share",
+      "text": "Share",
+      "icon": "\uf1e0",
+      "color": "yellow"
+    },
+    {
+      "id": "menu-flag",
+      "name": "flag",
+      "text": "Flag",
+      "icon": "\uf024",
+      "color": "red"
+    },
+    {
+      "id": "menu-merge",
+      "name": "merge",
+      "text": "Merge",
+      "icon": "\uf247",
+      "color": "orange"
+    },
+    {
+      "id": "menu-star",
+      "name": "star",
+      "text": "Star",
+      "icon": "\uf005",
+      "color": "gold"
+    },
+    {
+      "id": "menu-thumbsup",
+      "name": "thumbs up",
+      "text": "Thumbs up",
+      "icon": "\uf164",
+      "color": "purple"
+    },
+    {
+      "id": "menu-add",
+      "name": "add",
+      "text": "Add",
+      "icon": "\uf055",
+      "color": "magenta"
     }
   ]
 }

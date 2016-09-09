@@ -83,10 +83,8 @@ export class IbScape {
         .selectAll("circle")
         .data(graph.nodes)
         .enter().append("circle")
-          .attr("id", d => {
-            // debugger;
-            return d.js_id || null;
-          })
+          .attr("id", d => d.js_id || null)
+          .attr("cursor", "pointer")
           .attr("r", getRadius)
           .attr("fill", getColor)
           .on("click", nodeClicked)
@@ -169,8 +167,12 @@ export class IbScape {
       //   location.href = openPath + d.ibgib;
       // }
 
-      t.clearSelectedNode();
-      t.selectNode(d);
+      if (t.selectedDatum && t.selectedDatum.js_id == d.js_id) {
+        t.clearSelectedNode();
+      } else {
+        t.clearSelectedNode();
+        t.selectNode(d);
+      }
 
       d3.event.preventDefault();
     }
@@ -200,6 +202,8 @@ export class IbScape {
 
     if (this.selectedNode) {
       this.tearDownMenu();
+      delete this.selectedNode;
+      delete this.selectedDatum;
     }
   }
 
@@ -210,6 +214,7 @@ export class IbScape {
 
     this.buildMenu();
 
+    this.selectedDatum = d;
     this.selectedNode = d3.select("#" + d.js_id);
     let top =
       d3.select("#" + d.js_id)
@@ -235,7 +240,7 @@ export class IbScape {
 
   buildMenu() {
     let t = this;
-    t.menuButtonRadius = 30;
+    t.menuButtonRadius = 22;
 
     t.menuDiv = d3.select("#ib-d3-graph-menu-div");
 
@@ -281,6 +286,7 @@ export class IbScape {
           .append("circle")
           .attr("id", d => d.id)
           .attr("r", t.menuButtonRadius)
+          .attr("cursor", "pointer")
           .on("click", menuNodeClicked)
           .attr("fill", d => d.color);
 
@@ -299,13 +305,19 @@ export class IbScape {
         nodeTextsGroup
           .append("text")
           .attr("font-size", "20px")
-          .attr("fill", "green")
+          .attr("fill", "darkgreen")
           .attr("text-anchor", "middle")
+          .attr("cursor", "pointer")
+          .attr("class", "ib-noselect")
           .on("click", menuNodeClicked)
           .text(d => d.text)
           .attr('dominant-baseline', 'central')
           .attr('font-family', 'FontAwesome')
           .text(d => d.icon);
+
+      nodeTexts
+          .append("title")
+          .text(d => d.text);
 
       let nodes = graph.nodes;
 
@@ -343,7 +355,12 @@ export class IbScape {
   }
 
   tearDownMenu() {
-    if (this.menuArea) { d3.select("#ib-d3-graph-menu-area").remove(); }
+    if (this.menuArea) { d3.select("#ib-d3-graph-menu-area").remove();
+      delete this.menuArea;
+    }
+
+    d3.select("#ib-d3-graph-menu-div")
+      .style("visibility", "hidden");
   }
 
   getMenuPosition(mousePosition) {
