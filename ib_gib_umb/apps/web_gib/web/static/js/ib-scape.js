@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { d3CircleRadius, d3Scales, d3Colors } from './d3params';
+import { d3CircleRadius, d3Scales, d3Colors, d3MenuCommands } from './d3params';
 
 export class IbScape {
   constructor(graphDiv) {
@@ -14,14 +14,18 @@ export class IbScape {
 
       this.resizeTimer = setTimeout(() => {
         this.destroyStuff();
-        this.init(this.data);
+        this.update(null);
       }, debounceMs);
     };
   }
 
-  init(data) {
+  update(data) {
     let t = this;
-    t.data = data;
+    if (data) {
+      t.data = data;
+    } else {
+      data = t.data;
+    }
     t.width = t.graphDiv.scrollWidth;
     t.height = t.graphDiv.scrollHeight;
     t.center = {x: t.width / 2, y: t.height / 2};
@@ -71,23 +75,66 @@ export class IbScape {
     d3.json(data, function(error, graph) {
       if (error) throw error;
 
+      // This is a hack, but I don't want to trudge through cleaning up this
+      // messy javascript code at the moment. The "workingData" is the
+      // json, but modified with local settings. So the actual call to the
+      // `d3.json` is superfluous if this is already set. Anyway, I'm doing
+      // initialize stuff to enable collapsing of categories.
+      // Obviously, this is horrifically non-optimized.
+      t.rawData = graph;
+      if (!t.workingData) {
+        let collapsed = ["ancestor", "past", "dna", "query"]
+        let hiddenNodeIds = [];
+        graph.nodes.forEach(n => {
+          if (collapsed.some(c => c === n.cat)) {
+            n.visible = false;
+            n.collapsed = false;
+            hiddenNodeIds.push(n.id);
+          } else if (collapsed.some(c => c === n.id)) {
+            n.visible = true;
+            n.collapsed = true;
+          } else {
+            n.visible = true;
+            n.collapsed = false;
+          }
+        });
+        graph.links.forEach(l => {
+          if (hiddenNodeIds.some(nid => l.source === nid || l.target === nid)) {
+            l.active = false;
+          } else {
+            l.active = true;
+          }
+        })
+
+        t.workingData = graph;
+      }
+
+      graph = t.workingData;
+
+      // modified nodes
+      // hidden means that the node's rel8n is collapsed.
+      let modifiedNodes = graph.nodes.filter(n => n.visible);
+      // inactive means one of the link's endpoints is hidden.
+      let modifiedLinks = graph.links.filter(l => l.active);
+
       let link = vis.append("g")
           .attr("class", "links")
         .selectAll("line")
-        .data(graph.links)
+        .data(modifiedLinks)
         .enter().append("line")
           .attr("stroke-width", function(d) { return Math.sqrt(d.value); });
 
       let node = vis.append("g")
           .attr("class", "nodes")
         .selectAll("circle")
-        .data(graph.nodes)
+        .data(modifiedNodes)
         .enter().append("circle")
           .attr("id", d => d.js_id || null)
           .attr("cursor", "pointer")
           .attr("r", getRadius)
           .attr("fill", getColor)
           .on("click", nodeClicked)
+          .on("dblclick", nodeDblClicked)
           .call(d3.drag()
               .on("start", dragstarted)
               .on("drag", dragged)
@@ -159,22 +206,54 @@ export class IbScape {
 
     function nodeClicked(d) {
       console.log(`nodeClicked: ${JSON.stringify(d)}`);
-      // I apologize for poor naming.
-      // let divIbGibData = document.querySelector("#ibgib-data");
-      // let openPath = divIbGibData.getAttribute("data-open-path");
-      // if (d.cat !== "rel8n" && d.ibgib !== "ib^gib" && d.cat !== "ib") {
-      //   console.log(`clicked ibgib: ${d.ibgib}`)
-      //   location.href = openPath + d.ibgib;
-      // }
 
-      if (t.selectedDatum && t.selectedDatum.js_id == d.js_id) {
-        t.clearSelectedNode();
+      // Only handle the click if it's not a double-click.
+      if (t.maybeDoubleClicking) {
+        // we're double-clicking
+        delete t.maybeDoubleClicking;
+        delete t.mousePosition;
+        delete t.targetNode;
       } else {
-        t.clearSelectedNode();
-        t.selectNode(d);
+        t.maybeDoubleClicking = true;
+        t.mousePosition = d3.mouse(t.view.node());
+        t.targetNode = d3.event.target;
+
+        setTimeout(() => {
+          if (t.maybeDoubleClicking) {
+            // It's still set after the timeout, so we didn't do a double-click.
+            // I apologize for poor naming.
+            // let divIbGibData = document.querySelector("#ibgib-data");
+            // let openPath = divIbGibData.getAttribute("data-open-path");
+            // if (d.cat !== "rel8n" && d.ibgib !== "ib^gib" && d.cat !== "ib") {
+            //   console.log(`clicked ibgib: ${d.ibgib}`)
+            //   location.href = openPath + d.ibgib;
+            // }
+
+            if (t.selectedDatum && t.selectedDatum.js_id == d.js_id) {
+              t.clearSelectedNode();
+            } else {
+              t.clearSelectedNode();
+              t.selectNode(d);
+            }
+
+            delete t.maybeDoubleClicking;
+          }
+        }, 300);
       }
 
       d3.event.preventDefault();
+    }
+
+    function nodeDblClicked(d) {
+      // We toggle expanding if the node is double clicked.
+      if (d.cat === "rel8n") {
+        // HACK: ib-scape nodeDblClicked Hide the menu that pops up on node clicked.
+        t.clearSelectedNode();
+
+        t.toggleExpandNode(d);
+        t.destroyStuff();
+        t.update(null);
+      }
     }
 
     function dragstarted(d) {
@@ -212,7 +291,7 @@ export class IbScape {
       .selectAll("circle")
         .style("opacity", 0.3);
 
-    this.buildMenu();
+    this.buildMenu(d);
 
     this.selectedDatum = d;
     this.selectedNode = d3.select("#" + d.js_id);
@@ -228,9 +307,9 @@ export class IbScape {
         .duration(150)
         .ease(d3.easeLinear);
 
-    let mousePosition = d3.mouse(this.view.node());
-    let targetNode = d3.event.target;
-    let position = this.getMenuPosition(mousePosition, targetNode);
+    // let mousePosition = d3.mouse(this.view.node());
+    // let targetNode = d3.event.target;
+    let position = this.getMenuPosition(this.mousePosition, this.targetNode);
     d3.select("#ib-d3-graph-menu-div")
       .transition(transition)
         .style("left", position.x + "px")
@@ -239,7 +318,7 @@ export class IbScape {
         .attr("z-index", 1000);
   }
 
-  buildMenu() {
+  buildMenu(d) {
     let t = this;
     t.menuButtonRadius = 22;
 
@@ -273,91 +352,142 @@ export class IbScape {
 
     // If i put the json file in another folder, it won't get loaded.
     // Maybe something to do with brunch, I don't know.
-    d3.json("../images/d3Menu.json", function(error, graph) {
+    // d3.json("../images/d3Menu.json", function(error, graph) {
+    let graph = t.getJson(d);
 
-      let nodeGroup =
-        t.menuVis.append("g")
-          .attr("class", "nodes")
-          .selectAll("circle")
-          .data(graph.nodes)
-          .enter();
+    let nodeGroup =
+      t.menuVis.append("g")
+        .attr("class", "nodes")
+        .selectAll("circle")
+        .data(graph.nodes)
+        .enter();
 
-      let nodeCircles =
-        nodeGroup
-          .append("circle")
-          .attr("id", d => d.id)
-          .attr("r", t.menuButtonRadius)
-          .attr("cursor", "pointer")
-          .on("click", menuNodeClicked)
-          .attr("fill", d => d.color);
+    let nodeCircles =
+      nodeGroup
+        .append("circle")
+        .attr("id", d => d.id)
+        .attr("r", t.menuButtonRadius)
+        .attr("cursor", "pointer")
+        .on("click", menuNodeClicked)
+        .attr("fill", d => d.color);
 
+    nodeCircles
+        .append("title")
+        .text(d => d.text);
+
+    let nodeTextsGroup =
+      t.menuVis.append("g")
+        .attr("class", "nodeTexts")
+        .selectAll("text")
+        .data(graph.nodes)
+        .enter();
+
+    let nodeTexts =
+      nodeTextsGroup
+        .append("text")
+        .attr("font-size", "30px")
+        .attr("fill", "#4F6627")
+        .attr("text-anchor", "middle")
+        .attr("cursor", "pointer")
+        .attr("class", "ib-noselect")
+        .on("click", menuNodeClicked)
+        .text(d => d.text)
+        .attr('dominant-baseline', 'central')
+        .attr('font-family', 'FontAwesome')
+        .text(d => d.icon);
+
+    nodeTexts
+        .append("title")
+        .text(d => d.text);
+
+    let nodes = graph.nodes;
+
+    t.menuSimulation
+        .nodes(graph.nodes)
+        .on("tick", tickedMenu);
+
+    function tickedMenu() {
       nodeCircles
-          .append("title")
-          .text(d => d.text);
+          .attr("cx", function(d) { return d.x; })
+          .attr("cy", function(d) { return d.y; });
 
-      let nodeTextsGroup =
-        t.menuVis.append("g")
-          .attr("class", "nodeTexts")
-          .selectAll("text")
-          .data(graph.nodes)
-          .enter();
-
-      let nodeTexts =
-        nodeTextsGroup
-          .append("text")
-          .attr("font-size", "20px")
-          .attr("fill", "darkgreen")
-          .attr("text-anchor", "middle")
-          .attr("cursor", "pointer")
-          .attr("class", "ib-noselect")
-          .on("click", menuNodeClicked)
-          .text(d => d.text)
-          .attr('dominant-baseline', 'central')
-          .attr('font-family', 'FontAwesome')
-          .text(d => d.icon);
-
+      let posTweak = 5;
       nodeTexts
-          .append("title")
-          .text(d => d.text);
+        .attr("x", d => d.x)
+        .attr("y", d => d.y);
+    }
 
-      let nodes = graph.nodes;
+    function menuNodeClicked(d) {
+      console.log(`menu node clicked. d: ${JSON.stringify(d)}`);
 
-      t.menuSimulation
-          .nodes(graph.nodes)
-          .on("tick", tickedMenu);
+      let transition =
+        d3.transition()
+          .duration(150)
+          .ease(d3.easeLinear);
 
-      function tickedMenu() {
-        nodeCircles
-            .attr("cx", function(d) { return d.x; })
-            .attr("cy", function(d) { return d.y; });
+      d3.select(`#${d.id}`)
+        .transition(transition)
+          .attr("r", 1.2 * t.menuButtonRadius)
+        .transition()
+          .attr("r", t.menuButtonRadius);
 
-        let posTweak = 5;
-        nodeTexts
-          .attr("x", d => d.x)
-          .attr("y", d => d.y);
-      }
+      t.executeMenuCommand(t.selectedDatum, d);
+    }
+  }
 
-      function menuNodeClicked(d) {
-        console.log(`menu node clicked. d: ${JSON.stringify(d)}`);
+  executeMenuCommand(dIbgib, dCommand) {
+    if ((dCommand.name === "view" || dCommand.name === "hide") &&
+         dIbgib.cat === "rel8n") {
+      this.toggleExpandNode(dIbgib);
+      this.destroyStuff();
+      this.update(null);
+    }
+  }
 
-        let transition =
-          d3.transition()
-            .duration(150)
-            .ease(d3.easeLinear);
+  toggleExpandNode(dRel8n) {
+    if (dRel8n.collapsed) {
+      // expand
+      dRel8n.collapsed = false;
 
-        d3.select(`#${d.id}`)
-          .transition(transition)
-            .attr("r", 1.2 * t.menuButtonRadius)
-          .transition()
-            .attr("r", t.menuButtonRadius);
-      }
-    });
+      // show hidden nodes
+      this.workingData.nodes.forEach(n => {
+        if (n.cat === dRel8n.id) {
+          n.visible = true;
+        }
+      });
 
+      // activate links
+      this.workingData.links.forEach(l => {
+        if (l.source.js_id === dRel8n.js_id || l.target.js_id === dRel8n.js_id) {
+          l.active = true;
+        }
+      });
+    } else {
+      // collapse
+      dRel8n.collapsed = true;
+
+      // show hidden nodes
+      this.workingData.nodes.forEach(n => {
+        if (n.cat === dRel8n.id) {
+          n.visible = false;
+        }
+      });
+
+      // activate links
+      this.workingData.links.forEach(l => {
+        if (l.source.js_id === dRel8n.js_id) {
+          l.active = false;
+        }
+      });
+    }
   }
 
   tearDownMenu() {
     if (this.menuArea) { d3.select("#ib-d3-graph-menu-area").remove();
       delete this.menuArea;
+    }
+    if (this.menuVis) { d3.select("#d3menuvis").remove();
+      delete this.menuVis;
     }
 
     d3.select("#ib-d3-graph-menu-div")
@@ -438,5 +568,25 @@ export class IbScape {
           .style('background-color', "transparent")
           .style("opacity", this.menuOpacity);
         });
+  }
+
+  getJson(d) {
+    // TODO: ib-scape.js getJson: When we have client-side dynamicism (prefs, whatever), then we need to change this to take that into account when building the popup menu.
+    let commands = [];
+
+    if (d.cat === "rel8n") {
+      commands = ["help", "view"];
+    } else if (d.ibgib && d.ibgib === "ib^gib") {
+      commands = ["help", "fork", "meta", "query"];
+    } else if (d.cat === "ib") {
+      commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link"];
+    } else {
+      commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link"];
+    }
+
+    let nodes = commands.map(cmdName => d3MenuCommands.filter(cmd => cmd.name == cmdName)[0]);
+    return {
+      "nodes": nodes
+    };
   }
 }

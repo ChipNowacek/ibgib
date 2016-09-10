@@ -24,9 +24,9 @@ import { IbGibChannel } from "./socket"
 // import { IbScape } from "./ibscape-three";
 // import { IbScape } from "./ibscape-pixi";
 
-import { IbScape } from "./d3_collapse_force";
+import { IbScape } from "./ib-scape";
 
-import { getData } from './miserables.js';
+// import { getData } from './miserables.js';
 
 class App {
 
@@ -45,7 +45,7 @@ class App {
     // let data = jsonPath + queryResult;
     let data = jsonPath + ibgib;
     // data = "images/miserables.json";
-    this.ibScape.init(data);
+    this.ibScape.update(data);
 
     this.ibGibChannel = new IbGibChannel();
     this.ibGibChannel.connect();
