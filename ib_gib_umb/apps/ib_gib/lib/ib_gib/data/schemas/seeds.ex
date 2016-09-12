@@ -2,7 +2,7 @@ defmodule IbGib.Data.Schemas.Seeds do
   @moduledoc """
   Utility functions to aid seeding ecto db.
   """
-  
+
   require Logger
   use IbGib.Constants, :ib_gib
   alias IbGib.Data.Repo
@@ -43,8 +43,9 @@ defmodule IbGib.Data.Schemas.Seeds do
       ib: "ib",
       gib: "gib",
       rel8ns: %{
-        "dna" => ["ib#{delim}gib"],
+        "dna" => default_dna,
         "ancestor" => ["ib#{delim}gib"],
+        "past" => default_past
         },
       data: %{}
     }

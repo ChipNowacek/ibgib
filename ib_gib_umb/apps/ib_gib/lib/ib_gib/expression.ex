@@ -164,8 +164,9 @@ defmodule IbGib.Expression do
       :ib => ib_string,
       :gib => "gib",
       :rel8ns => %{
-        "dna" => ["ib#{delim}gib", "ib#{delim}gib"],
+        "dna" => default_dna,
         "ancestor" => ["ib#{delim}gib"],
+        "past" => default_past
         },
       :data => %{}
     }
