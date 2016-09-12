@@ -42,6 +42,8 @@ defmodule WebGib.Router do
     post "/", IbGibController, :index
     get "/:ib_or_ib_gib", IbGibController, :show
 
+    post "/fork", IbGibController, :fork
+
     # get "/login", IbGibController, :login
     # post "/login", IbGibController, :login
   end

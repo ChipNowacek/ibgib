@@ -2,7 +2,8 @@ import * as d3 from 'd3';
 import { d3CircleRadius, d3Scales, d3Colors, d3MenuCommands } from './d3params';
 
 export class IbScape {
-  constructor(graphDiv) {
+  constructor(graphDiv, ibEngine) {
+    this.ibEngine = ibEngine;
     this.graphDiv = graphDiv;
 
     this.circleRadius = 10;
@@ -398,7 +399,7 @@ export class IbScape {
 
     nodeTexts
         .append("title")
-        .text(d => d.text);
+        .text(d => `${d.text}: ${d.description}`);
 
     let nodes = graph.nodes;
 
@@ -441,7 +442,38 @@ export class IbScape {
       this.toggleExpandNode(dIbgib);
       this.destroyStuff();
       this.update(null);
+    } else if (dCommand.name == "fork") {
+      // this.ibEngine.fork(dIbGib.ibgib);
+      d3.select("#ib-scape-details")
+        // .attr("class", null)
+        .attr("class", "ib-pos-abs ib-info-border");
+
+      d3.select("#ib-fork-details")
+        .attr("class", null);
+
+      console.log(`src_ib_gib: ${dIbgib.ibgib}`);
+
+      d3.select("#fork_form_data_src_ib_gib")
+        .attr("value", dIbgib.ibgib);
+          // .attr("class", "ib-pos-abs");
+
+      d3.select("#ib-scape-details-close-btn")
+        .on("click", () => {
+          console.log("cancelled.");
+          d3.select("#ib-scape-details")
+            .attr("class", "ib-hidden ib-pos-abs");
+          d3.select("#ib-fork-details")
+            .attr("class", "ib-hidden");
+        });
+
+      this.tearDownMenu();
+    } else if (dCommand.name == "help") {
+      this.showHelp(dIbGib);
     }
+  }
+
+  showHelp(dIbGib) {
+
   }
 
   toggleExpandNode(dRel8n) {

@@ -27,6 +27,7 @@ var d3MenuCommands = [
     "name": "pic",
     "text": "Pic",
     "icon": "\uf03e",
+    "description": "This will let you upload an image or link to an existing one online.",
     "color": "#1DA8A8"
   },
   {
@@ -34,6 +35,7 @@ var d3MenuCommands = [
     "name": "info",
     "text": "Info",
     "icon": "\uf05a",
+    "description": "This lets you see additional information, like when this ibGib was created.",
     "color": "#CFA1C8"
   },
   {
@@ -41,6 +43,7 @@ var d3MenuCommands = [
     "name": "merge",
     "text": "Merge",
     "icon": "\uf247",
+    "description": "Merging is how we relate existing ibGib to each other.",
     "color": "lightblue"
   },
   {
@@ -48,6 +51,7 @@ var d3MenuCommands = [
     "name": "help",
     "text": "Help",
     "icon": "\uf29c",
+    "description": "This shows general help information for the available commands.",
     "color": "#E8AC4A"
   },
   {
@@ -55,6 +59,7 @@ var d3MenuCommands = [
     "name": "share",
     "text": "Share",
     "icon": "\uf1e0",
+    "description": "Share this ibGib with others on things like Facebook or Twitter.",
     "color": "gold"
   },
   {
@@ -62,6 +67,7 @@ var d3MenuCommands = [
     "name": "comment",
     "text": "Comment",
     "icon": "\uf075",
+    "description": "Add a comment (or any text really) to this ibGib.",
     "color": "#1DA8A8"
   },
   {
@@ -69,6 +75,7 @@ var d3MenuCommands = [
     "name": "star",
     "text": "Star",
     "icon": "\uf005",
+    "description": "Give this ibGib a rating.",
     "color": "gold"
   },
   {
@@ -76,6 +83,7 @@ var d3MenuCommands = [
     "name": "fork",
     "text": "Fork",
     "icon": "\uf259",
+    "description": "Ah, forking...this is how you create a 'new' ibGib or copy from an existing one. You will be using this a lot!",
     "color": "lightblue"
   },
   {
@@ -83,6 +91,7 @@ var d3MenuCommands = [
     "name": "flag",
     "text": "Flag",
     "icon": "\uf024",
+    "description": "Flag this ibGib as having inappropriate content.",
     "color": "#FF4F4F"
   },
   {
@@ -90,6 +99,7 @@ var d3MenuCommands = [
     "name": "thumbs up",
     "text": "Thumbs up",
     "icon": "\uf087",
+    "description": "Give it the thumbs up yo!",
     "color": "gold"
   },
   {
@@ -97,6 +107,7 @@ var d3MenuCommands = [
     "name": "link",
     "text": "Link",
     "icon": "\uf0c1",
+    "description": "Add a link to this ibGib.",
     "color": "#1DA8A8"
   },
   {
@@ -104,6 +115,7 @@ var d3MenuCommands = [
     "name": "meta",
     "text": "Meta",
     "icon": "\uf013",
+    "description": "This contains settings, tweaks, preferences, et cetera, et cetera.",
     "color": "lightgray"
   },
   {
@@ -111,6 +123,7 @@ var d3MenuCommands = [
     "name": "mut8",
     "text": "Mut8",
     "icon": "\u2622",
+    "description": "This will allow you to edit an existing ibGib.",
     "color": "lightblue"
   },
   {
@@ -118,6 +131,7 @@ var d3MenuCommands = [
     "name": "view",
     "text": "View",
     "icon": "\uf06e",
+    "description": "Expand/collapse an ibGib's visible children.",
     "color": "pink"
   },
   {
@@ -125,6 +139,7 @@ var d3MenuCommands = [
     "name": "query",
     "text": "Query",
     "icon": "\uf002",
+    "description": "Create a query to look for other ibGib.",
     "color": "#C7FF4F"
   }
 ];

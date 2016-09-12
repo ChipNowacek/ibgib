@@ -116,6 +116,12 @@ defmodule WebGib.IbGibController do
     json(conn, %{error: @emsg_invalid_ibgib_url})
   end
 
+  @doc """
+  Gets the ib_gib, it's ib, gib, data, and rel8ns in a format for consumption
+  by the d3 engine.
+
+  It duplicates the plain `get/2` call, but it's the best I got at the moment.
+  """
   def getd3(conn, %{"ib_gib" => ib_gib} = params) do
     Logger.warn "mimicking latency....don't do this in production!"
     # Process.sleep(5000)
@@ -137,6 +143,17 @@ defmodule WebGib.IbGibController do
   end
 
   defp get_js_id(), do: "#{RandomGib.Get.some_letters(10)}"
+
+  # Takes a given ib_gib `info` map and converts it to nodes and links for d3.
+  # It creates a node for the ib_gib itself, the root ib^gib, and for each
+  # rel8n and related ib_gib in each rel8n.
+  # E.g. Say an ib_gib has 3 rel8ns as follows:
+  #   "ancestor" => ["one^gib", "two^gib"]
+  #   "dna" => ["three^gib", "four^gib"]
+  #   "rel8d" => ["one^gib", "two^gib", "three^gib", "four^gib"]
+  # Then this will create a node for the ib_gib itself, the root ib^gib, three
+  # "rel8n" group nodes, and **eight** subnodes. It does not de-dupe the rel8d
+  # ib_gib, as it shows each of these rel8d to their corresponding rel8n.
   defp convert_to_d3(info) do
     ib_node_ibgib = get_ib_gib!(info)
     ib_gib_node = %{"id" => "ib#{@delim}gib", "name" => "ib", "cat" => "ibGib", "ibgib" => "ib#{@delim}gib", "js_id" => get_js_id}
