@@ -156,8 +156,9 @@ defmodule WebGib.IbGibController do
   # ib_gib, as it shows each of these rel8d to their corresponding rel8n.
   defp convert_to_d3(info) do
     ib_node_ibgib = get_ib_gib!(info)
+    {ib_node_ib, ib_node_gib} = separate_ib_gib!(ib_node_ibgib)
     ib_gib_node = %{"id" => "ib#{@delim}gib", "name" => "ib", "cat" => "ibGib", "ibgib" => "ib#{@delim}gib", "js_id" => get_js_id}
-    ib_node = %{"id" => ib_node_ibgib, "name" => info["ib"], "cat" => "ib", "ibgib" => ib_node_ibgib, "js_id" => get_js_id}
+    ib_node = %{"id" => ib_node_ibgib, "name" => ib_node_ib, "cat" => "ib", "ibgib" => ib_node_ibgib, "js_id" => get_js_id, "ib" => ib_node_ib, "gib" => ib_node_gib}
 
     nodes = [ib_gib_node, ib_node]
 
@@ -199,8 +200,8 @@ defmodule WebGib.IbGibController do
   end
 
   defp create_rel8n_item_node_and_link(ibgib, rel8n) do
-    {ib, _gib} = separate_ib_gib!(ibgib)
-    item_node = %{"id" => "#{rel8n}: #{ibgib}", "name" => ib, "cat" => rel8n, "ibgib" => "#{ibgib}", "js_id" => get_js_id}
+    {ib, gib} = separate_ib_gib!(ibgib)
+    item_node = %{"id" => "#{rel8n}: #{ibgib}", "name" => ib, "cat" => rel8n, "ibgib" => "#{ibgib}", "js_id" => get_js_id, "ib" => ib, "gib" => gib}
     item_link = %{"source" => rel8n, "target" => "#{rel8n}: #{ibgib}", "value" => 1}
     result = {item_node, item_link}
     Logger.debug "item node: #{inspect result}"

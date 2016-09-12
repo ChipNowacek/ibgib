@@ -456,42 +456,72 @@ export class IbScape {
 
   execHelp(dIbGib) {
 
+    let init = () => {
+      console.log("initializing help...");
+      let text = "Hrmmm...you shouldn't be seeing this! This means that I " +
+        "haven't included help for this yet. Let me know please :-O";
+
+      if (dIbGib.cat === "ib") {
+        text = `This is the ibGib that you're looking at right now. The ib is ${dIbGib.ib}.`
+      } else if (dIbGib.ibgib === "ib^gib") {
+        text = "ibgib yo";
+      } else {
+        text = `ib: ${dIbGib.ib}`;
+      }
+
+      $("#ib-help-details-text").text(text);
+    };
+
+    this.showDetails("help", init);
   }
 
   execGoto(dIbGib) {
     location.href = `/ibgib/${dIbGib.ibgib}`
   }
 
-  execFork(dIbGib) {
+  /**
+   * This uses a convention that each details div is named
+   * `#ib-${cmdName}-details`. It shows the details div, initializes the
+   * specifics to the given cmdName and pops it up. This also takes care of
+   * cancelling, which is effected when the user just clicks somewhere else.
+   */
+  showDetails(cmdName, initFunction) {
     this.ibScapeDetails =
       d3.select("#ib-scape-details")
         // .attr("class", null)
         .attr("class", "ib-pos-abs ib-info-border");
 
     this.details =
-      d3.select("#ib-fork-details")
+      d3.select(`#ib-${cmdName}-details`)
         .attr("class", "ib-details-on");
 
+    // Position the details based on its size.
     let ibScapeDetailsDiv = this.ibScapeDetails.node();
     let detailsRect = ibScapeDetailsDiv.getBoundingClientRect();
     ibScapeDetailsDiv.style.position = "absolute";
 
     // Relative to top left corner of the graph, move up and left half
     // of the details height/width.
-
     ibScapeDetailsDiv.style.left = (this.rect.left + this.center.x - (detailsRect.width / 2)) + "px";
     ibScapeDetailsDiv.style.top = (this.rect.top + this.center.y - (detailsRect.height / 2)) + "px";
 
-    // console.log(`src_ib_gib: ${dIbGib.ibgib}`);
+    // Initialize details specific to given cmd
+    initFunction();
 
-    d3.select("#fork_form_data_src_ib_gib")
-      .attr("value", dIbGib.ibgib);
-        // .attr("class", "ib-pos-abs");
+    // console.log(`src_ib_gib: ${dIbGib.ibgib}`);
 
     // d3.select("#ib-scape-details-close-btn")
     //   .on("click", this.cancelDetails);
 
     this.tearDownMenu(/*cancelDetails*/ false);
+  }
+
+  execFork(dIbGib) {
+    let init = () => {
+      d3.select("#fork_form_data_src_ib_gib")
+        .attr("value", dIbGib.ibgib);
+    };
+    this.showDetails("fork", init);
   }
 
   cancelDetails() {
@@ -637,6 +667,11 @@ export class IbScape {
         });
   }
 
+  /**
+   * Builds the json that d3 requires for showing the menu to the user.
+   * This menu is what shows the commands for the user to do, e.g. "fork",
+   * "merge", etc.
+   */
   getJson(d) {
     // TODO: ib-scape.js getJson: When we have client-side dynamicism (prefs, whatever), then we need to change this to take that into account when building the popup menu.
     let commands = [];
@@ -644,11 +679,14 @@ export class IbScape {
     if (d.cat === "rel8n") {
       commands = ["help", "view"];
     } else if (d.ibgib && d.ibgib === "ib^gib") {
-      commands = ["help", "fork", "meta", "query"];
+      // commands = ["help", "fork", "meta", "query"];
+      commands = ["help", "fork"];
     } else if (d.cat === "ib") {
-      commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link"];
+      // commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link"];
+      commands = ["help", "fork"];
     } else {
-      commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link", "goto"];
+      // commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link", "goto"];
+      commands = ["help", "fork", "goto"];
     }
 
     let nodes = commands.map(cmdName => d3MenuCommands.filter(cmd => cmd.name == cmdName)[0]);

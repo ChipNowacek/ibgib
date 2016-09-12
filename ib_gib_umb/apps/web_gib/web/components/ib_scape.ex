@@ -36,7 +36,11 @@ defmodule WebGib.Web.Components.IbScape do
             end
           end
         end
-        
+
+        div [id: "ib-help-details", class: "ib-details-off"] do
+          p [id: "ib-help-details-text"], do: "Help goes here."
+        end
+
         # div [id: "ib-scape-details-close"] do
         #   button [id: "ib-scape-details-close-btn"], do: "Cancel"
         # end

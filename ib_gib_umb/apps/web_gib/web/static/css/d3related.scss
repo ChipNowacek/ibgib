@@ -56,8 +56,14 @@ line.link {
 
 .ib-details-on {
   // background-color: #CDDEC5;
+  position: relative;
 }
 
 .ib-details-off {
   visibility: hidden;
+  position: absolute;
+}
+
+#ib-help-details-text {
+  width: 250px;
 }
