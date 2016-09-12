@@ -141,7 +141,16 @@ var d3MenuCommands = [
     "icon": "\uf002",
     "description": "Create a query to look for other ibGib.",
     "color": "#C7FF4F"
+  },
+  {
+    "id": "menu-goto",
+    "name": "goto",
+    "text": "Goto",
+    "icon": "\uf0a6",
+    "description": "Navigate to the ibGib.",
+    "color": "#C7FF4F"
   }
+
 ];
 
 export { d3CircleRadius, d3Scales, d3Colors, d3MenuCommands };

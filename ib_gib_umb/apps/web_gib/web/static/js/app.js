@@ -34,18 +34,25 @@ class App {
     console.warn(`init app. Now: ${Date.now()}`);
 
     let divIbGibData = document.querySelector("#ibgib-data");
-    let query = divIbGibData.getAttribute("data-metaqueryibgib");
-    let queryResult = divIbGibData.getAttribute("data-metaqueryresultibgib");
-    let ibgib = divIbGibData.getAttribute("ibgib");
-    let jsonPath = divIbGibData.getAttribute("data-path");
+    if (divIbGibData) {
+      // // I'm not sure if these are really useful anymore.
+      // let query = divIbGibData.getAttribute("data-metaqueryibgib");
+      // let queryResult = divIbGibData.getAttribute("data-metaqueryresultibgib");
 
-    let graphDiv = document.querySelector("#ib-d3-graph-div");
-    this.ibScape = new IbScape(graphDiv);
-    // let data = jsonPath + query;
-    // let data = jsonPath + queryResult;
-    let data = jsonPath + ibgib;
-    // data = "images/miserables.json";
-    this.ibScape.update(data);
+      // The server passes the current ibgib via the ibgib attribute.
+      let ibgib = divIbGibData.getAttribute("ibgib");
+
+      // This is our base json path that we will use to pull anything down.
+      let baseJsonPath = divIbGibData.getAttribute("data-path");
+
+      // Create the ibScape, which is the d3 "landscape" for the ibgib.
+      let graphDiv = document.querySelector("#ib-d3-graph-div");
+      this.ibScape = new IbScape(graphDiv);
+
+      // We set the ibScape to get its json data
+      let data = baseJsonPath + ibgib;
+      this.ibScape.update(data);
+    }
 
     this.ibGibChannel = new IbGibChannel();
     this.ibGibChannel.connect();

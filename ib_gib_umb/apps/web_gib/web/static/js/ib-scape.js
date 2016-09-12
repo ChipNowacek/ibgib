@@ -27,6 +27,7 @@ export class IbScape {
     } else {
       data = t.data;
     }
+    t.rect = t.graphDiv.getBoundingClientRect();
     t.width = t.graphDiv.scrollWidth;
     t.height = t.graphDiv.scrollHeight;
     t.center = {x: t.width / 2, y: t.height / 2};
@@ -41,7 +42,7 @@ export class IbScape {
 
     // background
     let view = svg.append("rect")
-        .attr("fill", "#E7F0E4")
+        .attr("fill", "#F2F7F0")
         .attr("class", "view")
         .attr("x", 0.5)
         .attr("y", 0.5)
@@ -281,7 +282,8 @@ export class IbScape {
         .style("opacity", 1);
 
     if (this.selectedNode) {
-      this.tearDownMenu();
+      this.tearDownMenu(/*cancelDetails*/ true);
+
       delete this.selectedNode;
       delete this.selectedDatum;
     }
@@ -436,44 +438,73 @@ export class IbScape {
     }
   }
 
-  executeMenuCommand(dIbgib, dCommand) {
+  executeMenuCommand(dIbGib, dCommand) {
     if ((dCommand.name === "view" || dCommand.name === "hide") &&
-         dIbgib.cat === "rel8n") {
-      this.toggleExpandNode(dIbgib);
+         dIbGib.cat === "rel8n") {
+      this.toggleExpandNode(dIbGib);
       this.destroyStuff();
       this.update(null);
     } else if (dCommand.name == "fork") {
       // this.ibEngine.fork(dIbGib.ibgib);
+      this.execFork(dIbGib)
+    } else if (dCommand.name == "goto") {
+      this.execGoto(dIbGib);
+    } else if (dCommand.name == "help") {
+      this.execHelp(dIbGib);
+    }
+  }
+
+  execHelp(dIbGib) {
+
+  }
+
+  execGoto(dIbGib) {
+    location.href = `/ibgib/${dIbGib.ibgib}`
+  }
+
+  execFork(dIbGib) {
+    this.ibScapeDetails =
       d3.select("#ib-scape-details")
         // .attr("class", null)
         .attr("class", "ib-pos-abs ib-info-border");
 
+    this.details =
       d3.select("#ib-fork-details")
-        .attr("class", null);
+        .attr("class", "ib-details-on");
 
-      console.log(`src_ib_gib: ${dIbgib.ibgib}`);
+    let ibScapeDetailsDiv = this.ibScapeDetails.node();
+    let detailsRect = ibScapeDetailsDiv.getBoundingClientRect();
+    ibScapeDetailsDiv.style.position = "absolute";
 
-      d3.select("#fork_form_data_src_ib_gib")
-        .attr("value", dIbgib.ibgib);
-          // .attr("class", "ib-pos-abs");
+    // Relative to top left corner of the graph, move up and left half
+    // of the details height/width.
 
-      d3.select("#ib-scape-details-close-btn")
-        .on("click", () => {
-          console.log("cancelled.");
-          d3.select("#ib-scape-details")
-            .attr("class", "ib-hidden ib-pos-abs");
-          d3.select("#ib-fork-details")
-            .attr("class", "ib-hidden");
-        });
+    ibScapeDetailsDiv.style.left = (this.rect.left + this.center.x - (detailsRect.width / 2)) + "px";
+    ibScapeDetailsDiv.style.top = (this.rect.top + this.center.y - (detailsRect.height / 2)) + "px";
 
-      this.tearDownMenu();
-    } else if (dCommand.name == "help") {
-      this.showHelp(dIbGib);
-    }
+    // console.log(`src_ib_gib: ${dIbGib.ibgib}`);
+
+    d3.select("#fork_form_data_src_ib_gib")
+      .attr("value", dIbGib.ibgib);
+        // .attr("class", "ib-pos-abs");
+
+    // d3.select("#ib-scape-details-close-btn")
+    //   .on("click", this.cancelDetails);
+
+    this.tearDownMenu(/*cancelDetails*/ false);
   }
 
-  showHelp(dIbGib) {
+  cancelDetails() {
+    if (this.details) {
+      console.log("cancelled.");
+      d3.select("#ib-scape-details")
+        .attr("class", "ib-pos-abs ib-details-off");
 
+      this.details
+        .attr("class", "ib-details-off");
+
+      delete this.details;
+    }
   }
 
   toggleExpandNode(dRel8n) {
@@ -514,12 +545,16 @@ export class IbScape {
     }
   }
 
-  tearDownMenu() {
+  tearDownMenu(cancelDetails) {
     if (this.menuArea) { d3.select("#ib-d3-graph-menu-area").remove();
       delete this.menuArea;
     }
     if (this.menuVis) { d3.select("#d3menuvis").remove();
       delete this.menuVis;
+    }
+
+    if (cancelDetails) {
+      this.cancelDetails();
     }
 
     d3.select("#ib-d3-graph-menu-div")
@@ -613,7 +648,7 @@ export class IbScape {
     } else if (d.cat === "ib") {
       commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link"];
     } else {
-      commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link"];
+      commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link", "goto"];
     }
 
     let nodes = commands.map(cmdName => d3MenuCommands.filter(cmd => cmd.name == cmdName)[0]);

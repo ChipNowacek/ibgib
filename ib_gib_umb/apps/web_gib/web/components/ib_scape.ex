@@ -14,8 +14,14 @@ defmodule WebGib.Web.Components.IbScape do
          id: "ib-d3-graph-div",
          class: "ib-height-100"] do
 
-      div [id: "ib-scape-details", class: "ib-hidden ib-pos-abs ib-info-border"] do
-        div [id: "ib-fork-details", class: "ib-hidden"] do
+      # Because I can't figure out how to do this (or any of the UI) nicely,
+      # I've created these hidden divs that I show when I need them.
+      # The positioning, showing/hiding is all done of course in the js.
+      div [id: "ib-scape-details", class: "ib-details-off ib-pos-abs"] do
+
+        # Fork details
+        # This is shown when the user presses the fork button on an ibGib.
+        div [id: "ib-fork-details", class: "ib-details-off"] do
           form [action: "/ibgib/fork", method: "post"] do
             input [id: "fork_form_data_src_ib_gib", name: "fork_form_data[src_ib_gib]",type: "hidden", value: ""]
             input [name: "_utf8", type: "hidden", value: "✓"]
@@ -29,10 +35,11 @@ defmodule WebGib.Web.Components.IbScape do
               end
             end
           end
-          div [id: "ib-scape-details-close"] do
-            button [id: "ib-scape-details-close-btn"], do: "Cancel"
-          end
         end
+        
+        # div [id: "ib-scape-details-close"] do
+        #   button [id: "ib-scape-details-close-btn"], do: "Cancel"
+        # end
       end
     end
   end
