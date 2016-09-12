@@ -30,6 +30,7 @@ defmodule IbGib.Constants do
       defp regex_valid_ib_gib, do: ~r/^[\w\d_-\s]+\^[\w\d]+$/
 
       defp default_dna, do: ["ib#{delim}gib"]
+      defp default_past, do: ["ib#{delim}gib"]
 
       # This "stamp" added to gib means that we have generated the ib_gib,
       # and not a user.

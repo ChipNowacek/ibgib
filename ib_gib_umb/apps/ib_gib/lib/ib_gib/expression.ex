@@ -198,10 +198,10 @@ defmodule IbGib.Expression do
     # tricky...
     a_dna = Map.get(a[:rel8ns], "dna", [])
     a_ancestor = Map.get(a[:rel8ns], "ancestor", [])
-    this_rel8ns = %{
-      "dna" => a_dna,
-      "ancestor" => a_ancestor
-    }
+    this_rel8ns = Map.merge(a[:rel8ns], %{"past" => default_past})
+    #   "dna" => a_dna,
+    #   "ancestor" => a_ancestor
+    # }
     Logger.debug "this_rel8ns: #{inspect this_rel8ns}"
     this_info = Map.put(this_info, :rel8ns, this_rel8ns)
     Logger.debug "this_info: #{inspect this_info}"
@@ -419,7 +419,7 @@ defmodule IbGib.Expression do
         Enum.count(result) + 1
       end
     this_data = %{"result_count" => "#{result_count}"}
-    this_rel8ns = %{"dna" => default_dna, "ancestor" => ["query_result#{delim}gib"]}
+    this_rel8ns = %{"dna" => default_dna, "ancestor" => ["query_result#{delim}gib"], "past" => default_past}
     this_info =
       this_info
       |> Map.put(:ib, this_ib)
