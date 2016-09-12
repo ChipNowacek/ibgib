@@ -1,5 +1,6 @@
 import * as d3 from 'd3';
 import { d3CircleRadius, d3Scales, d3Colors, d3MenuCommands } from './d3params';
+// import { nerdAlert } from './text-helpers';
 
 export class IbScape {
   constructor(graphDiv, ibEngine) {
@@ -68,8 +69,8 @@ export class IbScape {
     let simulation = d3.forceSimulation()
         .velocityDecay(0.55)
         .force("link", d3.forceLink().id(function(d) { return d.id; }))
-        .force("charge", d3.forceManyBody().distanceMin(25))
-        .force("collide", d3.forceCollide(3.5 * d3CircleRadius))
+        .force("charge", d3.forceManyBody().strength(50))
+        .force("collide", d3.forceCollide(3 * d3CircleRadius))
         .force("center", d3.forceCenter(t.width / 2, t.height / 2));
     t.simulation = simulation;
 
@@ -106,7 +107,8 @@ export class IbScape {
           } else {
             l.active = true;
           }
-        })
+        });
+
 
         t.workingData = graph;
       }
@@ -461,12 +463,20 @@ export class IbScape {
       let text = "Hrmmm...you shouldn't be seeing this! This means that I " +
         "haven't included help for this yet. Let me know please :-O";
 
-      if (dIbGib.cat === "ib") {
-        text = `This is the ibGib that you're looking at right now. The ib is ${dIbGib.ib}.`
-      } else if (dIbGib.ibgib === "ib^gib") {
-        text = "ibgib yo";
+      if (dIbGib.ibgib === "ib^gib") {
+        text = `The green ibGib is a special ibGib called the 'root'. It is the Alpha and the Omega. It is always the first ancestor, the first dna, the first query result. It is its own ancestor and past.`;
+      } else if (dIbGib.cat === "ib") {
+        text = `The yellow ibGib is your current ibGib. Click the information button to get more details about it. You can expand / collapse any children, fork it, merge it, and more.`;
+      } else if (dIbGib.cat === "ancestor") {
+        text = `This is an 'ancestor' ibGib. Each 'new' ibGib is created by forking an existing one. Ancestors are how we keep track of which ibGib we've forked to produce the current incarnation.`
+      } else if (dIbGib.cat === "past") {
+        text = `This is a 'past' version of your current ibGib. You can think of past ibGib kinda like when you 'undo' a text document. Each time you mut8 an ibGib, either by adding/removing a comment or image, changing a comment, etc., you create a 'new' version in time. ibGib retains all histories of all changes of all ibGib!`
+      } else if (dIbGib.cat === "dna") {
+        text = `Just like a living organism, each ibGib is produced by an internal "dna" code. Each building block is itself an ibGib that you can look at.`;
+      } else if (dIbGib.cat === "rel8n") {
+        text = `This is the '${dIbGib.name}' rel8n node. All of its children are rel8ed to the current ibGib by this rel8n. One ibGib can have multiple rel8ns to any other ibGib. You can expand / collapse the rel8n to show / hide its children by either double-clicking or clicking and selecting the "view" button.`
       } else {
-        text = `ib: ${dIbGib.ib}`;
+        text = `This is one of the related ibGib. Click the information button to get more details about it. You can also navigate to it, expand / collapse any children, fork it, merge it, and more.`;
       }
 
       $("#ib-help-details-text").text(text);
@@ -680,7 +690,7 @@ export class IbScape {
       commands = ["help", "view"];
     } else if (d.ibgib && d.ibgib === "ib^gib") {
       // commands = ["help", "fork", "meta", "query"];
-      commands = ["help", "fork"];
+      commands = ["help", "fork", "goto"];
     } else if (d.cat === "ib") {
       // commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link"];
       commands = ["help", "fork"];

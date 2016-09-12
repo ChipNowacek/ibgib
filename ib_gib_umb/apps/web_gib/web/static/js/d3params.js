@@ -12,13 +12,19 @@ let d3Scales = {
 
 let d3Colors = {
   // "rel8n": "#C3ECFA",
-  "dna": "#FFD5CC",
+  "dna": "#C5DADE",
   "ancestor": "gray",
   "past": "black",
   "ib": "#F2EC41",
   "ibGib": "#76963e",
   "result": "#FAD98C",
-  "default": "#ECC3FA"
+  "comment": "#FFDFAB",
+  "text": "#FFDFAB",
+  "name": "#FFDFAB",
+  "pic": "#ABCBFF",
+  "image": "#ABCBFF",
+  "img": "#ABCBFF",
+  "default": "#AEA6E3"
 };
 
 var d3MenuCommands = [

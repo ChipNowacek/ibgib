@@ -1,4 +1,7 @@
 defmodule WebGib.Mixfile do
+  @moduledoc """
+  Config for web_gib
+  """
   use Mix.Project
 
   def project do
