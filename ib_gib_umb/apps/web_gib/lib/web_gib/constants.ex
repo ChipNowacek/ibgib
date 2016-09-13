@@ -32,6 +32,9 @@ defmodule WebGib.Constants do
       @emsg_invalid_identity "There is a problem with authenticating your identity.\n#{@refresh_msg}"
 
       @emsg_invalid_ibgib_url "Invalid ib_gib given in URL"
+
+      @emsg_invalid_comment "The comment is invalid."
+
     end
   end
   def fork do

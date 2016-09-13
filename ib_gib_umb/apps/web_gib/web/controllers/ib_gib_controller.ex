@@ -10,6 +10,7 @@ defmodule WebGib.IbGibController do
   use WebGib.Web, :controller
 
   alias IbGib.TransformFactory.Mut8Factory
+  alias IbGib.Expression
 
 
   # ----------------------------------------------------------------------------
@@ -63,7 +64,7 @@ defmodule WebGib.IbGibController do
 
     {result, result_term} =
       with {:ok, thing} <- IbGib.Expression.Supervisor.start_expression({ib, gib}),
-         {:ok, thing_info} <- thing |> IbGib.Expression.get_info do
+         {:ok, thing_info} <- thing |> Expression.get_info do
         thing_data = thing_info[:data]
         thing_relations = thing_info[:rel8ns]
         Logger.warn "thing_relations: #{inspect thing_relations}"
@@ -98,12 +99,12 @@ defmodule WebGib.IbGibController do
   # ----------------------------------------------------------------------------
 
   def get(conn, %{"ib_gib" => ib_gib} = params) do
-    Logger.warn "mimicking latency....don't do this in production!"
+    # Logger.warn "mimicking latency....don't do this in production!"
     # Process.sleep(5000)
     Logger.debug "JSON get. conn: #{inspect conn}"
     Logger.debug "JSON get. params: #{inspect params}"
     with {:ok, pid} <- IbGib.Expression.Supervisor.start_expression(ib_gib),
-      {:ok, info} <- pid |> IbGib.Expression.get_info do
+      {:ok, info} <- pid |> Expression.get_info do
       json(conn, info)
     else
       error -> json(conn, %{error: "#{inspect error}"})
@@ -123,12 +124,12 @@ defmodule WebGib.IbGibController do
   It duplicates the plain `get/2` call, but it's the best I got at the moment.
   """
   def getd3(conn, %{"ib_gib" => ib_gib} = params) do
-    Logger.warn "mimicking latency....don't do this in production!"
+    # Logger.warn "mimicking latency....don't do this in production!"
     # Process.sleep(5000)
     Logger.debug "JSON get. conn: #{inspect conn}"
     Logger.debug "JSON get. params: #{inspect params}"
     with {:ok, pid} <- IbGib.Expression.Supervisor.start_expression(ib_gib),
-      {:ok, info} <- pid |> IbGib.Expression.get_info,
+      {:ok, info} <- pid |> Expression.get_info,
       {:ok, d3_info} <- convert_to_d3(info) do
       json(conn, d3_info)
     else
@@ -250,7 +251,7 @@ defmodule WebGib.IbGibController do
       {:ok, mut8d_thing} ->
         Logger.info "mut8d_thing: #{inspect mut8d_thing}"
 
-        mut8d_thing_info = mut8d_thing |> IbGib.Expression.get_info!
+        mut8d_thing_info = mut8d_thing |> Expression.get_info!
         ib = mut8d_thing_info[:ib]
         gib = mut8d_thing_info[:gib]
         ib_gib = get_ib_gib!(ib, gib)
@@ -272,7 +273,7 @@ defmodule WebGib.IbGibController do
       {:ok, mut8d_thing} ->
         Logger.info "mut8d_thing: #{inspect mut8d_thing}"
 
-        mut8d_thing_info = mut8d_thing |> IbGib.Expression.get_info!
+        mut8d_thing_info = mut8d_thing |> Expression.get_info!
         ib = mut8d_thing_info[:ib]
         gib = mut8d_thing_info[:gib]
         ib_gib = get_ib_gib!(ib, gib)
@@ -296,7 +297,7 @@ defmodule WebGib.IbGibController do
       Logger.debug "src_ib_gib: #{src_ib_gib}, key: #{key}, value: #{value}"
 
       {:ok, src} = IbGib.Expression.Supervisor.start_expression(src_ib_gib)
-      src |> IbGib.Expression.mut8(Mut8Factory.add_or_update_key(key, value))
+      src |> Expression.mut8(Mut8Factory.add_or_update_key(key, value))
   end
   defp mut8_impl(src_ib_gib, {:remove_key, key})
       when is_bitstring(src_ib_gib) and
@@ -305,12 +306,12 @@ defmodule WebGib.IbGibController do
       Logger.debug "src_ib_gib: #{src_ib_gib}, key: #{key}"
 
       {:ok, src} = IbGib.Expression.Supervisor.start_expression(src_ib_gib)
-      src |> IbGib.Expression.mut8(Mut8Factory.remove_key(key))
+      src |> Expression.mut8(Mut8Factory.remove_key(key))
   end
+
   # ----------------------------------------------------------------------------
   # Fork
   # ----------------------------------------------------------------------------
-
 
   def fork(conn, %{"fork_form_data" => %{"dest_ib" => dest_ib, "src_ib_gib" => src_ib_gib}} = params) do
     Logger.debug "conn: #{inspect conn}"
@@ -318,7 +319,7 @@ defmodule WebGib.IbGibController do
     Logger.debug "params: #{inspect params}"
     msg = "dest_ib: #{dest_ib}"
 
-    if validate(:dest_ib, dest_ib) do
+    if validate(:dest_ib, dest_ib) and validate(:ib_gib, src_ib_gib) do
       do_fork(conn, %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib})
     else
       conn
@@ -332,7 +333,7 @@ defmodule WebGib.IbGibController do
     Logger.debug "params: #{inspect params}"
     msg = "dest_ib: #{dest_ib}"
 
-    if validate(:dest_ib, dest_ib) do
+    if validate(:dest_ib, dest_ib) and validate(:ib_gib, src_ib_gib) do
       do_fork(conn, %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib})
     else
       conn
@@ -340,36 +341,7 @@ defmodule WebGib.IbGibController do
       |> redirect(to: "/ibgib/#{src_ib_gib}")
     end
   end
-  # def fork(conn, params) do
-  #   Logger.warn "conn: #{inspect conn}"
-  #   Logger.warn "conn.params: #{inspect conn.params}"
-  #   Logger.warn "params: #{inspect params}"
-  # end
 
-  defp validate(:dest_ib, dest_ib) do
-    valid_ib?(dest_ib) or
-      # empty or nil dest_ib will be set automatically.
-      dest_ib === "" or dest_ib === nil
-  end
-  # def fork(conn, %{"fork_form_data" => %{"dest_ib" => "", "src_ib_gib" => src_ib_gib}} = params) do
-  #   dest_ib = ""
-  #   Logger.debug "conn: #{inspect conn}"
-  #   Logger.debug "conn.params: #{inspect conn.params}"
-  #   Logger.debug "params: #{inspect params}"
-  #   msg = "dest_ib: #{dest_ib}"
-  #
-  #   Logger.debug msg
-  #
-  #   do_fork(conn, %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib})
-  # end
-  # def fork(conn, %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib} = params) do
-  #   Logger.debug "index. params: #{inspect params}"
-  #   do_fork(conn, %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib})
-  # end
-  # def fork(conn, %{"src_ib_gib" => src_ib_gib} = params) do
-  #   Logger.debug "index. params: #{inspect params}"
-  #   do_fork(conn, %{"src_ib_gib" => src_ib_gib, "dest_ib" => new_id})
-  # end
 
   defp do_fork(conn, %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib}) do
     Logger.debug "src_ib_gib: #{src_ib_gib}\ndest_ib: #{dest_ib}"
@@ -377,7 +349,7 @@ defmodule WebGib.IbGibController do
       {:ok, forked_thing} ->
         Logger.info "forked_thing: #{inspect forked_thing}"
 
-        forked_thing_info = forked_thing |> IbGib.Expression.get_info!
+        forked_thing_info = forked_thing |> Expression.get_info!
         ib = forked_thing_info[:ib]
         gib = forked_thing_info[:gib]
         ib_gib = get_ib_gib!(ib, gib)
@@ -392,18 +364,6 @@ defmodule WebGib.IbGibController do
         |> put_flash(:error, error_msg)
         |> redirect(to: "/ibgib")
     end
-    # Logger.debug "doesn't exist huh: #{inspect get_session(conn, :never_put)}"
-
-    # Logger.debug "start inspect conn"
-    # Logger.info "#{inspect conn}"
-    # Logger.debug "end inspect conn"
-
-    # Logger.debug "old session message: #{inspect get_session(conn, :message)}"
-    # conn = put_session(conn, :message, "session msg yo: #{new_id}")
-    # Logger.debug "new session message: #{inspect get_session(conn, :message)}"
-    # Logger.debug "session id: #{inspect get_session(conn, :id)}"
-    # message = get_session(conn, :message)
-    # text conn, message
   end
 
   defp fork_impl(root, src_ib_gib \\ @root_ib_gib, dest_ib \\ new_id)
@@ -419,11 +379,172 @@ defmodule WebGib.IbGibController do
         thing
       end
 
-    src |> IbGib.Expression.fork(dest_ib)
+    src |> Expression.fork(dest_ib)
   end
   defp fork_impl(root, src_ib_gib, dest_ib)
     when is_bitstring(src_ib_gib) and is_bitstring(dest_ib) and
          src_ib_gib !== "" and (dest_ib === "" or is_nil(dest_ib)) do
       fork_impl(root, src_ib_gib, new_id)
   end
+
+  # ----------------------------------------------------------------------------
+  # Comment
+  # ----------------------------------------------------------------------------
+
+  def comment(conn, %{"comment_form_data" => %{"comment_text" => comment_text, "src_ib_gib" => src_ib_gib}} = params) do
+    Logger.debug "conn: #{inspect conn}"
+    Logger.debug "conn.params: #{inspect conn.params}"
+    Logger.debug "params: #{inspect params}"
+    msg = "comment_text: #{comment_text}"
+
+    Logger.warn "Testing gettext: #{gettext @emsg_invalid_comment}"
+
+    if validate(:comment_text, comment_text) and
+                validate(:ib_gib, src_ib_gib) and
+                src_ib_gib != @root_ib_gib do
+      do_comment(conn, %{"src_ib_gib" => src_ib_gib, "comment_text" => comment_text})
+    else
+      conn
+      |> put_flash(:error, gettext @emsg_invalid_comment)
+      |> redirect(to: "/ibgib/#{src_ib_gib}")
+    end
+  end
+  def comment(conn, %{"comment_text" => comment_text, "src_ib_gib" => src_ib_gib} = params) do
+    Logger.debug "conn: #{inspect conn}"
+    Logger.debug "conn.params: #{inspect conn.params}"
+    Logger.debug "params: #{inspect params}"
+    msg = "comment_text: #{comment_text}"
+
+    Logger.warn "@root_ib_gib: #{@root_ib_gib}"
+
+    if validate(:comment_text, comment_text) and
+                validate(:ib_gib, src_ib_gib) and
+                src_ib_gib != @root_ib_gib do
+      Logger.warn "comment is valid"
+      Logger.warn "comment is valid"
+      do_comment(conn, %{"src_ib_gib" => src_ib_gib, "comment_text" => comment_text})
+    else
+      Logger.warn "comment is INVALID"
+      Logger.warn "comment is INVALID"
+      conn
+      |> put_flash(:error, gettext @emsg_invalid_comment)
+      |> redirect(to: "/ibgib/#{src_ib_gib}")
+    end
+  end
+
+  defp do_comment(conn, %{"src_ib_gib" => src_ib_gib, "comment_text" => comment_text}) do
+    Logger.debug "src_ib_gib: #{src_ib_gib}\ncomment_text: #{comment_text}"
+    case comment_impl(conn, conn.assigns[:root], src_ib_gib, comment_text) do
+      {:ok, {commented_thing, new_comment}} ->
+
+        commented_thing_info = commented_thing |> Expression.get_info!
+        ib = commented_thing_info[:ib]
+        gib = commented_thing_info[:gib]
+        ib_gib = get_ib_gib!(ib, gib)
+
+        conn
+        |> redirect(to: "/ibgib/#{ib_gib}")
+      other ->
+        # put flash error
+        error_msg = dgettext "error", "Comment failed."
+        Logger.error "#{error_msg}. (#{inspect other})"
+        conn
+        |> put_flash(:error, error_msg)
+        |> redirect(to: "/ibgib")
+    end
+  end
+
+  defp comment_impl(conn, root, src_ib_gib, comment_text)
+    when is_bitstring(src_ib_gib) and is_bitstring(comment_text) and
+         src_ib_gib !== "" and comment_text !== "" do
+    Logger.debug "comment_text: #{comment_text}"
+
+    with {:ok, src} <- IbGib.Expression.Supervisor.start_expression(src_ib_gib),
+      {:ok, comment_gib} <-
+        IbGib.Expression.Supervisor.start_expression("comment#{@delim}gib"),
+      {:ok, comment} <- comment_gib |> Expression.fork("comment"),
+      {:ok, comment} <- comment |> Expression.mut8(%{"text" => comment_text}),
+      {:ok, comment} <-
+        comment |> tag_identification(get_session(conn, @ib_identity_ib_gibs_key)),
+      {:ok, {new_src, new_comment}} <- src |> Expression.rel8(comment, ["comment"]) do
+      {:ok, {new_src, new_comment}}
+    else
+      {:error, reason} when is_bitstring(reason) -> {:error, reason}
+      {:error, reason} -> {:error, inspect reason}
+      error -> {:error, inspect error}
+    end
+  end
+
+  # This adds the current user's identity(s) to the given ib_gib src (pid). The
+  # conn session has the characteristic of returning a single bitstring instead
+  # of an array if there is only one identity, thus we have a naming problem.
+  # So the identity info is either a single identity ib_gib bitstring, or a
+  # list of identity ib_gib bitstrings.
+  # Returns either {:ok, new_ib_gib} or {:error, reason}
+  defp tag_identification(src, identity_info)
+  defp tag_identification(src, identity_ib_gib)
+    when is_pid(src) and is_bitstring(identity_ib_gib) do
+    with {:ok, identity} <-
+      IbGib.Expression.Supervisor.start_expression(identity_ib_gib),
+      {:ok, {new_src, _new_identity}} <-
+        src |> Expression.rel8(identity, ["identity"], @default_rel8ns, %{:gib_stamp => true}) do
+      {:ok, new_src}
+    else
+      {:error, reason} when is_bitstring(reason) -> {:error, reason}
+      {:error, reason} -> {:error, inspect reason}
+      error -> {:error, inspect error}
+    end
+  end
+  defp tag_identification(src, identity_ib_gibs)
+    when is_pid(src) and is_list(identity_ib_gibs) do
+    # For each identity_ib_gib, we pass in the previous src and rel8 it to the
+    # given identity_ib_gib, starting with the passed in src.
+    Enum.reduce(identity_ib_gibs, {:ok, src}, fn (identity_ib_gib, acc) ->
+      case acc do
+        {:ok, this_src} -> tag_identification(this_src, identity_ib_gib)
+
+        # If there is an error at any point, we stop trying to do any more and
+        # just pass the error. Remember, this is not a huge loop, (I don't
+        # plan on it being huge anyway...maybe in the future if this is used
+        # for a bunch of people to "sign" something, who knows.)
+        {:error, reason} -> {:error, reason}
+      end
+    end)
+  end
+
+
+  # ----------------------------------------------------------------------------
+  # Helper
+  # ----------------------------------------------------------------------------
+
+  defp validate(type, instance)
+  defp validate(:dest_ib, dest_ib) do
+    valid_ib?(dest_ib) or
+      # empty or nil dest_ib will be set automatically.
+      dest_ib === "" or dest_ib === nil
+  end
+  defp validate(:comment_text, comment_text) when is_bitstring(comment_text) do
+    # Right now, I don't really care what text is in there. Will need to do
+    # fancier validation later obviously. But I'm not too concerned with text
+    # length at the moment, just so long as it is less than the allowed data
+    # size.
+    Logger.warn "comment_text: #{comment_text}"
+    Logger.warn "string length comment_text: #{String.length(comment_text)}"
+    Logger.warn "max_data_size: #{max_data_size}"
+    String.length(comment_text) < max_data_size
+  end
+  defp validate(:comment_text, comment_text) do
+    Logger.warn "Invalid comment_text: #{inspect comment_text}"
+    false
+  end
+  defp validate(:ib_gib, ib_gib) when is_bitstring(ib_gib) do
+    Logger.info "valid_ib_gib?: #{valid_ib_gib?(ib_gib)}"
+    valid_ib_gib?(ib_gib)
+  end
+  defp validate(:ib_gib, ib_gib) do
+    Logger.info "Invalid ib_gib: #{inspect ib_gib}"
+    false
+  end
+
+
 end

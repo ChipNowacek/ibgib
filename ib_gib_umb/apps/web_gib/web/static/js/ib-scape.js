@@ -68,13 +68,15 @@ export class IbScape {
 
     let simulation = d3.forceSimulation()
         .velocityDecay(0.55)
-        .force("link", d3.forceLink().id(function(d) { return d.id; }))
-        .force("charge", d3.forceManyBody().strength(50))
+        // .force("link", d3.forceLink(links).distance(20).strength(1))
+        .force("link", d3.forceLink().distance(20).strength(.8).id(function(d) { return d.id; }))
+        .force("charge", d3.forceManyBody().strength(25))
         .force("collide", d3.forceCollide(3 * d3CircleRadius))
         .force("center", d3.forceCenter(t.width / 2, t.height / 2));
     t.simulation = simulation;
 
     // Initialize the d3 chart with our data given.
+    // graph is the json with {"nodes": ..., "links": ...}
     d3.json(data, function(error, graph) {
       if (error) throw error;
 
@@ -86,7 +88,7 @@ export class IbScape {
       // Obviously, this is horrifically non-optimized.
       t.rawData = graph;
       if (!t.workingData) {
-        let collapsed = ["ancestor", "past", "dna", "query"]
+        let collapsed = ["ancestor", "past", "dna", "query", "rel8d"]
         let hiddenNodeIds = [];
         graph.nodes.forEach(n => {
           if (collapsed.some(c => c === n.cat)) {
@@ -172,12 +174,8 @@ export class IbScape {
 
     /** Gets the radius of the circle, depending on the data category. */
     function getRadius(d) {
-      let scale = 1;
-      let multiplier = d3Scales[d.cat];
-      if (multiplier || multiplier === 0) {
-        scale *= multiplier
-      }
-      return scale * d3CircleRadius;
+      let multiplier = d3Scales[d.cat] || d3Scales["default"];
+      return d3CircleRadius * multiplier;
     }
 
     /**
@@ -453,7 +451,17 @@ export class IbScape {
       this.execGoto(dIbGib);
     } else if (dCommand.name == "help") {
       this.execHelp(dIbGib);
+    } else if (dCommand.name == "comment") {
+      this.execComment(dIbGib);
     }
+  }
+
+  execComment(dIbGib) {
+    let init = () => {
+      d3.select("#comment_form_data_src_ib_gib")
+        .attr("value", dIbGib.ibgib);
+    };
+    this.showDetails("comment", init);
   }
 
   execHelp(dIbGib) {
@@ -466,7 +474,7 @@ export class IbScape {
       if (dIbGib.ibgib === "ib^gib") {
         text = `The green ibGib is a special ibGib called the 'root'. It is the Alpha and the Omega. It is always the first ancestor, the first dna, the first query result. It is its own ancestor and past.`;
       } else if (dIbGib.cat === "ib") {
-        text = `The yellow ibGib is your current ibGib. Click the information button to get more details about it. You can expand / collapse any children, fork it, merge it, and more.`;
+        text = `The yellow ibGib is your current ibGib. Click the information button to get more details about it. You can expand / collapse any children, fork it, merge it, add comments, pictures, links, and more.`;
       } else if (dIbGib.cat === "ancestor") {
         text = `This is an 'ancestor' ibGib. Each 'new' ibGib is created by forking an existing one. Ancestors are how we keep track of which ibGib we've forked to produce the current incarnation.`
       } else if (dIbGib.cat === "past") {
@@ -476,7 +484,7 @@ export class IbScape {
       } else if (dIbGib.cat === "rel8n") {
         text = `This is the '${dIbGib.name}' rel8n node. All of its children are rel8ed to the current ibGib by this rel8n. One ibGib can have multiple rel8ns to any other ibGib. You can expand / collapse the rel8n to show / hide its children by either double-clicking or clicking and selecting the "view" button.`
       } else {
-        text = `This is one of the related ibGib. Click the information button to get more details about it. You can also navigate to it, expand / collapse any children, fork it, merge it, and more.`;
+        text = `This is one of the related ibGib. Click the information button to get more details about it. You can also navigate to it, expand / collapse any children, fork it, merge it, add comments, pictures, links, and more.`;
       }
 
       $("#ib-help-details-text").text(text);
@@ -693,10 +701,10 @@ export class IbScape {
       commands = ["help", "fork", "goto"];
     } else if (d.cat === "ib") {
       // commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link"];
-      commands = ["help", "fork"];
+      commands = ["help", "fork", "comment"];
     } else {
       // commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link", "goto"];
-      commands = ["help", "fork", "goto"];
+      commands = ["help", "fork", "goto", "comment"];
     }
 
     let nodes = commands.map(cmdName => d3MenuCommands.filter(cmd => cmd.name == cmdName)[0]);

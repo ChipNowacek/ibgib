@@ -20,38 +20,13 @@ Ready to run in production? Please [check our deployment guides](http://www.phoe
   * Source: https://github.com/phoenixframework/phoenix
 
 
-
-
-
-
-
-
-
 ##  To connect to phoenix server with observer
 [Thanks gaslight!](https://teamgaslight.com/blog/microservices-in-phoenix-part-1)
 
 `iex -S mix phoenix.server`
 
 
-## This is what a form output looks like. I'm using this for use with
-[Marker](https://github.com/zambal/marker).
-
-<form accept-charset="UTF-8" action="/ibgib/api/fork" class="ib-circular-menuable" method="post">
-  <input name="_csrf_token" type="hidden" value="dCYHb0MuNn9gHzhcJ3xGEyoVHRstAAAACwU9wDyP8hn3cNpbXLkwEg==">
-  <input name="_utf8" type="hidden" value="✓">        
-  <input id="fork_form_data_dest_ib" name="fork_form_data[dest_ib]" type="text">
-  <input id="fork_form_data_src_ib_gib" name="fork_form_data[src_ib_gib]" type="hidden" value="RNimgKOAtJiOHbLfzWivVKvjirKSfD^C53A82228C71A9D5B0EE75C889878884634D841F925A2AB3609D8FF4AB5899B5">        
-  <div class="ib-tooltip">
-    <button type="submit">
-      <span class="ib-center-glyph glyphicon glyphicon-flash ib-green"></span>
-      <span class="ib-tooltiptext">Fork it yo!</span>
-    </button>
-    <!-- <input type="submit" value="⎇"> -->
-  </div>
-</form>
-
-
-## Notes from channel
+## Notes from channel (todo with token)
 
 // When you connect, you'll often need to authenticate the client.
 // For example, imagine you have an authentication plug, `MyAuth`,
@@ -96,3 +71,9 @@ Ready to run in production? Please [check our deployment guides](http://www.phoe
 //
 // Finally, pass the token on connect as below. Or remove it
 // from connect if you don't care about authentication.
+
+## Thanks
+
+* Favicon
+  * Thanks SO: http://stackoverflow.com/questions/4014823/does-a-favicon-have-to-be-32x32-or-16x16
+  * Thanks http://realfavicongenerator.net/

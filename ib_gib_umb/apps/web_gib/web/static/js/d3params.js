@@ -7,18 +7,21 @@ let d3Scales = {
   "past": 1,
   "ib": 3,
   "ibGib": 5,
-  "result": 2
+  "result": 2,
+  "rel8d": 1.5,
+  "default": 1.5
 };
 
 let d3Colors = {
   // "rel8n": "#C3ECFA",
   "dna": "#C5DADE",
-  "ancestor": "gray",
-  "past": "black",
+  "ancestor": "lightgray",
+  "past": "darkgray",
+  "comment": "#FCA430",
   "ib": "#F2EC41",
   "ibGib": "#76963e",
-  "result": "#FAD98C",
-  "comment": "#FFDFAB",
+  "result": "#3088FC",
+  "rel8d": "#FFDFAB",
   "text": "#FFDFAB",
   "name": "#FFDFAB",
   "pic": "#ABCBFF",

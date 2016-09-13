@@ -1,11 +1,17 @@
 defmodule IbGib.Expression.BasicsTest do
+  @moduledoc """
+  This exercises the very basics of manipulating ib_gib: create root, `fork`,
+  `mut8`, `rel8`. I also have the `instance` in here, but I should probably move
+  that out.
+  """
+
+  
   use ExUnit.Case
-  alias IbGib.{Expression, Helper}
-  # alias IbGib.Data.Repo
-  # import IbGib.Expression
   require Logger
 
-  @delim "^"
+  alias IbGib.{Expression, Helper}
+  use IbGib.Constants, :ib_gib
+
 
   setup context do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(IbGib.Data.Repo)

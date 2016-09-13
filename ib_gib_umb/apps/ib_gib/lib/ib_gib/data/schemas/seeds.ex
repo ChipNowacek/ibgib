@@ -8,12 +8,31 @@ defmodule IbGib.Data.Schemas.Seeds do
   alias IbGib.Data.Repo
   alias IbGib.Data.Schemas.IbGibModel
 
+  # Specifiers allow for basic "inheritance" creation.
+  # Use case: I want a "text^gib", from which "comment^gib", "url^gib", etc.,
+  #           will descend.
+  @specifiers [:text_child]
 
   def insert(ib_atom) when is_atom(ib_atom) do
     ib = Atom.to_string(ib_atom)
     Logger.info "Inserting #{ib}..."
     try do
       case Repo.insert(get_seed(ib_atom)) do
+        {:ok, _struct} -> Logger.warn "Inserted #{ib} successfully."
+        {:error, changeset} -> Logger.error "Insert #{ib} failed. changeset: #{inspect changeset}"
+      end
+    rescue
+      error -> Logger.error "Insert #{ib} failed. changeset: #{inspect error}"
+    end
+    :ok
+  end
+  def insert({ib_atom, specifier})
+    when is_atom(ib_atom) and is_atom(specifier) and
+         (specifier in @specifiers) do
+    ib = Atom.to_string(ib_atom)
+    Logger.info "Inserting #{ib}..."
+    try do
+      case Repo.insert(get_seed({ib, specifier})) do
         {:ok, _struct} -> Logger.warn "Inserted #{ib} successfully."
         {:error, changeset} -> Logger.error "Insert #{ib} failed. changeset: #{inspect changeset}"
       end
@@ -46,6 +65,18 @@ defmodule IbGib.Data.Schemas.Seeds do
         "dna" => default_dna,
         "ancestor" => ["ib#{delim}gib"],
         "past" => default_past
+        },
+      data: %{}
+    }
+  end
+  # This overload is for generating seeds that "descend" (forked from) text^gib.
+  def get_seed({ib_string, :text_child}) do
+    %IbGibModel{
+      ib: ib_string,
+      gib: "gib",
+      rel8ns: %{
+        "dna" => default_dna,
+        "ancestor" => ["ib#{delim}gib", "text^gib"],
         },
       data: %{}
     }

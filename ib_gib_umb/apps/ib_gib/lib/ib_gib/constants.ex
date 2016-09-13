@@ -31,6 +31,7 @@ defmodule IbGib.Constants do
 
       defp default_dna, do: ["ib#{delim}gib"]
       defp default_past, do: ["ib#{delim}gib"]
+      @default_rel8ns ["rel8d"]
 
       # This "stamp" added to gib means that we have generated the ib_gib,
       # and not a user.

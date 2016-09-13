@@ -149,6 +149,7 @@ defmodule IbGib.Expression do
       :rel8ns => %{
         "dna" => ["ib#{delim}gib"],
         "ancestor" => ["ib#{delim}gib"],
+        "past" => default_past
         },
       :data => %{}
     }
@@ -591,8 +592,6 @@ defmodule IbGib.Expression do
       Logger.warn "bad opts: #{inspect opts}"
       bang(mut8(expr_pid, new_data, %{}))
   end
-
-  @default_rel8ns ["rel8d"]
 
   @doc """
   Relates the given source `expr_pid` to the destination `other_pid`. It will
