@@ -129,9 +129,24 @@ defmodule IbGib.TransformFactory do
     when is_map(query_options) do
 
     ib = "query"
-    relations = %{
-      "dna" => ["ib#{delim}gib", "query#{delim}gib"]
-    }
+
+    who = IbGib.QueryOptionsFactory.get_identities(query_options)
+    relations =
+      if who == nil do
+        %{
+          "ancestor" => [@root_ib_gib, "query#{@delim}gib"],
+          "dna" => [@root_ib_gib],
+          "past" => @default_past
+        }
+      else
+        %{
+          "ancestor" => [@root_ib_gib, "query#{@delim}gib"],
+          "dna" => [@root_ib_gib],
+          "past" => @default_past,
+          "identity" => who
+        }
+      end
+
     data = %{
       "options" => query_options
     }

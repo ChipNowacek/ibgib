@@ -431,9 +431,19 @@ defmodule IbGib.Expression do
       |> add_relation("query", b)
       |> add_relation(
           "result",
-          result |> reduce(["ib#{delim}gib"], fn(ib_gib_model, acc) ->
+          result |> reduce(["ib#{@delim}gib"], fn(ib_gib_model, acc) ->
             acc ++ [Helper.get_ib_gib!(ib_gib_model.ib, ib_gib_model.gib)]
           end))
+
+    who = IbGib.QueryOptionsFactory.get_identities(query_options)
+
+    this_info =
+      if who != nil do
+        this_info
+        |> add_relation("identity", who)
+      else
+        this_info
+      end
 
     this_gib = Helper.hash(this_ib, this_info[:rel8ns], this_info[:data])
     this_info = Map.put(this_info, :gib, this_gib)
@@ -927,6 +937,11 @@ defmodule IbGib.Expression do
 
     # 3. Create instance process of query
     Logger.debug "query saved. Now trying to create query expression process."
+    Logger.warn "query saved. Now trying to create query expression process."
+    Logger.warn "query saved. Now trying to create query expression process."
+    Logger.warn "query saved. Now trying to create query expression process."
+    Logger.warn "query saved. Now trying to create query expression process."
+    Logger.warn "query saved. Now trying to create query expression process."
     {:ok, query} = IbGib.Expression.Supervisor.start_expression({query_info[:ib], query_info[:gib]})
 
     # 4. Create new ib_gib by contacting query ib_gib

@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { d3CircleRadius, d3Scales, d3Colors, d3MenuCommands } from './d3params';
+import { d3CircleRadius, d3Scales, d3Colors, d3DefaultCollapsed, d3MenuCommands } from './d3params';
 // import { nerdAlert } from './text-helpers';
 
 export class IbScape {
@@ -88,14 +88,14 @@ export class IbScape {
       // Obviously, this is horrifically non-optimized.
       t.rawData = graph;
       if (!t.workingData) {
-        let collapsed = ["ancestor", "past", "dna", "query", "rel8d"]
+        // let collapsed = ["ancestor", "past", "dna", "query", "rel8d", "identity"]
         let hiddenNodeIds = [];
         graph.nodes.forEach(n => {
-          if (collapsed.some(c => c === n.cat)) {
+          if (d3DefaultCollapsed.some(c => c === n.cat)) {
             n.visible = false;
             n.collapsed = false;
             hiddenNodeIds.push(n.id);
-          } else if (collapsed.some(c => c === n.id)) {
+          } else if (d3DefaultCollapsed.some(c => c === n.id)) {
             n.visible = true;
             n.collapsed = true;
           } else {

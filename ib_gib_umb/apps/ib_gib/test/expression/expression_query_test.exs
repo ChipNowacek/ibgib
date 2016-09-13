@@ -950,4 +950,77 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     assert result_ib_gib_list == expected_result_list
   end
 
+  @tag :capture_log
+  test "Fork a couple ib, query, asked_by single ib_gib bitstring" do
+    test_count = 5
+    {:ok, root} = IbGib.Expression.Supervisor.start_expression()
+
+    a = root |> fork!
+    Logger.configure(level: :info)
+      1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}") |> fork!("ib2_#{&1}")))
+    Logger.configure(level: :debug)
+
+
+    test_identity_ib_gib = "some ib#{@delim}gib"
+    test_identity_ib_gibs = [test_identity_ib_gib]
+    # testing single one in this test
+    query_options =
+      do_query
+      |> asked_by(test_identity_ib_gib)
+    {:ok, query_result} = root |> query(query_options)
+    Logger.debug "query_result: #{inspect query_result}"
+    query_result_info = query_result |> get_info!
+    Logger.warn "query_result_info: #{inspect query_result_info}"
+    assert Enum.count(query_result_info[:rel8ns]["result"]) > 1
+    query_ib_gib = Enum.at(query_result_info[:rel8ns]["query"], 0)
+
+    # this is the query itself (not the result). We want to make sure
+    # that the query itself is "signed" by the `asked_by` part of the
+    # query_options
+    {:ok, query} = IbGib.Expression.Supervisor.start_expression(query_ib_gib)
+    query_info = query |> get_info!
+    Logger.warn "query_info: #{inspect query_info}"
+    Logger.warn "blah: #{inspect query_info[:data]}"
+
+    assert query_info[:rel8ns]["identity"] == test_identity_ib_gibs
+    assert query_result_info[:rel8ns]["identity"] == test_identity_ib_gibs
+  end
+
+  @tag :capture_log
+  test "Fork a couple ib, query, asked_by list of ib_gib bitstrings" do
+    test_count = 5
+    {:ok, root} = IbGib.Expression.Supervisor.start_expression()
+
+    a = root |> fork!
+    Logger.configure(level: :info)
+      1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}") |> fork!("ib2_#{&1}")))
+    Logger.configure(level: :debug)
+
+
+    test_identity_ib_gib = "some ib#{@delim}gib"
+    test_identity_ib_gib2 = "some other ib#{@delim}gib"
+    test_identity_ib_gibs = [test_identity_ib_gib, test_identity_ib_gib2]
+    # testing multiple overload in this test
+    query_options =
+      do_query
+      |> asked_by(test_identity_ib_gibs)
+    {:ok, query_result} = root |> query(query_options)
+    Logger.debug "query_result: #{inspect query_result}"
+    query_result_info = query_result |> get_info!
+    Logger.warn "query_result_info: #{inspect query_result_info}"
+    assert Enum.count(query_result_info[:rel8ns]["result"]) > 1
+    query_ib_gib = Enum.at(query_result_info[:rel8ns]["query"], 0)
+
+    # this is the query itself (not the result). We want to make sure
+    # that the query itself is "signed" by the `asked_by` part of the
+    # query_options
+    {:ok, query} = IbGib.Expression.Supervisor.start_expression(query_ib_gib)
+    query_info = query |> get_info!
+    Logger.warn "query_info: #{inspect query_info}"
+    Logger.warn "blah: #{inspect query_info[:data]}"
+
+    assert query_info[:rel8ns]["identity"] == test_identity_ib_gibs
+    assert query_result_info[:rel8ns]["identity"] == test_identity_ib_gibs
+  end
+
 end

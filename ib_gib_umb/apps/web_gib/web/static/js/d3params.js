@@ -27,8 +27,18 @@ let d3Colors = {
   "pic": "#ABCBFF",
   "image": "#ABCBFF",
   "img": "#ABCBFF",
+  "identity": "#404040",
   "default": "#AEA6E3"
 };
+
+var d3DefaultCollapsed = [
+  "ancestor",
+  "past",
+  "dna",
+  "query",
+  "rel8d",
+  "identity"
+];
 
 var d3MenuCommands = [
   {
@@ -162,4 +172,4 @@ var d3MenuCommands = [
 
 ];
 
-export { d3CircleRadius, d3Scales, d3Colors, d3MenuCommands };
+export { d3CircleRadius, d3Scales, d3Colors, d3DefaultCollapsed, d3MenuCommands };

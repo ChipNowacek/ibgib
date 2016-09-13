@@ -87,6 +87,7 @@ defmodule WebGib.Plugs.EnsureMetaQuery do
       |> where_ib("is", "query_result")
       |> where_rel8ns("ancestor", "with", "ibgib", "query_result#{@delim}gib")
       |> where_rel8ns("identity", "withany", "ibgib", identity_ib_gibs)
+      |> asked_by(identity_ib_gibs)
     {:ok, query_opts}
   end
 

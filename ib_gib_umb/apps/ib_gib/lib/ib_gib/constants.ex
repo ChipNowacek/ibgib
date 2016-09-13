@@ -29,8 +29,9 @@ defmodule IbGib.Constants do
       # delim hardcoded in!!!!
       defp regex_valid_ib_gib, do: ~r/^[\w\d_-\s]+\^[\w\d]+$/
 
-      defp default_dna, do: ["ib#{delim}gib"]
-      defp default_past, do: ["ib#{delim}gib"]
+      defp default_dna, do: ["ib#{@delim}gib"]
+      @default_past ["ib#{@delim}gib"]
+      defp default_past, do: @default_past
       @default_rel8ns ["rel8d"]
 
       # This "stamp" added to gib means that we have generated the ib_gib,

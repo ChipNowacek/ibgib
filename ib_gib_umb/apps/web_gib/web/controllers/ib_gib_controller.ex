@@ -379,7 +379,9 @@ defmodule WebGib.IbGibController do
         thing
       end
 
-    src |> Expression.fork(dest_ib)
+    src
+    leaving off here. need to implement adding the user when forking, mut8ing, etc. Should be a pretty fun process!
+    |> Expression.fork(dest_ib)
   end
   defp fork_impl(root, src_ib_gib, dest_ib)
     when is_bitstring(src_ib_gib) and is_bitstring(dest_ib) and
@@ -545,6 +547,5 @@ defmodule WebGib.IbGibController do
     Logger.info "Invalid ib_gib: #{inspect ib_gib}"
     false
   end
-
 
 end
