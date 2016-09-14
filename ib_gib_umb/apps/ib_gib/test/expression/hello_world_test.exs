@@ -1,10 +1,18 @@
 defmodule IbGib.Expression.HelloWorldTest do
+  @moduledoc """
+  Ah, the dream of ibGib. To be able to do Hello World but with ibGib
+  transforms!
+  """
+
+
   use ExUnit.Case
-  alias IbGib.{Expression, Helper}
-  import IbGib.Expression
   require Logger
 
-  @delim "^"
+  alias IbGib.{Expression, Helper}
+  import IbGib.Expression
+  use IbGib.Constants, :ib_gib
+  use IbGib.Constants, :test
+
 
   setup context do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(IbGib.Data.Repo)
@@ -25,28 +33,28 @@ defmodule IbGib.Expression.HelloWorldTest do
     # Randomized to keep unit tests from overlapping.
     Logger.debug "gonna hw"
     hw_ib = "hw_#{RandomGib.Get.some_letters(5)}"
-    {:ok, hw} = root |> Expression.fork(hw_ib)
+    {:ok, hw} = root |> Expression.fork(@test_identities_1, hw_ib)
     # hw_info = hw_thing |> Expression.get_info!
     # hw_ib_gib = Helper.get_ib_gib!(hw_info[:ib], hw_info[:gib])
 
     Logger.debug "gonna instance hw"
     hw_instance_ib = "hw instance_#{RandomGib.Get.some_letters(5)}"
     {:ok, hw_instance} =
-      hw |> Expression.fork(hw_instance_ib)
+      hw |> Expression.fork(@test_identities_1, hw_instance_ib)
     hw_instance_info = hw_instance |> Expression.get_info!
     hw_instance_ib_gib = Helper.get_ib_gib!(hw_instance_info[:ib], hw_instance_info[:gib])
 
     Logger.debug "gonna text"
     # Randomized to keep unit tests from overlapping.
     text_ib = "text_#{RandomGib.Get.some_letters(5)}"
-    {:ok, text} = root |> Expression.fork(text_ib)
+    {:ok, text} = root |> Expression.fork(@test_identities_1, text_ib)
     # text_info = text_thing |> Expression.get_info!
     # text_ib_gib = Helper.get_ib_gib!(text_info[:ib], text_info[:gib])
 
     Logger.debug "gonna instance text"
     text_instance_ib = "text instance_#{RandomGib.Get.some_letters(5)}"
     {:ok, text_instance} =
-      text |> Expression.fork(text_instance_ib)
+      text |> Expression.fork(@test_identities_1, text_instance_ib)
     text_instance_info = text_instance |> Expression.get_info!
     text_instance_ib_gib = Helper.get_ib_gib!(text_instance_info[:ib], text_instance_info[:gib])
 
@@ -79,28 +87,28 @@ defmodule IbGib.Expression.HelloWorldTest do
     # Randomized to keep unit tests from overlapping.
     Logger.debug "gonna hw"
     hw_ib = "hw_#{RandomGib.Get.some_letters(5)}"
-    {:ok, hw} = root |> Expression.fork(hw_ib)
+    {:ok, hw} = root |> Expression.fork(@test_identities_1, hw_ib)
     # hw_info = hw_thing |> Expression.get_info!
     # hw_ib_gib = Helper.get_ib_gib!(hw_info[:ib], hw_info[:gib])
 
     Logger.debug "gonna instance hw"
     hw_instance_ib = "hw instance_#{RandomGib.Get.some_letters(5)}"
     {:ok, hw_instance} =
-      hw |> Expression.fork(hw_instance_ib)
+      hw |> Expression.fork(@test_identities_1, hw_instance_ib)
     hw_instance_info = hw_instance |> Expression.get_info!
     hw_instance_ib_gib = Helper.get_ib_gib!(hw_instance_info[:ib], hw_instance_info[:gib])
 
     Logger.debug "gonna text"
     # Randomized to keep unit tests from overlapping.
     text_ib = "text_#{RandomGib.Get.some_letters(5)}"
-    {:ok, text} = root |> Expression.fork(text_ib)
+    {:ok, text} = root |> Expression.fork(@test_identities_1, text_ib)
     # text_info = text_thing |> Expression.get_info!
     # text_ib_gib = Helper.get_ib_gib!(text_info[:ib], text_info[:gib])
 
     Logger.debug "gonna instance text"
     text_instance_ib = "text instance_#{RandomGib.Get.some_letters(5)}"
     {:ok, text_instance} =
-      text |> Expression.fork(text_instance_ib)
+      text |> Expression.fork(@test_identities_1, text_instance_ib)
     text_instance_info = text_instance |> Expression.get_info!
     text_instance_ib_gib = Helper.get_ib_gib!(text_instance_info[:ib], text_instance_info[:gib])
 
@@ -135,24 +143,24 @@ defmodule IbGib.Expression.HelloWorldTest do
     # Randomized to keep unit tests from overlapping.
     Logger.debug "gonna hw"
     hw_ib = "hw_#{RandomGib.Get.some_letters(5)}"
-    {:ok, hw} = root |> Expression.fork(hw_ib)
+    {:ok, hw} = root |> Expression.fork(@test_identities_1, hw_ib)
 
     Logger.debug "gonna instance hw"
     hw_instance_ib = "hw instance_#{RandomGib.Get.some_letters(5)}"
     {:ok, {hw_instance, _hw_instance_info, _hw_instance_ib_gib}} =
-      hw |> Expression.gib(:fork, hw_instance_ib)
+      hw |> Expression.gib(:fork, @test_identities_1, hw_instance_ib)
 
     Logger.debug "gonna text"
     # Randomized to keep unit tests from overlapping.
     text_ib = "text_#{RandomGib.Get.some_letters(5)}"
-    {:ok, text} = root |> Expression.fork(text_ib)
+    {:ok, text} = root |> Expression.fork(@test_identities_1, text_ib)
     # text_info = text_thing |> Expression.get_info!
     # text_ib_gib = Helper.get_ib_gib!(text_info[:ib], text_info[:gib])
 
     Logger.debug "gonna instance text"
     text_instance_ib = "text instance_#{RandomGib.Get.some_letters(5)}"
     {:ok, {text_instance, _text_instance_info, _text_instance_ib_gib}} =
-      text |> Expression.gib(:fork, text_instance_ib)
+      text |> Expression.gib(:fork, @test_identities_1, text_instance_ib)
 
     Logger.debug "gonna rel8 'text property'"
     {
@@ -174,13 +182,13 @@ defmodule IbGib.Expression.HelloWorldTest do
   test "hello world with user owner" do
     {:ok, root} = Expression.Supervisor.start_expression
 
-    hw = root |> fork!("Hello World")
+    hw = root |> fork!(@test_identities_1, "Hello World")
     hw_info = hw |> get_info!
 
-    user = root |> fork!("user")
+    user = root |> fork!(@test_identities_1, "user")
     user_info = user |> get_info!
 
-    {_user, bob} = user |> instance!("bob")
+    {_user, bob} = user |> instance!(@test_identities_1, "bob")
     bob_info = bob |> get_info!
     Logger.warn "hw_info: #{inspect hw_info}"
     Logger.warn "user_info: #{inspect user_info}"
@@ -198,7 +206,7 @@ defmodule IbGib.Expression.HelloWorldTest do
   test "playground" do
     {:ok, root} = Expression.Supervisor.start_expression
 
-    hw = root |> fork!
+    hw = root |> fork!(@test_identities_1, Helper.new_id)
     hw_info = hw |> get_info!
     Logger.warn "hw_info: #{inspect hw_info}"
 

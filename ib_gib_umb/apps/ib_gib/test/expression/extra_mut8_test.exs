@@ -1,12 +1,19 @@
 defmodule IbGib.Expression.ExtraMut8Test do
+  @moduledoc """
+  I'm putting additional mut8 tests here. This includes
+  `Mut8Factory.add_or_update_key/3`, `Mut8Factory.remove_key/2`, etc.
+
+  The default mut8 transform adds/overwrites existing keys only.
+  """
+
+
   use ExUnit.Case
   require Logger
 
-  alias IbGib.TransformFactory.Mut8Factory
-  # alias IbGib.Data.Repo
+  use IbGib.Constants, :ib_gib
+  use IbGib.Constants, :test
+  alias IbGib.{Helper, TransformFactory.Mut8Factory}
   import IbGib.Expression
-
-  @delim "^"
 
   setup context do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(IbGib.Data.Repo)
@@ -26,9 +33,10 @@ defmodule IbGib.Expression.ExtraMut8Test do
     test_key = "yo key uh huh"
     test_value = "yo test value uh huh"
 
+
     a =
       root
-      |> fork!
+      |> fork!(@test_identities_1, Helper.new_id)
       |> mut8!(Mut8Factory.add_or_update_key(test_key, test_value))
 
     b =
@@ -50,9 +58,14 @@ defmodule IbGib.Expression.ExtraMut8Test do
     test_value = "yo test value uh huh"
     test_key2 = "key was renamed yo"
 
+    test_identities_1 = @test_identities_1
+
+    Logger.warn "test_identities_1: #{inspect @test_identities_1}"
+    Logger.warn "test_identities_1: #{inspect @test_identities_1}"
+    Logger.warn "test_identities_1: #{inspect @test_identities_1}"
     a =
       root
-      |> fork!
+      |> fork!(test_identities_1, Helper.new_id)
       |> mut8!(Mut8Factory.add_or_update_key(test_key, test_value))
 
     b =

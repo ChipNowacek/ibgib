@@ -29,14 +29,17 @@ defmodule IbGib.Constants do
       # delim hardcoded in!!!!
       defp regex_valid_ib_gib, do: ~r/^[\w\d_-\s]+\^[\w\d]+$/
 
-      defp default_dna, do: ["ib#{@delim}gib"]
-      @default_past ["ib#{@delim}gib"]
-      defp default_past, do: @default_past
+      @default_dna [@root_ib_gib]
+      @default_past [@root_ib_gib]
+      @default_ancestor [@root_ib_gib]
+
       @default_rel8ns ["rel8d"]
 
       # This "stamp" added to gib means that we have generated the ib_gib,
       # and not a user.
       @gib_stamp "ibGib"
+
+      @default_transform_options %{:gib_stamp => false}
 
       # This key prefix is a helper that indicates some meta action for the
       # corresponding key/value entry in a map.
@@ -47,12 +50,25 @@ defmodule IbGib.Constants do
       # to delete that key/value pair.
       defp map_key_meta_prefix, do: "meta__"
       defp rename_operator, do: ">rename>"
+
+      # This is used for creating identities themselves when the user is not
+      # yet authenticated. You need identities to create ib_gib, but you don't
+      # have an ib_gib identity before doing so! Definitely an attack vector
+      # here, which I'm thinking on. But I think the idea is to restrict the
+      # use of this identity to only forking identity^gib and nothing else.
+      # This way, whatever is forked we already consider low trust anyway, as
+      # this is going to be the "lowest" layer of identity (anon session).
+      # We make it an atom so it doesn't pattern match against strings.
+      @bootstrap_identity :bootstrap_identity
+      @identity_ib_gib "identity#{@delim}gib"
     end
   end
 
-  def transforms do
+  # For use with testing.
+  def test do
     quote do
-      @default_transform_options %{:gib_stamp => false}
+      @test_identities_1 ["test identity1#{@delim}gib"]
+      @test_identities_2 ["test identity1#{@delim}gib", "test identity2222222222#{@delim}gib"]
     end
   end
 
@@ -99,6 +115,10 @@ defmodule IbGib.Constants do
 
       defp emsg_query_result_count(count) do
         "Unexpected query result count: #{count}"
+      end
+
+      def emsg_only_instance_bootstrap_identity_from_identity_gib do
+        "The bootstrap identity can only instance the identity#{@delim}gib. All other transforms must have a valid identity."
       end
     end
   end

@@ -63,7 +63,7 @@ defmodule IbGib.Expression do
   import Enum
 
   use IbGib.Constants, :ib_gib
-  use IbGib.Constants, :transforms
+  use IbGib.Constants, :error_msgs
   import IbGib.Macros
   alias IbGib.{TransformFactory, Helper}
   alias IbGib.TransformFactory.Mut8Factory
@@ -147,9 +147,9 @@ defmodule IbGib.Expression do
       :ib => "ib",
       :gib => "gib",
       :rel8ns => %{
-        "dna" => ["ib#{delim}gib"],
-        "ancestor" => ["ib#{delim}gib"],
-        "past" => default_past
+        "dna" => @default_dna,
+        "ancestor" => @default_ancestor,
+        "past" => @default_past
         },
       :data => %{}
     }
@@ -165,9 +165,9 @@ defmodule IbGib.Expression do
       :ib => ib_string,
       :gib => "gib",
       :rel8ns => %{
-        "dna" => default_dna,
-        "ancestor" => ["ib#{delim}gib"],
-        "past" => default_past
+        "dna" => @default_dna,
+        "ancestor" => @default_ancestor,
+        "past" => @default_past
         },
       :data => %{}
     }
@@ -200,7 +200,7 @@ defmodule IbGib.Expression do
     # tricky...
     a_dna = Map.get(a[:rel8ns], "dna", [])
     a_ancestor = Map.get(a[:rel8ns], "ancestor", [])
-    this_rel8ns = Map.merge(a[:rel8ns], %{"past" => default_past})
+    this_rel8ns = Map.merge(a[:rel8ns], %{"past" => @default_past})
     #   "dna" => a_dna,
     #   "ancestor" => a_ancestor
     # }
@@ -421,7 +421,11 @@ defmodule IbGib.Expression do
         Enum.count(result) + 1
       end
     this_data = %{"result_count" => "#{result_count}"}
-    this_rel8ns = %{"dna" => default_dna, "ancestor" => ["query_result#{delim}gib"], "past" => default_past}
+    this_rel8ns = %{
+      "dna" => @default_dna,
+      "ancestor" => @default_ancestor ++ ["query_result#{delim}gib"], 
+      "past" => @default_past
+    }
     this_info =
       this_info
       |> Map.put(:ib, this_ib)
@@ -538,16 +542,19 @@ defmodule IbGib.Expression do
 
   Returns the new forked process' pid or an error.
   """
-  @spec fork(pid, String.t, map) :: {:ok, pid} | {:error, any}
+  @spec fork(pid, list(String.t), String.t, map) :: {:ok, pid} | {:error, any}
   def fork(expr_pid,
-           dest_ib \\ Helper.new_id,
+           identity_ib_gibs,
+           dest_ib,
            opts \\ @default_transform_options)
-  def fork(expr_pid, dest_ib, opts)
-    when is_pid(expr_pid) and is_bitstring(dest_ib) and is_map(opts) do
-    GenServer.call(expr_pid, {:fork, dest_ib, opts})
+  def fork(expr_pid, identity_ib_gibs, dest_ib, opts)
+    when is_pid(expr_pid) and is_list(identity_ib_gibs) and
+         is_bitstring(dest_ib) and is_map(opts) do
+    GenServer.call(expr_pid, {:fork, identity_ib_gibs, dest_ib, opts})
   end
-  def fork(expr_pid, dest_ib, opts)
-    when is_pid(expr_pid) and is_bitstring(dest_ib) do
+  def fork(expr_pid, identity_ib_gibs, dest_ib, opts)
+    when is_pid(expr_pid) and is_list(identity_ib_gibs) and
+         is_bitstring(dest_ib) do
     Logger.warn "bad opts: #{inspect opts}"
     GenServer.call(expr_pid, {:fork, dest_ib, %{}})
   end
@@ -555,18 +562,21 @@ defmodule IbGib.Expression do
   @doc """
   Bang version of `fork/2`.
   """
-  @spec fork!(pid, String.t, map) :: pid | any
+  @spec fork!(pid, list(String.t), String.t, map) :: pid | any
   def fork!(expr_pid,
-            dest_ib \\ Helper.new_id,
+            identity_ib_gibs,
+            dest_ib,
             opts \\ @default_transform_options)
-  def fork!(expr_pid, dest_ib, opts)
-    when is_pid(expr_pid) and is_bitstring(dest_ib) and is_map(opts) do
-    bang(fork(expr_pid, dest_ib, opts))
+  def fork!(expr_pid, identity_ib_gibs, dest_ib, opts)
+    when is_pid(expr_pid) and is_list(identity_ib_gibs) and
+         is_bitstring(dest_ib) and is_map(opts) do
+    bang(fork(expr_pid, identity_ib_gibs, dest_ib, opts))
   end
-  def fork!(expr_pid, dest_ib, opts)
-    when is_pid(expr_pid) and is_bitstring(dest_ib) do
+  def fork!(expr_pid, identity_ib_gibs, dest_ib, opts)
+    when is_pid(expr_pid) and is_list(identity_ib_gibs) and
+         is_bitstring(dest_ib) do
     Logger.warn "bad opts: #{inspect opts}"
-    bang(fork(expr_pid, dest_ib, %{}))
+    bang(fork(expr_pid, identity_ib_gibs, dest_ib, %{}))
   end
 
   @doc """
@@ -719,18 +729,25 @@ defmodule IbGib.Expression do
     Returns a new version of the given `expr_pid` and the new forked expression.
     E.g. {pid_a0} returns {pid_a1, pid_a_instance)
     """
-    @spec instance(pid, String.t, map) :: {:ok, {pid, pid}} | {:error, any}
+    @spec instance(pid, list(String.t), String.t, map) :: {:ok, {pid, pid}} | {:error, any}
     def instance(expr_pid,
-                 dest_ib \\ Helper.new_id,
+                 identity_ib_gibs,
+                 dest_ib,
                  opts \\ @default_transform_options)
-    def instance(expr_pid, dest_ib, opts)
+    def instance(expr_pid, @bootstrap_identity = identity_ib_gib, dest_ib, opts)
       when is_pid(expr_pid) and is_bitstring(dest_ib) and is_map(opts) do
-      GenServer.call(expr_pid, {:instance, dest_ib, opts})
+      GenServer.call(expr_pid, {:instance_bootstrap, identity_ib_gib, dest_ib, opts})
     end
-    def instance(expr_pid, dest_ib, opts)
-      when is_pid(expr_pid) and is_bitstring(dest_ib) do
+    def instance(expr_pid, identity_ib_gibs, dest_ib, opts)
+      when is_pid(expr_pid) and is_list(identity_ib_gibs) and
+           is_bitstring(dest_ib) and is_map(opts) do
+      GenServer.call(expr_pid, {:instance, identity_ib_gibs, dest_ib, opts})
+    end
+    def instance(expr_pid, identity_ib_gibs, dest_ib, opts)
+      when is_pid(expr_pid) and is_list(identity_ib_gibs) and
+           is_bitstring(dest_ib) do
       Logger.warn "bad opts: #{inspect opts}"
-      GenServer.call(expr_pid, {:instance, dest_ib, %{}})
+      GenServer.call(expr_pid, {:instance, identity_ib_gibs, dest_ib, %{}})
     end
 
     @doc """
@@ -738,16 +755,19 @@ defmodule IbGib.Expression do
     """
     @spec instance!(pid, String.t, map) :: {pid, pid} | any
     def instance!(expr_pid,
-                  dest_ib \\ Helper.new_id,
+                  identity_ib_gibs,
+                  dest_ib,
                   opts \\ @default_transform_options)
-    def instance!(expr_pid, dest_ib, opts)
-      when is_pid(expr_pid) and is_bitstring(dest_ib) and is_map(opts) do
-      bang(instance(expr_pid, dest_ib, opts))
+    def instance!(expr_pid, identity_ib_gibs, dest_ib, opts)
+      when is_pid(expr_pid) and is_list(identity_ib_gibs) and
+           is_bitstring(dest_ib) and is_map(opts) do
+      bang(instance(expr_pid, identity_ib_gibs, dest_ib, opts))
     end
-    def instance!(expr_pid, dest_ib, opts)
-      when is_pid(expr_pid) and is_bitstring(dest_ib) do
+    def instance!(expr_pid, identity_ib_gibs, dest_ib, opts)
+      when is_pid(expr_pid) and is_list(identity_ib_gibs) and
+           is_bitstring(dest_ib) do
       Logger.warn "bad opts: #{inspect opts}"
-      bang(instance(expr_pid, dest_ib, %{}))
+      bang(instance(expr_pid, identity_ib_gibs, dest_ib, %{}))
     end
 
   # ----------------------------------------------------------------------------
@@ -758,8 +778,8 @@ defmodule IbGib.Expression do
   `gib` versions of `fork`, `mut8`, and `rel8` both perform the relevant
   operation and return the info as well as the ib_gib of the new thing.
   """
-  def gib(expr_pid, :fork, dest_ib) do
-    next = expr_pid |> fork!(dest_ib)
+  def gib(expr_pid, :fork, identity_ib_gibs, dest_ib) do
+    next = expr_pid |> fork!(identity_ib_gibs, dest_ib)
     next_info = next |> IbGib.Expression.get_info!
     next_ib_gib = Helper.get_ib_gib!(next_info[:ib], next_info[:gib])
     {:ok, {next, next_info, next_ib_gib}}
@@ -809,9 +829,9 @@ defmodule IbGib.Expression do
     Logger.metadata([x: :contact])
     {:reply, contact_impl(other_expr_pid, state), state}
   end
-  def handle_call({:fork, dest_ib, opts}, _from, state) do
+  def handle_call({:fork, identity_ib_gibs, dest_ib, opts}, _from, state) do
     Logger.metadata([x: :fork])
-    {:reply, fork_impl(dest_ib, opts, state), state}
+    {:reply, fork_impl(identity_ib_gibs, dest_ib, opts, state), state}
   end
   def handle_call({:mut8, new_data, opts}, _from, state) do
     Logger.metadata([x: :mut8])
@@ -823,9 +843,13 @@ defmodule IbGib.Expression do
       rel8_impl(other_pid, src_rel8ns, dest_rel8ns, opts, state)
     {:reply, {:ok, {new_this, new_other}}, state}
   end
-  def handle_call({:instance, dest_ib, opts}, _from, state) do
+  def handle_call({:instance_bootstrap, @bootstrap_identity, dest_ib, opts}, _from, state) do
+    Logger.metadata([x: :instance_bootstrap])
+    {:reply, instance_impl(@bootstrap_identity, dest_ib, opts, state), state}
+  end
+  def handle_call({:instance, identity_ib_gibs, dest_ib, opts}, _from, state) do
     Logger.metadata([x: :instance])
-    {:reply, instance_impl(dest_ib, opts, state), state}
+    {:reply, instance_impl(identity_ib_gibs, dest_ib, opts, state), state}
   end
   def handle_call({:query, query_options}, _from, state) do
     Logger.metadata([x: :query])
@@ -836,14 +860,14 @@ defmodule IbGib.Expression do
     {:reply, {:ok, state[:info]}, state}
   end
 
-  defp fork_impl(dest_ib, opts, state) do
+  defp fork_impl(identity_ib_gibs, dest_ib, opts, state) do
     Logger.debug "state: #{inspect state}"
     info = state[:info]
     ib = info[:ib]
     gib = info[:gib]
 
     # 1. Create transform
-    fork_info = TransformFactory.fork(Helper.get_ib_gib!(ib, gib), dest_ib, opts)
+    fork_info = TransformFactory.fork(Helper.get_ib_gib!(ib, gib), identity_ib_gibs, dest_ib, opts)
     Logger.debug "fork_info: #{inspect fork_info}"
 
     # 2. Save transform
@@ -906,7 +930,20 @@ defmodule IbGib.Expression do
     {:ok, {new_this, new_other}}
   end
 
-  defp instance_impl(dest_ib, opts, state) do
+  defp instance_impl(@bootstrap_identity, dest_ib, opts, state)
+    when is_atom(@bootstrap_identity) do
+    Logger.warn "state: #{inspect state}"
+    Logger.warn "state: #{inspect state}"
+    Logger.warn "state: #{inspect state}"
+    this_ib_gib = Helper.get_ib_gib!(state[:info])
+    Logger.warn "this_ib_gib: #{this_ib_gib}"
+    if this_ib_gib == @identity_ib_gib do
+      instance_impl(["bootstrap_identity#{@delim}gib"], dest_ib, opts, state)
+    else
+      {:error, emsg_only_instance_bootstrap_identity_from_identity_gib}
+    end
+  end
+  defp instance_impl(identity_ib_gibs, dest_ib, opts, state) do
     Logger.debug "_state_: #{inspect state}"
     Logger.debug "dest_ib: #{dest_ib}"
 
@@ -916,7 +953,7 @@ defmodule IbGib.Expression do
     # info = state[:info]
     # fork_dest_ib = info[:ib]
     # fork_dest_ib = Helper.new_id
-    {:ok, instance} = fork_impl(dest_ib, opts, state)
+    {:ok, instance} = fork_impl(identity_ib_gibs, dest_ib, opts, state)
     Logger.debug "instance: #{inspect instance}"
     {:ok, {new_this, new_instance}} =
       rel8_impl(instance, ["instance"], ["instance_of"], opts, state)

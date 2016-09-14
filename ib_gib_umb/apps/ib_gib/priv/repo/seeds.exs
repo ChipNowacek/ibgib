@@ -21,6 +21,7 @@ alias IbGib.Data.Schemas.Seeds
 Seeds.insert(:identity)
 Seeds.insert(:session)
 Seeds.insert(:email)
+Seeds.insert(:bootstrap_identity)
 
 # Text Related
 Seeds.insert(:text)

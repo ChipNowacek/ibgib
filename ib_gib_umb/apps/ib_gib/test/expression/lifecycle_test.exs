@@ -1,10 +1,17 @@
 defmodule IbGib.Expression.LifecycleTest do
+  @moduledoc """
+  We mimic killing processes to see what happens here.
+  """
+
+
   use ExUnit.Case
-  alias IbGib.Helper
-  import IbGib.Expression
   require Logger
 
-  @delim "^"
+  alias IbGib.Helper
+  import IbGib.Expression
+  use IbGib.Constants, :ib_gib
+  use IbGib.Constants, :test
+
 
   setup context do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(IbGib.Data.Repo)
@@ -26,9 +33,9 @@ defmodule IbGib.Expression.LifecycleTest do
     test_count = 100
     {:ok, root} = IbGib.Expression.Supervisor.start_expression()
 
-    a = root |> fork!
+    a = root |> fork!(@test_identities_1, Helper.new_id)
     Logger.configure(level: :info)
-    1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}")))
+    1..test_count |> Enum.each(&(a |> fork!(@test_identities_1, "ib_#{&1}")))
     Logger.configure(level: :debug)
   end
 
@@ -36,15 +43,15 @@ defmodule IbGib.Expression.LifecycleTest do
   test "create expressions, kill one, others should still be alive" do
     {:ok, root} = IbGib.Expression.Supervisor.start_expression()
 
-    a = root |> fork!
+    a = root |> fork!(@test_identities_1, Helper.new_id)
     a_info = a |> get_info!
     a_ib_gib = Helper.get_ib_gib!(a_info[:ib], a_info[:gib])
 
-    b = a |> fork!
+    b = a |> fork!(@test_identities_1, Helper.new_id)
     b_info = b |> get_info!
     b_ib_gib = Helper.get_ib_gib!(b_info[:ib], b_info[:gib])
 
-    c = b |> fork!
+    c = b |> fork!(@test_identities_1, Helper.new_id)
     c_info = c |> get_info!
     c_ib_gib = Helper.get_ib_gib!(c_info[:ib], c_info[:gib])
 
@@ -74,15 +81,15 @@ defmodule IbGib.Expression.LifecycleTest do
   test "create expressions, kill one, start back up on demand" do
     {:ok, root} = IbGib.Expression.Supervisor.start_expression()
 
-    a = root |> fork!
+    a = root |> fork!(@test_identities_1, Helper.new_id)
     a_info = a |> get_info!
     _a_ib_gib = Helper.get_ib_gib!(a_info[:ib], a_info[:gib])
 
-    b = a |> fork!
+    b = a |> fork!(@test_identities_1, Helper.new_id)
     b_info = b |> get_info!
     _b_ib_gib = Helper.get_ib_gib!(b_info[:ib], b_info[:gib])
 
-    c = b |> fork!
+    c = b |> fork!(@test_identities_1, Helper.new_id)
     c_info = c |> get_info!
     c_ib_gib = Helper.get_ib_gib!(c_info[:ib], c_info[:gib])
 
@@ -91,13 +98,13 @@ defmodule IbGib.Expression.LifecycleTest do
     # we fork another thing to be sure that the registry has processed
     # the removal and avoid the race condition of the test_kill and the
     # following c2 registration.
-    _dummy = root |> fork!
+    _dummy = root |> fork!(@test_identities_1, Helper.new_id)
 
     {:ok, c2} = IbGib.Expression.Supervisor.start_expression(c_ib_gib)
     Logger.debug "c2: #{inspect c2}"
     c2_info = c2 |> get_info!
 
-    d = c2 |> fork!
+    d = c2 |> fork!(@test_identities_1, Helper.new_id)
     d_info = d |> get_info!
     Logger.warn "c2_info: #{inspect c2_info}"
     Logger.warn "d_info: #{inspect d_info}"

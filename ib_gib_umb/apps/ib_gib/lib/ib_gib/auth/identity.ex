@@ -199,10 +199,14 @@ defmodule IbGib.Auth.Identity do
     {:error, emsg_invalid_args([identity_id, query_off_of])}
   end
 
+  # no `existing_ib_gib` means that we do not already have an identity
+  # associated with the current user. This means that the user is not
+  # authenticated, and we will need to bootstrap an identity for them.
   defp create_identity_if_needed(existing_ib_gib, root_identity, identity_ib)
     when is_nil(existing_ib_gib) do
     with {:ok, {_, identity}} <-
-           root_identity |> instance(identity_ib, %{:gib_stamp => true}),
+           root_identity
+           |> instance(@bootstrap_identity, identity_ib, %{:gib_stamp => true}),
       {:ok, identity_info} <- identity |> get_info,
       {:ok, identity_ib_gib} <- get_ib_gib(identity_info) do
       {:ok, {identity_ib_gib, identity_info, identity}}

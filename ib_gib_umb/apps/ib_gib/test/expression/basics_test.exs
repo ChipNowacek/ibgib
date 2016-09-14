@@ -5,12 +5,13 @@ defmodule IbGib.Expression.BasicsTest do
   that out.
   """
 
-  
+
   use ExUnit.Case
   require Logger
 
   alias IbGib.{Expression, Helper}
   use IbGib.Constants, :ib_gib
+  use IbGib.Constants, :test
 
 
   setup context do
@@ -45,7 +46,7 @@ defmodule IbGib.Expression.BasicsTest do
     {result, expr_pid} = Expression.Supervisor.start_expression()
     assert result === :ok
 
-    {fork_result, new_forked_pid} = Expression.fork(expr_pid)
+    {fork_result, new_forked_pid} = Expression.fork(expr_pid, @test_identities_1, Helper.new_id)
     assert fork_result === :ok
     assert is_pid(new_forked_pid)
 
@@ -57,7 +58,7 @@ defmodule IbGib.Expression.BasicsTest do
     {result, expr_pid} = Expression.Supervisor.start_expression()
     assert result === :ok
 
-    {fork_result, new_forked_pid} = Expression.fork(expr_pid)
+    {fork_result, new_forked_pid} = Expression.fork(expr_pid, @test_identities_1, Helper.new_id)
     assert fork_result === :ok
     assert is_pid(new_forked_pid)
 
@@ -89,7 +90,7 @@ defmodule IbGib.Expression.BasicsTest do
     {result, expr_pid} = Expression.Supervisor.start_expression()
     assert result === :ok
 
-    {fork_result, new_forked_pid} = Expression.fork(expr_pid, text)
+    {fork_result, new_forked_pid} = Expression.fork(expr_pid, @test_identities_1, text)
     assert fork_result === :ok
     assert is_pid(new_forked_pid)
 
@@ -116,7 +117,7 @@ defmodule IbGib.Expression.BasicsTest do
     {result, expr_pid} = Expression.Supervisor.start_expression()
     assert result === :ok
 
-    {fork_result, new_forked_pid} = Expression.fork(expr_pid, text)
+    {fork_result, new_forked_pid} = Expression.fork(expr_pid, @test_identities_1, text)
     assert fork_result === :ok
     assert is_pid(new_forked_pid)
 
@@ -130,7 +131,7 @@ defmodule IbGib.Expression.BasicsTest do
     forked_ib_gib = Helper.get_ib_gib!(forked_info[:ib], forked_info[:gib])
     Logger.debug "forked_ib_gib: #{forked_ib_gib}"
 
-    {fork_result_b, new_forked_pid_b} = Expression.fork(new_forked_pid, text)
+    {fork_result_b, new_forked_pid_b} = Expression.fork(new_forked_pid, @test_identities_1, text)
     assert fork_result_b === :ok
     assert is_pid(new_forked_pid_b)
     assert new_forked_pid_b !== new_forked_pid
@@ -163,7 +164,7 @@ defmodule IbGib.Expression.BasicsTest do
     {result, ib_gib_pid} = Expression.Supervisor.start_expression()
     assert result === :ok
 
-    {fork_result, new_forked_pid} = Expression.fork(ib_gib_pid, text)
+    {fork_result, new_forked_pid} = Expression.fork(ib_gib_pid, @test_identities_1, text)
     assert fork_result === :ok
     assert is_pid(new_forked_pid)
 
@@ -177,7 +178,7 @@ defmodule IbGib.Expression.BasicsTest do
     forked_ib_gib = Helper.get_ib_gib!(forked_info[:ib], forked_info[:gib])
     Logger.debug "forked_ib_gib: #{forked_ib_gib}"
 
-    {fork_result_b, _reason_b} = Expression.fork(ib_gib_pid, text)
+    {fork_result_b, _reason_b} = Expression.fork(ib_gib_pid, @test_identities_1, text)
     Logger.debug "fork_result_b: #{inspect fork_result_b}"
 
     # I've changed this so that it will NOT error out
@@ -196,7 +197,7 @@ defmodule IbGib.Expression.BasicsTest do
     {result, root} = Expression.Supervisor.start_expression()
     assert result === :ok
 
-    {fork_root_for_text_result, text_thing} = root |> Expression.fork(text_ib)
+    {fork_root_for_text_result, text_thing} = root |> Expression.fork(@test_identities_1, text_ib)
     assert fork_root_for_text_result === :ok
     assert is_pid(text_thing)
 
@@ -210,7 +211,7 @@ defmodule IbGib.Expression.BasicsTest do
 
     text_instance_ib = "text instance_#{RandomGib.Get.some_letters(5)}"
     {fork_text_for_instance_result, text_instance} =
-      text_thing |> Expression.fork(text_instance_ib)
+      text_thing |> Expression.fork(@test_identities_1, text_instance_ib)
 
     assert fork_text_for_instance_result === :ok
     assert is_pid(text_instance)
@@ -236,7 +237,7 @@ defmodule IbGib.Expression.BasicsTest do
 
     # Randomized to keep unit tests from overlapping.
     hw_ib = "hw_#{RandomGib.Get.some_letters(5)}"
-    {:ok, {hw, hw_info, hw_ib_gib}} = root |> Expression.gib(:fork, hw_ib)
+    {:ok, {hw, hw_info, hw_ib_gib}} = root |> Expression.gib(:fork, @test_identities_1, hw_ib)
     Logger.debug "hw: #{inspect hw}\nhw_info: #{inspect hw_info}\nhw_ib_gib: #{hw_ib_gib}"
 
     hw_info2 = hw |> Expression.get_info!
@@ -253,7 +254,7 @@ defmodule IbGib.Expression.BasicsTest do
 
     # Randomized to keep unit tests from overlapping.
     hw_ib = "hw_#{RandomGib.Get.some_letters(5)}"
-    {:ok, {hw, hw_info, hw_ib_gib}} = root |> Expression.gib(:fork, hw_ib)
+    {:ok, {hw, hw_info, hw_ib_gib}} = root |> Expression.gib(:fork, @test_identities_1, hw_ib)
     Logger.debug "hw: #{inspect hw}\nhw_info: #{inspect hw_info}\nhw_ib_gib: #{hw_ib_gib}"
 
     prop = "prop_name"
@@ -272,11 +273,11 @@ defmodule IbGib.Expression.BasicsTest do
 
     # Randomized to keep unit tests from overlapping.
     a_ib = "a_#{RandomGib.Get.some_letters(5)}"
-    {:ok, {a, a_info, a_ib_gib}} = root |> Expression.gib(:fork, a_ib)
+    {:ok, {a, a_info, a_ib_gib}} = root |> Expression.gib(:fork, @test_identities_1, a_ib)
     Logger.warn "a: #{inspect a}\na_info: #{inspect a_info}\na_ib_gib: #{a_ib_gib}"
 
     b_ib = "b_#{RandomGib.Get.some_letters(5)}"
-    {:ok, {b, b_info, b_ib_gib}} = root |> Expression.gib(:fork, b_ib)
+    {:ok, {b, b_info, b_ib_gib}} = root |> Expression.gib(:fork, @test_identities_1, b_ib)
     Logger.warn "b: #{inspect b}\nb_info: #{inspect b_info}\nb_ib_gib: #{b_ib_gib}"
     Logger.warn "0000"
 
@@ -300,11 +301,11 @@ defmodule IbGib.Expression.BasicsTest do
 
     # Randomized to keep unit tests from overlapping.
     a_ib = "a_#{RandomGib.Get.some_letters(5)}"
-    {:ok, {a, a_info, a_ib_gib}} = root |> Expression.gib(:fork, a_ib)
+    {:ok, {a, a_info, a_ib_gib}} = root |> Expression.gib(:fork, @test_identities_1, a_ib)
     Logger.debug "a: #{inspect a}\na_info: #{inspect a_info}\na_ib_gib: #{a_ib_gib}"
 
     Logger.warn "gonna instance"
-    {:ok, {new_a, a_instance}} = a |> Expression.instance
+    {:ok, {new_a, a_instance}} = a |> Expression.instance(@test_identities_1, Helper.new_id)
     Logger.debug "a: #{inspect a}\n\nnew_a: #{inspect new_a}\ninstance: #{inspect a_instance}"
 
     new_a_info = new_a |> Expression.get_info!

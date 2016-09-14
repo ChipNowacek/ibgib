@@ -4,11 +4,13 @@ defmodule IbGib.Auth.AuthTest do
   """
 
   use ExUnit.Case
-  use IbGib.Constants, :ib_gib
+  require Logger
 
+  use IbGib.Constants, :ib_gib
+  use IbGib.Constants, :test
   alias IbGib.{Expression, Helper, Auth.Identity}
   import IbGib.Expression
-  require Logger
+
 
   setup context do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(IbGib.Data.Repo)

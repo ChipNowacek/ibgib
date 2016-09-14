@@ -7,22 +7,22 @@ defmodule IbGib.TransformFactory do
   (2016/08/20) no other consumers need to use these.
   """
 
+
   require Logger
 
   alias IbGib.Helper
   use IbGib.Constants, :ib_gib
-  use IbGib.Constants, :transforms
 
-  @default_rel8ns ["rel8d"]
 
   @doc """
   Creates a fork with source `src_ib_gib` and dest_ib of given `dest_ib`. In
   most cases, no `dest_ib` need be specified, so it will just create a new
   random `ib`.
   """
-  @spec fork(String.t, String.t) :: map
-  def fork(src_ib_gib \\ "ib#{delim}gib",
-           dest_ib \\ Helper.new_id,
+  @spec fork(String.t, list(String.t), String.t, map) :: map
+  def fork(src_ib_gib, # \\ "ib#{delim}gib",
+           identity_ib_gibs,
+           dest_ib,
            opts \\ @default_transform_options)
     when is_bitstring(src_ib_gib) and is_bitstring(dest_ib) and is_map(opts) do
     Logger.debug "opts: #{inspect opts}"

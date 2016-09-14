@@ -6,11 +6,15 @@ defmodule IbGib.Expression.ExpressionQueryTest do
   See `IbGib.Expression.query/6` and `IbGib.Data.Schemas.IbGib.QueryTest`.
   """
 
+
   use ExUnit.Case
-  use IbGib.Constants, :ib_gib
+  require Logger
+
   alias IbGib.{Helper, Auth.Identity}
   import IbGib.{Expression, QueryOptionsFactory}
-  require Logger
+  use IbGib.Constants, :ib_gib
+  use IbGib.Constants, :test
+
 
   setup context do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(IbGib.Data.Repo)
@@ -32,9 +36,9 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     test_count = 5
     {:ok, root} = IbGib.Expression.Supervisor.start_expression()
 
-    a = root |> fork!
+    a = root |> fork!(@test_identities_1, Helper.new_id)
     Logger.configure(level: :info)
-      1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}") |> fork!("ib2_#{&1}")))
+      1..test_count |> Enum.each(&(a |> fork!(@test_identities_1, "ib_#{&1}") |> fork!(@test_identities_1, "ib2_#{&1}")))
     Logger.configure(level: :debug)
 
     query_options = do_query
@@ -51,15 +55,15 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     {:ok, root} = IbGib.Expression.Supervisor.start_expression()
 
     # Create some random other ib_gib
-    a = root |> fork!
+    a = root |> fork!(@test_identities_1, Helper.new_id)
 
     Logger.configure(level: :info)
-    1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}")))
+    1..test_count |> Enum.each(&(a |> fork!(@test_identities_1, "ib_#{&1}")))
     Logger.configure(level: :debug)
 
     # Create the one ib_gib we want to query for
     test_ib = "hey this is a test ib"
-    {:ok, {_test, _test_info, test_ib_gib}} = root |> gib(:fork, test_ib)
+    {:ok, {_test, _test_info, test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
 
     query_options =
       do_query
@@ -85,15 +89,15 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     {:ok, root} = IbGib.Expression.Supervisor.start_expression()
 
     # Create some random other ib_gib
-    a = root |> fork!
+    a = root |> fork!(@test_identities_1, Helper.new_id)
 
     Logger.configure(level: :info)
-    1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}")))
+    1..test_count |> Enum.each(&(a |> fork!(@test_identities_1, "ib_#{&1}")))
     Logger.configure(level: :debug)
 
     # Create the one ib_gib we want to query for
     test_ib = "hey this is a test ib"
-    {:ok, {_test, _test_info, test_ib_gib}} = root |> gib(:fork, test_ib)
+    {:ok, {_test, _test_info, test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
 
     search_term = "is is a"
     query_options =
@@ -120,15 +124,15 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     {:ok, root} = IbGib.Expression.Supervisor.start_expression()
 
     # Create some random other ib_gib
-    a = root |> fork!
+    a = root |> fork!(@test_identities_1, Helper.new_id)
 
     Logger.configure(level: :info)
-    1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}")))
+    1..test_count |> Enum.each(&(a |> fork!(@test_identities_1, "ib_#{&1}")))
     Logger.configure(level: :debug)
 
     # Create the one ib_gib we want to query for
     test_ib = "hey this is a test ib"
-    {:ok, {_test, _test_info, _test_ib_gib}} = root |> gib(:fork, test_ib)
+    {:ok, {_test, _test_info, _test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
 
     # search_term = test_ib
     query_options =
@@ -159,15 +163,15 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     {:ok, root} = IbGib.Expression.Supervisor.start_expression()
 
     # Create some random other ib_gib
-    a = root |> fork!
+    a = root |> fork!(@test_identities_1, Helper.new_id)
 
     Logger.configure(level: :info)
-    1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}")))
+    1..test_count |> Enum.each(&(a |> fork!(@test_identities_1, "ib_#{&1}")))
     Logger.configure(level: :debug)
 
     # Create the one ib_gib we want to query for
     test_ib = "hey this is a test ib"
-    {:ok, {_test, _test_info, test_ib_gib}} = root |> gib(:fork, test_ib)
+    {:ok, {_test, _test_info, test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
     {_, test_gib} = Helper.separate_ib_gib!(test_ib_gib)
 
     query_options =
@@ -194,15 +198,15 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     {:ok, root} = IbGib.Expression.Supervisor.start_expression()
 
     # Create some random other ib_gib
-    a = root |> fork!
+    a = root |> fork!(@test_identities_1, Helper.new_id)
 
     Logger.configure(level: :info)
-    1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}")))
+    1..test_count |> Enum.each(&(a |> fork!(@test_identities_1, "ib_#{&1}")))
     Logger.configure(level: :debug)
 
     # Create the one ib_gib we want to query for
     test_ib = "hey this is a test ib"
-    {:ok, {_test, _test_info, test_ib_gib}} = root |> gib(:fork, test_ib)
+    {:ok, {_test, _test_info, test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
     {_, test_gib} = Helper.separate_ib_gib!(test_ib_gib)
 
     search_term = String.slice(test_gib, 2..25)
@@ -230,15 +234,15 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     {:ok, root} = IbGib.Expression.Supervisor.start_expression()
 
     # Create some random other ib_gib
-    a = root |> fork!
+    a = root |> fork!(@test_identities_1, Helper.new_id)
 
     Logger.configure(level: :info)
-    1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}")))
+    1..test_count |> Enum.each(&(a |> fork!(@test_identities_1, "ib_#{&1}")))
     Logger.configure(level: :debug)
 
     # Create the one ib_gib we want to query for
     test_ib = "hey this is a test ib"
-    {:ok, {_test, _test_info, test_ib_gib}} = root |> gib(:fork, test_ib)
+    {:ok, {_test, _test_info, test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
     {_, test_gib} = Helper.separate_ib_gib!(test_ib_gib)
 
     # search_term = test_ib
@@ -270,10 +274,10 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     {:ok, root} = IbGib.Expression.Supervisor.start_expression()
 
     # Create some random other ib_gib
-    a = root |> fork!
+    a = root |> fork!(@test_identities_1, Helper.new_id)
 
     Logger.configure(level: :info)
-    1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}")))
+    1..test_count |> Enum.each(&(a |> fork!(@test_identities_1, "ib_#{&1}")))
     Logger.configure(level: :debug)
 
     # Create the one ib_gib we want to query for
@@ -281,7 +285,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     test_value = "my test value yoooo"
     test_data = %{test_key => test_value}
     test_ib = "test ib data key is"
-    {:ok, {test, _test_info, _test_ib_gib}} = root |> gib(:fork, test_ib)
+    {:ok, {test, _test_info, _test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
     # Reassign the same vars because we really want the version with the data
     {:ok, {_test, _test_info, test_ib_gib}} = test |> gib(:mut8, test_data)
 
@@ -310,10 +314,10 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     {:ok, root} = IbGib.Expression.Supervisor.start_expression()
 
     # Create some random other ib_gib
-    a = root |> fork!
+    a = root |> fork!(@test_identities_1, Helper.new_id)
 
     Logger.configure(level: :info)
-    1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}")))
+    1..test_count |> Enum.each(&(a |> fork!(@test_identities_1, "ib_#{&1}")))
     Logger.configure(level: :debug)
 
     # Create the one ib_gib we want to query for
@@ -321,7 +325,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     test_value = "my test value yoooo"
     test_data = %{test_key => test_value}
     test_ib = "test ib data key is"
-    {:ok, {test, _test_info, _test_ib_gib}} = root |> gib(:fork, test_ib)
+    {:ok, {test, _test_info, _test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
     # Reassign the same vars because we really want the version with the data
     {:ok, {_test, _test_info, test_ib_gib}} = test |> gib(:mut8, test_data)
 
@@ -350,10 +354,10 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     {:ok, root} = IbGib.Expression.Supervisor.start_expression()
 
     # Create some random other ib_gib
-    a = root |> fork!
+    a = root |> fork!(@test_identities_1, Helper.new_id)
 
     Logger.configure(level: :info)
-    1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}")))
+    1..test_count |> Enum.each(&(a |> fork!(@test_identities_1, "ib_#{&1}")))
     Logger.configure(level: :debug)
 
     # Create the one ib_gib we want to query for
@@ -361,7 +365,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     test_value = "my test value yoooo"
     test_data = %{test_key => test_value}
     test_ib = "test ib data key is"
-    {:ok, {test, _test_info, _test_ib_gib}} = root |> gib(:fork, test_ib)
+    {:ok, {test, _test_info, _test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
     # Reassign the same vars because we really want the version with the data
     {:ok, {_test, _test_info, test_ib_gib}} = test |> gib(:mut8, test_data)
 
@@ -390,10 +394,10 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     {:ok, root} = IbGib.Expression.Supervisor.start_expression()
 
     # Create some random other ib_gib
-    a = root |> fork!
+    a = root |> fork!(@test_identities_1, Helper.new_id)
 
     Logger.configure(level: :info)
-    1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}")))
+    1..test_count |> Enum.each(&(a |> fork!(@test_identities_1, "ib_#{&1}")))
     Logger.configure(level: :debug)
 
     # Create the one ib_gib we want to query for
@@ -401,7 +405,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     test_value = "my test value yoooo1q23451235"
     test_data = %{test_key => test_value}
     test_ib = "test ib data key is"
-    {:ok, {test, _test_info, _test_ib_gib}} = root |> gib(:fork, test_ib)
+    {:ok, {test, _test_info, _test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
     # Reassign the same vars because we really want the version with the data
     {:ok, {_test, _test_info, test_ib_gib}} = test |> gib(:mut8, test_data)
 
@@ -437,15 +441,15 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     test_count = 5
     {:ok, root} = IbGib.Expression.Supervisor.start_expression()
 
-    a = root |> fork!
+    a = root |> fork!(@test_identities_1, Helper.new_id)
     Logger.configure(level: :info)
-    1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}")))
+    1..test_count |> Enum.each(&(a |> fork!(@test_identities_1, "ib_#{&1}")))
     Logger.configure(level: :debug)
 
     test_ib_b = "hey this is a test ib yuk yuk"
-    {:ok, {test_b, _test_info_b, test_ib_gib_b}} = a |> gib(:fork, test_ib_b)
+    {:ok, {test_b, _test_info_b, test_ib_gib_b}} = a |> gib(:fork, @test_identities_1, test_ib_b)
     test_ib_c = "this is c"
-    {:ok, {_test_c, _test_info_c, test_ib_gib_c}} = test_b |> gib(:fork, test_ib_c)
+    {:ok, {_test_c, _test_info_c, test_ib_gib_c}} = test_b |> gib(:fork, @test_identities_1, test_ib_c)
 
     query_options =
       do_query
@@ -470,16 +474,16 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     test_count = 5
     {:ok, root} = IbGib.Expression.Supervisor.start_expression()
 
-    a = root |> fork!
+    a = root |> fork!(@test_identities_1, Helper.new_id)
     Logger.configure(level: :info)
-    1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}")))
+    1..test_count |> Enum.each(&(a |> fork!(@test_identities_1, "ib_#{&1}")))
     Logger.configure(level: :debug)
 
     # b = a |> fork!
     test_ib_b = "hey this is a test ib yuk yuk"
-    {:ok, {test_b, _test_info_b, test_ib_gib_b}} = a |> gib(:fork, test_ib_b)
+    {:ok, {test_b, _test_info_b, test_ib_gib_b}} = a |> gib(:fork, @test_identities_1, test_ib_b)
     test_ib_c = "this is c"
-    {:ok, {_test_c, _test_info_c, test_ib_gib_c}} = test_b |> gib(:fork, test_ib_c)
+    {:ok, {_test_c, _test_info_c, test_ib_gib_c}} = test_b |> gib(:fork, @test_identities_1, test_ib_c)
 
     query_options =
       do_query
@@ -503,15 +507,15 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     test_count = 5
     {:ok, root} = IbGib.Expression.Supervisor.start_expression()
 
-    a = root |> fork!
+    a = root |> fork!(@test_identities_1, Helper.new_id)
     Logger.configure(level: :info)
-    1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}")))
+    1..test_count |> Enum.each(&(a |> fork!(@test_identities_1, "ib_#{&1}")))
     Logger.configure(level: :debug)
 
     test_ib_b = "hey this is a test ib yuk yuk"
-    {:ok, {test_b, _test_info_b, _test_ib_gib_b}} = a |> gib(:fork, test_ib_b)
+    {:ok, {test_b, _test_info_b, _test_ib_gib_b}} = a |> gib(:fork, @test_identities_1, test_ib_b)
     test_ib_c = "this is c"
-    {:ok, {_test_c, _test_info_c, test_ib_gib_c}} = test_b |> gib(:fork, test_ib_c)
+    {:ok, {_test_c, _test_info_c, test_ib_gib_c}} = test_b |> gib(:fork, @test_identities_1, test_ib_c)
 
     query_options =
       do_query
@@ -540,17 +544,17 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     test_count = 5
     {:ok, root} = IbGib.Expression.Supervisor.start_expression()
 
-    a = root |> fork!
+    a = root |> fork!(@test_identities_1, Helper.new_id)
     Logger.configure(level: :info)
-    1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}")))
+    1..test_count |> Enum.each(&(a |> fork!(@test_identities_1, "ib_#{&1}")))
     Logger.configure(level: :debug)
 
     test_ib_b = "hey this is a test ib yuk yuk"
-    {:ok, {test_b, _test_info_b, _test_ib_gib_b}} = a |> gib(:fork, test_ib_b)
+    {:ok, {test_b, _test_info_b, _test_ib_gib_b}} = a |> gib(:fork, @test_identities_1, test_ib_b)
     test_ib_c = "this is c"
-    {:ok, {_test_c, _test_info_c, test_ib_gib_c}} = test_b |> gib(:fork, test_ib_c)
+    {:ok, {_test_c, _test_info_c, test_ib_gib_c}} = test_b |> gib(:fork, @test_identities_1, test_ib_c)
     test_ib_d = "this is d"
-    {:ok, {_test_d, _test_info_d, test_ib_gib_d}} = test_b |> gib(:fork, test_ib_d)
+    {:ok, {_test_d, _test_info_d, test_ib_gib_d}} = test_b |> gib(:fork, @test_identities_1, test_ib_d)
 
     query_options =
       do_query
@@ -590,16 +594,16 @@ defmodule IbGib.Expression.ExpressionQueryTest do
   #   test_count = 5
   #   {:ok, root} = IbGib.Expression.Supervisor.start_expression()
   #
-  #   a = root |> fork!
+  #   a = root |> fork!(@test_identities_1, Helper.new_id)
   #   Logger.configure(level: :info)
-  #   1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}")))
+  #   1..test_count |> Enum.each(&(a |> fork!(@test_identities_1, "ib_#{&1}")))
   #   Logger.configure(level: :debug)
   #
   #   # b = a |> fork!
   #   test_ib_b = "hey this is a test ib b"
-  #   {:ok, {test_b, _test_info_b, test_ib_gib_b}} = a |> gib(:fork, test_ib_b)
+  #   {:ok, {test_b, _test_info_b, test_ib_gib_b}} = a |> gib(:fork, @test_identities_1, test_ib_b)
   #   test_ib_c = "this is c"
-  #   {:ok, {_test_c, _test_info_c, test_ib_gib_c}} = test_b |> gib(:fork, test_ib_c)
+  #   {:ok, {_test_c, _test_info_c, test_ib_gib_c}} = test_b |> gib(:fork, @test_identities_1, test_ib_c)
   #
   #   query_options =
   #     do_query
@@ -633,7 +637,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
 
 
     a_ib = RandomGib.Get.some_letters(5)
-    a = root |> fork!(a_ib)
+    a = root |> fork!(@test_identities_1, a_ib)
     Logger.configure(level: :info)
 
     {_a_n, a_n_gib} =
@@ -671,13 +675,13 @@ defmodule IbGib.Expression.ExpressionQueryTest do
 
 
     a_ib = RandomGib.Get.some_letters(5)
-    a = root |> fork!(a_ib)
+    a = root |> fork!(@test_identities_1, a_ib)
     Logger.configure(level: :info)
 
     {_a_n, a_n_gib} =
       1..test_count
       |> Enum.reduce({a, nil}, fn(_n, {a_m, _}) ->
-           new_a = a_m |> fork!(a_ib)
+           new_a = a_m |> fork!(@test_identities_1, a_ib)
            new_a_info = new_a |> get_info!
           #  Logger.warn "new_a_info[:ib]: #{new_a_info[:ib]}"
            Logger.warn "new_a_info[:gib]: #{new_a_info[:gib]}"
@@ -709,7 +713,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
 
 
     a_ib = RandomGib.Get.some_letters(5)
-    a = root |> fork!(a_ib)
+    a = root |> fork!(@test_identities_1, a_ib)
     Logger.configure(level: :info)
 
     {_a_n, a_n_gib} =
@@ -724,7 +728,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     Logger.configure(level: :debug)
 
     b_ib = RandomGib.Get.some_letters(5)
-    b = root |> fork!(b_ib)
+    b = root |> fork!(@test_identities_1, b_ib)
     Logger.configure(level: :info)
 
     {_b_n, b_n_gib} =
@@ -782,7 +786,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     test_count = 10
     1..test_count
     |> Enum.each(fn(i) ->
-         test = root |> fork!("#{i}")
+         test = root |> fork!(@test_identities_1, "#{i}")
          test_info = test |> get_info!
          test_ib_gib = test_info |> Helper.get_ib_gib!
          if rem(i, 2) == 0 do
@@ -837,7 +841,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     test_count = 10
     1..test_count
     |> Enum.each(fn(i) ->
-         test = root |> fork!("#{i}")
+         test = root |> fork!(@test_identities_1, "#{i}")
          test_info = test |> get_info!
          test_ib_gib = test_info |> Helper.get_ib_gib!
          cond do
@@ -902,7 +906,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     test_count = 10
     1..test_count
     |> Enum.each(fn(i) ->
-         test = root |> fork!("#{i}")
+         test = root |> fork!(@test_identities_1, "#{i}")
          test_info = test |> get_info!
          test_ib_gib = test_info |> Helper.get_ib_gib!
          cond do
@@ -955,18 +959,18 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     test_count = 5
     {:ok, root} = IbGib.Expression.Supervisor.start_expression()
 
-    a = root |> fork!
+    a = root |> fork!(@test_identities_1, Helper.new_id)
     Logger.configure(level: :info)
-      1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}") |> fork!("ib2_#{&1}")))
+      1..test_count |> Enum.each(&(a |> fork!(@test_identities_1, "ib_#{&1}") |> fork!(@test_identities_1, "ib2_#{&1}")))
     Logger.configure(level: :debug)
 
 
-    test_identity_ib_gib = "some ib#{@delim}gib"
-    test_identity_ib_gibs = [test_identity_ib_gib]
+    test_identities_1_ib_gib = "some ib#{@delim}gib"
+    test_identities_1_ib_gibs = [test_identities_1_ib_gib]
     # testing single one in this test
     query_options =
       do_query
-      |> asked_by(test_identity_ib_gib)
+      |> asked_by(test_identities_1_ib_gib)
     {:ok, query_result} = root |> query(query_options)
     Logger.debug "query_result: #{inspect query_result}"
     query_result_info = query_result |> get_info!
@@ -982,8 +986,8 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     Logger.warn "query_info: #{inspect query_info}"
     Logger.warn "blah: #{inspect query_info[:data]}"
 
-    assert query_info[:rel8ns]["identity"] == test_identity_ib_gibs
-    assert query_result_info[:rel8ns]["identity"] == test_identity_ib_gibs
+    assert query_info[:rel8ns]["identity"] == test_identities_1_ib_gibs
+    assert query_result_info[:rel8ns]["identity"] == test_identities_1_ib_gibs
   end
 
   @tag :capture_log
@@ -991,19 +995,19 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     test_count = 5
     {:ok, root} = IbGib.Expression.Supervisor.start_expression()
 
-    a = root |> fork!
+    a = root |> fork!(@test_identities_1, Helper.new_id)
     Logger.configure(level: :info)
-      1..test_count |> Enum.each(&(a |> fork!("ib_#{&1}") |> fork!("ib2_#{&1}")))
+      1..test_count |> Enum.each(&(a |> fork!(@test_identities_1, "ib_#{&1}") |> fork!(@test_identities_1, "ib2_#{&1}")))
     Logger.configure(level: :debug)
 
 
-    test_identity_ib_gib = "some ib#{@delim}gib"
-    test_identity_ib_gib2 = "some other ib#{@delim}gib"
-    test_identity_ib_gibs = [test_identity_ib_gib, test_identity_ib_gib2]
+    test_identities_1_ib_gib = "some ib#{@delim}gib"
+    test_identities_1_ib_gib2 = "some other ib#{@delim}gib"
+    test_identities_1_ib_gibs = [test_identities_1_ib_gib, test_identities_1_ib_gib2]
     # testing multiple overload in this test
     query_options =
       do_query
-      |> asked_by(test_identity_ib_gibs)
+      |> asked_by(test_identities_1_ib_gibs)
     {:ok, query_result} = root |> query(query_options)
     Logger.debug "query_result: #{inspect query_result}"
     query_result_info = query_result |> get_info!
@@ -1019,8 +1023,8 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     Logger.warn "query_info: #{inspect query_info}"
     Logger.warn "blah: #{inspect query_info[:data]}"
 
-    assert query_info[:rel8ns]["identity"] == test_identity_ib_gibs
-    assert query_result_info[:rel8ns]["identity"] == test_identity_ib_gibs
+    assert query_info[:rel8ns]["identity"] == test_identities_1_ib_gibs
+    assert query_result_info[:rel8ns]["identity"] == test_identities_1_ib_gibs
   end
 
 end
