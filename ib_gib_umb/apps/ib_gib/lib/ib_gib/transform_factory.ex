@@ -12,32 +12,68 @@ defmodule IbGib.TransformFactory do
 
   alias IbGib.Helper
   use IbGib.Constants, :ib_gib
+  use IbGib.Constants, :error_msgs
 
+
+  defp validate_identity_ib_gibs(identity_ib_gibs)
+    when is_list(identity_ib_gibs) do
+    valid_identity_ib_gibs =
+      length(identity_ib_gibs) > 0 and
+      identity_ib_gibs |> Enum.all?(&(Helper.valid_ib_gib?(&1)))
+    if valid_identity_ib_gibs do
+      {:ok, :ok}
+    else
+      emsg = emsg_invalid_args(identity_ib_gibs)
+      Logger.error emsg
+      {:error, emsg}
+    end
+  end
+  defp validate_identity_ib_gibs(identity_ib_gibs) do
+    {:error, emsg_invalid_args(identity_ib_gibs)}
+  end
 
   @doc """
   Creates a fork with source `src_ib_gib` and dest_ib of given `dest_ib`. In
   most cases, no `dest_ib` need be specified, so it will just create a new
   random `ib`.
+
+  Returns {:ok, info} | {:error, "reason"}
   """
-  @spec fork(String.t, list(String.t), String.t, map) :: map
+  @spec fork(String.t, list(String.t), String.t, map) :: {:ok, map} | {:error, String.t}
   def fork(src_ib_gib, # \\ "ib#{delim}gib",
            identity_ib_gibs,
            dest_ib,
            opts \\ @default_transform_options)
-    when is_bitstring(src_ib_gib) and is_bitstring(dest_ib) and is_map(opts) do
-    Logger.debug "opts: #{inspect opts}"
-    ib = "fork"
-    relations = %{
-      "dna" => ["ib#{delim}gib", "fork#{delim}gib"]
-    }
-    data = %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib}
-    gib = Helper.hash(ib, relations, data) |> stamp_if_needed(opts[:gib_stamp])
-    %{
-      ib: ib,
-      gib: gib,
-      rel8ns: relations,
-      data: data
-    }
+  def fork(src_ib_gib, identity_ib_gibs, dest_ib, opts)
+    when is_bitstring(src_ib_gib) and is_list(identity_ib_gibs) and
+         is_bitstring(dest_ib) and is_map(opts) do
+
+    case validate_identity_ib_gibs(identity_ib_gibs) do
+      {:ok, :ok} ->
+        ib = "fork"
+
+        relations = %{
+          "dna" => ["ib#{delim}gib", "fork#{delim}gib"],
+          "identity" => identity_ib_gibs
+        }
+        data = %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib}
+        gib = Helper.hash(ib, relations, data) |> stamp_if_needed(opts[:gib_stamp])
+        result = %{
+          ib: ib,
+          gib: gib,
+          rel8ns: relations,
+          data: data
+        }
+
+        Logger.debug "result: #{inspect result}"
+        {:ok, result}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+  def fork(src_ib_gib, identity_ib_gibs, dest_ib, opts) do
+    {:error, emsg_invalid_args([src_ib_gib, identity_ib_gibs, dest_ib, opts])}
   end
 
   @doc """

@@ -321,8 +321,8 @@ defmodule IbGib.Expression do
 
     remove_key = Mut8Factory.get_meta_key(:mut8_remove_key)
     rename_key = Mut8Factory.get_meta_key(:mut8_rename_key)
-    Logger.warn "remove_key: #{remove_key}"
-    Logger.warn "rename_key: #{rename_key}"
+    Logger.debug "remove_key: #{remove_key}"
+    Logger.debug "rename_key: #{rename_key}"
 
     b_new_data_metadata
     |> Enum.reduce(a_data, fn(entry, acc) ->
@@ -423,7 +423,7 @@ defmodule IbGib.Expression do
     this_data = %{"result_count" => "#{result_count}"}
     this_rel8ns = %{
       "dna" => @default_dna,
-      "ancestor" => @default_ancestor ++ ["query_result#{delim}gib"], 
+      "ancestor" => @default_ancestor ++ ["query_result#{delim}gib"],
       "past" => @default_past
     }
     this_info =
@@ -490,7 +490,7 @@ defmodule IbGib.Expression do
       Logger.debug "Added relation #{relation_name} to a_info. a_info[:rel8ns]: #{inspect a_info[:rel8ns]}"
       new_a
     else
-      Logger.warn "Tried to add relation list of non-valid ib_gib."
+      Logger.debug "Tried to add relation list of non-valid ib_gib."
       a_info
     end
   end
@@ -555,7 +555,7 @@ defmodule IbGib.Expression do
   def fork(expr_pid, identity_ib_gibs, dest_ib, opts)
     when is_pid(expr_pid) and is_list(identity_ib_gibs) and
          is_bitstring(dest_ib) do
-    Logger.warn "bad opts: #{inspect opts}"
+    Logger.debug "bad opts: #{inspect opts}"
     GenServer.call(expr_pid, {:fork, dest_ib, %{}})
   end
 
@@ -575,7 +575,7 @@ defmodule IbGib.Expression do
   def fork!(expr_pid, identity_ib_gibs, dest_ib, opts)
     when is_pid(expr_pid) and is_list(identity_ib_gibs) and
          is_bitstring(dest_ib) do
-    Logger.warn "bad opts: #{inspect opts}"
+    Logger.debug "bad opts: #{inspect opts}"
     bang(fork(expr_pid, identity_ib_gibs, dest_ib, %{}))
   end
 
@@ -594,7 +594,7 @@ defmodule IbGib.Expression do
   end
   def mut8(expr_pid, new_data, opts)
     when is_pid(expr_pid) and is_map(new_data) do
-    Logger.warn "bad opts: #{inspect opts}"
+    Logger.debug "bad opts: #{inspect opts}"
     GenServer.call(expr_pid, {:mut8, new_data, %{}})
   end
 
@@ -609,7 +609,7 @@ defmodule IbGib.Expression do
   end
   def mut8!(expr_pid, new_data, opts)
     when is_pid(expr_pid) and is_map(new_data) do
-      Logger.warn "bad opts: #{inspect opts}"
+      Logger.debug "bad opts: #{inspect opts}"
       bang(mut8(expr_pid, new_data, %{}))
   end
 
@@ -648,7 +648,7 @@ defmodule IbGib.Expression do
     when is_pid(expr_pid) and is_pid(other_pid) and expr_pid !== other_pid and
          is_list(src_rel8ns) and length(src_rel8ns) >= 1 and
          is_list(dest_rel8ns) and length(dest_rel8ns) >= 1 do
-    Logger.warn "bad opts: #{inspect opts}"
+    Logger.debug "bad opts: #{inspect opts}"
     GenServer.call(expr_pid, {:rel8, other_pid, src_rel8ns, dest_rel8ns, %{}})
   end
 
@@ -672,7 +672,7 @@ defmodule IbGib.Expression do
     when is_pid(expr_pid) and is_pid(other_pid) and expr_pid !== other_pid and
          is_list(src_rel8ns) and length(src_rel8ns) >= 1 and
          is_list(dest_rel8ns) and length(dest_rel8ns) >= 1 do
-    Logger.warn "bad opts: #{inspect opts}"
+    Logger.debug "bad opts: #{inspect opts}"
     bang(rel8(expr_pid, other_pid, src_rel8ns, dest_rel8ns, %{}))
   end
 
@@ -746,7 +746,7 @@ defmodule IbGib.Expression do
     def instance(expr_pid, identity_ib_gibs, dest_ib, opts)
       when is_pid(expr_pid) and is_list(identity_ib_gibs) and
            is_bitstring(dest_ib) do
-      Logger.warn "bad opts: #{inspect opts}"
+      Logger.debug "bad opts: #{inspect opts}"
       GenServer.call(expr_pid, {:instance, identity_ib_gibs, dest_ib, %{}})
     end
 
@@ -766,7 +766,7 @@ defmodule IbGib.Expression do
     def instance!(expr_pid, identity_ib_gibs, dest_ib, opts)
       when is_pid(expr_pid) and is_list(identity_ib_gibs) and
            is_bitstring(dest_ib) do
-      Logger.warn "bad opts: #{inspect opts}"
+      Logger.debug "bad opts: #{inspect opts}"
       bang(instance(expr_pid, identity_ib_gibs, dest_ib, %{}))
     end
 
@@ -793,15 +793,15 @@ defmodule IbGib.Expression do
 
   def gib(expr_pid, :rel8, other_pid, src_rel8ns \\ @default_rel8ns, dest_rel8ns \\ @default_rel8ns) do
     {next, next_other} = IbGib.Expression.rel8!(expr_pid, other_pid, src_rel8ns, dest_rel8ns)
-    Logger.warn "a"
+    Logger.debug "a"
     next_info = next |> IbGib.Expression.get_info!
-    Logger.warn "b"
+    Logger.debug "b"
     next_other_info = next_other |> IbGib.Expression.get_info!
-    Logger.warn "c"
+    Logger.debug "c"
     next_ib_gib = Helper.get_ib_gib!(next_info[:ib], next_info[:gib])
-    Logger.warn "d"
+    Logger.debug "d"
     next_other_ib_gib = Helper.get_ib_gib!(next_other_info[:ib], next_other_info[:gib])
-    Logger.warn "e"
+    Logger.debug "e"
     {
       :ok,
       {next, next_info, next_ib_gib},
@@ -860,28 +860,44 @@ defmodule IbGib.Expression do
     {:reply, {:ok, state[:info]}, state}
   end
 
+  # ----------------------------------------------------------------------------
+  # Server - fork impl
+  # ----------------------------------------------------------------------------
+
   defp fork_impl(identity_ib_gibs, dest_ib, opts, state) do
-    Logger.debug "state: #{inspect state}"
+    Logger.debug "identity_ib_gibs, dest_ib, opts, state: #{inspect [identity_ib_gibs, dest_ib, opts, state]}"
     info = state[:info]
     ib = info[:ib]
     gib = info[:gib]
 
-    # 1. Create transform
-    fork_info = TransformFactory.fork(Helper.get_ib_gib!(ib, gib), identity_ib_gibs, dest_ib, opts)
-    Logger.debug "fork_info: #{inspect fork_info}"
+    with {:ok, fork_info} <-
+      # 1. Create transform
+      TransformFactory.fork(Helper.get_ib_gib!(ib, gib), identity_ib_gibs, dest_ib, opts),
 
-    # 2. Save transform
-    {:ok, :ok} = IbGib.Data.save(fork_info)
+      # 2. Save transform
+      {:ok, :ok} <- IbGib.Data.save(fork_info),
 
-    # 3. Create instance process of fork
-    Logger.debug "fork saved. Now trying to create fork transform expression process"
-    {:ok, fork} = IbGib.Expression.Supervisor.start_expression({fork_info[:ib], fork_info[:gib]})
+      # 3. Create instance process of fork
+      {:ok, fork} <- IbGib.Expression.Supervisor.start_expression({fork_info[:ib], fork_info[:gib]}),
 
-    # 4. Apply transform
-    contact_result = contact_impl(fork, state)
-    Logger.debug "contact_result: #{inspect contact_result}"
-    contact_result
+      # 4. Apply transform
+      {:ok, new_pid} <- contact_impl(fork, state) do
+
+      # 5. Return new process of applied fork
+      {:ok, new_pid}
+    else
+      {:error, reason} ->
+        Logger.error reason
+        {:error, reason}
+      error ->
+        Logger.error "#{inspect error}"
+        {:error, "#{inspect error}"}
+    end
   end
+
+  # ----------------------------------------------------------------------------
+  # Server - mut8 impl
+  # ----------------------------------------------------------------------------
 
   defp mut8_impl(new_data, opts, state) do
     info = state[:info]
@@ -932,11 +948,11 @@ defmodule IbGib.Expression do
 
   defp instance_impl(@bootstrap_identity, dest_ib, opts, state)
     when is_atom(@bootstrap_identity) do
-    Logger.warn "state: #{inspect state}"
-    Logger.warn "state: #{inspect state}"
-    Logger.warn "state: #{inspect state}"
+    Logger.debug "state: #{inspect state}"
+    Logger.debug "state: #{inspect state}"
+    Logger.debug "state: #{inspect state}"
     this_ib_gib = Helper.get_ib_gib!(state[:info])
-    Logger.warn "this_ib_gib: #{this_ib_gib}"
+    Logger.debug "this_ib_gib: #{this_ib_gib}"
     if this_ib_gib == @identity_ib_gib do
       instance_impl(["bootstrap_identity#{@delim}gib"], dest_ib, opts, state)
     else
@@ -974,11 +990,11 @@ defmodule IbGib.Expression do
 
     # 3. Create instance process of query
     Logger.debug "query saved. Now trying to create query expression process."
-    Logger.warn "query saved. Now trying to create query expression process."
-    Logger.warn "query saved. Now trying to create query expression process."
-    Logger.warn "query saved. Now trying to create query expression process."
-    Logger.warn "query saved. Now trying to create query expression process."
-    Logger.warn "query saved. Now trying to create query expression process."
+    Logger.debug "query saved. Now trying to create query expression process."
+    Logger.debug "query saved. Now trying to create query expression process."
+    Logger.debug "query saved. Now trying to create query expression process."
+    Logger.debug "query saved. Now trying to create query expression process."
+    Logger.debug "query saved. Now trying to create query expression process."
     {:ok, query} = IbGib.Expression.Supervisor.start_expression({query_info[:ib], query_info[:gib]})
 
     # 4. Create new ib_gib by contacting query ib_gib
@@ -991,8 +1007,13 @@ defmodule IbGib.Expression do
     Logger.debug "state: #{inspect state}"
     Logger.debug "other_expr_pid: #{inspect other_pid}"
 
-    {:ok, other_info} = get_info(other_pid)
-    Logger.debug "other_info: #{inspect other_info}"
-    IbGib.Expression.Supervisor.start_expression({state[:info], other_info})
+    with {:ok, other_info} <- get_info(other_pid),
+      {:ok, new_pid} <-
+        IbGib.Expression.Supervisor.start_expression({state[:info], other_info}) do
+      {:ok, new_pid}
+    else
+      {:error, reason} -> {:error, reason}
+      error -> {:error, "#{inspect error}"}
+    end
   end
 end

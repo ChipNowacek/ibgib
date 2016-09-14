@@ -81,4 +81,63 @@ defmodule IbGib.Auth.AuthTest do
 
     Logger.warn "identity_info: #{inspect identity_info}"
   end
+
+  @tag :capture_log
+  test "fork with invalid identity_ib_gib, no gib" do
+    {:ok, root} = Expression.Supervisor.start_expression()
+
+    identity_ib_gibs = ["invalid ib gib here"]
+    dest_ib = "valid ib here"
+
+    {:error, result} =
+      root |> fork(identity_ib_gibs, dest_ib)
+
+    Logger.debug "result: #{inspect result}"
+  end
+
+  @tag :capture_log
+  test "fork with invalid identity_ib_gib, empty string" do
+    {:ok, root} = Expression.Supervisor.start_expression()
+
+    identity_ib_gibs = [""]
+    dest_ib = "valid ib here"
+
+    {:error, result} =
+      root |> fork(identity_ib_gibs, dest_ib)
+
+    Logger.debug "result: #{inspect result}"
+  end
+
+  @tag :capture_log
+  test "fork with invalid identity_ib_gib, two identity ib gib, one invalid" do
+    {:ok, root} = Expression.Supervisor.start_expression()
+
+    identity_ib_gibs = ["valid#{@delim}gib", "invalid ib gib here"]
+    dest_ib = "valid ib here"
+
+    {:error, result} =
+      root |> fork(identity_ib_gibs, dest_ib)
+
+    Logger.debug "result: #{inspect result}"
+  end
+
+  @tag :capture_log
+  test "fork with invalid identity_ib_gib, many identity ib gib, one invalid" do
+    {:ok, root} = Expression.Supervisor.start_expression()
+
+    identity_ib_gibs = [
+      "valid#{@delim}gib",
+      "valid 2#{@delim}gibYO",
+      "invalid ib gib here",
+      "valid 3#{@delim}gibHUH",
+      "valid 4#{@delim}gibWHAT"
+    ]
+    dest_ib = "valid ib here"
+
+    {:error, result} =
+      root |> fork(identity_ib_gibs, dest_ib)
+
+    Logger.debug "result: #{inspect result}"
+  end
+
 end

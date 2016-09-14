@@ -120,6 +120,10 @@ defmodule IbGib.Constants do
       def emsg_only_instance_bootstrap_identity_from_identity_gib do
         "The bootstrap identity can only instance the identity#{@delim}gib. All other transforms must have a valid identity."
       end
+
+      def emsg_invalid_identity_ib_gibs do
+        "Invalid identity given."
+      end
     end
   end
 
