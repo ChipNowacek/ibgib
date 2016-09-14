@@ -124,6 +124,10 @@ defmodule IbGib.Constants do
       def emsg_invalid_identity_ib_gibs do
         "Invalid identity given."
       end
+
+      def emsg_invalid_authorization(expected, actual) do
+        "Authorization level not met. Expected identity_ib_gibs: #{inspect expected}. Actual: #{inspect actual}"
+      end
     end
   end
 

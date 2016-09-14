@@ -40,7 +40,7 @@ defmodule IbGib.TransformFactory do
   Returns {:ok, info} | {:error, "reason"}
   """
   @spec fork(String.t, list(String.t), String.t, map) :: {:ok, map} | {:error, String.t}
-  def fork(src_ib_gib, # \\ "ib#{delim}gib",
+  def fork(src_ib_gib, # \\ "ib#{@delim}gib",
            identity_ib_gibs,
            dest_ib,
            opts \\ @default_transform_options)
@@ -53,7 +53,8 @@ defmodule IbGib.TransformFactory do
         ib = "fork"
 
         relations = %{
-          "dna" => ["ib#{delim}gib", "fork#{delim}gib"],
+          "past" => @default_past,
+          "dna" => @default_dna ++ ["fork#{@delim}gib"],
           "identity" => identity_ib_gibs
         }
         data = %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib}
@@ -82,23 +83,39 @@ defmodule IbGib.TransformFactory do
   If `opts` :gib_stamp is true, then we will "stamp" the gib, showing that the
   gib was done by our engine and not by a user.
   """
-  @spec mut8(String.t, map, map) :: map
+  @spec mut8(String.t, list(String.t), map, map) :: map
   def mut8(src_ib_gib,
+           identity_ib_gibs,
            new_data,
            opts \\ @default_transform_options)
-    when is_bitstring(src_ib_gib) and is_map(new_data) do
-    ib = "mut8"
-    relations = %{
-      "dna" => ["ib#{delim}gib", "mut8#{delim}gib"]
-    }
-    data = %{"src_ib_gib" => src_ib_gib, "new_data" => new_data}
-    gib = Helper.hash(ib, relations, data) |> stamp_if_needed(opts[:gib_stamp])
-    %{
-      ib: ib,
-      gib: gib,
-      rel8ns: relations,
-      data: data
-    }
+ def mut8(src_ib_gib, identity_ib_gibs, new_data, opts)
+    when is_bitstring(src_ib_gib) and is_list(identity_ib_gibs) and
+         is_map(new_data) and is_map(opts) do
+
+    case validate_identity_ib_gibs(identity_ib_gibs) do
+      {:ok, :ok} ->
+        ib = "mut8"
+        relations = %{
+          "past" => @default_past,
+          "dna" => @default_dna ++ "mut8#{@delim}gib",
+          "identity" => identity_ib_gibs
+        }
+        data = %{"src_ib_gib" => src_ib_gib, "new_data" => new_data}
+        gib = Helper.hash(ib, relations, data) |> stamp_if_needed(opts[:gib_stamp])
+        result = %{
+          ib: ib,
+          gib: gib,
+          rel8ns: relations,
+          data: data
+        }
+        {:ok, result}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+  def mut8(src_ib_gib, identity_ib_gibs, new_data, opts) do
+    {:error, emsg_invalid_args([src_ib_gib, identity_ib_gibs, new_data, opts])}
   end
 
   @doc """
@@ -138,7 +155,7 @@ defmodule IbGib.TransformFactory do
       end
     ib = "rel8"
     relations = %{
-      "dna" => ["ib#{delim}gib", "rel8#{delim}gib"]
+      "dna" => ["ib#{@delim}gib", "rel8#{@delim}gib"]
     }
     data = %{
       "src_ib_gib" => src_ib_gib,

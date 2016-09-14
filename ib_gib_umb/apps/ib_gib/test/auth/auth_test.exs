@@ -173,4 +173,38 @@ defmodule IbGib.Auth.AuthTest do
     Logger.debug "result: #{inspect result}"
   end
 
+  @tag :capture_log
+  test "mut8 with single valid identity_ib_gib, assure identity is rel8d" do
+    {:ok, root} = Expression.Supervisor.start_expression()
+
+    identity_ib_gibs = @test_identities_1
+    test_key = "valid key here"
+    test_value = "valid value here"
+    test_kv = %{test_key => test_value}
+
+    {:ok, a} = root |> mut8(identity_ib_gibs, test_kv)
+    a_info = a |> get_info!
+
+    Logger.debug "a_info: #{inspect a_info}"
+
+    assert Map.has_key?(a_info[:rel8ns], "identity")
+    assert a_info[:rel8ns]["identity"] == identity_ib_gibs
+  end
+
+  @tag :capture_log
+  test "mut8 with multiple valid identity_ib_gib, assure identity is rel8d" do
+    {:ok, root} = Expression.Supervisor.start_expression()
+
+    identity_ib_gibs = @test_identities_2
+    dest_ib = "valid ib here"
+
+    {:ok, a} = root |> mut8(identity_ib_gibs, dest_ib)
+    a_info = a |> get_info!
+
+    Logger.debug "a_info: #{inspect a_info}"
+
+    assert Map.has_key?(a_info[:rel8ns], "identity")
+    assert a_info[:rel8ns]["identity"] == identity_ib_gibs
+  end
+
 end

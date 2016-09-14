@@ -250,10 +250,27 @@ defmodule IbGib.Expression do
     original_ib_gib = Helper.get_ib_gib!(ib, original_gib)
     Logger.debug "retaining ib. a[:ib]...: #{ib}"
 
+    # Check to make sure that our identities are valid (authorization)
+    # The passed in identities must contain **all** of the existing identities.
+    # Otherwise, the caller does not have the proper authorization, and should
+    # fork their own version before trying to mut8.
+    # Note also that this will **ADD** any other identities that are passed in,
+    # thus raising the level of authorization required for future mut8ns.
+    # If this is invalid, then we are going to fail fast and crash, which is
+    # what we want, since this is in the new process that was created (somehow)
+    # by an unauthorized caller.
+    b_identities = authorize_mut8(a[:rel8ns], b[:rel8ns])
+
+    # Passed authorization.
+    # I do not call add_relation for this, because I want it to overwrite.
+    a_rel8ns = Map.put(a[:rel8ns], "identity", b_identities)
+    a = Map.put(a, :rel8ns, a_rel8ns)
+
     # We add the mut8 itself to the `relations`.
-    a = a
-        |> add_relation("past", original_ib_gib)
-        |> add_relation("dna", b)
+    a =
+      a
+      |> add_relation("past", original_ib_gib)
+      |> add_relation("dna", b)
 
     a_data = Map.get(a, :data, %{})
     b_data = Map.get(b, :data, %{})
@@ -314,6 +331,50 @@ defmodule IbGib.Expression do
     Logger.debug "a[:gib] set to gib: #{this_gib}"
 
     on_new_expression_completed(ib, this_gib, a)
+  end
+
+  # Returns b_identities if authorized.
+  # Raises exception if unauthorized (fail fast is proper).
+  # b must always have at least one identity
+  @spec authorize_mut8(map, map) :: list(String.t)
+  defp authorize_mut8(a_rel8ns, b_rel8ns) do
+    a_has_identity = Map.has_key?(a_rel8ns, "identity") and length(a_rel8ns) > 0
+    b_has_identity = Map.has_key?(b_rel8ns, "identity") and length(b_rel8ns) > 0
+
+    case {a_has_identity, b_has_identity} do
+      {true, true} ->
+        # both have identities, so the a must be a subset or equal to b
+        b_contains_all_of_a =
+          Enum.reduce(a_rel8ns, true, fn(a_ib_gib, acc) ->
+            acc and Enum.any?(b_rel8ns, &(&1 == a_ib_gib))
+          end)
+        if b_contains_all_of_a do
+          # return the b identities, as they may be more restrictive
+          b_rel8ns["identity"]
+        else
+          # unauthorized: a requires auth, b does not have any/all
+          Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
+          # expected: a_identity, actual: b_identity
+          raise IbGib.Errors.UnauthorizedError, a_rel8ns["identity"], b_rel8ns["identity"]
+        end
+
+      {false, true} ->
+        # authorized: b has identity and a requires no authorization
+        b_identity = b_rel8ns["identity"]
+
+      {true, false} ->
+        # unauthorized: a requires auth, b has none
+        Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
+        a_identity = a_rel8ns["identity"]
+        # expected: a_identity, actual: nil
+        raise IbGib.Errors.UnauthorizedError, a_identity, nil
+
+      {false, false} ->
+        # unauthorized: b is required to have authorization and doesn't
+        Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
+        # expected: [something], actual: nil
+        raise IbGib.Errors.UnauthorizedError, [], nil
+    end
   end
 
   defp apply_mut8_metadata(a_data, b_new_data_metadata)
@@ -587,16 +648,22 @@ defmodule IbGib.Expression do
 
   See `IbGib.TransformFactory.Mut8Factory` for more details.
   """
-  @spec mut8(pid, map, map) :: {:ok, pid} | {:error, any}
-  def mut8(expr_pid, new_data, opts \\ @default_transform_options)
-  def mut8(expr_pid, new_data, opts)
-    when is_pid(expr_pid) and is_map(new_data) and is_map(opts) do
-    GenServer.call(expr_pid, {:mut8, new_data, opts})
+  @spec mut8(pid, list(String.t), map, map) :: {:ok, pid} | {:error, any}
+  def mut8(expr_pid,
+           identity_ib_gibs,
+           new_data,
+           opts \\ @default_transform_options)
+  def mut8(expr_pid, identity_ib_gibs, new_data, opts)
+    when is_pid(expr_pid) and is_list(identity_ib_gibs) and
+         is_map(new_data) and is_map(opts) do
+    GenServer.call(expr_pid, {:mut8, identity_ib_gibs, new_data, opts})
   end
-  def mut8(expr_pid, new_data, opts)
-    when is_pid(expr_pid) and is_map(new_data) do
+  def mut8(expr_pid, identity_ib_gibs, new_data, opts) do
+    # when is_pid(expr_pid) and is_list(identity_ib_gibs) and
+    #      is_map(new_data) do
     Logger.debug "bad opts: #{inspect opts}"
-    GenServer.call(expr_pid, {:mut8, new_data, %{}})
+    # GenServer.call(expr_pid, {:mut8, identity_ib_gibs, new_data, %{}})
+    {:error, emsg_invalid_args([expr_pid, identity_ib_gibs, new_data, opts])}
   end
 
   @doc """
@@ -834,9 +901,9 @@ defmodule IbGib.Expression do
     Logger.metadata([x: :fork])
     {:reply, fork_impl(identity_ib_gibs, dest_ib, opts, state), state}
   end
-  def handle_call({:mut8, new_data, opts}, _from, state) do
+  def handle_call({:mut8, identity_ib_gibs, new_data, opts}, _from, state) do
     Logger.metadata([x: :mut8])
-    {:reply, mut8_impl(new_data, opts, state), state}
+    {:reply, mut8_impl(identity_ib_gibs, new_data, opts, state), state}
   end
   def handle_call({:rel8, other_pid, src_rel8ns, dest_rel8ns, opts}, _from, state) do
     Logger.metadata([x: :rel8])
@@ -884,7 +951,7 @@ defmodule IbGib.Expression do
       # 4. Apply transform
       {:ok, new_pid} <- contact_impl(fork, state) do
 
-      # 5. Return new process of applied fork
+      # 5. Return new process of applied transform
       {:ok, new_pid}
     else
       {:error, reason} ->
@@ -900,23 +967,34 @@ defmodule IbGib.Expression do
   # Server - mut8 impl
   # ----------------------------------------------------------------------------
 
-  defp mut8_impl(new_data, opts, state) do
+  defp mut8_impl(identity_ib_gibs, new_data, opts, state) do
     info = state[:info]
     ib = info[:ib]
     gib = info[:gib]
 
     # 1. Create transform
-    mut8_info = TransformFactory.mut8(Helper.get_ib_gib!(ib, gib), new_data, opts)
-    Logger.debug "mut8_info: #{inspect mut8_info}"
+    with {:ok, mut8_info} <-
+      TransformFactory.mut8(Helper.get_ib_gib!(ib, gib), identity_ib_gibs, new_data, opts),
 
-    # 2. Save transform
-    {:ok, :ok} = IbGib.Data.save(mut8_info)
+      # 2. Save transform
+      {:ok, :ok} <- IbGib.Data.save(mut8_info),
 
-    # 3. Create instance process of mut8
-    {:ok, mut8} = IbGib.Expression.Supervisor.start_expression({mut8_info[:ib], mut8_info[:gib]})
+      # 3. Create instance process of mut8
+      {:ok, mut8} <- IbGib.Expression.Supervisor.start_expression({mut8_info[:ib], mut8_info[:gib]}),
 
-    # 4. Apply transform
-    contact_result = contact_impl(mut8, state)
+      # 4. Apply transform
+      {:ok, new_pid} <- contact_impl(mut8, state) do
+
+      # 5. Return new process of applied transform
+      {:ok, new_pid}
+    else
+      {:error, reason} ->
+        Logger.error "#{inspect reason}"
+        {:error, reason}
+      error ->
+        Logger.error "#{inspect error}"
+        {:error, "#{inspect error}"}
+    end
   end
 
   defp rel8_impl(other_pid, src_rel8ns, dest_rel8ns, opts, state) do
