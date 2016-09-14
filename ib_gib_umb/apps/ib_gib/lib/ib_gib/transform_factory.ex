@@ -64,8 +64,6 @@ defmodule IbGib.TransformFactory do
           rel8ns: relations,
           data: data
         }
-
-        Logger.debug "result: #{inspect result}"
         {:ok, result}
 
       {:error, reason} ->

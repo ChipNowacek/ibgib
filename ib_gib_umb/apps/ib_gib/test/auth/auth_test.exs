@@ -82,6 +82,39 @@ defmodule IbGib.Auth.AuthTest do
     Logger.warn "identity_info: #{inspect identity_info}"
   end
 
+
+  @tag :capture_log
+  test "fork with single valid identity_ib_gib, assure identity is rel8d" do
+    {:ok, root} = Expression.Supervisor.start_expression()
+
+    identity_ib_gibs = @test_identities_1
+    dest_ib = "valid ib here"
+
+    {:ok, a} = root |> fork(identity_ib_gibs, dest_ib)
+    a_info = a |> get_info!
+
+    Logger.debug "a_info: #{inspect a_info}"
+
+    assert Map.has_key?(a_info[:rel8ns], "identity")
+    assert a_info[:rel8ns]["identity"] == identity_ib_gibs
+  end
+
+  @tag :capture_log
+  test "fork with multiple valid identity_ib_gib, assure identity is rel8d" do
+    {:ok, root} = Expression.Supervisor.start_expression()
+
+    identity_ib_gibs = @test_identities_2
+    dest_ib = "valid ib here"
+
+    {:ok, a} = root |> fork(identity_ib_gibs, dest_ib)
+    a_info = a |> get_info!
+
+    Logger.debug "a_info: #{inspect a_info}"
+
+    assert Map.has_key?(a_info[:rel8ns], "identity")
+    assert a_info[:rel8ns]["identity"] == identity_ib_gibs
+  end
+
   @tag :capture_log
   test "fork with invalid identity_ib_gib, no gib" do
     {:ok, root} = Expression.Supervisor.start_expression()

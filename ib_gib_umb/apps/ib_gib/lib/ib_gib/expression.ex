@@ -201,6 +201,7 @@ defmodule IbGib.Expression do
     a_dna = Map.get(a[:rel8ns], "dna", [])
     a_ancestor = Map.get(a[:rel8ns], "ancestor", [])
     this_rel8ns = Map.merge(a[:rel8ns], %{"past" => @default_past})
+    this_rel8ns = Map.put(this_rel8ns, "identity", b[:rel8ns]["identity"])
     #   "dna" => a_dna,
     #   "ancestor" => a_ancestor
     # }
@@ -887,7 +888,7 @@ defmodule IbGib.Expression do
       {:ok, new_pid}
     else
       {:error, reason} ->
-        Logger.error reason
+        Logger.error "#{inspect reason}"
         {:error, reason}
       error ->
         Logger.error "#{inspect error}"
