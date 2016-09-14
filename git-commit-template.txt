@@ -8,9 +8,12 @@
 
 # Details (Use * bullets)
 
+# Blank line
+
 # Attributes
-# attr: wip
+# attr: wip - not building
 # attr: minor
+# attr: tests failing
 # attr: docs
 # attr: meta
 # attr: something else
