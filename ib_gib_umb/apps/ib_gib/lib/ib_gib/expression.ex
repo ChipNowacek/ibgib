@@ -554,7 +554,9 @@ defmodule IbGib.Expression do
     Logger.warn "a_rel8ns: #{inspect a_rel8ns}"
     Logger.warn "a_rel8ns: #{inspect a_rel8ns}"
     Logger.warn "a_rel8ns: #{inspect a_rel8ns}"
-    Logger.warn "a_rel8ns: #{inspect a_rel8ns}"
+    Logger.warn "b_rel8ns: #{inspect b_rel8ns}"
+    Logger.warn "b_rel8ns: #{inspect b_rel8ns}"
+    Logger.warn "b_rel8ns: #{inspect b_rel8ns}"
     a_has_identity =
       Map.has_key?(a_rel8ns, "identity") and
       length(a_rel8ns["identity"]) > 0
@@ -795,7 +797,7 @@ defmodule IbGib.Expression do
   def query(expr_pid, identity_ib_gibs, query_options)
     when is_pid(expr_pid) and is_list(identity_ib_gibs) and
          is_map(query_options) do
-    GenServer.call(expr_pid, {:query, identity_ib_gibs, query_options}, 30_000) # TODO: Change hardcoded query timeout 30s to env var
+    GenServer.call(expr_pid, {:query, identity_ib_gibs, query_options}, 30_000) # hardcoded query timeout 30s
   end
   def query(expr_pid, identity_ib_gibs, query_options) do
     emsg = emsg_invalid_args([expr_pid, identity_ib_gibs, query_options])
@@ -830,7 +832,7 @@ defmodule IbGib.Expression do
                identity_ib_gibs,
                dest_ib,
                opts \\ @default_transform_options)
-  def instance(expr_pid, @bootstrap_identity = identity_ib_gib, dest_ib, opts)
+  def instance(expr_pid, @bootstrap_identity_ib_gib = identity_ib_gib, dest_ib, opts)
     when is_pid(expr_pid) and is_bitstring(dest_ib) and is_map(opts) do
     GenServer.call(expr_pid, {:instance_bootstrap, identity_ib_gib, dest_ib, opts})
   end
@@ -900,9 +902,9 @@ defmodule IbGib.Expression do
       rel8_impl(other_pid, src_rel8ns, dest_rel8ns, opts, state)
     {:reply, {:ok, {new_this, new_other}}, state}
   end
-  def handle_call({:instance_bootstrap, @bootstrap_identity, dest_ib, opts}, _from, state) do
+  def handle_call({:instance_bootstrap, @bootstrap_identity_ib_gib, dest_ib, opts}, _from, state) do
     Logger.metadata([x: :instance_bootstrap])
-    {:reply, instance_impl(@bootstrap_identity, dest_ib, opts, state), state}
+    {:reply, instance_impl(@bootstrap_identity_ib_gib, dest_ib, opts, state), state}
   end
   def handle_call({:instance, identity_ib_gibs, dest_ib, opts}, _from, state) do
     Logger.metadata([x: :instance])
@@ -1014,15 +1016,12 @@ defmodule IbGib.Expression do
     {:ok, {new_this, new_other}}
   end
 
-  defp instance_impl(@bootstrap_identity, dest_ib, opts, state)
-    when is_atom(@bootstrap_identity) do
-    Logger.debug "state: #{inspect state}"
-    Logger.debug "state: #{inspect state}"
+  defp instance_impl(@bootstrap_identity_ib_gib, dest_ib, opts, state) do
     Logger.debug "state: #{inspect state}"
     this_ib_gib = Helper.get_ib_gib!(state[:info])
-    Logger.debug "this_ib_gib: #{this_ib_gib}"
     if this_ib_gib == @identity_ib_gib do
-      instance_impl(["bootstrap_identity#{@delim}gib"], dest_ib, opts, state)
+      Logger.debug "instancing #{@identity_ib_gib}"
+      instance_impl([@bootstrap_identity_ib_gib], dest_ib, opts, state)
     else
       {:error, emsg_only_instance_bootstrap_identity_from_identity_gib}
     end

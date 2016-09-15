@@ -42,7 +42,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     Logger.configure(level: :debug)
 
     query_options = do_query
-    {:ok, query_result} = root |> query(query_options)
+    {:ok, query_result} = root |> query(@test_identities_1, query_options)
     Logger.debug "query_result: #{inspect query_result}"
     query_result_info = query_result |> get_info!
     Logger.warn "query_result_info: #{inspect query_result_info}"
@@ -73,7 +73,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
       do_query
       |> where_ib("is", test_ib)
 
-    {:ok, query_result} = root |> query(query_options)
+    {:ok, query_result} = root |> query(@test_identities_1, query_options)
     Logger.debug "query_result: #{inspect query_result}"
     query_result_info = query_result |> get_info!
     Logger.debug "query_result_info: #{inspect query_result_info}"
@@ -111,7 +111,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
       do_query
       |> where_ib("like", search_term)
 
-    {:ok, query_result} = root |> query(query_options)
+    {:ok, query_result} = root |> query(@test_identities_1, query_options)
     Logger.debug "query_result: #{inspect query_result}"
     query_result_info = query_result |> get_info!
     Logger.debug "query_result_info: #{inspect query_result_info}"
@@ -149,7 +149,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
       do_query
       |> where_ib("isnt", test_ib)
 
-    {:ok, query_result} = root |> query(query_options)
+    {:ok, query_result} = root |> query(@test_identities_1, query_options)
     Logger.debug "query_result: #{inspect query_result}"
     query_result_info = query_result |> get_info!
     Logger.debug "query_result_info: #{inspect query_result_info}"
@@ -191,7 +191,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
       do_query
       |> where_gib("is", test_gib)
 
-    {:ok, query_result} = root |> query(query_options)
+    {:ok, query_result} = root |> query(@test_identities_1, query_options)
     Logger.debug "query_result: #{inspect query_result}"
     query_result_info = query_result |> get_info!
     Logger.debug "query_result_info: #{inspect query_result_info}"
@@ -230,7 +230,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
       do_query
       |> where_gib("like", search_term)
 
-    {:ok, query_result} = root |> query(query_options)
+    {:ok, query_result} = root |> query(@test_identities_1, query_options)
     Logger.debug "query_result: #{inspect query_result}"
     query_result_info = query_result |> get_info!
     Logger.debug "query_result_info: #{inspect query_result_info}"
@@ -269,7 +269,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
       do_query
       |> where_gib("isnt", test_gib)
 
-    {:ok, query_result} = root |> query(query_options)
+    {:ok, query_result} = root |> query(@test_identities_1, query_options)
     Logger.debug "query_result: #{inspect query_result}"
     query_result_info = query_result |> get_info!
     Logger.debug "query_result_info: #{inspect query_result_info}"
@@ -320,7 +320,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
       do_query
       |> where_data("key", "is", search_term)
 
-    {:ok, query_result} = root |> query(query_options)
+    {:ok, query_result} = root |> query(@test_identities_1, query_options)
     Logger.debug "query_result: #{inspect query_result}"
     query_result_info = query_result |> get_info!
     Logger.debug "query_result_info: #{inspect query_result_info}"
@@ -367,7 +367,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
       do_query
       |> where_data("key", "like", search_term)
 
-    {:ok, query_result} = root |> query(query_options)
+    {:ok, query_result} = root |> query(@test_identities_1, query_options)
     Logger.debug "query_result: #{inspect query_result}"
     query_result_info = query_result |> get_info!
     Logger.debug "query_result_info: #{inspect query_result_info}"
@@ -414,7 +414,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
       do_query
       |> where_data("value", "is", search_term)
 
-    {:ok, query_result} = root |> query(query_options)
+    {:ok, query_result} = root |> query(@test_identities_1, query_options)
     Logger.debug "query_result: #{inspect query_result}"
     query_result_info = query_result |> get_info!
     Logger.debug "query_result_info: #{inspect query_result_info}"
@@ -462,7 +462,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
       |> where_ib("is", test_ib)
       |> where_data("value", "like", search_term)
 
-    {:ok, query_result} = root |> query(query_options)
+    {:ok, query_result} = root |> query(@test_identities_1, query_options)
     Logger.debug "query_result: #{inspect query_result}"
     query_result_info = query_result |> get_info!
     Logger.debug "query_result_info: #{inspect query_result_info}"
@@ -515,7 +515,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     query_options =
       do_query
       |> where_rel8ns("ancestor", "with", "ibgib", test_ib_gib_b)
-    {:ok, query_result} = root |> query(query_options)
+    {:ok, query_result} = root |> query(@test_identities_1, query_options)
     Logger.debug "query_result: #{inspect query_result}"
     query_result_info = query_result |> get_info!
     Logger.info "query_result_info: #{inspect query_result_info}"
@@ -556,7 +556,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     query_options =
       do_query
       |> where_rel8ns("ancestor", "without", "ibgib", test_ib_gib_b)
-    {:ok, query_result} = root |> query(query_options)
+    {:ok, query_result} = root |> query(@test_identities_1, query_options)
     Logger.debug "query_result: #{inspect query_result}"
     query_result_info = query_result |> get_info!
     Logger.info "query_result_info: #{inspect query_result_info}"
@@ -595,7 +595,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     query_options =
       do_query
       |> where_rel8ns("ancestor", "with", "ib", test_ib_b)
-    {:ok, query_result} = root |> query(query_options)
+    {:ok, query_result} = root |> query(@test_identities_1, query_options)
     Logger.debug "query_result: #{inspect query_result}"
     query_result_info = query_result |> get_info!
     Logger.info "query_result_info: #{inspect query_result_info}"
@@ -645,7 +645,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     query_options =
       do_query
       |> where_rel8ns("ancestor", "with", "ib", test_ib_b)
-    {:ok, query_result} = root |> query(query_options)
+    {:ok, query_result} = root |> query(@test_identities_1, query_options)
     Logger.debug "query_result: #{inspect query_result}"
     query_result_info = query_result |> get_info!
     Logger.info "query_result_info: #{inspect query_result_info}"
@@ -698,7 +698,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
       do_query
       |> where_ib("is", a_ib)
       |> most_recent_only
-    query_result_info = a |> query!(query_opts) |> get_info!
+    query_result_info = a |> query!(@test_identities_1, query_opts) |> get_info!
     Logger.debug "query_result_info: #{inspect query_result_info}"
 
     result_list = query_result_info[:rel8ns]["result"]
@@ -736,7 +736,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
       do_query
       |> where_ib("is", a_ib)
       |> most_recent_only
-    query_result_info = a |> query!(query_opts) |> get_info!
+    query_result_info = a |> query!(@test_identities_1, query_opts) |> get_info!
     Logger.debug "query_result_info: #{inspect query_result_info}"
 
     result_list = query_result_info[:rel8ns]["result"]
@@ -793,7 +793,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
       |> where_ib("is", b_ib)
       |> most_recent_only
 
-    query_result_info = a |> query!(query_opts) |> get_info!
+    query_result_info = a |> query!(@test_identities_1, query_opts) |> get_info!
     Logger.debug "query_result_info: #{inspect query_result_info}"
 
     result_list = query_result_info[:rel8ns]["result"]
@@ -843,7 +843,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
       do_query
       |> where_rel8ns(test_rel8n, "withany", "ibgib", [identity_ib_gib])
       # |> where_rel8ns(test_rel8n, "with", "ibgib", identity_ib_gib)
-    query_result_info = identity |> query!(query_opts) |> get_info!
+    query_result_info = identity |> query!(@test_identities_1, query_opts) |> get_info!
     Logger.debug "query_result_info: #{inspect query_result_info}"
 
     result_ib_gib_list =
@@ -907,7 +907,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     query_opts =
       do_query
       |> where_rel8ns(test_rel8n, "withany", "ibgib", [identity_ib_gib, identity_ib_gib2])
-    query_result_info = identity |> query!(query_opts) |> get_info!
+    query_result_info = identity |> query!(@test_identities_1, query_opts) |> get_info!
     Logger.debug "query_result_info: #{inspect query_result_info}"
 
     result_ib_gib_list =
@@ -979,7 +979,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
       |> where_rel8ns(test_rel8n, "with", "ibgib", identity_ib_gib)
       |> where_rel8ns(test_rel8n, "with", "ibgib", identity_ib_gib2)
 
-    query_result_info = identity |> query!(query_opts) |> get_info!
+    query_result_info = identity |> query!(@test_identities_1, query_opts) |> get_info!
     Logger.debug "query_result_info: #{inspect query_result_info}"
 
     result_ib_gib_list =
@@ -996,78 +996,4 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     Logger.debug "expected_result_list: #{inspect expected_result_list}"
     assert result_ib_gib_list == expected_result_list
   end
-
-  @tag :capture_log
-  test "Fork a couple ib, query, asked_by single ib_gib bitstring" do
-    test_count = 5
-    {:ok, root} = IbGib.Expression.Supervisor.start_expression()
-
-    a = root |> fork!(@test_identities_1, Helper.new_id)
-    Logger.configure(level: :info)
-      1..test_count |> Enum.each(&(a |> fork!(@test_identities_1, "ib_#{&1}") |> fork!(@test_identities_1, "ib2_#{&1}")))
-    Logger.configure(level: :debug)
-
-
-    test_identities_1_ib_gib = "some ib#{@delim}gib"
-    test_identities_1_ib_gibs = [test_identities_1_ib_gib]
-    # testing single one in this test
-    query_options =
-      do_query
-      |> asked_by(test_identities_1_ib_gib)
-    {:ok, query_result} = root |> query(query_options)
-    Logger.debug "query_result: #{inspect query_result}"
-    query_result_info = query_result |> get_info!
-    Logger.warn "query_result_info: #{inspect query_result_info}"
-    assert Enum.count(query_result_info[:rel8ns]["result"]) > 1
-    query_ib_gib = Enum.at(query_result_info[:rel8ns]["query"], 0)
-
-    # this is the query itself (not the result). We want to make sure
-    # that the query itself is "signed" by the `asked_by` part of the
-    # query_options
-    {:ok, query} = IbGib.Expression.Supervisor.start_expression(query_ib_gib)
-    query_info = query |> get_info!
-    Logger.warn "query_info: #{inspect query_info}"
-    Logger.warn "blah: #{inspect query_info[:data]}"
-
-    assert query_info[:rel8ns]["identity"] == test_identities_1_ib_gibs
-    assert query_result_info[:rel8ns]["identity"] == test_identities_1_ib_gibs
-  end
-
-  @tag :capture_log
-  test "Fork a couple ib, query, asked_by list of ib_gib bitstrings" do
-    test_count = 5
-    {:ok, root} = IbGib.Expression.Supervisor.start_expression()
-
-    a = root |> fork!(@test_identities_1, Helper.new_id)
-    Logger.configure(level: :info)
-      1..test_count |> Enum.each(&(a |> fork!(@test_identities_1, "ib_#{&1}") |> fork!(@test_identities_1, "ib2_#{&1}")))
-    Logger.configure(level: :debug)
-
-
-    test_identities_1_ib_gib = "some ib#{@delim}gib"
-    test_identities_1_ib_gib2 = "some other ib#{@delim}gib"
-    test_identities_1_ib_gibs = [test_identities_1_ib_gib, test_identities_1_ib_gib2]
-    # testing multiple overload in this test
-    query_options =
-      do_query
-      |> asked_by(test_identities_1_ib_gibs)
-    {:ok, query_result} = root |> query(query_options)
-    Logger.debug "query_result: #{inspect query_result}"
-    query_result_info = query_result |> get_info!
-    Logger.warn "query_result_info: #{inspect query_result_info}"
-    assert Enum.count(query_result_info[:rel8ns]["result"]) > 1
-    query_ib_gib = Enum.at(query_result_info[:rel8ns]["query"], 0)
-
-    # this is the query itself (not the result). We want to make sure
-    # that the query itself is "signed" by the `asked_by` part of the
-    # query_options
-    {:ok, query} = IbGib.Expression.Supervisor.start_expression(query_ib_gib)
-    query_info = query |> get_info!
-    Logger.warn "query_info: #{inspect query_info}"
-    Logger.warn "blah: #{inspect query_info[:data]}"
-
-    assert query_info[:rel8ns]["identity"] == test_identities_1_ib_gibs
-    assert query_result_info[:rel8ns]["identity"] == test_identities_1_ib_gibs
-  end
-
 end

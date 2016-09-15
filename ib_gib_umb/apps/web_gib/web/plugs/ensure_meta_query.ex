@@ -50,7 +50,7 @@ defmodule WebGib.Plugs.EnsureMetaQuery do
           # Execute the actual query
           {:ok, meta_query_result} <-
             first_identity
-            |> query([@bootstrap_identity, first_identity_ib_gib], query_opts),
+            |> query([@bootstrap_identity_ib_gib, first_identity_ib_gib], query_opts),
 
           # Parse our results
           {:ok, meta_query_result_info} <- meta_query_result |> get_info,
@@ -101,7 +101,6 @@ defmodule WebGib.Plugs.EnsureMetaQuery do
       |> where_ib("is", "query_result")
       |> where_rel8ns("ancestor", "with", "ibgib", "query_result#{@delim}gib")
       |> where_rel8ns("identity", "withany", "ibgib", identity_ib_gibs)
-      |> asked_by(identity_ib_gibs)
     {:ok, query_opts}
   end
 

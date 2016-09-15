@@ -334,50 +334,9 @@ defmodule IbGib.QueryOptionsFactory do
     insert_details(acc_options, current_key, current_options, "time", this_details)
   end
 
-  def asked_by(acc_options, who)
-  def asked_by(acc_options, identity_ib_gib)
-    when is_bitstring(identity_ib_gib) do
-    # Just wrapping it in a list
-    asked_by(acc_options, [identity_ib_gib])
-  end
-  def asked_by(acc_options, identity_ib_gibs)
-    when is_list(identity_ib_gibs) do
-
-    {current_key, current_options, current_details} =
-      get_current(acc_options, "meta")
-
-    this_details = %{
-      "who" => identity_ib_gibs
-    }
-    new_details = Map.merge(current_details, this_details)
-
-    insert_details(acc_options, current_key, current_options, "meta", new_details)
-  end
-
   # ----------------------------------------------------------------------------
   # Helper
   # ----------------------------------------------------------------------------
-
-  def get_identities(query_options) when is_map(query_options) do
-    Logger.debug "query_options: #{inspect query_options}"
-    who_list =
-      Enum.filter_map(query_options, fn {_, opt_group} ->
-        if Map.has_key?(opt_group, "meta") and
-           Map.has_key?(opt_group["meta"], "who") do
-          true
-        else
-          false
-        end
-      end, fn {_, opt_group} ->
-        opt_group["meta"]["who"]
-      end)
-    who =
-      if who_list != nil do
-        Enum.at(who_list, 0)
-      else
-        nil
-      end
-  end
 
   # All of these fluent factory functions have the same basic structure.
   # This part extracts the current stuff out of the accumulated options

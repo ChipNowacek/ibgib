@@ -59,7 +59,7 @@ defmodule IbGib.Constants do
       # This way, whatever is forked we already consider low trust anyway, as
       # this is going to be the "lowest" layer of identity (anon session).
       # We make it an atom so it doesn't pattern match against strings.
-      @bootstrap_identity :bootstrap_identity
+      @bootstrap_identity_ib_gib "bootstrap_identity#{@delim}gib"
       @identity_ib_gib "identity#{@delim}gib"
     end
   end

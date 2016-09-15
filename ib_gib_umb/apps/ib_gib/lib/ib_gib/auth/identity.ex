@@ -61,7 +61,7 @@ defmodule IbGib.Auth.Identity do
   details.
   E.g. "%{username => cool user, password => badPASSWORD}" hashes to
        "ABCDE12345ABCDE12345ABCDE12345ABCDE12345ABCDE12345"
-       "%{identityId => aiSDFJEisjFJSEkwi1923487}" hashes to
+       "%{identityTokenId => aiSDFJEisjFJSEkwi1923487}" hashes to
        "12345ABCDE12345ABCDE12345ABCDE12345ABCDE12345ABCDE"
        "%{email => "example@email.address", identityId => aiSDFJEisjFJSEkwi1923487}" hashes to
        "YOyoYOyooo1234567890YOyoYOyooo1234567890YOyoYOyooo12345678901234"
@@ -102,7 +102,7 @@ defmodule IbGib.Auth.Identity do
   def get_identity(priv_data, pub_data)
     when is_map(priv_data) and is_map(pub_data) do
     with {:ok, root_identity} <- IbGib.Expression.Supervisor.start_expression({"identity", "gib"}),
-      {:ok, identity_ib} <- get_identity_ib(priv_data),
+      {:ok, identity_ib} <- generate_identity_ib(priv_data),
       {:ok, latest} <- get_latest_identity_ib_gib(identity_ib, root_identity),
       {:ok, {identity_ib_gib, identity_info, identity}} <-
         create_identity_if_needed(latest, root_identity, identity_ib),
@@ -123,13 +123,13 @@ defmodule IbGib.Auth.Identity do
 
   ## Examples
       iex> identity_info = %{"some_key" => "some-id_here234987SD(^&@{%})"}
-      iex> IbGib.Auth.Identity.get_identity_ib(identity_info)
+      iex> IbGib.Auth.Identity.generate_identity_ib(identity_info)
       {:ok, "93B8AA0EE0495D24CEBE1322AC705B0143945CA14B92D6B1B840630AC3251F3F"}
 
   Returns {:ok, identity_ib} if ok, else {:error, reason}
   """
-  @spec get_identity_ib(map) :: {:ok, String.t} | {:error, String.t}
-  def get_identity_ib(identity_details)
+  @spec generate_identity_ib(map) :: {:ok, String.t} | {:error, String.t}
+  def generate_identity_ib(identity_details)
     when is_map(identity_details) do
     identity_ib = hash(identity_details)
     if identity_ib != :error do
@@ -138,20 +138,20 @@ defmodule IbGib.Auth.Identity do
       {:error, emsg_hash_problem}
     end
   end
-  def get_identity_ib(unknown_arg) do
+  def generate_identity_ib(unknown_arg) do
     {:error, emsg_invalid_args(unknown_arg)}
   end
 
   @doc """
-  Bang version of `get_identity_ib/1`.
+  Bang version of `generate_identity_ib/1`.
 
   ## Examples
       iex> identity_info = %{"some_key" => "some-id_here234987SD(^&@{%})"}
-      iex> IbGib.Auth.Identity.get_identity_ib!(identity_info)
+      iex> IbGib.Auth.Identity.generate_identity_ib!(identity_info)
       "93B8AA0EE0495D24CEBE1322AC705B0143945CA14B92D6B1B840630AC3251F3F"
   """
-  def get_identity_ib!(identity_id) do
-    bang(get_identity_ib(identity_id))
+  def generate_identity_ib!(identity_id) do
+    bang(generate_identity_ib(identity_id))
   end
 
   @doc """
@@ -176,8 +176,8 @@ defmodule IbGib.Auth.Identity do
 
     with \
       {:ok, query_result} <-
-        query_off_of |> query([@bootstrap_identity], query_options),
-        
+        query_off_of |> query([@bootstrap_identity_ib_gib], query_options),
+
       {:ok, query_result_info} <-
         query_result |> get_info do
 
@@ -216,7 +216,7 @@ defmodule IbGib.Auth.Identity do
     when is_nil(existing_ib_gib) do
     with {:ok, {_, identity}} <-
            root_identity
-           |> instance(@bootstrap_identity, identity_ib, %{:gib_stamp => true}),
+           |> instance(@bootstrap_identity_ib_gib, identity_ib, %{:gib_stamp => true}),
       {:ok, identity_info} <- identity |> get_info,
       {:ok, identity_ib_gib} <- get_ib_gib(identity_info) do
       {:ok, {identity_ib_gib, identity_info, identity}}
@@ -246,11 +246,11 @@ defmodule IbGib.Auth.Identity do
       {:ok, identity_ib_gib}
     else
       opts = %{:gib_stamp => true}
-      # Everyone is authorized with at least @bootstrap_identity, and
+      # Everyone is authorized with at least @bootstrap_identity_ib_gib, and
       # by providing the priv_data, the user has already been authorized with
       # current identity, identity_ib_gib. We are only looking to mut8 if we
       # should, so this should be correct authorization.
-      authz = [@bootstrap_identity, identity_ib_gib]
+      authz = [@bootstrap_identity_ib_gib, identity_ib_gib]
       with {:ok, new_identity} <- identity |> mut8(authz, identity_data, opts),
         {:ok, new_identity_info} <- new_identity |> get_info,
         {:ok, new_identity_ib_gib} <- new_identity_info |> get_ib_gib do
