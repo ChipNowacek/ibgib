@@ -114,7 +114,7 @@ defmodule IbGib.Auth.Identity do
     end
   end
   def get_identity(unknown_arg) do
-    {:error, emsg_invalid_arg(unknown_arg)}
+    {:error, emsg_invalid_args(unknown_arg)}
   end
 
 
@@ -139,7 +139,7 @@ defmodule IbGib.Auth.Identity do
     end
   end
   def get_identity_ib(unknown_arg) do
-    {:error, emsg_invalid_arg(unknown_arg)}
+    {:error, emsg_invalid_args(unknown_arg)}
   end
 
   @doc """
@@ -174,29 +174,39 @@ defmodule IbGib.Auth.Identity do
       |> where_gib("like", "#{@gib_stamp}%")
       |> most_recent_only
 
-    query_result_info =
-      query_off_of |> query!(query_options) |> get_info!
+    with \
+      {:ok, query_result} <-
+        query_off_of |> query([@bootstrap_identity], query_options),
+        
+      {:ok, query_result_info} <-
+        query_result |> get_info do
 
-    result_list = query_result_info[:rel8ns]["result"]
+          result_list = query_result_info[:rel8ns]["result"]
 
-    result_count = Enum.count(result_list)
-    case result_count do
-      1 ->
-        # All queries return ib^gib itself as the first result.
-        # So if there is one result, then that is like an "empty" result.
-        {:ok, nil}
+          result_count = Enum.count(result_list)
+          case result_count do
+            1 ->
+              # All queries return ib^gib itself as the first result.
+              # So if there is one result, then that is like an "empty" result.
+              {:ok, nil}
 
-      2 ->
-        {:ok, Enum.at(result_list, 1)}
-        # All queries return ib^gib itself as the first result.
-        # So if two results, then the second will be our identity ib^gib
+            2 ->
+              {:ok, Enum.at(result_list, 1)}
+              # All queries return ib^gib itself as the first result.
+              # So if two results, then the second will be our identity ib^gib
 
-      count ->
-        {:error, emsg_query_result_count(count)}
+            count ->
+              {:error, emsg_query_result_count(count)}
+          end
+    else
+      {:error, reason} ->
+        {:error, reason}
+      error ->
+        {:error, "#{inspect error}"}
     end
   end
-  def get_latest_identity_ib_gib(identity_id, query_off_of) do
-    {:error, emsg_invalid_args([identity_id, query_off_of])}
+  def get_latest_identity_ib_gib(identity_ib, query_off_of) do
+    {:error, emsg_invalid_args([identity_ib, query_off_of])}
   end
 
   # no `existing_ib_gib` means that we do not already have an identity

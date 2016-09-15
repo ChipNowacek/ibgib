@@ -84,7 +84,7 @@ defmodule IbGib.TransformFactory do
   If `opts` :gib_stamp is true, then we will "stamp" the gib, showing that the
   gib was done by our engine and not by a user.
   """
-  @spec mut8(String.t, list(String.t), map, map) :: map
+  @spec mut8(String.t, list(String.t), map, map) :: {:ok, map} | {:error, String.t}
   def mut8(src_ib_gib,
            identity_ib_gibs,
            new_data,
@@ -178,38 +178,49 @@ defmodule IbGib.TransformFactory do
   Creates a `query` transform ib_gib info map containing the given
   `query_options`.
   """
-  def query(query_options)
-    when is_map(query_options) do
+  @spec query(list(String.t), map) :: {:ok, map} | {:error, String.t}
+  def query(identity_ib_gibs, query_options)
+    when is_list(identity_ib_gibs) and is_map(query_options) do
 
-    ib = "query"
+    case validate_identity_ib_gibs(identity_ib_gibs) do
+      {:ok, :ok} ->
+        ib = "query"
 
-    who = IbGib.QueryOptionsFactory.get_identities(query_options)
-    relations =
-      if who == nil do
-        %{
-          "ancestor" => [@root_ib_gib, "query#{@delim}gib"],
-          "dna" => [@root_ib_gib],
-          "past" => @default_past
+        who = IbGib.QueryOptionsFactory.get_identities(query_options)
+        relations =
+          if who == nil do
+            %{
+              "ancestor" => [@root_ib_gib, "query#{@delim}gib"],
+              "dna" => [@root_ib_gib],
+              "past" => @default_past
+            }
+          else
+            %{
+              "ancestor" => [@root_ib_gib, "query#{@delim}gib"],
+              "dna" => [@root_ib_gib],
+              "past" => @default_past,
+              "identity" => who
+            }
+          end
+
+        data = %{
+          "options" => query_options
         }
-      else
-        %{
-          "ancestor" => [@root_ib_gib, "query#{@delim}gib"],
-          "dna" => [@root_ib_gib],
-          "past" => @default_past,
-          "identity" => who
+        gib = Helper.hash(ib, relations, data)
+        result = %{
+          ib: ib,
+          gib: gib,
+          rel8ns: relations,
+          data: data
         }
-      end
+        {:ok, result}
 
-    data = %{
-      "options" => query_options
-    }
-    gib = Helper.hash(ib, relations, data)
-    %{
-      ib: ib,
-      gib: gib,
-      rel8ns: relations,
-      data: data
-    }
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+  def query(query_opts) do
+    {:error, emsg_invalid_args(query_opts)}
   end
 
   # Stamping a gib means that it is "official", since a user doesn't (shouldn't)

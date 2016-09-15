@@ -380,7 +380,6 @@ defmodule WebGib.IbGibController do
       end
 
     src
-    leaving off here. need to implement adding the user when forking, mut8ing, etc. Should be a pretty fun process!
     |> Expression.fork(dest_ib)
   end
   defp fork_impl(root, src_ib_gib, dest_ib)

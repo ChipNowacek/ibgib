@@ -105,12 +105,8 @@ defmodule IbGib.Constants do
         "There was a problem hashing the given value."
       end
 
-      defp emsg_invalid_arg(arg) do
-        "Invalid argument: #{inspect arg}"
-      end
-
       defp emsg_invalid_args(args) do
-        "Invalid argument: #{inspect args}"
+        "Invalid args: #{inspect args}"
       end
 
       defp emsg_query_result_count(count) do

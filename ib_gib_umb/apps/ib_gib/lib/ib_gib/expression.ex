@@ -242,6 +242,8 @@ defmodule IbGib.Expression do
   end
 
   defp apply_mut8(a, b) do
+    b_identities = authorize_apply_b(a[:rel8ns], b[:rel8ns])
+
     # We are applying a mut8 transform.
     Logger.debug "applying mut8 b to ib_gib a.\na: #{inspect a}\nb: #{inspect b}\n"
     Logger.debug "a[:rel8ns]: #{inspect a[:rel8ns]}"
@@ -255,17 +257,6 @@ defmodule IbGib.Expression do
     original_gib = a[:gib]
     original_ib_gib = Helper.get_ib_gib!(ib, original_gib)
     Logger.debug "retaining ib. a[:ib]...: #{ib}"
-
-    # Check to make sure that our identities are valid (authorization)
-    # The passed in identities must contain **all** of the existing identities.
-    # Otherwise, the caller does not have the proper authorization, and should
-    # fork their own version before trying to mut8.
-    # Note also that this will **ADD** any other identities that are passed in,
-    # thus raising the level of authorization required for future mut8ns.
-    # If this is invalid, then we are going to fail fast and crash, which is
-    # what we want, since this is in the new process that was created (somehow)
-    # by an unauthorized caller.
-    b_identities = authorize_mut8(a[:rel8ns], b[:rel8ns])
 
     # Passed authorization.
     # I do not call add_relation for this, because I want it to overwrite.
@@ -337,58 +328,6 @@ defmodule IbGib.Expression do
     Logger.debug "a[:gib] set to gib: #{this_gib}"
 
     on_new_expression_completed(ib, this_gib, a)
-  end
-
-  # Returns b_identities if authorized.
-  # Raises exception if unauthorized (fail fast is proper).
-  # b must always have at least one identity
-  @spec authorize_mut8(map, map) :: list(String.t)
-  defp authorize_mut8(a_rel8ns, b_rel8ns) do
-    Logger.warn "a_rel8ns: #{inspect a_rel8ns}"
-    Logger.warn "a_rel8ns: #{inspect a_rel8ns}"
-    Logger.warn "a_rel8ns: #{inspect a_rel8ns}"
-    Logger.warn "a_rel8ns: #{inspect a_rel8ns}"
-    a_has_identity =
-      Map.has_key?(a_rel8ns, "identity") and
-      length(a_rel8ns["identity"]) > 0
-    b_has_identity =
-      Map.has_key?(b_rel8ns, "identity") and
-      length(b_rel8ns["identity"]) > 0
-
-    case {a_has_identity, b_has_identity} do
-      {true, true} ->
-        # both have identities, so the a must be a subset or equal to b
-        b_contains_all_of_a =
-          Enum.reduce(a_rel8ns["identity"], true, fn(a_ib_gib, acc) ->
-            acc and Enum.any?(b_rel8ns["identity"], &(&1 == a_ib_gib))
-          end)
-        if b_contains_all_of_a do
-          # return the b identities, as they may be more restrictive
-          b_identity = b_rel8ns["identity"]
-        else
-          # unauthorized: a requires auth, b does not have any/all
-          Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
-          # expected: a_identity, actual: b_identity
-          raise IbGib.Errors.UnauthorizedError, {a_rel8ns["identity"], b_rel8ns["identity"]}
-        end
-
-      {false, true} ->
-        # authorized: b has identity and a requires no authorization
-        b_identity = b_rel8ns["identity"]
-
-      {true, false} ->
-        # unauthorized: a requires auth, b has none
-        Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
-        a_identity = a_rel8ns["identity"]
-        # expected: a_identity, actual: nil
-        raise IbGib.Errors.UnauthorizedError, {a_identity, nil}
-
-      {false, false} ->
-        # unauthorized: b is required to have authorization and doesn't
-        Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
-        # expected: [something], actual: nil
-        raise IbGib.Errors.UnauthorizedError, {[], nil}
-    end
   end
 
   defp apply_mut8_metadata(a_data, b_new_data_metadata)
@@ -481,7 +420,9 @@ defmodule IbGib.Expression do
     on_new_expression_completed(ib, this_gib, a)
   end
 
-  defp apply_query(_, b) do
+  defp apply_query(a, b) do
+    b_identities = authorize_apply_b(a[:rel8ns], b[:rel8ns])
+
     query_options = b[:data]["options"]
     result = IbGib.Data.query(query_options)
     Logger.debug "query result: #{inspect result}"
@@ -500,7 +441,8 @@ defmodule IbGib.Expression do
     this_rel8ns = %{
       "dna" => @default_dna,
       "ancestor" => @default_ancestor ++ ["query_result#{delim}gib"],
-      "past" => @default_past
+      "past" => @default_past,
+      "identity" => b_identities
     }
     this_info =
       this_info
@@ -515,15 +457,15 @@ defmodule IbGib.Expression do
             acc ++ [Helper.get_ib_gib!(ib_gib_model.ib, ib_gib_model.gib)]
           end))
 
-    who = IbGib.QueryOptionsFactory.get_identities(query_options)
-
-    this_info =
-      if who != nil do
-        this_info
-        |> add_relation("identity", who)
-      else
-        this_info
-      end
+    # who = IbGib.QueryOptionsFactory.get_identities(query_options)
+    #
+    # this_info =
+    #   if who != nil do
+    #     this_info
+    #     |> add_relation("identity", who)
+    #   else
+    #     this_info
+    #   end
 
     this_gib = Helper.hash(this_ib, this_info[:rel8ns], this_info[:data])
     this_info = Map.put(this_info, :gib, this_gib)
@@ -592,6 +534,67 @@ defmodule IbGib.Expression do
     else
       Logger.error "Save/Register error: #{inspect result}"
       {:error, result}
+    end
+  end
+
+  # Check to make sure that our identities are valid (authorization)
+  # The passed in identities must contain **all** of the existing identities.
+  # Otherwise, the caller does not have the proper authorization, and should
+  # fork their own version before trying to mut8.
+  # Note also that this will **ADD** any other identities that are passed in,
+  # thus raising the level of authorization required for future mut8ns.
+  # If this is invalid, then we are going to fail fast and crash, which is
+  # what we want, since this is in the new process that was created (somehow)
+  # by an unauthorized caller.
+  # Returns b_identities if authorized.
+  # Raises exception if unauthorized (fail fast is proper).
+  # b must always have at least one identity
+  @spec authorize_apply_b(map, map) :: list(String.t)
+  defp authorize_apply_b(a_rel8ns, b_rel8ns) do
+    Logger.warn "a_rel8ns: #{inspect a_rel8ns}"
+    Logger.warn "a_rel8ns: #{inspect a_rel8ns}"
+    Logger.warn "a_rel8ns: #{inspect a_rel8ns}"
+    Logger.warn "a_rel8ns: #{inspect a_rel8ns}"
+    a_has_identity =
+      Map.has_key?(a_rel8ns, "identity") and
+      length(a_rel8ns["identity"]) > 0
+    b_has_identity =
+      Map.has_key?(b_rel8ns, "identity") and
+      length(b_rel8ns["identity"]) > 0
+
+    case {a_has_identity, b_has_identity} do
+      {true, true} ->
+        # both have identities, so the a must be a subset or equal to b
+        b_contains_all_of_a =
+          Enum.reduce(a_rel8ns["identity"], true, fn(a_ib_gib, acc) ->
+            acc and Enum.any?(b_rel8ns["identity"], &(&1 == a_ib_gib))
+          end)
+        if b_contains_all_of_a do
+          # return the b identities, as they may be more restrictive
+          b_identity = b_rel8ns["identity"]
+        else
+          # unauthorized: a requires auth, b does not have any/all
+          Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
+          # expected: a_identity, actual: b_identity
+          raise IbGib.Errors.UnauthorizedError, {a_rel8ns["identity"], b_rel8ns["identity"]}
+        end
+
+      {false, true} ->
+        # authorized: b has identity and a requires no authorization
+        b_identity = b_rel8ns["identity"]
+
+      {true, false} ->
+        # unauthorized: a requires auth, b has none
+        Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
+        a_identity = a_rel8ns["identity"]
+        # expected: a_identity, actual: nil
+        raise IbGib.Errors.UnauthorizedError, {a_identity, nil}
+
+      {false, false} ->
+        # unauthorized: b is required to have authorization and doesn't
+        Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
+        # expected: [something], actual: nil
+        raise IbGib.Errors.UnauthorizedError, {[], nil}
     end
   end
 
@@ -787,22 +790,25 @@ defmodule IbGib.Expression do
   Returns `{:ok, qry_results_expr_pid}` which is the reference to the newly
   generated queryresults ib_gib (not the query "transform" ib_gib).
   """
-  @spec query(pid, map) :: {:ok, pid} | {:error, any}
-  def query(expr_pid, query_options)
-    when is_pid(expr_pid) and is_map(query_options) do
-    GenServer.call(expr_pid, {:query, query_options}, 30_000) # 30 sec timeout
+  @spec query(pid, list(String.t), map) :: {:ok, pid} | {:error, any}
+  def query(expr_pid, identity_ib_gibs, query_options)
+  def query(expr_pid, identity_ib_gibs, query_options)
+    when is_pid(expr_pid) and is_list(identity_ib_gibs) and
+         is_map(query_options) do
+    GenServer.call(expr_pid, {:query, identity_ib_gibs, query_options}, 30_000) # TODO: Change hardcoded query timeout 30s to env var
+  end
+  def query(expr_pid, identity_ib_gibs, query_options) do
+    emsg = emsg_invalid_args([expr_pid, identity_ib_gibs, query_options])
+    Logger.error(emsg)
+    {:error, emsg}
   end
 
   @doc """
   Bang version of `query/6`
   """
-  @spec query!(pid, map) :: pid | any
-  def query!(expr_pid, query_options)
-    when is_pid(expr_pid) and is_map(query_options) do
-    case query(expr_pid, query_options) do
-      {:ok, qry_results_expr_pid} -> qry_results_expr_pid
-      {:error, reason} -> raise "#{inspect reason}"
-    end
+  @spec query!(pid, list(String.t), map) :: pid | any
+  def query!(expr_pid, identity_ib_gibs, query_options) do
+    bang(query(expr_pid, identity_ib_gibs, query_options))
   end
 
   # ----------------------------------------------------------------------------
@@ -902,9 +908,9 @@ defmodule IbGib.Expression do
     Logger.metadata([x: :instance])
     {:reply, instance_impl(identity_ib_gibs, dest_ib, opts, state), state}
   end
-  def handle_call({:query, query_options}, _from, state) do
+  def handle_call({:query, identity_ib_gibs, query_options}, _from, state) do
     Logger.metadata([x: :query])
-    {:reply, query_impl(query_options, state), state}
+    {:reply, query_impl(identity_ib_gibs, query_options, state), state}
   end
   def handle_call(:get_info, _from, state) do
     Logger.metadata([x: :get_info])
@@ -1039,25 +1045,33 @@ defmodule IbGib.Expression do
     {:ok, {new_this, new_instance}}
   end
 
-  defp query_impl(query_options, state)
+  defp query_impl(identity_ib_gibs, query_options, state)
     when is_map(query_options) do
     Logger.debug "_state_: #{inspect state}"
 
     # 1. Create query ib_gib
-    query_info = TransformFactory.query(query_options)
-    Logger.debug "query_info: #{inspect query_info}"
+    with {:ok, query_info} <-
+        TransformFactory.query(identity_ib_gibs, query_options),
 
-    # 2. Save query ib_gib
-    {:ok, :ok} = IbGib.Data.save(query_info)
+      # 2. Save query ib_gib
+      {:ok, :ok} <- IbGib.Data.save(query_info),
 
-    # 3. Create instance process of query
-    Logger.debug "query saved. Now trying to create query expression process."
-    {:ok, query} = IbGib.Expression.Supervisor.start_expression({query_info[:ib], query_info[:gib]})
+      # 3. Create instance process of query
+      {:ok, query} <- IbGib.Expression.Supervisor.start_expression({query_info[:ib], query_info[:gib]}),
 
-    # 4. Create new ib_gib by contacting query ib_gib
-    contact_result = contact_impl(query, state)
-    Logger.debug "contact_result: #{inspect contact_result}"
-    contact_result
+      # 4. Apply transform
+      {:ok, new_pid} <- contact_impl(query, state) do
+
+      # 5. Return new process of applied transform
+      {:ok, new_pid}
+    else
+      {:error, reason} ->
+        Logger.error "#{inspect reason}"
+        {:error, reason}
+      error ->
+        Logger.error "#{inspect error}"
+        {:error, "#{inspect error}"}
+    end
   end
 
   defp contact_impl(other_pid, state) when is_pid(other_pid) and is_map(state) do

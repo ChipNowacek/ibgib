@@ -377,7 +377,7 @@ defmodule IbGib.Helper do
     {:ok, "#{@gib_stamp}_#{gib}_#{@gib_stamp}"}
   end
   def stamp_gib(unknown_arg) do
-    {:error, emsg_invalid_arg(unknown_arg)}
+    {:error, emsg_invalid_args(unknown_arg)}
   end
 
   @doc """

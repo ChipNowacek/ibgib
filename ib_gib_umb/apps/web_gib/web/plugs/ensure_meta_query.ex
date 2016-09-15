@@ -39,16 +39,30 @@ defmodule WebGib.Plugs.EnsureMetaQuery do
 
       conn =
         with {:ok, query_opts} <- get_meta_query_opts(identity_ib_gibs),
-          {:ok, first_identity} <- get_first_identity(identity_ib_gibs),
-          {:ok, meta_query_result} <- first_identity |> query(query_opts),
+          # Setup the query.
+          # We need the first identity ib_gib to do the query
+          {:ok, first_identity_ib_gib} <-
+            get_first_identity_ib_gib(identity_ib_gibs),
+          # ...and the process off of which to perform the query
+          {:ok, first_identity} <-
+            IbGib.Expression.Supervisor.start_expression(first_identity_ib_gib),
+
+          # Execute the actual query
+          {:ok, meta_query_result} <-
+            first_identity
+            |> query([@bootstrap_identity, first_identity_ib_gib], query_opts),
+
+          # Parse our results
           {:ok, meta_query_result_info} <- meta_query_result |> get_info,
           {:ok, meta_query_ib_gib} <-
             get_meta_query_ib_gib(meta_query_result_info),
           {:ok, meta_query_result_ib_gib} <-
             Helper.get_ib_gib(meta_query_result_info) do
 
-          Logger.warn "meta_query_result_ib_gib: #{meta_query_result_ib_gib}"
-          Logger.warn "meta_query_result_info: #{inspect meta_query_result_info}"
+          # At this point, our query was executed, and we have both the
+          # query's and query result's ib_gib to store in session.
+
+          Logger.debug "meta_query_result_ib_gib: #{meta_query_result_ib_gib}"
           conn =
             conn
             |> put_session(@meta_query_ib_gib_key, meta_query_ib_gib)
@@ -91,17 +105,20 @@ defmodule WebGib.Plugs.EnsureMetaQuery do
     {:ok, query_opts}
   end
 
-  defp get_first_identity(identity_ib_gibs)
+  # Getting an array from session with a single value for some reason
+  # returns the single value and not the array with a single value. :-/
+  defp get_first_identity_ib_gib(identity_ib_gibs)
     when is_bitstring(identity_ib_gibs) do
-      # Getting an array from session with a single value for some reason
-      # returns the single value and not the array with a single value. :-/
-    identity_ib_gibs
+    {:ok, identity_ib_gibs}
   end
-  defp get_first_identity(identity_ib_gibs)
-    when is_list(identity_ib_gibs) do
-    first_identity_ib_gib = Enum.at(identity_ib_gibs, 0)
-    first_identity =
-      IbGib.Expression.Supervisor.start_expression(first_identity_ib_gib)
+  defp get_first_identity_ib_gib(identity_ib_gibs)
+    when is_list(identity_ib_gibs) and identity_ib_gibs != [] do
+    get_first_identity_ib_gib(Enum.at(identity_ib_gibs, 0))
+  end
+  defp get_first_identity_ib_gib(identity_ib_gibs) do
+    emsg = emsg_invalid_args(identity_ib_gibs)
+    Logger.error emsg
+    {:error, emsg}
   end
 
   defp get_meta_query_ib_gib(meta_query_result_info) do
