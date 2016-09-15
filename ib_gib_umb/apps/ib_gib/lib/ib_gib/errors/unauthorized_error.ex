@@ -4,14 +4,14 @@ defmodule IbGib.Errors.UnauthorizedError do
   thereof wah wah).
   """
 
+  defexception [:message]
+  use IbGib.Constants, :ib_gib
   use IbGib.Constants, :error_msgs
 
-  defexception [:message]
-
-  def exception(expected_identity_ib_gibs, actual_identity_ib_gibs) do
+  def exception({expected_identity_ib_gibs, actual_identity_ib_gibs}) do
     msg =
       emsg_invalid_authorization(expected_identity_ib_gibs,
                                  actual_identity_ib_gibs)
-    %UnauthorizedError{message: msg}
+    %IbGib.Errors.UnauthorizedError{message: msg}
   end
 end

@@ -101,7 +101,7 @@ defmodule IbGib.Expression.GibStampsTest do
     {:ok, root} = Expression.Supervisor.start_expression()
 
     new_data = %{"data" => "some data here"}
-    test = root |> mut8!(new_data, %{:gib_stamp => true})
+    test = root |> mut8!(@test_identities_1, new_data, %{:gib_stamp => true})
     test_info = test |> get_info!
     test_gib = test_info[:gib]
 
@@ -114,7 +114,7 @@ defmodule IbGib.Expression.GibStampsTest do
 
     new_data = %{"data" => "some data here"}
     # opts = nada
-    test = root |> mut8!(new_data)
+    test = root |> mut8!(@test_identities_1, new_data)
     test_info = test |> get_info!
     test_gib = test_info[:gib]
 
@@ -127,7 +127,7 @@ defmodule IbGib.Expression.GibStampsTest do
 
     new_data = %{"data" => "some data here"}
     opts = %{:gib_stamp => false}
-    test = root |> mut8!(new_data, opts)
+    test = root |> mut8!(@test_identities_1, new_data, opts)
     test_info = test |> get_info!
     test_gib = test_info[:gib]
 
@@ -140,7 +140,7 @@ defmodule IbGib.Expression.GibStampsTest do
 
     new_data = %{"data" => "some data here"}
     opts = %{}
-    test = root |> mut8!(new_data, opts)
+    test = root |> mut8!(@test_identities_1, new_data, opts)
     test_info = test |> get_info!
     test_gib = test_info[:gib]
 
@@ -153,7 +153,7 @@ defmodule IbGib.Expression.GibStampsTest do
 
     new_data = %{"data" => "some data here"}
     opts = nil
-    test = root |> mut8!(new_data, opts)
+    test = root |> mut8!(@test_identities_1, new_data, opts)
     test_info = test |> get_info!
     test_gib = test_info[:gib]
 

@@ -147,32 +147,27 @@ defmodule IbGib.Expression.HelloWorldTest do
 
     Logger.debug "gonna instance hw"
     hw_instance_ib = "hw instance_#{RandomGib.Get.some_letters(5)}"
-    {:ok, {hw_instance, _hw_instance_info, _hw_instance_ib_gib}} =
-      hw |> Expression.gib(:fork, @test_identities_1, hw_instance_ib)
+    # {:ok, {hw_instance, _hw_instance_info, _hw_instance_ib_gib}} =
+      # hw |> Expression.gib(:fork, @test_identities_1, hw_instance_ib)
+    hw_instance = hw |> fork!(@test_identities_1, hw_instance_ib)
 
     Logger.debug "gonna text"
     # Randomized to keep unit tests from overlapping.
     text_ib = "text_#{RandomGib.Get.some_letters(5)}"
     {:ok, text} = root |> Expression.fork(@test_identities_1, text_ib)
-    # text_info = text_thing |> Expression.get_info!
-    # text_ib_gib = Helper.get_ib_gib!(text_info[:ib], text_info[:gib])
 
     Logger.debug "gonna instance text"
     text_instance_ib = "text instance_#{RandomGib.Get.some_letters(5)}"
-    {:ok, {text_instance, _text_instance_info, _text_instance_ib_gib}} =
-      text |> Expression.gib(:fork, @test_identities_1, text_instance_ib)
+    text_instance = text |> fork!(@test_identities_1, text_instance_ib)
 
     Logger.debug "gonna rel8 'text property'"
-    {
-      :ok,
-      {_hw_instance, hw_instance_info, _hw_instance_ib_gib},
-      {text_instance, _text_instance_info, _text_instance_ib_gib}
-    } =
-      hw_instance |> Expression.gib(:rel8, text_instance, ["prop", "text"], ["prop_of"])
 
-    {:ok, {_text_instance, text_instance_info, _text_instance_ib_gib}} =
-      text_instance
-      |> Expression.gib(:mut8, %{"content" => "Hello World!"})
+    {hw_instance, text_instance} = hw_instance |> rel8!(text_instance, ["prop", "text"], ["prop_of"])
+    hw_instance_info = hw_instance |> get_info!
+
+    text_instance =
+      text_instance |> mut8!(@test_identities_1, %{"content" => "Hello World!"})
+    text_instance_info = text_instance |> get_info!
 
     Logger.debug "hw_instance_info: #{inspect hw_instance_info}"
     Logger.debug "text_instance_info: #{inspect text_instance_info}"

@@ -53,8 +53,9 @@ defmodule IbGib.TransformFactory do
         ib = "fork"
 
         relations = %{
+          "ancestor" => @default_ancestor ++ ["fork#{@delim}gib"],
           "past" => @default_past,
-          "dna" => @default_dna ++ ["fork#{@delim}gib"],
+          "dna" => @default_dna,
           "identity" => identity_ib_gibs
         }
         data = %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib}
@@ -87,7 +88,7 @@ defmodule IbGib.TransformFactory do
   def mut8(src_ib_gib,
            identity_ib_gibs,
            new_data,
-           opts \\ @default_transform_options)
+           opts)
  def mut8(src_ib_gib, identity_ib_gibs, new_data, opts)
     when is_bitstring(src_ib_gib) and is_list(identity_ib_gibs) and
          is_map(new_data) and is_map(opts) do
@@ -96,8 +97,9 @@ defmodule IbGib.TransformFactory do
       {:ok, :ok} ->
         ib = "mut8"
         relations = %{
+          "ancestor" => @default_ancestor ++ ["mut8#{@delim}gib"],
           "past" => @default_past,
-          "dna" => @default_dna ++ "mut8#{@delim}gib",
+          "dna" => @default_dna,
           "identity" => identity_ib_gibs
         }
         data = %{"src_ib_gib" => src_ib_gib, "new_data" => new_data}

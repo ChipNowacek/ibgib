@@ -182,7 +182,7 @@ defmodule IbGib.Auth.AuthTest do
     test_value = "valid value here"
     test_kv = %{test_key => test_value}
 
-    {:ok, a} = root |> mut8(identity_ib_gibs, test_kv)
+    {:ok, a} = root |> mut8(identity_ib_gibs, test_kv, @default_transform_options)
     a_info = a |> get_info!
 
     Logger.debug "a_info: #{inspect a_info}"
@@ -196,9 +196,11 @@ defmodule IbGib.Auth.AuthTest do
     {:ok, root} = Expression.Supervisor.start_expression()
 
     identity_ib_gibs = @test_identities_2
-    dest_ib = "valid ib here"
+    test_key = "valid key here"
+    test_value = "valid value here"
+    test_kv = %{test_key => test_value}
 
-    {:ok, a} = root |> mut8(identity_ib_gibs, dest_ib)
+    {:ok, a} = root |> mut8(identity_ib_gibs, test_kv, @default_transform_options)
     a_info = a |> get_info!
 
     Logger.debug "a_info: #{inspect a_info}"

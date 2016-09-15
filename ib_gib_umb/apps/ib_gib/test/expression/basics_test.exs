@@ -66,13 +66,24 @@ defmodule IbGib.Expression.BasicsTest do
 
     forked_info = Expression.get_info!(new_forked_pid)
     Logger.debug "forked_info: #{inspect forked_info}"
+    Logger.debug "forked_info: #{inspect forked_info}"
+    Logger.debug "forked_info: #{inspect forked_info}"
+    Logger.debug "forked_info: #{inspect forked_info}"
+    Logger.warn "forked_info: #{inspect forked_info}"
+    Logger.warn "forked_info: #{inspect forked_info}"
+    Logger.warn "forked_info: #{inspect forked_info}"
+    Logger.warn "forked_info: #{inspect forked_info}"
+    Logger.warn "forked_info: #{inspect forked_info}"
+    Logger.warn "forked_info: #{inspect forked_info}"
+    Logger.warn "forked_info: #{inspect forked_info}"
+    Logger.warn "forked_info: #{inspect forked_info}"
 
     forked_ib_gib = Helper.get_ib_gib!(forked_info[:ib], forked_info[:gib])
     Logger.debug "forked_ib_gib: #{forked_ib_gib}"
 
     prop = "prop_name"
     prop_value = "prop value yo"
-    {mut8_result, new_mut8_pid} = Expression.mut8(new_forked_pid, %{prop => prop_value})
+    {mut8_result, new_mut8_pid} = Expression.mut8(new_forked_pid, @test_identities_1, %{prop => prop_value}, @default_transform_options)
 
     assert mut8_result === :ok
 
@@ -230,70 +241,70 @@ defmodule IbGib.Expression.BasicsTest do
     assert text_instance_ib_gib !== text_ib_gib
   end
 
-  @tag :capture_log
-  test "fork via gib" do
-
-    {:ok, root} = Expression.Supervisor.start_expression()
-
-    # Randomized to keep unit tests from overlapping.
-    hw_ib = "hw_#{RandomGib.Get.some_letters(5)}"
-    {:ok, {hw, hw_info, hw_ib_gib}} = root |> Expression.gib(:fork, @test_identities_1, hw_ib)
-    Logger.debug "hw: #{inspect hw}\nhw_info: #{inspect hw_info}\nhw_ib_gib: #{hw_ib_gib}"
-
-    hw_info2 = hw |> Expression.get_info!
-    assert hw_info === hw_info2
-
-    hw_ib_gib2 = Helper.get_ib_gib!(hw_info[:ib], hw_info[:gib])
-    assert hw_ib_gib === hw_ib_gib2
-  end
-
-  @tag :capture_log
-  test "mut8 via gib" do
-
-    {:ok, root} = Expression.Supervisor.start_expression()
-
-    # Randomized to keep unit tests from overlapping.
-    hw_ib = "hw_#{RandomGib.Get.some_letters(5)}"
-    {:ok, {hw, hw_info, hw_ib_gib}} = root |> Expression.gib(:fork, @test_identities_1, hw_ib)
-    Logger.debug "hw: #{inspect hw}\nhw_info: #{inspect hw_info}\nhw_ib_gib: #{hw_ib_gib}"
-
-    prop = "prop_name"
-    prop_value = "prop value yo"
-    Logger.warn "========================================================="
-    # I would normally just say hw = hw ..., but since we'll do asserts, I'm
-    # suffixing this with 2: hw2.
-    {:ok, {hw2, hw2_info, hw2_ib_gib}} = hw |> Expression.gib(:mut8, %{prop => prop_value})
-    Logger.debug "hw2: #{inspect hw2}\nhw2_info: #{inspect hw2_info}\nhw2_ib_gib: #{hw2_ib_gib}"
-  end
-
-  @tag :capture_log
-  test "rel8 via gib" do
-
-    {:ok, root} = Expression.Supervisor.start_expression()
-
-    # Randomized to keep unit tests from overlapping.
-    a_ib = "a_#{RandomGib.Get.some_letters(5)}"
-    {:ok, {a, a_info, a_ib_gib}} = root |> Expression.gib(:fork, @test_identities_1, a_ib)
-    Logger.warn "a: #{inspect a}\na_info: #{inspect a_info}\na_ib_gib: #{a_ib_gib}"
-
-    b_ib = "b_#{RandomGib.Get.some_letters(5)}"
-    {:ok, {b, b_info, b_ib_gib}} = root |> Expression.gib(:fork, @test_identities_1, b_ib)
-    Logger.warn "b: #{inspect b}\nb_info: #{inspect b_info}\nb_ib_gib: #{b_ib_gib}"
-    Logger.warn "0000"
-
-    {
-      :ok,
-      {new_a, new_a_info, new_a_ib_gib},
-      {new_b, new_b_info, new_b_ib_gib}
-    } = a |> Expression.gib(:rel8, b)
-
-    Logger.warn "1111"
-    assert new_a_info === new_a |> Expression.get_info!
-    assert new_b_info === new_b |> Expression.get_info!
-
-    assert new_a_ib_gib === Helper.get_ib_gib!(new_a_info[:ib], new_a_info[:gib])
-    assert new_b_ib_gib === Helper.get_ib_gib!(new_b_info[:ib], new_b_info[:gib])
-  end
+  # @tag :capture_log
+  # test "fork via gib" do
+  #
+  #   {:ok, root} = Expression.Supervisor.start_expression()
+  #
+  #   # Randomized to keep unit tests from overlapping.
+  #   hw_ib = "hw_#{RandomGib.Get.some_letters(5)}"
+  #   {:ok, {hw, hw_info, hw_ib_gib}} = root |> Expression.gib(:fork, @test_identities_1, hw_ib)
+  #   Logger.debug "hw: #{inspect hw}\nhw_info: #{inspect hw_info}\nhw_ib_gib: #{hw_ib_gib}"
+  #
+  #   hw_info2 = hw |> Expression.get_info!
+  #   assert hw_info === hw_info2
+  #
+  #   hw_ib_gib2 = Helper.get_ib_gib!(hw_info[:ib], hw_info[:gib])
+  #   assert hw_ib_gib === hw_ib_gib2
+  # end
+  #
+  # @tag :capture_log
+  # test "mut8 via gib" do
+  #
+  #   {:ok, root} = Expression.Supervisor.start_expression()
+  #
+  #   # Randomized to keep unit tests from overlapping.
+  #   hw_ib = "hw_#{RandomGib.Get.some_letters(5)}"
+  #   {:ok, {hw, hw_info, hw_ib_gib}} = root |> Expression.gib(:fork, @test_identities_1, hw_ib)
+  #   Logger.debug "hw: #{inspect hw}\nhw_info: #{inspect hw_info}\nhw_ib_gib: #{hw_ib_gib}"
+  #
+  #   prop = "prop_name"
+  #   prop_value = "prop value yo"
+  #   Logger.warn "========================================================="
+  #   # I would normally just say hw = hw ..., but since we'll do asserts, I'm
+  #   # suffixing this with 2: hw2.
+  #   {:ok, {hw2, hw2_info, hw2_ib_gib}} = hw |> Expression.gib(:mut8, @test_identities_1, %{prop => prop_value}, @default_transform_options)
+  #   Logger.debug "hw2: #{inspect hw2}\nhw2_info: #{inspect hw2_info}\nhw2_ib_gib: #{hw2_ib_gib}"
+  # end
+  #
+  # @tag :capture_log
+  # test "rel8 via gib" do
+  #
+  #   {:ok, root} = Expression.Supervisor.start_expression()
+  #
+  #   # Randomized to keep unit tests from overlapping.
+  #   a_ib = "a_#{RandomGib.Get.some_letters(5)}"
+  #   {:ok, {a, a_info, a_ib_gib}} = root |> Expression.gib(:fork, @test_identities_1, a_ib)
+  #   Logger.warn "a: #{inspect a}\na_info: #{inspect a_info}\na_ib_gib: #{a_ib_gib}"
+  #
+  #   b_ib = "b_#{RandomGib.Get.some_letters(5)}"
+  #   {:ok, {b, b_info, b_ib_gib}} = root |> Expression.gib(:fork, @test_identities_1, b_ib)
+  #   Logger.warn "b: #{inspect b}\nb_info: #{inspect b_info}\nb_ib_gib: #{b_ib_gib}"
+  #   Logger.warn "0000"
+  #
+  #   {
+  #     :ok,
+  #     {new_a, new_a_info, new_a_ib_gib},
+  #     {new_b, new_b_info, new_b_ib_gib}
+  #   } = a |> Expression.gib(:rel8, b)
+  #
+  #   Logger.warn "1111"
+  #   assert new_a_info === new_a |> Expression.get_info!
+  #   assert new_b_info === new_b |> Expression.get_info!
+  #
+  #   assert new_a_ib_gib === Helper.get_ib_gib!(new_a_info[:ib], new_a_info[:gib])
+  #   assert new_b_ib_gib === Helper.get_ib_gib!(new_b_info[:ib], new_b_info[:gib])
+  # end
 
   @tag :capture_log
   test "instance via instance function" do
@@ -301,7 +312,10 @@ defmodule IbGib.Expression.BasicsTest do
 
     # Randomized to keep unit tests from overlapping.
     a_ib = "a_#{RandomGib.Get.some_letters(5)}"
-    {:ok, {a, a_info, a_ib_gib}} = root |> Expression.gib(:fork, @test_identities_1, a_ib)
+    # {:ok, {a, a_info, a_ib_gib}} = root |> Expression.gib(:fork, @test_identities_1, a_ib)
+    a = root |> Expression.fork!(@test_identities_1, a_ib)
+    a_info = a |> Expression.get_info!
+    a_ib_gib = Helper.get_ib_gib!(a_info)
     Logger.debug "a: #{inspect a}\na_info: #{inspect a_info}\na_ib_gib: #{a_ib_gib}"
 
     Logger.warn "gonna instance"
@@ -326,4 +340,33 @@ defmodule IbGib.Expression.BasicsTest do
     )
     assert a_instance_info[:rel8ns]["instance_of"] |> Enum.member?(a_ib_gib)
   end
+
+  @tag :capture_log
+  test "fork with dest_ib" do
+    {:ok, root} = Expression.Supervisor.start_expression()
+
+    dest_ib = "test ib here yo"
+    a = root |> Expression.fork!(@test_identities_1, dest_ib)
+    a_info = a |> Expression.get_info!
+
+    assert a_info[:ib] == dest_ib
+  end
+
+  @tag :capture_log
+  test "fork twice, assert ancestor" do
+    {:ok, root} = Expression.Supervisor.start_expression()
+
+    dest_ib_a = "test ib a yo"
+    a = root |> Expression.fork!(@test_identities_1, dest_ib_a)
+    a_info = a |> Expression.get_info!
+    a_ib_gib = Helper.get_ib_gib!(a_info)
+
+    dest_ib_b = "test ib b huh"
+    b = a |> Expression.fork!(@test_identities_1, dest_ib_b)
+    b_info = b |> Expression.get_info!
+    # b_ib_gib = Helper.get_ib_gib!(b_info)
+
+    assert b_info[:rel8ns]["ancestor"] == [@root_ib_gib, a_ib_gib]
+  end
+
 end

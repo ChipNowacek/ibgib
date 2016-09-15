@@ -63,7 +63,11 @@ defmodule IbGib.Expression.ExpressionQueryTest do
 
     # Create the one ib_gib we want to query for
     test_ib = "hey this is a test ib"
-    {:ok, {_test, _test_info, test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
+    # {:ok, {_test, _test_info, test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
+    test = root |> fork!(@test_identities_1, test_ib)
+    test_info = test |> get_info!
+    test_ib_gib = Helper.get_ib_gib!(test_info)
+
 
     query_options =
       do_query
@@ -97,7 +101,10 @@ defmodule IbGib.Expression.ExpressionQueryTest do
 
     # Create the one ib_gib we want to query for
     test_ib = "hey this is a test ib"
-    {:ok, {_test, _test_info, test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
+    # {:ok, {_test, _test_info, test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
+    test = root |> fork!(@test_identities_1, test_ib)
+    test_info = test |> get_info!
+    test_ib_gib = Helper.get_ib_gib!(test_info)
 
     search_term = "is is a"
     query_options =
@@ -132,7 +139,10 @@ defmodule IbGib.Expression.ExpressionQueryTest do
 
     # Create the one ib_gib we want to query for
     test_ib = "hey this is a test ib"
-    {:ok, {_test, _test_info, _test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
+    # {:ok, {_test, _test_info, _test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
+    test = root |> fork!(@test_identities_1, test_ib)
+    test_info = test |> get_info!
+    test_ib_gib = Helper.get_ib_gib!(test_info)
 
     # search_term = test_ib
     query_options =
@@ -171,7 +181,10 @@ defmodule IbGib.Expression.ExpressionQueryTest do
 
     # Create the one ib_gib we want to query for
     test_ib = "hey this is a test ib"
-    {:ok, {_test, _test_info, test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
+    # {:ok, {_test, _test_info, test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
+    test = root |> fork!(@test_identities_1, test_ib)
+    test_info = test |> get_info!
+    test_ib_gib = Helper.get_ib_gib!(test_info)
     {_, test_gib} = Helper.separate_ib_gib!(test_ib_gib)
 
     query_options =
@@ -206,7 +219,10 @@ defmodule IbGib.Expression.ExpressionQueryTest do
 
     # Create the one ib_gib we want to query for
     test_ib = "hey this is a test ib"
-    {:ok, {_test, _test_info, test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
+    # {:ok, {_test, _test_info, test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
+    test = root |> fork!(@test_identities_1, test_ib)
+    test_info = test |> get_info!
+    test_ib_gib = Helper.get_ib_gib!(test_info)
     {_, test_gib} = Helper.separate_ib_gib!(test_ib_gib)
 
     search_term = String.slice(test_gib, 2..25)
@@ -242,7 +258,10 @@ defmodule IbGib.Expression.ExpressionQueryTest do
 
     # Create the one ib_gib we want to query for
     test_ib = "hey this is a test ib"
-    {:ok, {_test, _test_info, test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
+    # {:ok, {_test, _test_info, test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
+    test = root |> fork!(@test_identities_1, test_ib)
+    test_info = test |> get_info!
+    test_ib_gib = Helper.get_ib_gib!(test_info)
     {_, test_gib} = Helper.separate_ib_gib!(test_ib_gib)
 
     # search_term = test_ib
@@ -285,9 +304,16 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     test_value = "my test value yoooo"
     test_data = %{test_key => test_value}
     test_ib = "test ib data key is"
-    {:ok, {test, _test_info, _test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
+    # {:ok, {test, _test_info, _test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
+    test = root |> fork!(@test_identities_1, test_ib)
+    test_info = test |> get_info!
+    test_ib_gib = Helper.get_ib_gib!(test_info)
+
     # Reassign the same vars because we really want the version with the data
-    {:ok, {_test, _test_info, test_ib_gib}} = test |> gib(:mut8, test_data)
+    # {:ok, {_test, _test_info, test_ib_gib}} = test |> gib(:mut8, test_data)
+    test = test |> mut8!(@test_identities_1, test_data)
+    test_info = test |> get_info!
+    test_ib_gib = Helper.get_ib_gib!(test_info)
 
     search_term = test_key
     query_options =
@@ -325,9 +351,16 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     test_value = "my test value yoooo"
     test_data = %{test_key => test_value}
     test_ib = "test ib data key is"
-    {:ok, {test, _test_info, _test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
+    # {:ok, {test, _test_info, _test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
+    test = root |> fork!(@test_identities_1, test_ib)
+    test_info = test |> get_info!
+    test_ib_gib = Helper.get_ib_gib!(test_info)
+
     # Reassign the same vars because we really want the version with the data
-    {:ok, {_test, _test_info, test_ib_gib}} = test |> gib(:mut8, test_data)
+    # {:ok, {_test, _test_info, test_ib_gib}} = test |> gib(:mut8, test_data)
+    test = test |> mut8!(@test_identities_1, test_data)
+    test_info = test |> get_info!
+    test_ib_gib = Helper.get_ib_gib!(test_info)
 
     search_term = "y key yo yo yo123"
     query_options =
@@ -365,9 +398,16 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     test_value = "my test value yoooo"
     test_data = %{test_key => test_value}
     test_ib = "test ib data key is"
-    {:ok, {test, _test_info, _test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
+    # {:ok, {test, _test_info, _test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
+    test = root |> fork!(@test_identities_1, test_ib)
+    test_info = test |> get_info!
+    test_ib_gib = Helper.get_ib_gib!(test_info)
+
     # Reassign the same vars because we really want the version with the data
-    {:ok, {_test, _test_info, test_ib_gib}} = test |> gib(:mut8, test_data)
+    # {:ok, {_test, _test_info, test_ib_gib}} = test |> gib(:mut8, test_data)
+    test = test |> mut8!(@test_identities_1, test_data)
+    test_info = test |> get_info!
+    test_ib_gib = Helper.get_ib_gib!(test_info)
 
     search_term = test_value
     query_options =
@@ -405,9 +445,16 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     test_value = "my test value yoooo1q23451235"
     test_data = %{test_key => test_value}
     test_ib = "test ib data key is"
-    {:ok, {test, _test_info, _test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
+    # {:ok, {test, _test_info, _test_ib_gib}} = root |> gib(:fork, @test_identities_1, test_ib)
+    test = root |> fork!(@test_identities_1, test_ib)
+    test_info = test |> get_info!
+    test_ib_gib = Helper.get_ib_gib!(test_info)
+
     # Reassign the same vars because we really want the version with the data
-    {:ok, {_test, _test_info, test_ib_gib}} = test |> gib(:mut8, test_data)
+    # {:ok, {_test, _test_info, test_ib_gib}} = test |> gib(:mut8, test_data)
+    test = test |> mut8!(@test_identities_1, test_data)
+    test_info = test |> get_info!
+    test_ib_gib = Helper.get_ib_gib!(test_info)
 
     search_term = "y test value yoooo1q23451"
     query_options =
@@ -441,15 +488,29 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     test_count = 5
     {:ok, root} = IbGib.Expression.Supervisor.start_expression()
 
-    a = root |> fork!(@test_identities_1, Helper.new_id)
+    test_ib_a = "a here yo"
+    a = root |> fork!(@test_identities_1, test_ib_a)
     Logger.configure(level: :info)
     1..test_count |> Enum.each(&(a |> fork!(@test_identities_1, "ib_#{&1}")))
     Logger.configure(level: :debug)
 
     test_ib_b = "hey this is a test ib yuk yuk"
-    {:ok, {test_b, _test_info_b, test_ib_gib_b}} = a |> gib(:fork, @test_identities_1, test_ib_b)
+    # {:ok, {test_b, _test_info_b, test_ib_gib_b}} = a |> gib(:fork, @test_identities_1, test_ib_b)
+    test_b = a |> fork!(@test_identities_1, test_ib_b)
+    test_info_b = test_b |> get_info!
+    test_ib_gib_b = Helper.get_ib_gib!(test_info_b)
+    Logger.warn "test_info_b: #{inspect test_info_b}"
+    Logger.warn "test_info_b: #{inspect test_info_b}"
+    Logger.warn "test_info_b: #{inspect test_info_b}"
+
     test_ib_c = "this is c"
-    {:ok, {_test_c, _test_info_c, test_ib_gib_c}} = test_b |> gib(:fork, @test_identities_1, test_ib_c)
+    # {:ok, {_test_c, _test_info_c, test_ib_gib_c}} = test_b |> gib(:fork, @test_identities_1, test_ib_c)
+    test_c = test_b |> fork!(@test_identities_1, test_ib_c)
+    test_info_c = test_c |> get_info!
+    test_ib_gib_c = Helper.get_ib_gib!(test_info_c)
+    Logger.warn "test_info_c: #{inspect test_info_c}"
+    Logger.warn "test_info_c: #{inspect test_info_c}"
+    Logger.warn "test_info_c: #{inspect test_info_c}"
 
     query_options =
       do_query
@@ -481,9 +542,16 @@ defmodule IbGib.Expression.ExpressionQueryTest do
 
     # b = a |> fork!
     test_ib_b = "hey this is a test ib yuk yuk"
-    {:ok, {test_b, _test_info_b, test_ib_gib_b}} = a |> gib(:fork, @test_identities_1, test_ib_b)
+    # {:ok, {test_b, _test_info_b, test_ib_gib_b}} = a |> gib(:fork, @test_identities_1, test_ib_b)
+    test_b = a |> fork!(@test_identities_1, test_ib_b)
+    test_info_b = test_b |> get_info!
+    test_ib_gib_b = Helper.get_ib_gib!(test_info_b)
+
     test_ib_c = "this is c"
-    {:ok, {_test_c, _test_info_c, test_ib_gib_c}} = test_b |> gib(:fork, @test_identities_1, test_ib_c)
+    # {:ok, {_test_c, _test_info_c, test_ib_gib_c}} = test_b |> gib(:fork, @test_identities_1, test_ib_c)
+    test_c = test_b |> fork!(@test_identities_1, test_ib_c)
+    test_info_c = test_c |> get_info!
+    test_ib_gib_c = Helper.get_ib_gib!(test_info_c)
 
     query_options =
       do_query
@@ -513,9 +581,16 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     Logger.configure(level: :debug)
 
     test_ib_b = "hey this is a test ib yuk yuk"
-    {:ok, {test_b, _test_info_b, _test_ib_gib_b}} = a |> gib(:fork, @test_identities_1, test_ib_b)
+    # {:ok, {test_b, _test_info_b, _test_ib_gib_b}} = a |> gib(:fork, @test_identities_1, test_ib_b)
+    test_b = a |> fork!(@test_identities_1, test_ib_b)
+    test_info_b = test_b |> get_info!
+    test_ib_gib_b = Helper.get_ib_gib!(test_info_b)
+
     test_ib_c = "this is c"
-    {:ok, {_test_c, _test_info_c, test_ib_gib_c}} = test_b |> gib(:fork, @test_identities_1, test_ib_c)
+    # {:ok, {_test_c, _test_info_c, test_ib_gib_c}} = test_b |> gib(:fork, @test_identities_1, test_ib_c)
+    test_c = test_b |> fork!(@test_identities_1, test_ib_c)
+    test_info_c = test_c |> get_info!
+    test_ib_gib_c = Helper.get_ib_gib!(test_info_c)
 
     query_options =
       do_query
@@ -550,11 +625,22 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     Logger.configure(level: :debug)
 
     test_ib_b = "hey this is a test ib yuk yuk"
-    {:ok, {test_b, _test_info_b, _test_ib_gib_b}} = a |> gib(:fork, @test_identities_1, test_ib_b)
+    # {:ok, {test_b, _test_info_b, _test_ib_gib_b}} = a |> gib(:fork, @test_identities_1, test_ib_b)
+    test_b = a |> fork!(@test_identities_1, test_ib_b)
+    test_info_b = test_b |> get_info!
+    test_ib_gib_b = Helper.get_ib_gib!(test_info_b)
+
     test_ib_c = "this is c"
-    {:ok, {_test_c, _test_info_c, test_ib_gib_c}} = test_b |> gib(:fork, @test_identities_1, test_ib_c)
+    # {:ok, {_test_c, _test_info_c, test_ib_gib_c}} = test_b |> gib(:fork, @test_identities_1, test_ib_c)
+    test_c = test_b |> fork!(@test_identities_1, test_ib_c)
+    test_info_c = test_c |> get_info!
+    test_ib_gib_c = Helper.get_ib_gib!(test_info_c)
+
     test_ib_d = "this is d"
-    {:ok, {_test_d, _test_info_d, test_ib_gib_d}} = test_b |> gib(:fork, @test_identities_1, test_ib_d)
+    # {:ok, {_test_d, _test_info_d, test_ib_gib_d}} = test_b |> gib(:fork, @test_identities_1, test_ib_d)
+    test_d = test_b |> fork!(@test_identities_1, test_ib_d)
+    test_info_d = test_d |> get_info!
+    test_ib_gib_d = Helper.get_ib_gib!(test_info_d)
 
     query_options =
       do_query
@@ -587,49 +673,6 @@ defmodule IbGib.Expression.ExpressionQueryTest do
 
   end
 
-  # not going to worry about implementing this right now since low
-  # priority
-  # @tag :capture_log
-  # test "Fork a couple ib, fork b, then c from b, query, rel8n ancestor without ib b" do
-  #   test_count = 5
-  #   {:ok, root} = IbGib.Expression.Supervisor.start_expression()
-  #
-  #   a = root |> fork!(@test_identities_1, Helper.new_id)
-  #   Logger.configure(level: :info)
-  #   1..test_count |> Enum.each(&(a |> fork!(@test_identities_1, "ib_#{&1}")))
-  #   Logger.configure(level: :debug)
-  #
-  #   # b = a |> fork!
-  #   test_ib_b = "hey this is a test ib b"
-  #   {:ok, {test_b, _test_info_b, test_ib_gib_b}} = a |> gib(:fork, @test_identities_1, test_ib_b)
-  #   test_ib_c = "this is c"
-  #   {:ok, {_test_c, _test_info_c, test_ib_gib_c}} = test_b |> gib(:fork, @test_identities_1, test_ib_c)
-  #
-  #   query_options =
-  #     do_query
-  #     |> where_rel8ns("ancestor", "without", "ib", test_ib_b)
-  #   {:ok, query_result} = root |> query(query_options)
-  #   Logger.debug "query_result: #{inspect query_result}"
-  #   query_result_info = query_result |> get_info!
-  #   Logger.info "query_result_info: #{inspect query_result_info}"
-  #
-  #   result_list = query_result_info[:rel8ns]["result"]
-  #   Logger.debug "result_list(count=#{Enum.count(result_list)}): #{inspect result_list}"
-  #   # All results have ib^gib as the first result
-  #   assert Enum.count(result_list) > 2
-  #
-  #   # should be everything except test_c
-  #   assert Enum.each(result_list, fn (res_ib_gib) ->
-  #     {:ok, res} = IbGib.Expression.Supervisor.start_expression(res_ib_gib)
-  #     res_info = res |> get_info!
-  #     res_info[:rel8ns] |> Enum.each(fn (rel8n) ->
-  #
-  #       end)
-  #     {res_ib, _res_gib} = Helper.separate_ib_gib!(res_ib_gib)
-  #     res_ib === test_ib_b
-  #     end)
-  # end
-
   @tag :capture_log
   test "Fork, mut8s, query most recent only" do
     test_count = 5
@@ -643,7 +686,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     {_a_n, a_n_gib} =
       1..test_count
       |> Enum.reduce({a, nil}, fn(n, {a_m, _}) ->
-           new_a = a_m |> mut8!(%{"value" => "#{n}"})
+           new_a = a_m |> mut8!(@test_identities_1, %{"value" => "#{n}"})
            new_a_info = new_a |> get_info!
           #  Logger.warn "new_a_info[:ib]: #{new_a_info[:ib]}"
            Logger.warn "new_a_info[:gib]: #{new_a_info[:gib]}"
@@ -719,7 +762,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     {_a_n, a_n_gib} =
       1..test_count
       |> Enum.reduce({a, nil}, fn(n, {a_m, _}) ->
-           new_a = a_m |> mut8!(%{"value" => "#{n}"})
+           new_a = a_m |> mut8!(@test_identities_1, %{"value" => "#{n}"})
            new_a_info = new_a |> get_info!
           #  Logger.warn "new_a_info[:ib]: #{new_a_info[:ib]}"
            Logger.warn "new_a_info[:gib]: #{new_a_info[:gib]}"
@@ -734,7 +777,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     {_b_n, b_n_gib} =
       1..test_count
       |> Enum.reduce({b, nil}, fn(n, {b_m, _}) ->
-           new_b = b_m |> mut8!(%{"value" => "#{n}"})
+           new_b = b_m |> mut8!(@test_identities_1, %{"value" => "#{n}"})
            new_b_info = new_b |> get_info!
           #  Logger.warn "new_b_info[:ib]: #{new_b_info[:ib]}"
            Logger.warn "new_b_info[:gib]: #{new_b_info[:gib]}"

@@ -71,6 +71,9 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
 
   @doc """
   Get an approximate byte size of a given map `m`.
+
+  Warning: Ugliness.
+
   Returns -1 if running_size exceeds max_size at any point.
   """
   def get_map_size(m, running_size \\ 0, max_size \\ max_data_size)
@@ -80,7 +83,7 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
     m
     |> Enum.reduce_while(running_size,
       fn(item, acc) ->
-        Logger.debug "item: #{inspect item}"
+        # Logger.debug "item: #{inspect item}"
         {key, value} = item
 
         # Logger.debug "key: #{inspect key}\nvalue: #{inspect value}"
@@ -104,7 +107,7 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
                   value_length = value |> String.length
                   new_running_size = acc + key_length + value_length
                   if new_running_size <= max_size do
-                    Logger.debug "new_running_size: #{new_running_size}, max_size: #{max_size}"
+                    # Logger.debug "new_running_size: #{new_running_size}, max_size: #{max_size}"
                     {:cont, new_running_size}
                   else
                     # not valid - too big

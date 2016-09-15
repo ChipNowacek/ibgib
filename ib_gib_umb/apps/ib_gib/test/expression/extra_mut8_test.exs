@@ -37,11 +37,11 @@ defmodule IbGib.Expression.ExtraMut8Test do
     a =
       root
       |> fork!(@test_identities_1, Helper.new_id)
-      |> mut8!(Mut8Factory.add_or_update_key(test_key, test_value))
+      |> mut8!(@test_identities_1, Mut8Factory.add_or_update_key(test_key, test_value))
 
     b =
       a
-      |> mut8!(Mut8Factory.remove_key(test_key))
+      |> mut8!(@test_identities_1, Mut8Factory.remove_key(test_key))
 
     b_info = b |> get_info!
 
@@ -58,19 +58,14 @@ defmodule IbGib.Expression.ExtraMut8Test do
     test_value = "yo test value uh huh"
     test_key2 = "key was renamed yo"
 
-    test_identities_1 = @test_identities_1
-
-    Logger.warn "test_identities_1: #{inspect @test_identities_1}"
-    Logger.warn "test_identities_1: #{inspect @test_identities_1}"
-    Logger.warn "test_identities_1: #{inspect @test_identities_1}"
     a =
       root
-      |> fork!(test_identities_1, Helper.new_id)
-      |> mut8!(Mut8Factory.add_or_update_key(test_key, test_value))
+      |> fork!(@test_identities_1, Helper.new_id)
+      |> mut8!(@test_identities_1, Mut8Factory.add_or_update_key(test_key, test_value))
 
     b =
       a
-      |> mut8!(Mut8Factory.rename_key(test_key, test_key2))
+      |> mut8!(@test_identities_1, Mut8Factory.rename_key(test_key, test_key2))
 
     b_info = b |> get_info!
 

@@ -236,7 +236,12 @@ defmodule IbGib.Auth.Identity do
       {:ok, identity_ib_gib}
     else
       opts = %{:gib_stamp => true}
-      with {:ok, new_identity} <- identity |> mut8(identity_data, opts),
+      # Everyone is authorized with at least @bootstrap_identity, and
+      # by providing the priv_data, the user has already been authorized with
+      # current identity, identity_ib_gib. We are only looking to mut8 if we
+      # should, so this should be correct authorization.
+      authz = [@bootstrap_identity, identity_ib_gib]
+      with {:ok, new_identity} <- identity |> mut8(authz, identity_data, opts),
         {:ok, new_identity_info} <- new_identity |> get_info,
         {:ok, new_identity_ib_gib} <- new_identity_info |> get_ib_gib do
         {:ok, new_identity_ib_gib}
