@@ -11,7 +11,8 @@ defmodule IbGib.Macros do
     quote do
       case unquote(result) do
         {:ok, value} -> value
-        {:error, error} -> raise error
+        {:error, error} when is_bitstring(error) -> raise error
+        {:error, error} -> raise inspect error
       end
     end
   end
