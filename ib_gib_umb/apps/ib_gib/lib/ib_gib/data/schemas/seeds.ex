@@ -55,7 +55,8 @@ defmodule IbGib.Data.Schemas.Seeds do
       rel8ns: %{
         "dna" => @default_dna,
         "ancestor" => @default_ancestor,
-        "past" => @default_past
+        "past" => @default_past,
+        "identity" => @default_identity
         },
       data: %{}
     }
@@ -67,7 +68,8 @@ defmodule IbGib.Data.Schemas.Seeds do
       rel8ns: %{
         "dna" => @default_dna,
         "ancestor" => @default_ancestor,
-        "past" => @default_past
+        "past" => @default_past,
+        "identity" => @default_identity
         },
       data: %{}
     }
@@ -81,7 +83,8 @@ defmodule IbGib.Data.Schemas.Seeds do
       rel8ns: %{
         "dna" => @default_dna,
         "ancestor" => @default_ancestor ++ ["text#{@delim}gib"],
-        "past" => @default_past
+        "past" => @default_past,
+        "identity" => @default_identity
         },
       data: %{}
     }

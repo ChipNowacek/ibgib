@@ -66,7 +66,8 @@ defmodule IbGib.Expression do
   use IbGib.Constants, :error_msgs
   import IbGib.Macros
   alias IbGib.{TransformFactory, Helper, TransformFactory.Mut8Factory}
-  alias IbGib.Errors.UnauthorizedError
+  alias IbGib.UnauthorizedError
+
   # ----------------------------------------------------------------------------
   # Constructors
   # ----------------------------------------------------------------------------
@@ -95,6 +96,8 @@ defmodule IbGib.Expression do
   # ----------------------------------------------------------------------------
   # Inits
   # ----------------------------------------------------------------------------
+
+  # We are loading a pre-existing ib_gib.
   def init({:ib_gib, {ib, gib}}) when is_bitstring(ib) and is_bitstring(gib) do
     Logger.metadata([x: :ib_gib])
     info =
@@ -106,11 +109,6 @@ defmodule IbGib.Expression do
         {"query", "gib"} -> init_default(:query)
         _ -> IbGib.Data.load!(ib, gib)
       end
-      # if ib === "ib" and gib === "gib" do
-      # else
-      #   Logger.debug "initializing ib_gib expression by loading data. ib: #{ib}, gib: #{gib}"
-      #   IbGib.Data.load!(ib, gib)
-      # end
     register_result = IbGib.Expression.Registry.register(Helper.get_ib_gib!(ib, gib), self)
     if register_result == :ok do
       {:ok, %{:info => info}}
@@ -119,41 +117,29 @@ defmodule IbGib.Expression do
       {:error, register_result}
     end
   end
+  # Creating a "new" ib_gib from two existing ib_gib by "applying" b to a.
   def init({:apply, {a, b}}) when is_map(a) and is_map(b) do
     Logger.metadata([x: :apply])
-    cond do
-      b[:ib] === "fork" and b[:gib] !== "gib" ->
-        apply_fork(a, b)
-      b[:ib] === "mut8" and b[:gib] !== "gib" ->
-        apply_mut8(a, b)
-      b[:ib] === "rel8" and b[:gib] !== "gib" ->
-        apply_rel8(a, b)
-      b[:ib] === "query" and b[:gib] !== "gib" ->
-        apply_query(a, b)
-      true ->
+    case {b[:ib], b[:gib]} do
+      {"fork", b_gib} when b_gib != "gib" -> apply_fork(a, b)
+      {"mut8", b_gib} when b_gib != "gib" -> apply_mut8(a, b)
+      {"rel8", b_gib} when b_gib != "gib" -> apply_rel8(a, b)
+      {"query", b_gib} when b_gib != "gib" -> apply_query(a, b)
+      {b_ib, b_gib} ->
         err_msg = "unknown combination: a: #{inspect a}, b: #{inspect b}"
         Logger.error err_msg
         {:error, err_msg}
     end
   end
 
-  defp init_default(:root) do
-    %{
-      :ib => "ib",
-      :gib => "gib",
-      :rel8ns => %{
-        "dna" => @default_dna,
-        "ancestor" => @default_ancestor,
-        "past" => @default_past
-        },
-      :data => %{}
-    }
-  end
+  # Note: Root maps to "ib". All of the others map to the string.
+  defp init_default(:root), do: get_default("ib")
   defp init_default(:fork), do: get_default("fork")
   defp init_default(:mut8), do: get_default("mut8")
   defp init_default(:rel8), do: get_default("rel8")
   defp init_default(:query), do: get_default("query")
 
+  # Builds the default ib_gib structure for "primitive"-like ib_gib.
   defp get_default(ib_string) when is_bitstring(ib_string) do
     Logger.debug "initializing ib_gib #{ib_string} expression."
     %{
@@ -162,9 +148,10 @@ defmodule IbGib.Expression do
       :rel8ns => %{
         "dna" => @default_dna,
         "ancestor" => @default_ancestor,
-        "past" => @default_past
+        "past" => @default_past,
+        "identity" => @default_identity
         },
-      :data => %{}
+      :data => @default_data
     }
   end
 
@@ -175,6 +162,8 @@ defmodule IbGib.Expression do
   # info map. See moduledoc for more details.
   # ----------------------------------------------------------------------------
   defp apply_fork(a, b) do
+    b_identities = authorize_apply_b(:fork, a[:rel8ns], b[:rel8ns])
+
     # We are applying a fork transform.
     Logger.debug "applying fork b to ib_gib a.\na: #{inspect a}\nb: #{inspect b}\n"
     Logger.debug "a[:rel8ns]: #{inspect a[:rel8ns]}"
@@ -237,7 +226,7 @@ defmodule IbGib.Expression do
   end
 
   defp apply_mut8(a, b) do
-    b_identities = authorize_apply_b(a[:rel8ns], b[:rel8ns])
+    b_identities = authorize_apply_b(:mut8, a[:rel8ns], b[:rel8ns])
 
     # We are applying a mut8 transform.
     Logger.debug "applying mut8 b to ib_gib a.\na: #{inspect a}\nb: #{inspect b}\n"
@@ -365,6 +354,7 @@ defmodule IbGib.Expression do
   end
 
   defp apply_rel8(a, b) do
+
     # We are applying a rel8 transform.
     Logger.debug "applying rel8 b to ib_gib a.\na: #{inspect a}\nb: #{inspect b}\n"
     Logger.debug "a[:rel8ns]: #{inspect a[:rel8ns]}"
@@ -417,7 +407,7 @@ defmodule IbGib.Expression do
 
   defp apply_query(a, b) do
     Logger.debug "a: #{inspect a}\nb: #{inspect b}"
-    b_identities = authorize_apply_b(a[:rel8ns], b[:rel8ns])
+    b_identities = authorize_apply_b(:query, a[:rel8ns], b[:rel8ns])
 
     query_options = b[:data]["options"]
     result = IbGib.Data.query(query_options)
@@ -436,7 +426,7 @@ defmodule IbGib.Expression do
     this_data = %{"result_count" => "#{result_count}"}
     this_rel8ns = %{
       "dna" => @default_dna,
-      "ancestor" => @default_ancestor ++ ["query_result#{delim}gib"],
+      "ancestor" => @default_ancestor ++ ["query_result#{@delim}gib"],
       "past" => @default_past,
       "identity" => b_identities
     }
@@ -545,8 +535,36 @@ defmodule IbGib.Expression do
   # Returns b_identities if authorized.
   # Raises exception if unauthorized (fail fast is proper).
   # b must always have at least one identity
-  @spec authorize_apply_b(map, map) :: list(String.t)
-  defp authorize_apply_b(a_rel8ns, b_rel8ns) do
+  @spec authorize_apply_b(atom, map, map) :: list(String.t)
+  defp authorize_apply_b(which, a_rel8ns, b_rel8ns)
+  defp authorize_apply_b(:fork = which, a_rel8ns, b_rel8ns) do
+    # When authorizing a fork, we only care that both a and b _have_ identities,
+    # because anyone can fork anything. Authorization here is really just
+    # checking for error in code or more nefarious monkey business.
+    Logger.debug "which: #{:fork}"
+    Logger.warn "a_rel8ns: #{inspect a_rel8ns}"
+    Logger.warn "b_rel8ns: #{inspect b_rel8ns}"
+
+    a_has_identity =
+      Map.has_key?(a_rel8ns, "identity") and
+      length(a_rel8ns["identity"]) > 0
+    b_has_identity =
+      Map.has_key?(b_rel8ns, "identity") and
+      length(b_rel8ns["identity"]) > 0
+
+    if a_has_identity and b_has_identity do
+      b_identity = b_rel8ns["identity"]
+    else
+      Logger.error "DOH! Unidentified #{which} apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
+      expected = "a_has_identity: true, b_has_identity: true"
+      actual = "a_has_identity: #{a_has_identity},
+                b_has_identity: #{b_has_identity}"
+      raise UnauthorizedError, message:
+        emsg_invalid_authorization(expected, actual)
+    end
+  end
+  defp authorize_apply_b(which, a_rel8ns, b_rel8ns) when is_atom(which) do
+    Logger.debug "which: #{inspect which}"
     Logger.warn "a_rel8ns: #{inspect a_rel8ns}"
     Logger.warn "b_rel8ns: #{inspect b_rel8ns}"
     a_has_identity =
@@ -568,28 +586,39 @@ defmodule IbGib.Expression do
           b_identity = b_rel8ns["identity"]
         else
           # unauthorized: a requires auth, b does not have any/all
-          # expected: a_identity, actual: b_identity
+          expected = a_rel8ns["identity"]
+          actual = b_rel8ns["identity"]
           Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
-          raise(UnauthorizedError, message:
-            emsg_invalid_authorization(a_rel8ns["identity"],
-                                       b_rel8ns["identity"]))
+          raise UnauthorizedError, message:
+            emsg_invalid_authorization(expected, actual)
         end
 
       {false, true} ->
-        # authorized: b has identity and a requires no authorization
-        b_identity = b_rel8ns["identity"]
+        # unauthorized: b is required to have authorization and doesn't
+        # expected: [something], actual: nil
+        expected = "a_has_identity: true, b_has_identity: true"
+        actual = "a_has_identity: false, b_has_identity: true"
+        Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
+        raise UnauthorizedError, message:
+          emsg_invalid_authorization(expected, actual)
 
       {true, false} ->
         # unauthorized: a requires auth, b has none
         # expected: a_identity, actual: nil
+        expected = a_rel8ns["identity"]
+        actual = nil
         Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
-        raise UnauthorizedError, message: emsg_invalid_authorization(a_rel8ns["identity"], nil)
+        raise UnauthorizedError, message:
+          emsg_invalid_authorization(expected, actual)
 
       {false, false} ->
         # unauthorized: b is required to have authorization and doesn't
         # expected: [something], actual: nil
+        expected = "a_has_identity: true, b_has_identity: true"
+        actual = "a_has_identity: false, b_has_identity: false"
         Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
-        raise UnauthorizedError, message: emsg_invalid_authorization([], nil)
+        raise UnauthorizedError, message:
+          emsg_invalid_authorization(expected, actual)
     end
   end
 
@@ -617,40 +646,28 @@ defmodule IbGib.Expression do
   Returns the new forked process' pid or an error.
   """
   @spec fork(pid, list(String.t), String.t, map) :: {:ok, pid} | {:error, any}
-  def fork(expr_pid,
-           identity_ib_gibs,
-           dest_ib,
+  def fork(expr_pid, identity_ib_gibs, dest_ib,
            opts \\ @default_transform_options)
   def fork(expr_pid, identity_ib_gibs, dest_ib, opts)
-    when is_pid(expr_pid) and is_list(identity_ib_gibs) and
+    when is_pid(expr_pid) and
+         is_list(identity_ib_gibs) and length(identity_ib_gibs) >= 1 and
          is_bitstring(dest_ib) and is_map(opts) do
     GenServer.call(expr_pid, {:fork, identity_ib_gibs, dest_ib, opts})
   end
-  def fork(expr_pid, identity_ib_gibs, dest_ib, opts)
-    when is_pid(expr_pid) and is_list(identity_ib_gibs) and
-         is_bitstring(dest_ib) do
-    Logger.debug "bad opts: #{inspect opts}"
-    GenServer.call(expr_pid, {:fork, dest_ib, %{}})
+  def fork(expr_pid, identity_ib_gibs, dest_ib, opts) do
+    emsg = emsg_invalid_args([expr_pid, identity_ib_gibs, dest_ib, opts])
+    Logger.error emsg
+    {:error, emsg}
   end
 
   @doc """
   Bang version of `fork/2`.
   """
-  @spec fork!(pid, list(String.t), String.t, map) :: pid | any
-  def fork!(expr_pid,
-            identity_ib_gibs,
-            dest_ib,
+  @spec fork!(pid, list(String.t), String.t, map) :: pid
+  def fork!(expr_pid, identity_ib_gibs, dest_ib,
             opts \\ @default_transform_options)
-  def fork!(expr_pid, identity_ib_gibs, dest_ib, opts)
-    when is_pid(expr_pid) and is_list(identity_ib_gibs) and
-         is_bitstring(dest_ib) and is_map(opts) do
+  def fork!(expr_pid, identity_ib_gibs, dest_ib, opts) do
     bang(fork(expr_pid, identity_ib_gibs, dest_ib, opts))
-  end
-  def fork!(expr_pid, identity_ib_gibs, dest_ib, opts)
-    when is_pid(expr_pid) and is_list(identity_ib_gibs) and
-         is_bitstring(dest_ib) do
-    Logger.debug "bad opts: #{inspect opts}"
-    bang(fork(expr_pid, identity_ib_gibs, dest_ib, %{}))
   end
 
   @doc """
@@ -661,45 +678,33 @@ defmodule IbGib.Expression do
   See `IbGib.TransformFactory.Mut8Factory` for more details.
   """
   @spec mut8(pid, list(String.t), map, map) :: {:ok, pid} | {:error, any}
-  def mut8(expr_pid,
-           identity_ib_gibs,
-           new_data,
-           opts)
+  def mut8(expr_pid, identity_ib_gibs, new_data,
+           opts \\ @default_transform_options)
   def mut8(expr_pid, identity_ib_gibs, new_data, opts)
-    when is_pid(expr_pid) and is_list(identity_ib_gibs) and
+    when is_pid(expr_pid) and
+         is_list(identity_ib_gibs) and length(identity_ib_gibs) >= 1 and
          is_map(new_data) and is_map(opts) do
     GenServer.call(expr_pid, {:mut8, identity_ib_gibs, new_data, opts})
   end
-  def mut8(expr_pid, identity_ib_gibs, new_data, nil)
-    when is_pid(expr_pid) and is_list(identity_ib_gibs) and
-         is_map(new_data) do
-    GenServer.call(expr_pid, {:mut8, identity_ib_gibs, new_data, %{}})
-  end
+  # def mut8(expr_pid, identity_ib_gibs, new_data, nil)
+  #   when is_pid(expr_pid) and is_list(identity_ib_gibs) and
+  #        is_map(new_data) do
+  #   GenServer.call(expr_pid, {:mut8, identity_ib_gibs, new_data, %{}})
+  # end
   def mut8(expr_pid, identity_ib_gibs, new_data, opts) do
-    # when is_pid(expr_pid) and is_list(identity_ib_gibs) and
-    #      is_map(new_data) do
-    Logger.debug "bad args: #{inspect [expr_pid, identity_ib_gibs, new_data, opts]}"
-    # GenServer.call(expr_pid, {:mut8, identity_ib_gibs, new_data, %{}})
-    {:error, emsg_invalid_args([expr_pid, identity_ib_gibs, new_data, opts])}
+    emsg = emsg_invalid_args([expr_pid, identity_ib_gibs, new_data, opts])
+    Logger.error emsg
+    {:error, emsg}
   end
 
   @doc """
   Bang version of `mut8/2`.
   """
-  @spec mut8!(pid, list(String.t), map, map) :: pid | any
-  def mut8!(expr_pid,
-            identity_ib_gibs,
-            new_data,
-            opts \\ @default_transform_options)
-  def mut8!(expr_pid, identity_ib_gibs, new_data, opts) do
-    # when is_pid(expr_pid) and is_map(new_data) and is_map(opts) do
-      bang(mut8(expr_pid, identity_ib_gibs, new_data, opts))
+  @spec mut8!(pid, list(String.t), map, map) :: pid
+  def mut8!(expr_pid, identity_ib_gibs, new_data,
+            opts \\ @default_transform_options) do
+    bang(mut8(expr_pid, identity_ib_gibs, new_data, opts))
   end
-  # def mut8!(expr_pid, new_data, opts)
-  #   when is_pid(expr_pid) and is_map(new_data) do
-  #     Logger.debug "bad opts: #{inspect opts}"
-  #     bang(mut8(expr_pid, new_data, %{}))
-  # end
 
   @doc """
   Relates the given source `expr_pid` to the destination `other_pid`. It will
@@ -719,49 +724,35 @@ defmodule IbGib.Expression do
   vice versa. I'm still not sure of the implications of this, because it's a
   tough cookie to understand (chicken and egg issue).
   """
-  @spec rel8(pid, pid, list(String.t), list(String.t), map) :: {:ok, {pid, pid}} | {:error, any}
-  def rel8(expr_pid,
-           other_pid,
-           src_rel8ns \\ @default_rel8ns,
-           dest_rel8ns \\ @default_rel8ns,
-           opts \\ @default_transform_options)
-  def rel8(expr_pid, other_pid, src_rel8ns, dest_rel8ns, opts)
+  @spec rel8(pid, pid, list(String.t), list(String.t), list(String.t), map) :: {:ok, {pid, pid}} | {:error, any}
+  def rel8(expr_pid, other_pid, identity_ib_gibs, src_rel8ns, dest_rel8ns, opts)
+  def rel8(expr_pid, other_pid, identity_ib_gibs, src_rel8ns, dest_rel8ns, opts)
     when is_pid(expr_pid) and is_pid(other_pid) and expr_pid !== other_pid and
+         is_list(identity_ib_gibs) and length(identity_ib_gibs) >= 1 and
          is_list(src_rel8ns) and length(src_rel8ns) >= 1 and
          is_list(dest_rel8ns) and length(dest_rel8ns) >= 1 and
          is_map(opts) do
-    GenServer.call(expr_pid, {:rel8, other_pid, src_rel8ns, dest_rel8ns, opts})
+    GenServer.call(expr_pid, {:rel8, other_pid, identity_ib_gibs, src_rel8ns,
+                   dest_rel8ns, opts})
   end
-  def rel8(expr_pid, other_pid, src_rel8ns, dest_rel8ns, opts)
-    when is_pid(expr_pid) and is_pid(other_pid) and expr_pid !== other_pid and
-         is_list(src_rel8ns) and length(src_rel8ns) >= 1 and
-         is_list(dest_rel8ns) and length(dest_rel8ns) >= 1 do
-    Logger.debug "bad opts: #{inspect opts}"
-    GenServer.call(expr_pid, {:rel8, other_pid, src_rel8ns, dest_rel8ns, %{}})
+  def rel8(expr_pid, other_pid, identity_ib_gibs, src_rel8ns, dest_rel8ns, opts)  do
+    emsg = emsg_invalid_args([expr_pid, other_pid, identity_ib_gibs, src_rel8ns,
+      dest_rel8ns, opts])
+    Logger.error emsg
+    {:error, emsg}
   end
 
   @doc """
-  Bang version of `rel8/4`.
+  Bang version of `rel8/6`.
   """
-  @spec rel8!(pid, pid, list(String.t), list(String.t), map) :: {pid, pid} | any
-  def rel8!(expr_pid,
-            other_pid,
-            src_rel8ns \\ @default_rel8ns,
-            dest_rel8ns \\ @default_rel8ns,
-            opts \\ @default_transform_options)
-  def rel8!(expr_pid, other_pid, src_rel8ns, dest_rel8ns, opts)
-    when is_pid(expr_pid) and is_pid(other_pid) and expr_pid !== other_pid and
-         is_list(src_rel8ns) and length(src_rel8ns) >= 1 and
-         is_list(dest_rel8ns) and length(dest_rel8ns) >= 1 and
-         is_map(opts) do
-    bang(rel8(expr_pid, other_pid, src_rel8ns, dest_rel8ns, opts))
-  end
-  def rel8!(expr_pid, other_pid, src_rel8ns, dest_rel8ns, opts)
-    when is_pid(expr_pid) and is_pid(other_pid) and expr_pid !== other_pid and
-         is_list(src_rel8ns) and length(src_rel8ns) >= 1 and
-         is_list(dest_rel8ns) and length(dest_rel8ns) >= 1 do
-    Logger.debug "bad opts: #{inspect opts}"
-    bang(rel8(expr_pid, other_pid, src_rel8ns, dest_rel8ns, %{}))
+  @spec rel8!(pid, pid, list(String.t), list(String.t), list(String.t),
+              map) :: {pid, pid}
+  def rel8!(expr_pid, other_pid, identity_ib_gibs, src_rel8ns, dest_rel8ns,
+            opts)
+  def rel8!(expr_pid, other_pid, identity_ib_gibs, src_rel8ns, dest_rel8ns,
+            opts) do
+    bang(rel8(expr_pid, other_pid, identity_ib_gibs, src_rel8ns, dest_rel8ns,
+         opts))
   end
 
   # ----------------------------------------------------------------------------
@@ -889,10 +880,10 @@ defmodule IbGib.Expression do
     Logger.metadata([x: :mut8])
     {:reply, mut8_impl(identity_ib_gibs, new_data, opts, state), state}
   end
-  def handle_call({:rel8, other_pid, src_rel8ns, dest_rel8ns, opts}, _from, state) do
+  def handle_call({:rel8, other_pid, identity_ib_gibs, src_rel8ns, dest_rel8ns, opts}, _from, state) do
     Logger.metadata([x: :rel8])
     {:ok, {new_this, new_other}} =
-      rel8_impl(other_pid, src_rel8ns, dest_rel8ns, opts, state)
+      rel8_impl(other_pid, identity_ib_gibs, src_rel8ns, dest_rel8ns, opts, state)
     {:reply, {:ok, {new_this, new_other}}, state}
   end
   def handle_call({:instance_bootstrap, @bootstrap_identity_ib_gib, dest_ib, opts}, _from, state) do
@@ -917,14 +908,12 @@ defmodule IbGib.Expression do
   # ----------------------------------------------------------------------------
 
   defp fork_impl(identity_ib_gibs, dest_ib, opts, state) do
-    Logger.debug "identity_ib_gibs, dest_ib, opts, state: #{inspect [identity_ib_gibs, dest_ib, opts, state]}"
     info = state[:info]
     ib = info[:ib]
     gib = info[:gib]
 
-    with {:ok, fork_info} <-
-      # 1. Create transform
-      TransformFactory.fork(Helper.get_ib_gib!(ib, gib), identity_ib_gibs, dest_ib, opts),
+    # 1. Create transform
+    with {:ok, fork_info} <- TransformFactory.fork(Helper.get_ib_gib!(ib, gib), identity_ib_gibs, dest_ib, opts),
 
       # 2. Save transform
       {:ok, :ok} <- IbGib.Data.save(fork_info),
@@ -958,13 +947,16 @@ defmodule IbGib.Expression do
 
     # 1. Create transform
     with {:ok, mut8_info} <-
-      TransformFactory.mut8(Helper.get_ib_gib!(ib, gib), identity_ib_gibs, new_data, opts),
+        TransformFactory.mut8(Helper.get_ib_gib!(ib, gib), identity_ib_gibs,
+                              new_data, opts),
 
       # 2. Save transform
       {:ok, :ok} <- IbGib.Data.save(mut8_info),
 
       # 3. Create instance process of mut8
-      {:ok, mut8} <- IbGib.Expression.Supervisor.start_expression({mut8_info[:ib], mut8_info[:gib]}),
+      {:ok, mut8} <-
+        IbGib.Expression.Supervisor.start_expression({mut8_info[:ib],
+                                                      mut8_info[:gib]}),
 
       # 4. Apply transform
       {:ok, new_pid} <- contact_impl(mut8, state) do
@@ -981,32 +973,46 @@ defmodule IbGib.Expression do
     end
   end
 
-  defp rel8_impl(other_pid, src_rel8ns, dest_rel8ns, opts, state) do
-    Logger.debug "_state_: #{inspect state}"
+  defp rel8_impl(other_pid,
+                 identity_ib_gibs,
+                 src_rel8ns,
+                 dest_rel8ns,
+                 opts,
+                 state) do
     info = state[:info]
 
     # 1. Create transform
-    this_ib_gib = Helper.get_ib_gib!(info[:ib], info[:gib])
-    other_info = IbGib.Expression.get_info!(other_pid)
-    other_ib_gib = Helper.get_ib_gib!(other_info[:ib], other_info[:gib])
-    rel8_info = this_ib_gib |> TransformFactory.rel8(other_ib_gib, src_rel8ns, dest_rel8ns, opts)
-    Logger.debug "rel8_info: #{inspect rel8_info}"
+    with {:ok, this_ib_gib} <- Helper.get_ib_gib(info[:ib], info[:gib]),
+      {:ok, other_info} <- IbGib.Expression.get_info(other_pid),
+      {:ok, other_ib_gib} <-
+        Helper.get_ib_gib(other_info[:ib], other_info[:gib]),
+      {:ok, rel8_info} <-
+        this_ib_gib
+        |> TransformFactory.rel8(other_ib_gib, identity_ib_gibs, src_rel8ns,
+                                 dest_rel8ns, opts),
 
-    # 2. Save transform
-    {:ok, :ok} = IbGib.Data.save(rel8_info)
+      # 2. Save transform
+      {:ok, :ok} <- IbGib.Data.save(rel8_info),
 
-    # 3. Create instance process of rel8
-    Logger.debug "rel8 saved. Now trying to create rel8 transform expression process"
-    {:ok, rel8} = IbGib.Expression.Supervisor.start_expression({rel8_info[:ib], rel8_info[:gib]})
+      # 3. Create instance process of rel8
+      {:ok, rel8} <-
+        IbGib.Expression.Supervisor.start_expression({rel8_info[:ib],
+                                                      rel8_info[:gib]}),
 
-    # 4. Apply transform to both this and other
-    Logger.debug "rel8 transform expression process created. Now will apply rel8 transform to this expression to create a new this..."
-    {:ok, new_this} = contact_impl(rel8, state)
-    Logger.debug "application successful. new_this: #{inspect new_this}"
-    Logger.debug "Now will apply rel8 to the dest_ib_gib expression..."
-    {:ok, new_other} = other_pid |> IbGib.Expression.contact(rel8)
-    Logger.debug "application successful. new_other: #{inspect new_other}"
-    {:ok, {new_this, new_other}}
+      # 4. Apply transform to both this and other
+      {:ok, new_this} <- contact_impl(rel8, state),
+      {:ok, new_other} <- other_pid |> IbGib.Expression.contact(rel8) do
+
+        # 5. Return new processes of applied rel8
+      {:ok, {new_this, new_other}}
+    else
+      {:error, reason} ->
+        Logger.error "#{inspect reason}"
+        {:error, reason}
+      error ->
+        Logger.error "#{inspect error}"
+        {:error, "#{inspect error}"}
+    end
   end
 
   defp instance_impl(@bootstrap_identity_ib_gib, dest_ib, opts, state) do
@@ -1032,7 +1038,7 @@ defmodule IbGib.Expression do
     {:ok, instance} = fork_impl(identity_ib_gibs, dest_ib, opts, state)
     Logger.debug "instance: #{inspect instance}"
     {:ok, {new_this, new_instance}} =
-      rel8_impl(instance, ["instance"], ["instance_of"], opts, state)
+      rel8_impl(instance, identity_ib_gibs, ["instance"], ["instance_of"], opts, state)
     Logger.debug "new_this: #{inspect new_this}\nnew_instance: #{inspect new_instance}"
     {:ok, {new_this, new_instance}}
   end

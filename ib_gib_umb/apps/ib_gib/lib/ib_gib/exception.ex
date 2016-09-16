@@ -1,4 +1,4 @@
-defmodule IbGib.Errors.UnauthorizedError do
+defmodule IbGib.UnauthorizedError do
   @moduledoc """
   Exception to raise when there is a problem with authorization (or lack
   thereof wah wah).

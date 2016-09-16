@@ -69,7 +69,7 @@ defmodule IbGib.Helper do
   def get_ib_gib(ib, gib)
     when is_bitstring(ib) and bit_size(ib) > 0 and
          is_bitstring(gib) and bit_size(gib) > 0 do
-    {:ok, ib <> "#{delim}" <> gib}
+    {:ok, ib <> "#{@delim}" <> gib}
   end
   def get_ib_gib(ib, gib) do
     error_msg = "ib and gib are not both bitstrings with length > 0. ib: #{inspect ib}. gib: #{inspect gib}"
@@ -116,12 +116,12 @@ defmodule IbGib.Helper do
   @spec separate_ib_gib(String.t) :: {:ok, {String.t, String.t}} | {:error, String.t}
   def separate_ib_gib(ib_gib)
   def separate_ib_gib(ib_gib) when is_bitstring(ib_gib) do
-    as_array = String.split(ib_gib, delim)
+    as_array = String.split(ib_gib, @delim)
     {ib, gib} = {Enum.at(as_array, 0), Enum.at(as_array, 1)}
     {:ok, {ib, gib}}
   end
   def separate_ib_gib(ib_gib) do
-    error_msg = "ib_gib must be a bitstring with a valid delim (#{delim}). ib_gib: #{inspect ib_gib}"
+    error_msg = "ib_gib must be a bitstring with a valid delim (#{@delim}). ib_gib: #{inspect ib_gib}"
     Logger.error error_msg
     {:error, error_msg}
   end

@@ -1,13 +1,18 @@
 defmodule IbGib.Data.Schemas.IbGib.ValidationTest do
+  @moduledoc """
+  This tests the IbGibModel changeset functionality.
+  """
+
+
   use ExUnit.Case
   require Logger
 
   use IbGib.Constants, :ib_gib
   use IbGib.Constants, :error_msgs
   alias IbGib.TestHelper
-  # alias IbGib.Data.Repo
   alias IbGib.Data.Schemas.IbGibModel
   alias RandomGib.Get
+
 
   @at_least_msg "should have at least %{count} item(s)"
   @at_most_msg "should be at most %{count} character(s)"
@@ -34,7 +39,7 @@ defmodule IbGib.Data.Schemas.IbGib.ValidationTest do
                     gib: Get.some_letters(20),
                     # data: %{Get.some_letters(5) => Get.some_letters(min_id_length)},
                     rel8ns: %{
-                      Get.some_letters(5) => ["#{Get.some_letters(min_ib_gib_length)}#{delim}#{Get.some_letters(min_ib_gib_length)}"]
+                      Get.some_letters(5) => ["#{Get.some_letters(min_ib_gib_length)}#{@delim}#{Get.some_letters(min_ib_gib_length)}"]
                     }
                   })
 
@@ -49,7 +54,7 @@ defmodule IbGib.Data.Schemas.IbGib.ValidationTest do
                     gib: Get.some_letters(20),
                     data: %{Get.some_letters(5) => Get.some_letters(min_id_length)},
                     rel8ns: %{
-                      Get.some_letters(5) => ["#{Get.some_letters(min_ib_gib_length)}#{delim}#{Get.some_letters(min_ib_gib_length)}"]
+                      Get.some_letters(5) => ["#{Get.some_letters(min_ib_gib_length)}#{@delim}#{Get.some_letters(min_ib_gib_length)}"]
                     }
                   })
     Logger.debug "changeset: #{inspect changeset}"
@@ -64,7 +69,7 @@ defmodule IbGib.Data.Schemas.IbGib.ValidationTest do
                     gib: Get.some_letters(20),
                     data: %{},
                     rel8ns: %{
-                      Get.some_letters(5) => ["#{Get.some_letters(min_ib_gib_length)}#{delim}#{Get.some_letters(min_ib_gib_length)}"]
+                      Get.some_letters(5) => ["#{Get.some_letters(min_ib_gib_length)}#{@delim}#{Get.some_letters(min_ib_gib_length)}"]
                     }
                   })
     Logger.debug "changeset: #{inspect changeset}"
@@ -79,7 +84,7 @@ defmodule IbGib.Data.Schemas.IbGib.ValidationTest do
                     gib: Get.some_letters(20),
                     data: nil,
                     rel8ns: %{
-                      Get.some_letters(5) => ["#{Get.some_letters(min_ib_gib_length)}#{delim}#{Get.some_letters(min_ib_gib_length)}"]
+                      Get.some_letters(5) => ["#{Get.some_letters(min_ib_gib_length)}#{@delim}#{Get.some_letters(min_ib_gib_length)}"]
                     }
                   })
     Logger.debug "changeset: #{inspect changeset}"
@@ -102,8 +107,8 @@ defmodule IbGib.Data.Schemas.IbGib.ValidationTest do
   @tag :capture_log
   test "ib and gib, invalid, too long" do
     changeset = IbGibModel.changeset(%IbGibModel{}, %{
-                    ib: Get.some_letters(max_id_length+1), # too many
-                    gib: Get.some_letters(max_id_length+1) # too many
+                    ib: Get.some_letters(max_id_length + 1), # too many
+                    gib: Get.some_letters(max_id_length + 1) # too many
                   })
     Logger.debug "changeset: #{inspect changeset}"
     TestHelper.flunk_insert(changeset, :ib, @at_most_msg)
@@ -132,7 +137,7 @@ defmodule IbGib.Data.Schemas.IbGib.ValidationTest do
   @tag :capture_log
   test "rel8ns, invalid, ib_gib too long" do
     changeset = IbGibModel.changeset(%IbGibModel{}, %{
-                  rel8ns: %{Get.some_letters(5) => Get.some_letters((2 * max_id_length)+2)}
+                  rel8ns: %{Get.some_letters(5) => Get.some_letters((2 * max_id_length) + 2)}
                 })
     TestHelper.flunk_insert(changeset, :rel8ns, emsg_invalid_relations)
   end
@@ -142,7 +147,7 @@ defmodule IbGib.Data.Schemas.IbGib.ValidationTest do
     changeset = IbGibModel.changeset(%IbGibModel{}, %{
       rel8ns: %{
           Get.some_letters(5) => Get.some_letters(2),
-          Get.some_letters(5) => Get.some_letters((2 * max_id_length)+2),
+          Get.some_letters(5) => Get.some_letters((2 * max_id_length) + 2),
           Get.some_letters(5) => Get.some_letters(5)
       }
     })

@@ -171,8 +171,8 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
     # 1. Setup our return logical `and` operation.
 
     ib_gib_length = ib_gib |> String.length
-    has_delim = ib_gib |> String.contains?(delim)
-    array = ib_gib |> String.split(delim)
+    has_delim = ib_gib |> String.contains?(@delim)
+    array = ib_gib |> String.split(@delim)
     array_length = array |> length
     ib = array |> Enum.at(0, "")
     ib_length = ib |> String.length

@@ -17,7 +17,6 @@ defmodule IbGib.Constants do
       @delim "^"
       @root_ib_gib "ib#{@delim}gib"
 
-      defp delim, do: "^"
       defp min_id_length, do: 1
       defp max_id_length, do: 76
       defp min_ib_gib_length, do: 3 # min + delim + min
@@ -32,7 +31,12 @@ defmodule IbGib.Constants do
       @default_dna [@root_ib_gib]
       @default_past [@root_ib_gib]
       @default_ancestor [@root_ib_gib]
+      @default_identity [@root_ib_gib]
 
+      @default_data %{}
+
+      # The following is misnamed. It's the default_rel8ns when performing
+      # a rel8 transform. Will refactor.
       @default_rel8ns ["rel8d"]
 
       # This "stamp" added to gib means that we have generated the ib_gib,
@@ -70,8 +74,15 @@ defmodule IbGib.Constants do
   # For use with testing.
   def test do
     quote do
-      @test_identities_1 ["test identity1#{@delim}gib"]
-      @test_identities_2 ["test identity1#{@delim}gib", "test identity2222222222#{@delim}gib"]
+      @test_identities_1 [
+        @bootstrap_identity_ib_gib,
+        "test identity1#{@delim}gib"
+      ]
+      @test_identities_2 [
+        @bootstrap_identity_ib_gib,
+        "test identity1#{@delim}gib",
+        "test identity2222222222#{@delim}gib"
+      ]
     end
   end
 
@@ -125,7 +136,7 @@ defmodule IbGib.Constants do
       end
 
       def emsg_invalid_authorization(expected, actual) do
-        "Authorization level not met. Expected identity_ib_gibs: #{inspect expected}. Actual: #{inspect actual}"
+        "Authorization level not met. Expected: #{inspect expected}. Actual: #{inspect actual}"
       end
     end
   end

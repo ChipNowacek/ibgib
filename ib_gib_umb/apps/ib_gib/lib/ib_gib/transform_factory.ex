@@ -129,49 +129,55 @@ defmodule IbGib.TransformFactory do
   `src_rel8n` will add a relation to the src with this name of the rel8n, and
   `dest-rel8n` will add a relation to the dest.
   """
-  @spec rel8(String.t, String.t, list(String.t), list(String.t), map) :: map
+  @spec rel8(String.t, String.t, list(String.t), list(String.t), list(String.t), map) :: map
   def rel8(src_ib_gib,
            dest_ib_gib,
-           src_rel8ns \\ @default_rel8ns,
-           dest_rel8ns \\ @default_rel8ns,
-           opts \\ @default_transform_options)
+           identity_ib_gibs,
+           src_rel8ns,
+           dest_rel8ns,
+           opts)
     when is_bitstring(src_ib_gib) and is_bitstring(dest_ib_gib) and
-         src_ib_gib !== dest_ib_gib and
-         src_ib_gib !== "ib#{@delim}gib" and
-         dest_ib_gib !== "ib#{@delim}gib" and
-         is_list(src_rel8ns) and
-         is_list(dest_rel8ns) and
+         src_ib_gib !== dest_ib_gib and src_ib_gib !== @root_ib_gib and
+         dest_ib_gib !== @root_ib_gib and
+         is_list(identity_ib_gibs) and length(identity_ib_gibs) >= 1 and
+         is_list(src_rel8ns) and is_list(dest_rel8ns) and
          is_map(opts) do
 
-    src_rel8ns =
-      if length(src_rel8ns) == 0 do
-        @default_rel8ns
-      else
-        src_rel8ns
-      end
-    dest_rel8ns =
-      if length(dest_rel8ns) == 0 do
-        @default_rel8ns
-      else
-        dest_rel8ns
-      end
-    ib = "rel8"
-    relations = %{
-      "dna" => ["ib#{@delim}gib", "rel8#{@delim}gib"]
-    }
-    data = %{
-      "src_ib_gib" => src_ib_gib,
-      "dest_ib_gib" => dest_ib_gib,
-      "src_rel8ns" => src_rel8ns |> Enum.concat(@default_rel8ns) |> Enum.uniq,
-      "dest_rel8ns" => dest_rel8ns |> Enum.concat(@default_rel8ns) |> Enum.uniq
-    }
-    gib = Helper.hash(ib, relations, data) |> stamp_if_needed(opts[:gib_stamp])
-    %{
-      ib: ib,
-      gib: gib,
-      rel8ns: relations,
-      data: data
-    }
+    case validate_identity_ib_gibs(identity_ib_gibs) do
+      {:ok, :ok} ->
+        src_rel8ns =
+          if length(src_rel8ns) == 0, do: @default_rel8ns, else: src_rel8ns
+        dest_rel8ns =
+          if length(dest_rel8ns) == 0, do: @default_rel8ns, else: dest_rel8ns
+
+        ib = "rel8"
+        relations = %{
+          "ancestor" => @default_ancestor ++ ["rel8#{@delim}gib"],
+          "past" => @default_past,
+          "dna" => @default_dna,
+          "identity" => identity_ib_gibs
+        }
+        data = %{
+          "src_ib_gib" => src_ib_gib,
+          "dest_ib_gib" => dest_ib_gib,
+          "src_rel8ns" =>
+            src_rel8ns |> Enum.concat(@default_rel8ns) |> Enum.uniq,
+          "dest_rel8ns" =>
+            dest_rel8ns |> Enum.concat(@default_rel8ns) |> Enum.uniq
+        }
+        gib =
+          Helper.hash(ib, relations, data) |> stamp_if_needed(opts[:gib_stamp])
+        result = %{
+          ib: ib,
+          gib: gib,
+          rel8ns: relations,
+          data: data
+        }
+        {:ok, result}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   @doc """
