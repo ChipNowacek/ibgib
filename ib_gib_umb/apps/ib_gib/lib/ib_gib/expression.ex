@@ -65,9 +65,8 @@ defmodule IbGib.Expression do
   use IbGib.Constants, :ib_gib
   use IbGib.Constants, :error_msgs
   import IbGib.Macros
-  alias IbGib.{TransformFactory, Helper}
-  alias IbGib.TransformFactory.Mut8Factory
-
+  alias IbGib.{TransformFactory, Helper, TransformFactory.Mut8Factory}
+  alias IbGib.Errors.UnauthorizedError
   # ----------------------------------------------------------------------------
   # Constructors
   # ----------------------------------------------------------------------------
@@ -85,16 +84,12 @@ defmodule IbGib.Expression do
   def start_link({:ib_gib, {ib, gib}}) do
     # expr_id = Helper.new_id |> String.downcase
     Logger.debug "{ib, gib}: {#{inspect ib}, #{inspect gib}}"
-    result = GenServer.start_link(__MODULE__, {:ib_gib, {ib, gib}})
-    Logger.debug "start_link result: #{inspect result}"
-    result
+    GenServer.start_link(__MODULE__, {:ib_gib, {ib, gib}})
   end
   def start_link({:apply, {a, b}}) when is_map(a) and is_map(b) do
     # expr_id = Helper.new_id |> String.downcase
-    Logger.debug "{a, b}: {#{inspect a}, #{inspect b}}"
-    result = GenServer.start_link(__MODULE__, {:apply, {a, b}})
-    Logger.debug "start_link result: #{inspect result}"
-    result
+    Logger.debug "a: {#{inspect a}\nb: #{inspect b}}"
+    GenServer.start_link(__MODULE__, {:apply, {a, b}})
   end
 
   # ----------------------------------------------------------------------------
@@ -421,6 +416,7 @@ defmodule IbGib.Expression do
   end
 
   defp apply_query(a, b) do
+    Logger.debug "a: #{inspect a}\nb: #{inspect b}"
     b_identities = authorize_apply_b(a[:rel8ns], b[:rel8ns])
 
     query_options = b[:data]["options"]
@@ -552,10 +548,6 @@ defmodule IbGib.Expression do
   @spec authorize_apply_b(map, map) :: list(String.t)
   defp authorize_apply_b(a_rel8ns, b_rel8ns) do
     Logger.warn "a_rel8ns: #{inspect a_rel8ns}"
-    Logger.warn "a_rel8ns: #{inspect a_rel8ns}"
-    Logger.warn "a_rel8ns: #{inspect a_rel8ns}"
-    Logger.warn "b_rel8ns: #{inspect b_rel8ns}"
-    Logger.warn "b_rel8ns: #{inspect b_rel8ns}"
     Logger.warn "b_rel8ns: #{inspect b_rel8ns}"
     a_has_identity =
       Map.has_key?(a_rel8ns, "identity") and
@@ -576,9 +568,11 @@ defmodule IbGib.Expression do
           b_identity = b_rel8ns["identity"]
         else
           # unauthorized: a requires auth, b does not have any/all
-          Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
           # expected: a_identity, actual: b_identity
-          raise IbGib.Errors.UnauthorizedError, {a_rel8ns["identity"], b_rel8ns["identity"]}
+          Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
+          raise(UnauthorizedError, message:
+            emsg_invalid_authorization(a_rel8ns["identity"],
+                                       b_rel8ns["identity"]))
         end
 
       {false, true} ->
@@ -587,16 +581,15 @@ defmodule IbGib.Expression do
 
       {true, false} ->
         # unauthorized: a requires auth, b has none
-        Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
-        a_identity = a_rel8ns["identity"]
         # expected: a_identity, actual: nil
-        raise IbGib.Errors.UnauthorizedError, {a_identity, nil}
+        Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
+        raise UnauthorizedError, message: emsg_invalid_authorization(a_rel8ns["identity"], nil)
 
       {false, false} ->
         # unauthorized: b is required to have authorization and doesn't
-        Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
         # expected: [something], actual: nil
-        raise IbGib.Errors.UnauthorizedError, {[], nil}
+        Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
+        raise UnauthorizedError, message: emsg_invalid_authorization([], nil)
     end
   end
 
