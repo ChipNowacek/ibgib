@@ -92,11 +92,11 @@ defmodule IbGib.Constants do
   def error_msgs do
     quote do
       defp emsg_invalid_relations do
-        "Something about the rel8ns is invalid. :-/"
+        "Rel8ns are invalid. :-/"
       end
 
       defp emsg_invalid_data do
-        "Something about the data is invalid. :-O"
+        "Data is invalid. :-O"
       end
 
       defp emsg_invalid_id_length do
@@ -137,6 +137,10 @@ defmodule IbGib.Constants do
 
       def emsg_invalid_authorization(expected, actual) do
         "Authorization level not met. Expected: #{inspect expected}. Actual: #{inspect actual}"
+      end
+
+      def emsg_invalid_rel8_src_mismatch(src_ib_gib, a_ib_gib) do
+        "A rel8 transform was attempted, but the src_ib_gib (#{src_ib_gib}) does not match the ib_gib which is transforming (#{a_ib_gib})."
       end
     end
   end

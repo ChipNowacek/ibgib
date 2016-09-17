@@ -9,3 +9,14 @@ defmodule IbGib.UnauthorizedError do
 
   defexception [:message]
 end
+
+
+defmodule IbGib.InvalidRel8Error do
+  @moduledoc """
+  Exception to raise when there is a problem with applying a rel8 transform.
+
+  Use with emsg_invalid_rel8_src_mismatch(src_ib_gib, a_ib_gib)
+  """
+
+  defexception [:message]
+end

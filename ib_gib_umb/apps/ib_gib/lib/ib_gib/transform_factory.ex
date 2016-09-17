@@ -122,33 +122,21 @@ defmodule IbGib.TransformFactory do
 
   @doc """
   Creates a rel8 transform that will rel8 the given `src_ib_gib` to the given
-  `dest_ib_gib` according to details in given `how` map.
-
-  It is expecting `how` to include at least keys called src_rel8n and dest_rel8n
-  which describe `how` the `src_ib_gib` is related to the `dest_ib_gib`.
-  `src_rel8n` will add a relation to the src with this name of the rel8n, and
-  `dest-rel8n` will add a relation to the dest.
+  `other_ib_gib`.
   """
-  @spec rel8(String.t, String.t, list(String.t), list(String.t), list(String.t), map) :: map
-  def rel8(src_ib_gib,
-           dest_ib_gib,
-           identity_ib_gibs,
-           src_rel8ns,
-           dest_rel8ns,
-           opts)
-    when is_bitstring(src_ib_gib) and is_bitstring(dest_ib_gib) and
-         src_ib_gib !== dest_ib_gib and src_ib_gib !== @root_ib_gib and
-         dest_ib_gib !== @root_ib_gib and
+  @spec rel8(String.t, String.t, list(String.t), list(String.t), map) :: {:ok, map} | {:error, String.t}
+  def rel8(src_ib_gib, other_ib_gib, identity_ib_gibs, rel8ns, opts)
+    when is_bitstring(src_ib_gib) and is_bitstring(other_ib_gib) and
+         src_ib_gib !== other_ib_gib and src_ib_gib !== @root_ib_gib and
+         other_ib_gib !== @root_ib_gib and
          is_list(identity_ib_gibs) and length(identity_ib_gibs) >= 1 and
-         is_list(src_rel8ns) and is_list(dest_rel8ns) and
+         is_list(rel8ns) and
          is_map(opts) do
 
     case validate_identity_ib_gibs(identity_ib_gibs) do
       {:ok, :ok} ->
-        src_rel8ns =
-          if length(src_rel8ns) == 0, do: @default_rel8ns, else: src_rel8ns
-        dest_rel8ns =
-          if length(dest_rel8ns) == 0, do: @default_rel8ns, else: dest_rel8ns
+        rel8ns =
+          if length(rel8ns) == 0, do: @default_rel8ns, else: src_rel8ns
 
         ib = "rel8"
         relations = %{
@@ -159,11 +147,8 @@ defmodule IbGib.TransformFactory do
         }
         data = %{
           "src_ib_gib" => src_ib_gib,
-          "dest_ib_gib" => dest_ib_gib,
-          "src_rel8ns" =>
-            src_rel8ns |> Enum.concat(@default_rel8ns) |> Enum.uniq,
-          "dest_rel8ns" =>
-            dest_rel8ns |> Enum.concat(@default_rel8ns) |> Enum.uniq
+          "other_ib_gib" => other_ib_gib,
+          "rel8ns" => rel8ns |> Enum.concat(@default_rel8ns) |> Enum.uniq,
         }
         gib =
           Helper.hash(ib, relations, data) |> stamp_if_needed(opts[:gib_stamp])
@@ -178,6 +163,13 @@ defmodule IbGib.TransformFactory do
       {:error, reason} ->
         {:error, reason}
     end
+  end
+  def rel8(src_ib_gib, other_ib_gib, identity_ib_gibs, rel8ns, opts) do
+    {
+      :error,
+      emsg_invalid_args([src_ib_gib, other_ib_gib, identity_ib_gibs,
+                         rel8ns, opts])
+    }
   end
 
   @doc """
