@@ -3,7 +3,7 @@ defmodule IbGib.Data.Cache do
   This is a cache for persisting ib_gib in something slightly more permanent
   than the processes themselves, but not as permanent as the repo itself.
   """
-  
+
   use GenServer
   require Logger
 
@@ -33,7 +33,7 @@ defmodule IbGib.Data.Cache do
   Returns {:ok, :ok} or {:error, reason}
   """
   def put(key, value, name \\ @srv_name) when is_bitstring(key) do
-    Logger.debug "putting..."
+    Logger.debug "putting in cache..."
     GenServer.call(name, {:put, {key, value}})
   end
 
@@ -43,6 +43,7 @@ defmodule IbGib.Data.Cache do
   Returns {:ok, value} or {:error, reason}
   """
   def get(key, name \\ @srv_name) do
+    Logger.debug "getting from cache..."
     GenServer.call(name, {:get, key})
   end
 

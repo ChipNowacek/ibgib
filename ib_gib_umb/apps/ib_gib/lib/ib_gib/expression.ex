@@ -432,7 +432,7 @@ defmodule IbGib.Expression do
 
     Logger.debug "a[:gib] set to gib: #{a[:gib]}"
 
-    on_new_expression_completed(ib, this_gib, this_info)
+    on_new_expression_completed(this_ib, this_gib, this_info)
   end
 
   defp add_rel8ns(this_info, rel8n_names, other_ib_gib) do
@@ -458,7 +458,7 @@ defmodule IbGib.Expression do
            else
              # The rel8n doesn't exist, so add it with the sole rel8n to
              # other_ib_gib
-             Map.put_new(acc, x, [other_ib_gib])
+             Map.put_new(acc, rel8n, [other_ib_gib])
            end
          end)
 
@@ -601,6 +601,7 @@ defmodule IbGib.Expression do
     # When authorizing a fork, we only care that both a and b _have_ identities,
     # because anyone can fork anything. Authorization here is really just
     # checking for error in code or more nefarious monkey business.
+    Logger.metadata([x: which])
     Logger.debug "which: #{:fork}"
     Logger.warn "a_rel8ns: #{inspect a_rel8ns}"
     Logger.warn "b_rel8ns: #{inspect b_rel8ns}"
@@ -624,6 +625,7 @@ defmodule IbGib.Expression do
     end
   end
   defp authorize_apply_b(which, a_rel8ns, b_rel8ns) when is_atom(which) do
+    Logger.metadata([x: which])
     Logger.debug "which: #{inspect which}"
     Logger.warn "a_rel8ns: #{inspect a_rel8ns}"
     Logger.warn "b_rel8ns: #{inspect b_rel8ns}"
@@ -788,12 +790,13 @@ defmodule IbGib.Expression do
          is_list(identity_ib_gibs) and length(identity_ib_gibs) >= 1 and
          is_list(rel8ns) and length(rel8ns) >= 1 and
          is_map(opts) do
-    GenServer.call(expr_pid, {:rel8, other_pid, identity_ib_gibs, src_rel8ns,
-                   dest_rel8ns, opts})
+    Logger.debug "rel8 huh"
+    GenServer.call(expr_pid, {:rel8, other_pid, identity_ib_gibs, rel8ns, opts})
   end
   def rel8(expr_pid, other_pid, identity_ib_gibs, rel8ns, opts) do
-    emsg = emsg_invalid_args([expr_pid, other_pid, identity_ib_gibs, src_rel8ns,
-      dest_rel8ns, opts])
+    emsg = emsg_invalid_args([
+        expr_pid, other_pid, identity_ib_gibs, rel8ns, opts
+      ])
     Logger.error emsg
     {:error, emsg}
   end
@@ -803,8 +806,7 @@ defmodule IbGib.Expression do
   """
   @spec rel8!(pid, pid, list(String.t), list(String.t), map) :: pid
   def rel8!(expr_pid, other_pid, identity_ib_gibs, rel8ns, opts) do
-    bang(rel8(expr_pid, other_pid, identity_ib_gibs, src_rel8ns, dest_rel8ns,
-         opts))
+    bang(rel8(expr_pid, other_pid, identity_ib_gibs, rel8ns, opts))
   end
 
   # ----------------------------------------------------------------------------
@@ -1024,10 +1026,12 @@ defmodule IbGib.Expression do
   end
 
   defp rel8_impl(other_pid, identity_ib_gibs, rel8ns, opts, state) do
+    Logger.debug "state: #{inspect state}"
     info = state[:info]
 
     # 1. Create transform
     with {:ok, this_ib_gib} <- Helper.get_ib_gib(info[:ib], info[:gib]),
+      {:ok, :ok} <- log_yo(:debug, "what up"),
       {:ok, other_info} <- IbGib.Expression.get_info(other_pid),
       {:ok, other_ib_gib} <-
         Helper.get_ib_gib(other_info[:ib], other_info[:gib]),
@@ -1078,12 +1082,32 @@ defmodule IbGib.Expression do
     # info = state[:info]
     # fork_dest_ib = info[:ib]
     # fork_dest_ib = Helper.new_id
-    {:ok, instance} = fork_impl(identity_ib_gibs, dest_ib, opts, state)
-    Logger.debug "instance: #{inspect instance}"
-    {:ok, {new_this, new_instance}} =
-      rel8_impl(instance, identity_ib_gibs, ["instance"], ["instance_of"], opts, state)
-    Logger.debug "new_this: #{inspect new_this}\nnew_instance: #{inspect new_instance}"
-    {:ok, {new_this, new_instance}}
+    with {:ok, this_ib_gib} <-
+        Helper.get_ib_gib(state[:info][:ib], state[:info][:gib]),
+      {:ok, forked} <- fork_impl(identity_ib_gibs, dest_ib, opts, state),
+      {:ok, :ok} <- log_yo(:debug, "fork complete. forked pid: #{inspect forked}\nself pid: #{inspect self}"),
+      {:ok, instance} <-
+        forked |> rel8(self, identity_ib_gibs, ["instance_of"], opts) do
+      {:ok, instance}
+    else
+      {:error, reason} ->
+        Logger.error "#{inspect reason}"
+        {:error, reason}
+      error ->
+        Logger.error "#{inspect error}"
+        {:error, "#{inspect error}"}
+    end
+  end
+
+  defp log_yo(:debug, msg) do
+    Logger.warn "This log msg is for dev purposes only!!! Should not be run in prod!!!"
+    Logger.debug msg
+    {:ok, :ok}
+  end
+  defp log_yo(:warn, msg) do
+    Logger.warn "This log msg is for dev purposes only!!! Should not be run in prod!!!"
+    Logger.warn msg
+    {:ok, :ok}
   end
 
   defp query_impl(identity_ib_gibs, query_options, state)

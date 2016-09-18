@@ -136,7 +136,7 @@ defmodule IbGib.TransformFactory do
     case validate_identity_ib_gibs(identity_ib_gibs) do
       {:ok, :ok} ->
         rel8ns =
-          if length(rel8ns) == 0, do: @default_rel8ns, else: src_rel8ns
+          if length(rel8ns) == 0, do: @default_rel8ns, else: rel8ns
 
         ib = "rel8"
         relations = %{
