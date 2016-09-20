@@ -416,4 +416,21 @@ defmodule IbGib.Helper do
     false
   end
 
+  defp validate_identity_ib_gibs(identity_ib_gibs)
+    when is_list(identity_ib_gibs) do
+    valid_identity_ib_gibs =
+      length(identity_ib_gibs) > 0 and
+      identity_ib_gibs |> Enum.all?(&(Helper.valid_ib_gib?(&1)))
+    if valid_identity_ib_gibs do
+      {:ok, :ok}
+    else
+      emsg = emsg_invalid_args(identity_ib_gibs)
+      Logger.error emsg
+      {:error, emsg}
+    end
+  end
+  defp validate_identity_ib_gibs(identity_ib_gibs) do
+    {:error, emsg_invalid_args(identity_ib_gibs)}
+  end
+
 end

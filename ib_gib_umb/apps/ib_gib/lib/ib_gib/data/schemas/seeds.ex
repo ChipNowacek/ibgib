@@ -15,7 +15,9 @@ defmodule IbGib.Data.Schemas.Seeds do
   #           will descend.
   @specifiers [:text_child]
 
-  def insert(ib_atom) when is_atom(ib_atom) do
+  def insert(ib_atom, data \\ %{})
+  def insert(ib_atom, data)
+    when is_atom(ib_atom) and is_map(data) do
     ib = Atom.to_string(ib_atom)
     Logger.info "Inserting #{ib}..."
     try do
@@ -28,7 +30,7 @@ defmodule IbGib.Data.Schemas.Seeds do
     end
     :ok
   end
-  def insert({ib_atom, specifier})
+  def insert({ib_atom, specifier}, data)
     when is_atom(ib_atom) and is_atom(specifier) and
          (specifier in @specifiers) do
     ib = Atom.to_string(ib_atom)
@@ -44,10 +46,13 @@ defmodule IbGib.Data.Schemas.Seeds do
     :ok
   end
 
-  def get_seed(ib_atom) when is_atom(ib_atom) and ib_atom != :root do
-    get_seed(Atom.to_string(ib_atom))
+  def get_seed(ib_atom, data \\ %{})
+  def get_seed(ib_atom, data)
+    when is_atom(ib_atom) and ib_atom != :root do
+    get_seed(Atom.to_string(ib_atom), data)
   end
-  def get_seed(ib_string) when is_bitstring(ib_string) do
+  def get_seed(ib_string, data)
+    when is_bitstring(ib_string) and is_map(data) do
     Logger.debug "getting seed ib_gib #{ib_string} expression."
     %IbGibModel{
       ib: ib_string,
@@ -58,10 +63,10 @@ defmodule IbGib.Data.Schemas.Seeds do
         "past" => @default_past,
         "identity" => @default_identity
         },
-      data: %{}
+      data: data
     }
   end
-  def get_seed(:root) do
+  def get_seed(:root, data) do
     %IbGibModel{
       ib: "ib",
       gib: "gib",
@@ -71,11 +76,11 @@ defmodule IbGib.Data.Schemas.Seeds do
         "past" => @default_past,
         "identity" => @default_identity
         },
-      data: %{}
+      data: data
     }
   end
   # This overload is for generating seeds that "descend" (forked from) text^gib.
-  def get_seed({ib_string, :text_child}) do
+  def get_seed({ib_string, :text_child}, data) do
     Logger.debug "get_seed :text_child. ib_string: #{ib_string}"
     %IbGibModel{
       ib: ib_string,
@@ -86,7 +91,7 @@ defmodule IbGib.Data.Schemas.Seeds do
         "past" => @default_past,
         "identity" => @default_identity
         },
-      data: %{}
+      data: data
     }
   end
 end
