@@ -16,6 +16,7 @@ defmodule IbGib.Constants do
       # if change, must also change in regex below
       @delim "^"
       @root_ib_gib "ib#{@delim}gib"
+      @error_gib "error#{@delim}gib"
 
       defp min_id_length, do: 1
       defp max_id_length, do: 76

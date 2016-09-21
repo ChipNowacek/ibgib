@@ -13,6 +13,8 @@ use IbGib.Constants, :ib_gib
 # Root!
 :ok = Seeds.insert(:root)
 
+:ok = Seeds.insert(:error)
+
 # Fundamental Transforms
 :ok = Seeds.insert(:fork, %{
   "src" => "[src]",

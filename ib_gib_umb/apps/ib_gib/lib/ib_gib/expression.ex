@@ -67,6 +67,7 @@ defmodule IbGib.Expression do
   import IbGib.Macros
   alias IbGib.{TransformFactory, Helper, TransformFactory.Mut8Factory}
   alias IbGib.UnauthorizedError
+  alias IbGib.TransformBuilder, as: TB
 
   # ----------------------------------------------------------------------------
   # Constructors
@@ -91,6 +92,26 @@ defmodule IbGib.Expression do
     # expr_id = Helper.new_id |> String.downcase
     Logger.debug "a: {#{inspect a}\nb: #{inspect b}}"
     GenServer.start_link(__MODULE__, {:apply, {a, b}})
+  end
+  def start_link({:express, {a, b}}) when is_bitstring(a) and is_bitstring(b) do
+    Logger.debug "express. a: {#{a}\nb: #{b}}"
+    GenServer.start_link(__MODULE__, {:express, {a, b}})
+  end
+
+  @doc """
+  Express is how we "create new" ib_gib. We pass in two existing ib^gib,
+  and this will be evaluated to generate a tertiary "new" ib_gib.
+
+  All of this happens within the process' init function, so it is happening
+  in parallel, independent of any other processes.
+  """
+  def express(identity_ib_gibs, a_ib_gib, b_ib_gib)
+  def express(_identity_ib_gibs, a_ib_gib, @root_ib_gib) do
+    # the @root_ib_gib (ib^gib) acts as an "identity" transform.
+    {:ok, a_ib_gib}
+  end
+  def express(identity_ib_gibs, a_ib_gib, b_ib_gib) do
+    IbGib.Expression.Supervisor.start_expression({identity_ib_gibs, a_ib_gib, b_ib_gib})
   end
 
   # ----------------------------------------------------------------------------
@@ -120,6 +141,7 @@ defmodule IbGib.Expression do
   # Creating a "new" ib_gib from two existing ib_gib by "applying" b to a.
   def init({:apply, {a, b}}) when is_map(a) and is_map(b) do
     Logger.metadata([x: :apply])
+
     case {b[:ib], b[:gib]} do
       {"fork", b_gib} when b_gib != "gib" -> apply_fork(a, b)
       {"mut8", b_gib} when b_gib != "gib" -> apply_mut8(a, b)
@@ -130,6 +152,167 @@ defmodule IbGib.Expression do
         Logger.error err_msg
         {:error, err_msg}
     end
+  end
+  # Creating a "new" ib_gib from two existing ib_gib by "applying" b to a.
+  # This is going to be replacing the :apply version I think. WIP.
+  def init({:express, {identity_ib_gibs, a_ib_gib, b_ib_gib}})
+    when is_bitstring(a_ib_gib) and is_bitstring(b_ib_gib) do
+    Logger.metadata([x: :express])
+    Logger.debug "express. identity_ib_gibs: #{inspect identity_ib_gibs}\na_ib_gib: #{a_ib_gib}\n, b_ib_gib: #{b_ib_gib}"
+
+    with {:ok, b} <- get_process(identity_ib_gibs, b_ib_gib),
+      {:ok, b_info} <- b |> get_info,
+      {:ok, next} <- compile(a_ib_gib, b_ib_gib, b_info),
+      {:ok, a} <- get_process(identity_ib_gibs, a_ib_gib),
+      {:ok, a_info} <- a |> get_info,
+      {:ok, result_ib_gib} <- apply_next(a_info, next) do
+      {:ok, result_ib_gib}
+    else
+      {:error, reason} ->
+        Logger.error "#{inspect reason}"
+        {:error, reason}
+      error ->
+        Logger.error "#{inspect error}"
+        {:error, "#{inspect error}"}
+    end
+
+    case {b_ib, b_gib} do
+
+      # These are "concrete" transforms. They are already fully fleshed out.
+      {"fork", b_gib} when b_gib != "gib" -> apply_fork(a, b)
+      {"mut8", b_gib} when b_gib != "gib" -> apply_mut8(a, b)
+      {"rel8", b_gib} when b_gib != "gib" -> apply_rel8(a, b)
+      {"query", b_gib} when b_gib != "gib" -> apply_query(a, b)
+      {b_ib, b_gib} ->
+        err_msg = "unknown combination: a: #{inspect a}, b: #{inspect b}"
+        Logger.error err_msg
+        {:error, err_msg}
+    end
+  end
+
+  defp get_process(identity_ib_gibs, a_ib_gib) do
+    # For now, the implementation is just to call start_expression
+    # In the future, we can possibly throttle here i dunno..maybe yagni.
+    # this whole thing is i dunno woo hoo!
+    IbGib.Expression.Supervisor.start_expression(a_ib_gib)
+  end
+
+  # If b has any variables in it, then we need to replace those variables
+  # with actual values (and save it).
+  # There are a couple of cases:
+  # b is a fork, mut8, or rel8 with vars
+  # b is a fork, mut8, or rel8 without vars (is already concrete)
+  # b is a plan with vars in plan itself or the next step
+  # b is a plan without vars in plan itself nor the next step
+  # b is a query
+  defp compile(a_ib_gib, b_ib_gib, b_info = %{"ib" => ib})
+    when ib == "fork" or ib == "mut8" or ib == "rel8" do
+
+  end
+  defp compile(a_ib_gib, b_ib_gib, b_info = %{"ib" => ib})
+    when ib == "query" do
+    {:ok, b_info}
+  end
+  defp compile(a_ib_gib, b_ib_gib, b_info = %{"ib" => ib, "src" => src})
+    when ib == "plan" and src == "[src]" do
+    b_info = Map.put(b_info, "src", a_ib_gib)
+    # todoyoooo: change to with statement
+    {:ok, concrete_plan} = concretize_plan(a_ib_gib, b_info)
+    {:ok, next_step} = get_next_step(b_info)
+  end
+
+  defp concretize_plan(a_ib_gib, b_info) do
+    case is_ibgib_or_variable(b_info["src"]) do
+      # src is already concrete
+      {:ok, :ibgib} ->
+        concretize_next_step(a_ib_gib, b_info)
+
+      # Cheating. The only variable in the plan src right now is src.
+      {:ok, :variable} ->
+        concretize_next_step(a_ib_gib, Map.put(b_info, "src", a_ib_gib))
+
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp concretize_next_step(a_ib_gib, b_info) do
+    # Should not get here if there is a next step (I don't think)
+    next_step =
+      b_info["steps"]
+      |> Enum.filter(&(&1["out"] == nil))
+      |> Enum.at(0)
+
+    {:ok, available_vars} = get_available_vars(a_ib_gib, b_info)
+  end
+
+  # Cornerstone
+  # So this is what the Sovereign Lord says: See, I lay a stone in Zion,
+  # a tested stone, a precious Cornerstone for a sure foundation. The One
+  # who relies on it will never be stricken with panic.
+  #
+  # Christ translation: The cornerstone is a foundation layer of coding. The
+  # Cornerstone is a tested stone - unit testing, integration testing, etc.
+  # Test-driven design baby. The One who relies on it will never be stricken
+  # with panic because the One is building its foundation upon a
+  # self-reinforcing informational entity, which isn't reliant upon outside
+  # stimulus. The Cornerstone bootstraps itself and is hardened across an
+  # infinite timespan...*the* infinite timespan. Think of AI and where we are
+  # headed...it is a very real possibility that the Cornerstone (aka the Word,
+  # a la message passing) is a coding construct.
+
+  defp get_available_vars(a_ib_gib, b_info) do
+    {:ok, {a_ib, _} = Helper.get_ib_gib(a_ib_gib)}
+    plan_src = b_info["src"]
+    {:ok, {plan_src_ib, _} = Helper.get_ib_gib(plan_src)}
+
+    # Initialize plan variables
+    vars = %{
+      # The "current" src for this step in the plan
+      "src" => a_ib_gib,
+      "src.ib" => a_ib,
+
+      # The original src for the transform plan
+      "plan.src" => plan_src
+      "plan.src.ib" => plan_src_ib
+    }
+
+    # Add variables available from previously completed steps and return
+    b_info["steps"]
+       # only complete steps
+    |> Enum.filter(&(&1["out"] != nil))
+       # Add vars from steps
+    |> Enum.reduce(vars, fn(step, acc) ->
+         name = step["name"]
+         acc
+         |> Map.put("#{step["name"]}.ibgib", step["ibgib"])
+         |> Map.put("#{step["name"]}.arg", step["arg"])
+         |> Map.put("#{step["name"]}.out", step["out"])
+       end)
+  end
+
+  defp is_ibgib_or_variable(x) when is_bitstring(x) do
+    cond do
+      # arg is a valid ib_gib (not a variable)
+      Helper.valid_ib_gib?(x) ->
+        {:ok, :ibgib}
+
+      # matches [src], [x.y], [x.y.z], etc.
+      String.match?(next_step["arg"], ~r/^\[\w+[\.\w]*\]$/ ->
+        {:ok, :variable}
+
+      true ->
+        emsg = emsg_invalid_args(x)
+        Logger.error emsg
+        {:error, emsg}
+    end
+  end
+  defp is_ibgib_or_variable(x) do
+    emsg = emsg_invalid_args(x)
+    Logger.error emsg
+    {:error, emsg}
+  end
+
+  def apply_next(next_ib_gib) do
   end
 
   # Note: Root maps to "ib". All of the others map to the string.
@@ -963,21 +1146,29 @@ defmodule IbGib.Expression do
     info = state[:info]
     ib = info[:ib]
     gib = info[:gib]
+    ib_gib = Helper.get_ib_gib!(ib, gib)
 
-    # 1. Create transform
-    with {:ok, fork_info} <- TransformFactory.fork(Helper.get_ib_gib!(ib, gib), identity_ib_gibs, dest_ib, opts),
+    # Create the minimal information necessary to start the fork.
+    # Build plan to transform this ib_gib
+    plan_result =
+      TB.plan(identity_ib_gibs, "[src]")
+      ~>> &TB.add_step(&1, %{
+          # The name here is just for readability for us, since we aren't
+          # referencing it in any subsequent steps.
+          "name" => "fork",
+          "arg" => "~[src]",
+          "f" => %{
+            "name" => "fork",
+            "dest_ib" => "~[src.ib]"
+          }
+        })
+      ~>> &TB.yo/2
 
-      # 2. Save transform
-      {:ok, :ok} <- IbGib.Data.save(fork_info),
-
-      # 3. Create instance process of fork
-      {:ok, fork} <- IbGib.Expression.Supervisor.start_expression({fork_info[:ib], fork_info[:gib]}),
-
-      # 4. Apply transform
-      {:ok, new_pid} <- contact_impl(fork, state) do
-
-      # 5. Return new process of applied transform
-      {:ok, new_pid}
+    with {:ok, plan} <- plan_result,
+      {:ok, :ok} <- IbGib.Data.save(plan),
+      {:ok, plan_ib_gib} <- Helper.get_ib_gib(plan),
+      {:ok, new_ib_gib} <- express(identity_ib_gibs, ib_gib, plan_ib_gib) do
+      {:ok, new_ib_gib}
     else
       {:error, reason} ->
         Logger.error "#{inspect reason}"
@@ -986,6 +1177,29 @@ defmodule IbGib.Expression do
         Logger.error "#{inspect error}"
         {:error, "#{inspect error}"}
     end
+
+    # # 1. Create transform
+    # with {:ok, fork_info} <- TransformFactory.fork(Helper.get_ib_gib!(ib, gib), identity_ib_gibs, dest_ib, opts),
+    #
+    #   # 2. Save transform
+    #   {:ok, :ok} <- IbGib.Data.save(fork_info),
+    #
+    #   # 3. Create instance process of fork
+    #   {:ok, fork} <- IbGib.Expression.Supervisor.start_expression({fork_info[:ib], fork_info[:gib]}),
+    #
+    #   # 4. Apply transform
+    #   {:ok, new_pid} <- contact_impl(fork, state) do
+    #
+    #   # 5. Return new process of applied transform
+    #   {:ok, new_pid}
+    # else
+    #   {:error, reason} ->
+    #     Logger.error "#{inspect reason}"
+    #     {:error, reason}
+    #   error ->
+    #     Logger.error "#{inspect error}"
+    #     {:error, "#{inspect error}"}
+    # end
   end
 
   # ----------------------------------------------------------------------------
