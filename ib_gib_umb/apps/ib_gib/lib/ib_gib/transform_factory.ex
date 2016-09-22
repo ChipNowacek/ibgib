@@ -212,6 +212,8 @@ defmodule IbGib.TransformFactory do
     {:error, emsg_invalid_args(query_opts)}
   end
 
+  # NOT DRY>>>>NOOOOOOOOOOO
+  # THIS IS DUPLICATED IN TRANSFORM_FACTORY/BUILDER
   # Stamping a gib means that it is "official", since a user doesn't (shouldn't)
   # have the ability to create their own gib.
   @spec stamp_if_needed(String.t, boolean) :: String.t

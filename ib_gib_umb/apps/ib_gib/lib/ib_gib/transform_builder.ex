@@ -16,6 +16,7 @@ defmodule IbGib.TransformBuilder do
     vars: []
     dnas: []
 
+
     steps: [
       %{
         # name will make this step accessible to proceeding steps via variable
@@ -27,6 +28,7 @@ defmodule IbGib.TransformBuilder do
         "ibgib": "fork^ABC1234"
 
         # The input ib^gib resolved at "runtime"
+        # ** This should always be set to "[src]" **
         "arg": "[src]",
 
         # The "function" transform that will act upon the arg
@@ -46,15 +48,14 @@ defmodule IbGib.TransformBuilder do
 
   ## Examples
 
-  ### Fork
+  ### Plain Fork (duplicates existing behavior)
 
   TransformBuilder.plan(identity_ib_gibs)
   ~>> add_step(%{
         "name" => "fork1",
-        "in" => "~[src]", # ~ means string literal "at runtime"
-        "f" => %{
+        "f_data" => %{
           "type" => "fork",
-          "dest_ib" => "~[src.ib]"
+          "dest_ib" => "[src.ib]"
         }
       })
 
@@ -63,18 +64,16 @@ defmodule IbGib.TransformBuilder do
   TransformBuilder.plan(identity_ib_gibs)
   ~>> add_step(%{
        "name" => "fork1",
-       "in" => "~[src]", # ~ means string literal "at runtime"
-       "f" => %{
+       "f_data" => %{
          "type" => "fork",
-         "dest_ib" => "~[src.ib]"
+         "dest_ib" => "[plan.src.ib]"
        }
      })
   ~>> add_step(%{
        "name" => "rel8_instance",
-       "in" => "[fork1.result]",
-       "f" => %{
+       "f_data" => %{
          "type" => "rel8",
-         "other" => [src],
+         "other" => "[plan.src]",
          "rel8ns" => ["instance_of"]
        }
      })
@@ -115,10 +114,10 @@ defmodule IbGib.TransformBuilder do
       "ancestor" => @default_ancestor ++ ["plan#{@delim}gib"],
       "past" => @default_past,
       "dna" => @default_dna,
-      "identity" => identity_ib_gibs
+      "identity" => plan["identities"]
     }
     data = plan
-    gib = Helper.hash(ib, relations, data) |> stamp_if_needed(opts[:gib_stamp])
+    gib = hash(ib, relations, data) |> stamp_if_needed(opts[:gib_stamp])
     result = %{
       ib: ib,
       gib: gib,
@@ -137,9 +136,9 @@ defmodule IbGib.TransformBuilder do
   """
   def add_step(plan,
                %{"name" => name,
-                 "arg" => arg,
+                 "arg" => "[src]",
                  "f" => %{
-                   "name" => "fork",
+                   "type" => "fork",
                    "dest_ib" => dest_ib
                   } = f
                 } = step) do
@@ -152,18 +151,36 @@ defmodule IbGib.TransformBuilder do
     {:error, emsg}
   end
 
-  def add_fork(plan, name, arg, dest_ib) do
+  def add_fork(plan, name, dest_ib) do
     add_step(
               plan,
               %{
                 "name" => name,
-                "arg" => arg,
+                "arg" => "[src]",
                 "f" => %{
-                  "name" => "fork",
+                  "type" => "fork",
                   "dest_ib" => dest_ib
                 }
               }
             )
+  end
+
+  # NOT DRY>>>>NOOOOOOOOOOO
+  # THIS IS DUPLICATED IN TRANSFORM_FACTORY/BUILDER
+  # Stamping a gib means that it is "official", since a user doesn't (shouldn't)
+  # have the ability to create their own gib.
+  @spec stamp_if_needed(String.t, boolean) :: String.t
+  defp stamp_if_needed(gib, is_needed) when is_boolean(is_needed) do
+    if is_needed do
+      # I'm both prepending and appending for visual purposes. When querying,
+      # I only need to search for: where gib `LIKE` "#{gib_stamp}%"
+      gib = stamp_gib!(gib)
+    else
+      gib
+    end
+  end
+  defp stamp_if_needed(gib, is_needed) do
+    gib
   end
 
   # @doc """

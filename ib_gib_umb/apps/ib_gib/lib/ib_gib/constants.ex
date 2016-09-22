@@ -45,6 +45,7 @@ defmodule IbGib.Constants do
       @gib_stamp "ibGib"
 
       @default_transform_options %{:gib_stamp => false}
+      @default_transform_src "[src]"
 
       # This key prefix is a helper that indicates some meta action for the
       # corresponding key/value entry in a map.

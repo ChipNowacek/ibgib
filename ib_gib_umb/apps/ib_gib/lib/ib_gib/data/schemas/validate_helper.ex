@@ -151,6 +151,7 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
               end
           else
             # key invalid
+            Logger.warn "invalid key: #{inspect key, [pretty: true]}"
             # not valid
             {:halt, -1}
           end
@@ -208,6 +209,7 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
         if valid_data?(field, src) do
           []
         else
+          Logger.error "whaaa. src: #{inspect src, [pretty: true]}"
           [data: emsg_invalid_data]
         end
       _ -> Logger.error emsg_unknown_field

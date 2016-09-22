@@ -41,7 +41,7 @@ defmodule IbGib.Expression.BasicsTest do
     assert get_expr_pid === expr_pid
   end
 
-  @tag :capture_log
+  # @tag :capture_log
   test "create expression, from scratch, root Thing, fork" do
     {result, expr_pid} = Expression.Supervisor.start_expression()
     assert result === :ok
