@@ -20,5 +20,5 @@
 # Blank line
 
 # Issue tracking
-# #123
-# closes #123
+# issue: relates to #
+# issue: closes #
