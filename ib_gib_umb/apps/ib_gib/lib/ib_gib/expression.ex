@@ -98,25 +98,6 @@ defmodule IbGib.Expression do
     GenServer.start_link(__MODULE__, {:express, {identity_ib_gibs, a, b}})
   end
 
-  @doc """
-  Express is how we "create new" ib_gib. We pass in two existing ib^gib,
-  and this will be evaluated to generate a tertiary "new" ib_gib.
-
-  All of this happens within the process' init function, so it is happening
-  in parallel, independent of any other processes.
-  """
-  def express(identity_ib_gibs, a_ib_gib, b_ib_gib)
-  def express(_identity_ib_gibs, a_ib_gib, @root_ib_gib) do
-    # The @root_ib_gib (ib^gib) acts as an "identity" transform, so just return
-    # the incoming ib^gib without touching the server.
-    # NB: This bypasses adding anything to the dna.
-    {:ok, a_ib_gib}
-  end
-  def express(identity_ib_gibs, a_ib_gib, b_ib_gib) do
-    IbGib.Expression.Supervisor.start_expression({identity_ib_gibs,
-                                                  a_ib_gib,
-                                                  b_ib_gib})
-  end
 
   # ----------------------------------------------------------------------------
   # Inits
@@ -165,213 +146,10 @@ defmodule IbGib.Expression do
     Logger.warn "11111111111111111111111"
     Logger.debug "express. identity_ib_gibs: #{inspect identity_ib_gibs}\na_ib_gib: #{a_ib_gib}\n, b_ib_gib: #{b_ib_gib}"
 
-    with(
-      {:ok, b} <- get_process(identity_ib_gibs, b_ib_gib),
-      {:ok, :ok} <- log_yo(:debug, "1"),
-      {:ok, b_info} <- b |> get_info,
-      {:ok, :ok} <- log_yo(:debug, "2"),
-      {:ok, next_info} <- compile(identity_ib_gibs, a_ib_gib, b_ib_gib, b_info),
-      {:ok, :ok} <- log_yo(:debug, "3"),
-      {:ok, a} <- get_process(identity_ib_gibs, a_ib_gib),
-      {:ok, :ok} <- log_yo(:debug, "4"),
-      {:ok, a_info} <- a |> get_info,
-      {:ok, :ok} <- log_yo(:debug, "5"),
-      {:ok, result_ib_gib} <- apply_next(a_info, next_info)
-    ) do
-      log_yo(:debug, "6")
-      {:ok, result_ib_gib}
-    else
-      {:error, reason} ->
-        Logger.error "#{inspect reason}"
-        {:error, reason}
-      error ->
-        Logger.error "#{inspect error}"
-        {:error, "#{inspect error}"}
-    end
+    # First, we just store our state with mama and papa ib_gib (and identities)
+    state = %{"expressed" => false}
 
-  end
-
-  defp apply_next(a_info, next_info) do
-
-  end
-
-  # For now, the implementation is just to call start_expression
-  defp get_process(identity_ib_gibs, ib_gib) do
-    Logger.debug "ib_gib: #{ib_gib}"
-    IbGib.Expression.Supervisor.start_expression(ib_gib)
-  end
-
-  defp compile(identity_ib_gibs,
-               a_ib_gib,
-               b_ib_gib,
-               b_info = %{"ib" => ib, "src" => src})
-    when ib == "plan" and src == "[src]" do
-    # b_info = Map.put(b_info, "src", a_ib_gib)
-    # # todoyoooo: change to with statement
-    # Logger.warn "before compile"
-    # Logger.debug "b_info: #{inspect b_info}"
-    # Logger.warn "before compile"
-    # Logger.warn "before compile"
-    # Logger.warn "before compile"
-    # {:ok, concrete_plan} = concretize_plan(identity_ib_gibs, a_ib_gib, b_info)
-    # Logger.warn "after compile"
-    # Logger.debug "concrete_plan: #{inspect concrete_plan}"
-    # Logger.warn "after compile"
-    # Logger.warn "after compile"
-    # Logger.warn "after compile"
-  end
-
-  defp concretize_plan(identity_ib_gibs, a_ib_gib, old_plan_info) do
-    # available_vars = get_available_vars(a_ib_gib, old_plan_info)
-    #
-    # # Builds a new map with a comprehension.
-    # new_plan_info = replace_variables_in_map(available_vars, old_plan_info)
-    #
-    # # Now we have a possibly more concrete b_info, but it may not be fully
-    # # concrete.
-    #
-    # {:ok, {next_step, next_step_index}} = get_next_step(new_plan_info)
-    #
-    # # So right now, we have a "next step" that should be concrete, but we have
-    # # not yet created its corresponding primitive transform ib_gib, and it
-    # # has no "ibgib" field. So we need to create
-    # # the next primitive transform based on the step's f_data, and then
-    # # fill in the step's "ibgib" field with that ib^gib, e.g. "fork^ABC1234".
-    # next_f_data = next_step["f_data"]
-    # {:ok, {next_step_ibgib, next_step_transform_info}} =
-    #   build_and_save_next_transform(next_f_data["type"], identity_ib_gibs, a_ib_gib, next_f_data)
-    #
-    # # Fill in the next_step's "ibgib" field
-    # Logger.debug "before...next_step[ibgib]: #{next_step["ibgib"]}"
-    # next_step = Map.put(next_step, "ibgib", next_step_ibgib)
-    # Logger.debug "after...next_step[ibgib]: #{next_step["ibgib"]}"
-    #
-    # # Replace the newly edited step in the map
-    # new_steps =
-    #   List.replace_at(new_plan_info["steps"], next_step_index, next_step)
-    # new_plan_info = Map.put(new_plan_info, "steps", new_steps)
-    #
-    # # At this point, our plan is concrete for this iteration, and we can save
-    # # the concrete plan itself.
-    #
-    #
-    # # If the next step does not have an ib^gib, then we need to save it.
-  end
-
-  defp build_and_save_next_transform("fork", identity_ib_gibs, src_ib_gib,
-    f_data) do
-
-    # # 1. Create transform
-    # with {:ok, fork_info} <- TransformFactory.fork(src_ib_gib, identity_ib_gibs, f_data["dest_ib"], opts),
-    #
-    #   # 2. Save transform
-    #   {:ok, :ok} <- IbGib.Data.save(fork_info),
-    #
-    #   {:ok, fork_ib_gib} <- Helper.get_ib_gib(fork_info[:ib], fork_info[:gib]) do
-    #
-    #   {:ok, {fork_ib_gib, fork_info}}
-    # else
-    #   {:error, reason} ->
-    #     Logger.error "#{inspect reason}"
-    #     {:error, reason}
-    #   error ->
-    #     Logger.error "#{inspect error}"
-    #     {:error, "#{inspect error}"}
-    # end
-  end
-
-  defp get_next_step(b_info) do
-    # # At this point, should always be a next step, i.e. plan isn't complete
-    # {next_step, next_step_index} =
-    #   b_info["steps"]
-    #   |> Enum.reduce({nil, 0}, fn(step, {acc_next, i}) ->
-    #        if (acc_next == nil) do
-    #          if step["out"] == nil do
-    #            {step, i}
-    #          else
-    #            {nil, i + 1}
-    #          end
-    #        else
-    #          {acc_next, i}
-    #        end
-    #      end)
-    # if next_step do
-    #   {:ok, {next_step, next_step_index}}
-    # else
-    #   {:error, "Next step not found"}
-    # end
-  end
-
-  @doc """
-  Given the `available_vars` in the form of `%{"var_name" => "var_value"}`,
-  this iterates over all entries in the given `map`, including maps nested
-  in values, replacing any value that is a `var_name` and replacing it
-  with `var_value`.
-  """
-  def replace_variables_in_map(available_vars, map) do
-    # for {key, val} <- map, into: %{} do
-    #   val =
-    #     if is_map(val) do
-    #       # val itself is a map in which we need to replace variables, so call
-    #       # replace variables recursively to get the new value.
-    #       val = replace_variables_in_map(available_vars, val)
-    #     else do
-    #       val
-    #     end
-    #
-    #   # If the Map.get is successful, then replace the variable with it.
-    #   # If it isn't found, then default to the existing value.
-    #   {key, Map.get(available_vars, val, val)}
-    # end
-  end
-
-  # Cornerstone
-  # So this is what the Sovereign Lord says: See, I lay a stone in Zion,
-  # a tested stone, a precious Cornerstone for a sure foundation. The One
-  # who relies on it will never be stricken with panic.
-  #
-  # Christ translation: The cornerstone is a foundation layer of coding. The
-  # Cornerstone is a tested stone - unit testing, integration testing, etc.
-  # Test-driven design baby. The One who relies on it will never be stricken
-  # with panic because the One is building its foundation upon a
-  # self-reinforcing informational entity, which isn't reliant upon outside
-  # stimulus. The Cornerstone is hardened across an infinite timespan...*the*
-  # infinite timespan. Think of AI and where we are headed, and other world
-  # colonization...it is a very real possibility that the Cornerstone (aka the
-  # Word, a la message passing) is a coding construct to prepare planets for
-  # assimilation into the one universal body. Try explaining quantum physics to
-  # a bunch of violent tribesmen, and not just the concepts that are
-  # intrinsically involved in the physics, but the meta-concepts that are
-  # necessary to enable an environment to discover these principles.
-
-  defp get_available_vars(a_ib_gib, b_info) do
-    # {:ok, {a_ib, _} = Helper.get_ib_gib(a_ib_gib)}
-    # plan_src = b_info["src"]
-    # {:ok, {plan_src_ib, _} = Helper.get_ib_gib(plan_src)}
-    #
-    # # Initialize plan variables
-    # vars = %{
-    #   # The "current" src for this step in the plan
-    #   "[src]" => a_ib_gib,
-    #   "[src.ib]" => a_ib,
-    #
-    #   # The original src for the transform plan
-    #   "[plan.src]" => plan_src
-    #   "[plan.src.ib]" => plan_src_ib
-    # }
-    #
-    # # Add variables available from previously completed steps and return
-    # b_info["steps"]
-    #    # only complete steps
-    # |> Enum.filter(&(&1["out"] != nil))
-    #    # Add vars from steps
-    # |> Enum.reduce(vars, fn(step, acc) ->
-    #      name = step["name"]
-    #      acc
-    #      |> Map.put("[#{step["name"]}.ibgib]", step["ibgib"])
-    #      |> Map.put("[#{step["name"]}.arg]", step["arg"])
-    #      |> Map.put("[#{step["name"]}.out]", step["out"])
-    #    end)
+    {:ok, state}
   end
 
   # Note: Root maps to "ib". All of the others map to the string.
@@ -931,6 +709,351 @@ defmodule IbGib.Expression do
   # ----------------------------------------------------------------------------
 
   @doc """
+  Express is how we "create new" ib_gib. We pass in two existing ib^gib,
+  and this will be evaluated to generate a tertiary "new" ib_gib.
+
+  All of this happens within the process' init function, so it is happening
+  in parallel, independent of any other processes.
+  """
+  def express(identity_ib_gibs, a_ib_gib, b_ib_gib)
+  def express(_identity_ib_gibs, a_ib_gib, @root_ib_gib) do
+    # The @root_ib_gib (ib^gib) acts as an "identity" transform, so just return
+    # the incoming ib^gib without touching the server.
+    # NB: This bypasses adding anything to the dna.
+    {:ok, a_ib_gib}
+  end
+  def express(identity_ib_gibs, a_ib_gib, b_ib_gib) do
+    {:ok, stem_cell_pid} =
+      IbGib.Expression.Supervisor.start_expression({identity_ib_gibs,
+                                                    a_ib_gib,
+                                                    b_ib_gib})
+    GenServer.call(stem_cell_pid,
+                   {:express, {identity_ib_gibs, a_ib_gib, b_ib_gib}})
+  end
+
+  def handle_call({:express, {identity_ib_gibs, a_ib_gib, b_ib_gib}}, _from, state) do
+    Logger.metadata([x: :contact])
+    {:ok, {new_ib_gib, new_state}} = express_impl(identity_ib_gibs, a_ib_gib, b_ib_gib, state)
+    {:reply, {:ok, new_ib_gib}, new_state}
+  end
+
+  defp express_impl(identity_ib_gibs, a_ib_gib, b_ib_gib, state) do
+    Logger.warn "express_impl reachhed"
+    Logger.warn "express_impl reachhed"
+
+    with(
+      {:ok, b} <- get_process(identity_ib_gibs, b_ib_gib),
+      {:ok, :ok} <- log_yo(:warn, "1\nb: #{inspect b}"),
+      {:ok, b_info} <- b |> get_info,
+      {:ok, :ok} <- log_yo(:warn, "2\nb_info:\n#{inspect b_info, [pretty: true]}"),
+      {:ok, next_info} <- compile(identity_ib_gibs, a_ib_gib, b_ib_gib, b_info),
+      {:ok, :ok} <- log_yo(:warn, "3\nnext_info:\n#{inspect next_info, pretty: true}"),
+      {:ok, a} <- get_process(identity_ib_gibs, a_ib_gib),
+      {:ok, :ok} <- log_yo(:warn, "4\na: #{inspect a}\nself: #{inspect self}"),
+      {:ok, a_info} <- a |> get_info,
+      {:ok, :ok} <- log_yo(:warn, "5"),
+      {:ok, result_ib_gib} <- apply_next(a_info, next_info)
+    ) do
+      log_yo(:debug, "6")
+      {:ok, result_ib_gib}
+    else
+      {:error, reason} ->
+        Logger.error "#{inspect reason}"
+        {:error, reason}
+      error ->
+        Logger.error "#{inspect error}"
+        {:error, "#{inspect error}"}
+    end
+  end
+
+  defp apply_next(a_info, next_info) do
+
+  end
+
+  # For now, the implementation is just to call start_expression
+  defp get_process(identity_ib_gibs, ib_gib) do
+    Logger.debug "ib_gib: #{ib_gib}"
+    IbGib.Expression.Supervisor.start_expression(ib_gib)
+  end
+
+  defp compile(identity_ib_gibs,
+               a_ib_gib,
+               b_ib_gib,
+               b_info = %{:ib => "plan", :data => %{"src" => src}})
+    when is_list(identity_ib_gibs) and
+         is_bitstring(a_ib_gib) and
+         is_bitstring(b_ib_gib) do
+
+    b_info =
+      if src == "[src]" do
+        b_info_data = Map.put(b_info[:data], "src", a_ib_gib)
+        Map.put(b_info, :data, b_info_data)
+      else
+        b_info
+      end
+
+    Logger.debug "b_info: #{inspect b_info}"
+    Logger.warn "before compile"
+    case concretize_and_save_plan(identity_ib_gibs, a_ib_gib, b_ib_gib, b_info) do
+      # We have concretized the plan, including the next step transform,
+      # and we want to return that new transform to express.
+      {:ok, {concrete_plan_info,
+             concrete_plan_ib_gib,
+             next_step_transform_info}} ->
+        Logger.debug "concrete_plan_ib_gib:\n#{concrete_plan_ib_gib}\nconcrete_plan_info: #{inspect concrete_plan_info, pretty: true}"
+        Logger.warn "after compile"
+        {:ok, next_step_transform_info}
+
+      # Something went awry.
+      {:error, reason} -> {:error, reason}
+      error -> {:error, inspect error}
+    end
+
+  end
+
+  # Warning, this is a big honking monster. Once it's working, we can try to
+  # refactor it to be more elegantly structured, perhaps taking this whole
+  # compilation process into its own module, yada yada yada.
+  defp concretize_and_save_plan(identity_ib_gibs, a_ib_gib, old_plan_ib_gib, old_plan_info) do
+    # Logger.debug "args:\n#{inspect [identity_ib_gibs, a_ib_gib, old_plan_info], [pretty: true]}"
+    available_vars = get_available_vars(a_ib_gib, old_plan_info)
+
+    Logger.debug "available vars:\n#{inspect available_vars, pretty: true}"
+    # Builds a new map with a comprehension.
+    new_plan_info = replace_variables_in_map(available_vars, old_plan_info)
+    Logger.debug "old:\n#{inspect old_plan_info, pretty: true}\nnew:\n#{inspect new_plan_info, pretty: true}"
+
+
+    with(
+      # Now we have a possibly more concrete b_info, but it may not be fully
+      # concrete.
+      {:ok, {next_step, next_step_index}} <- get_next_step(new_plan_info),
+
+      # So right now, we have a "next step" that should be concrete, but we have
+      # not yet created its corresponding primitive transform ib_gib, and it
+      # has no "ibgib" field. So we need to create
+      # the next primitive transform based on the step's f_data, and then
+      # fill in the step's "ibgib" field with that ib^gib, e.g. "fork^ABC1234".
+      {:ok, next_f_data} <- {:ok, next_step["f_data"]},
+      {:ok, {next_step_ibgib, next_step_transform_info}} <-
+        build_and_save_next_transform(next_f_data["type"],
+                                      identity_ib_gibs,
+                                      a_ib_gib,
+                                      next_f_data),
+
+      # Fill in the next_step's "ibgib" field
+      {:ok, :ok} <-
+        log_yo(:debug, "before...next_step[ibgib]: #{next_step["ibgib"]}"),
+      {:ok, next_step} <- {:ok, Map.put(next_step, "ibgib", next_step_ibgib)},
+      {:ok, :ok} <-
+        log_yo(:debug, "after...next_step[ibgib]: #{next_step["ibgib"]}"),
+
+      # Replace the newly edited step in the map
+      new_plan_steps <-
+        new_plan_info[:data]["steps"] |> convert_to_list_if_needed,
+      new_plan_steps <-
+        List.replace_at(new_plan_steps, next_step_index, next_step),
+      new_plan_data <- Map.put(new_plan_info[:data], "steps", new_plan_steps),
+      new_plan_info <- Map.put(new_plan_info, :data, new_plan_data),
+
+      # We need to add the previous plan to the past rel8n.
+      new_plan_rel8ns_past <-
+        new_plan_info[:rel8ns]["past"] ++ [old_plan_ib_gib],
+      new_plan_rel8ns <-
+        Map.put(new_plan_info[:rel8ns], "past", new_plan_rel8ns_past),
+      new_plan_info <-
+        Map.put(new_plan_info, :rel8ns, new_plan_rel8ns),
+
+      # At this point, our plan itself is concrete for this iteration, and we
+      # need to recalculate the gib hash, and then save it.
+      new_plan_gib <-
+        Helper.hash(new_plan_info[:ib], new_plan_rel8ns, new_plan_data),
+      new_plan_info <- Map.put(new_plan_info, :gib, new_plan_gib),
+      {:ok, :ok} <-
+        log_yo(:debug, "new_plan_info before saving:\n#{inspect new_plan_info, pretty: true}"),
+
+      {:ok, :ok} <- IbGib.Data.save(new_plan_info),
+      {:ok, :ok} <- log_yo(:debug, "saved yaaaaaaaay"),
+      {:ok, new_plan_ib_gib} <-
+        Helper.get_ib_gib(new_plan_info[:ib], new_plan_gib)
+    ) do
+      # Whew! ':-O
+      # Really need to refactor this.
+      {:ok, {new_plan_info, new_plan_ib_gib, next_step_transform_info}}
+    else
+      {:error, reason} ->
+        Logger.error "#{inspect reason}"
+        {:error, reason}
+      error ->
+        Logger.error "#{inspect error}"
+        {:error, "#{inspect error}"}
+    end
+  end
+
+  # I don't know if it's the map encoder or something in elixir, but it likes
+  # to convert a single-item array/list to just the item and forget the list
+  # part of it. Very strange. :-/
+  defp convert_to_list_if_needed(item) when is_bitstring(item), do: [item]
+  defp convert_to_list_if_needed(item) when is_list(item), do: item
+  defp convert_to_list_if_needed(item), do: [item]
+
+  defp build_and_save_next_transform("fork", identity_ib_gibs, src_ib_gib,
+    f_data) do
+
+    # Probably need to actually get this from somewhere, but for now I'm
+    # going with the default until I see the reason otherwise.
+    opts = @default_transform_options
+
+    # 1. Create transform
+    with {:ok, fork_info} <- TransformFactory.fork(src_ib_gib, identity_ib_gibs, f_data["dest_ib"], opts),
+
+      # 2. Save transform
+      {:ok, :ok} <- IbGib.Data.save(fork_info),
+
+      {:ok, fork_ib_gib} <- Helper.get_ib_gib(fork_info[:ib], fork_info[:gib]) do
+
+      {:ok, {fork_ib_gib, fork_info}}
+    else
+      {:error, reason} ->
+        Logger.error "#{inspect reason}"
+        {:error, reason}
+      error ->
+        Logger.error "#{inspect error}"
+        {:error, "#{inspect error}"}
+    end
+  end
+
+  defp get_next_step(b_info) do
+    # At this point, should always be a next step, i.e. plan isn't complete
+    steps = b_info[:data]["steps"]
+
+    Logger.debug "steps:\n#{inspect steps, pretty: true}"
+    # Compensate for the very strange behavior of elixir converting single-item
+    # arrays to non-arrays in maps.
+    steps = if is_list(steps), do: steps, else: [steps]
+
+    Logger.debug "steps:\n#{inspect steps, pretty: true}"
+
+    {next_step, next_step_index} =
+      steps
+      |> Enum.reduce({nil, 0}, fn(step, {acc_next, i}) ->
+           if (acc_next == nil) do
+             if step["out"] == nil do
+               {step, i}
+             else
+               {nil, i + 1}
+             end
+           else
+             {acc_next, i}
+           end
+         end)
+    if next_step do
+      {:ok, {next_step, next_step_index}}
+    else
+      {:error, "Next step not found"}
+    end
+  end
+
+  @doc """
+  Given the `available_vars` in the form of `%{"var_name" => "var_value"}`,
+  this iterates over all entries in the given `map`, including maps nested
+  in values, replacing any value that is a `var_name` and replacing it
+  with `var_value`.
+  """
+  def replace_variables_in_map(available_vars, map) do
+    Logger.debug "args:\n#{inspect [available_vars, map], pretty: true}"
+    for {key, val} <- map, into: %{} do
+      val =
+        if is_map(val) do
+          # val itself is a map in which we need to replace variables, so call
+          # replace variables recursively to get the new value.
+          val = replace_variables_in_map(available_vars, val)
+        else
+          val
+        end
+
+      Logger.debug "val:\n#{inspect val, pretty: true}"
+
+      # If the Map.get is successful, then replace the variable with it.
+      # If it isn't found, then default to the existing value.
+      {key, Map.get(available_vars, val, val)}
+    end
+  end
+
+  # Cornerstone
+  # So this is what the Sovereign Lord says: See, I lay a stone in Zion,
+  # a tested stone, a precious Cornerstone for a sure foundation. The One
+  # who relies on it will never be stricken with panic.
+  #
+  # Christ translation: The cornerstone is a foundation layer of coding. The
+  # Cornerstone is a tested stone - unit testing, integration testing, etc.
+  # Test-driven design baby. The One who relies on it will never be stricken
+  # with panic because the One is building its foundation upon a
+  # self-reinforcing informational entity, which isn't reliant upon outside
+  # stimulus. The Cornerstone is hardened across an infinite timespan...*the*
+  # infinite timespan. Think of AI and where we are headed, and other world
+  # colonization...it is a very real possibility that the Cornerstone (aka the
+  # Word, a la message passing) is a coding construct to prepare planets for
+  # assimilation into the one universal body. Try explaining quantum physics to
+  # a bunch of violent tribesmen, and not just the concepts that are
+  # intrinsically involved in the physics, but the meta-concepts that are
+  # necessary to enable an environment to discover these principles.
+
+  defp get_available_vars(a_ib_gib, b_info) do
+    Logger.debug "args: #{inspect [a_ib_gib, b_info], [pretty: true]}"
+
+    {:ok, {a_ib, _}} = Helper.separate_ib_gib(a_ib_gib)
+    plan_src = b_info[:data]["src"]
+    {:ok, {plan_src_ib, _}} = Helper.separate_ib_gib(plan_src)
+
+    # Initialize plan variables
+    vars = %{
+      # The "current" src for this step in the plan
+      "[src]" => a_ib_gib,
+      "[src.ib]" => a_ib,
+
+      # The original src for the transform plan
+      "[plan.src]" => plan_src,
+      "[plan.src.ib]" => plan_src_ib
+    }
+
+    # Add variables available from previously completed steps and return
+    steps = b_info[:data]["steps"]
+    steps =
+      if is_list(steps) do
+        steps
+      else
+        [steps]
+      end
+    Logger.debug "steps:\n#{inspect steps, [pretty: true]}"
+
+    completed_steps =
+      steps
+      |> Enum.filter(fn(step) ->
+           output = step["out"]
+           output != nil and output != ""
+         end)
+    Logger.debug "completed_steps:\n#{inspect completed_steps, [pretty: true]}"
+
+    vars =
+      if completed_steps != nil and Enum.count(completed_steps) > 0 do
+        # Add vars from completed steps
+        completed_steps
+        |> Enum.reduce(vars, fn(step, acc) ->
+             name = step["name"]
+             acc
+             |> Map.put("[#{step["name"]}.ibgib]", step["ibgib"])
+             |> Map.put("[#{step["name"]}.arg]", step["arg"])
+             |> Map.put("[#{step["name"]}.out]", step["out"])
+           end)
+      else
+        vars
+      end
+    Logger.debug "vars:\n#{inspect vars, pretty: true}"
+    vars
+  end
+
+  @doc """
   Brings two ib_gib into contact with each other to produce a third, probably
   new, ib_gib.
   """
@@ -1366,12 +1489,12 @@ defmodule IbGib.Expression do
 
   defp log_yo(:debug, msg) do
     Logger.warn "This log msg is for dev purposes only!!! Should not be run in prod!!!"
-    Logger.debug msg
+    Logger.debug msg, [pretty: true]
     {:ok, :ok}
   end
   defp log_yo(:warn, msg) do
     Logger.warn "This log msg is for dev purposes only!!! Should not be run in prod!!!"
-    Logger.warn msg
+    Logger.warn msg, [pretty: true]
     {:ok, :ok}
   end
 

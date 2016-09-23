@@ -83,11 +83,11 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
     m
     |> Enum.reduce_while(running_size,
       fn(item, acc) ->
-        # Logger.debug "item: #{inspect item}"
+        Logger.debug "item: #{inspect item}"
         {key, value} = item
 
-        # Logger.debug "key: #{inspect key}\nvalue: #{inspect value}"
-        # Logger.debug "is_list(value): #{is_list(value)}"
+        Logger.debug "key: #{inspect key}\nvalue: #{inspect value}"
+        Logger.debug "is_list(value): #{is_list(value)}"
         if is_bitstring(key) do
           key_length = key |> String.length
 
@@ -107,7 +107,7 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
                   value_length = value |> String.length
                   new_running_size = acc + key_length + value_length
                   if new_running_size <= max_size do
-                    # Logger.debug "new_running_size: #{new_running_size}, max_size: #{max_size}"
+                    Logger.debug "new_running_size: #{new_running_size}, max_size: #{max_size}"
                     {:cont, new_running_size}
                   else
                     # not valid - too big
@@ -128,12 +128,15 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
                 is_list(value) ->
                   new_running_size =
                     Enum.reduce_while(value, acc + key_length, fn(list_item, list_acc) ->
-                      # Must be a list of bitstrings
+                      # Must be a list of bitstrings or maps
                       cond do
                         is_nil(list_item) ->
                           {:cont, list_acc}
                         is_bitstring(list_item) ->
                           {:cont, list_acc + String.length(list_item)}
+                        is_map(list_item) ->
+                          # call recursively with our list_acc running_size
+                          {:cont, get_map_size(list_item, list_acc, max_size)}
                         true ->
                           {:halt, -1}
                       end

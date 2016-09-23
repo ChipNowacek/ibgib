@@ -131,17 +131,18 @@ defmodule IbGib.TransformBuilder do
   Each step is in the form of:
     arg -> f -> out
 
-  `arg` is the thing we will transform with "function" `f`.
-  `f` is the "transform function" ib^gib.
+  `arg` is the thing we will transform with "function" created from `f_data`.
+  `f_data` is the information to create a "transform function" ib_gib.
   """
   def add_step(plan,
                %{"name" => name,
-                 "arg" => "[src]",
-                 "f" => %{
+                #  "arg" => "[src]",
+                 "f_data" => %{
                    "type" => "fork",
                    "dest_ib" => dest_ib
-                  } = f
+                  }
                 } = step) do
+    step = Map.put(step, "arg", "[src]")
     plan = Map.put(plan, "steps", plan["steps"] ++ step)
     {:ok, plan}
   end
@@ -156,8 +157,8 @@ defmodule IbGib.TransformBuilder do
               plan,
               %{
                 "name" => name,
-                "arg" => "[src]",
-                "f" => %{
+                # "arg" => "[src]",
+                "f_data" => %{
                   "type" => "fork",
                   "dest_ib" => dest_ib
                 }
