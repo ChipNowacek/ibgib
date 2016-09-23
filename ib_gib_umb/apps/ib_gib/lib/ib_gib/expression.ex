@@ -93,9 +93,11 @@ defmodule IbGib.Expression do
     Logger.debug "a: {#{inspect a}\nb: #{inspect b}}"
     GenServer.start_link(__MODULE__, {:apply, {a, b}})
   end
-  def start_link({:express, {identity_ib_gibs, a, b}}) when is_bitstring(a) and is_bitstring(b) do
+  def start_link({:express, {identity_ib_gibs, a, a_info, b}})
+    when is_bitstring(a) and (is_map(a_info) or is_nil(a_info)) and
+         is_bitstring(b) do
     Logger.debug "express. a: {#{a}\nb: #{b}}"
-    GenServer.start_link(__MODULE__, {:express, {identity_ib_gibs, a, b}})
+    GenServer.start_link(__MODULE__, {:express, {identity_ib_gibs, a, a_info, b}})
   end
 
 
@@ -140,14 +142,14 @@ defmodule IbGib.Expression do
   end
   # Creating a "new" ib_gib from two existing ib_gib by "applying" b to a.
   # This is going to be replacing the :apply version I think. WIP.
-  def init({:express, {identity_ib_gibs, a_ib_gib, b_ib_gib}})
+  def init({:express, {identity_ib_gibs, a_ib_gib, a_info, b_ib_gib}})
     when is_bitstring(a_ib_gib) and is_bitstring(b_ib_gib) do
     Logger.metadata([x: :express])
     Logger.warn "11111111111111111111111"
     Logger.debug "express. identity_ib_gibs: #{inspect identity_ib_gibs}\na_ib_gib: #{a_ib_gib}\n, b_ib_gib: #{b_ib_gib}"
 
     # First, we just store our state with mama and papa ib_gib (and identities)
-    state = %{"expressed" => false}
+    state = %{"expressed" => false, "a_info" => a_info}
 
     {:ok, state}
   end
@@ -248,7 +250,8 @@ defmodule IbGib.Expression do
     this_info = Map.put(this_info, :gib, this_gib)
     Logger.debug "this_info: #{inspect this_info}"
 
-    on_new_expression_completed(this_ib, this_gib, this_info)
+    {:ok, {this_ib, this_gib, this_info}}
+    # on_new_expression_completed(this_ib, this_gib, this_info)
   end
 
   defp apply_mut8(a, b) do
@@ -712,32 +715,42 @@ defmodule IbGib.Expression do
   Express is how we "create new" ib_gib. We pass in two existing ib^gib,
   and this will be evaluated to generate a tertiary "new" ib_gib.
 
+  The `a_info` is optional (I think). I wanted to only pass the ib^gib, but
+  because of how I have caching set up right now, this approach causes a
+  deadlock. So, pass in the `a_info` optionally. If it exists, which it will
+  when calling this function from this expression process e.g. from `fork_impl`,
+  then it will be used. If not, then the info will be loaded via the given
+  `a_ib_gib`.
+
   All of this happens within the process' init function, so it is happening
   in parallel, independent of any other processes.
   """
-  def express(identity_ib_gibs, a_ib_gib, b_ib_gib)
-  def express(_identity_ib_gibs, a_ib_gib, @root_ib_gib) do
+  def express(identity_ib_gibs, a_ib_gib, a_info, b_ib_gib)
+  def express(_identity_ib_gibs, a_ib_gib, a_info, @root_ib_gib) do
     # The @root_ib_gib (ib^gib) acts as an "identity" transform, so just return
     # the incoming ib^gib without touching the server.
     # NB: This bypasses adding anything to the dna.
     {:ok, a_ib_gib}
   end
-  def express(identity_ib_gibs, a_ib_gib, b_ib_gib) do
+  def express(identity_ib_gibs, a_ib_gib, a_info, b_ib_gib) do
     {:ok, stem_cell_pid} =
       IbGib.Expression.Supervisor.start_expression({identity_ib_gibs,
                                                     a_ib_gib,
+                                                    a_info,
                                                     b_ib_gib})
     GenServer.call(stem_cell_pid,
-                   {:express, {identity_ib_gibs, a_ib_gib, b_ib_gib}})
+                   {:express, {identity_ib_gibs, a_ib_gib, a_info, b_ib_gib}})
   end
 
-  def handle_call({:express, {identity_ib_gibs, a_ib_gib, b_ib_gib}}, _from, state) do
-    Logger.metadata([x: :contact])
-    {:ok, {new_ib_gib, new_state}} = express_impl(identity_ib_gibs, a_ib_gib, b_ib_gib, state)
+  def handle_call({:express, {identity_ib_gibs, a_ib_gib, a_info, b_ib_gib}},
+                  _from,
+                  state) do
+    Logger.metadata([x: :express])
+    {:ok, {new_ib_gib, new_state}} = express_impl(identity_ib_gibs, a_ib_gib, a_info, b_ib_gib, state)
     {:reply, {:ok, new_ib_gib}, new_state}
   end
 
-  defp express_impl(identity_ib_gibs, a_ib_gib, b_ib_gib, state) do
+  defp express_impl(identity_ib_gibs, a_ib_gib, a_info, b_ib_gib, state) do
     Logger.warn "express_impl reachhed"
     Logger.warn "express_impl reachhed"
 
@@ -749,9 +762,10 @@ defmodule IbGib.Expression do
       {:ok, next_info} <- compile(identity_ib_gibs, a_ib_gib, b_ib_gib, b_info),
       {:ok, :ok} <- log_yo(:warn, "3\nnext_info:\n#{inspect next_info, pretty: true}"),
       {:ok, a} <- get_process(identity_ib_gibs, a_ib_gib),
-      {:ok, :ok} <- log_yo(:warn, "4\na: #{inspect a}\nself: #{inspect self}"),
-      {:ok, a_info} <- a |> get_info,
-      {:ok, :ok} <- log_yo(:warn, "5"),
+      {:ok, :ok} <- log_yo(:warn, "4\na: #{inspect a}\nself: #{inspect self}\na_info: #{inspect a_info, pretty: true}"),
+      {:ok, a_info} <-
+        (if is_nil(a_info), do: a |> get_info, else: {:ok, a_info}),
+      {:ok, :ok} <- log_yo(:warn, "5\na_info: #{inspect a_info, pretty: true}"),
       {:ok, result_ib_gib} <- apply_next(a_info, next_info)
     ) do
       log_yo(:debug, "6")
@@ -767,7 +781,8 @@ defmodule IbGib.Expression do
   end
 
   defp apply_next(a_info, next_info) do
-
+    {:ok, {this_ib, this_gib, this_info}} = apply_fork(a_info, next_info)
+    {:ok, result_ib_gib}
   end
 
   # For now, the implementation is just to call start_expression
@@ -1340,7 +1355,7 @@ defmodule IbGib.Expression do
       {:ok, plan_ib_gib} <- Helper.get_ib_gib(plan),
 
       # Express (via spawned processes), passing only relevant ib^gib pointers.
-      {:ok, new_ib_gib} <- express(identity_ib_gibs, ib_gib, plan_ib_gib)
+      {:ok, new_ib_gib} <- express(identity_ib_gibs, ib_gib, info, plan_ib_gib)
     ) do
       {:ok, new_ib_gib}
     else

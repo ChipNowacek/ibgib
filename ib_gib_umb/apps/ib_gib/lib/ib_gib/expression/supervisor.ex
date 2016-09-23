@@ -84,10 +84,11 @@ defmodule IbGib.Expression.Supervisor do
     Logger.warn "Attempted to start_expression with identity transform"
     {:ok, a}
   end
-  def start_expression({identity_ib_gibs, a, b})
-    when is_list(identity_ib_gibs) and is_bitstring(a) and is_bitstring(b) do
+  def start_expression({identity_ib_gibs, a, a_info, b})
+    when is_list(identity_ib_gibs) and is_bitstring(a) and
+         (is_map(a_info) or is_nil(a_info)) and is_bitstring(b) do
     Logger.debug "combining two ib via ib^gib"
-    args = [{:express, {identity_ib_gibs, a, b}}]
+    args = [{:express, {identity_ib_gibs, a, a_info, b}}]
     start(args)
   end
 
