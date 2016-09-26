@@ -59,8 +59,13 @@ defmodule IbGib.Expression.HelloWorldTest do
     text_instance_ib_gib = Helper.get_ib_gib!(text_instance_info[:ib], text_instance_info[:gib])
 
     Logger.debug "gonna rel8"
-    {:ok, {hw_instance_rel8d, text_instance_rel8d}} =
-      hw_instance |> Expression.rel8(text_instance)
+    # {:ok, {hw_instance_rel8d, text_instance_rel8d}} =
+    #   hw_instance |> Expression.rel8(text_instance)
+    {:ok, hw_instance_rel8d} =
+      hw_instance |> Expression.rel8(text_instance, @test_identities_1, @default_rel8ns, @default_transform_options)
+    {:ok, text_instance_rel8d} =
+      text_instance |> Expression.rel8(hw_instance_rel8d, @test_identities_1, @default_rel8ns, @default_transform_options)
+
 
     assert is_pid(hw_instance_rel8d)
     assert is_pid(text_instance_rel8d)
@@ -69,14 +74,14 @@ defmodule IbGib.Expression.HelloWorldTest do
     assert text_instance !== text_instance_rel8d
 
     hw_instance_rel8d_info = hw_instance_rel8d |> Expression.get_info!
-    _hw_instance_rel8d_ib_gib = Helper.get_ib_gib!(hw_instance_rel8d_info[:ib], hw_instance_rel8d_info[:gib])
+    hw_instance_rel8d_ib_gib = Helper.get_ib_gib!(hw_instance_rel8d_info[:ib], hw_instance_rel8d_info[:gib])
     Logger.debug "hw_instance_rel8d_info: #{inspect hw_instance_rel8d_info}"
     text_instance_rel8d_info = text_instance_rel8d |> Expression.get_info!
     _text_instance_rel8d_ib_gib = Helper.get_ib_gib!(text_instance_rel8d_info[:ib], text_instance_rel8d_info[:gib])
     Logger.debug "text_instance_rel8d_info: #{inspect text_instance_rel8d_info}"
 
     assert hw_instance_rel8d_info[:rel8ns]["rel8d"] === [text_instance_ib_gib]
-    assert text_instance_rel8d_info[:rel8ns]["rel8d"] === [hw_instance_ib_gib]
+    assert text_instance_rel8d_info[:rel8ns]["rel8d"] === [hw_instance_rel8d_ib_gib]
   end
 
   @tag :capture_log
@@ -113,8 +118,10 @@ defmodule IbGib.Expression.HelloWorldTest do
     text_instance_ib_gib = Helper.get_ib_gib!(text_instance_info[:ib], text_instance_info[:gib])
 
     Logger.debug "gonna rel8 'text property'"
-    {:ok, {hw_instance_rel8d, text_instance_rel8d}} =
-      hw_instance |> Expression.rel8(text_instance, ["prop", "text"], ["prop_of"])
+    # {:ok, {hw_instance_rel8d, text_instance_rel8d}} =
+    #   hw_instance |> Expression.rel8(text_instance, ["prop", "text"], ["prop_of"])
+    {:ok, hw_instance_rel8d} = hw_instance |> Expression.rel8(text_instance, @test_identities_1, ["prop", "text"], @default_transform_options)
+    {:ok, text_instance_rel8d} = text_instance |> Expression.rel8(hw_instance_rel8d, @test_identities_1, ["prop_of", "text_of"], @default_transform_options)
 
     assert is_pid(hw_instance_rel8d)
     assert is_pid(text_instance_rel8d)
@@ -123,17 +130,17 @@ defmodule IbGib.Expression.HelloWorldTest do
     assert text_instance !== text_instance_rel8d
 
     hw_instance_rel8d_info = hw_instance_rel8d |> Expression.get_info!
-    _hw_instance_rel8d_ib_gib = Helper.get_ib_gib!(hw_instance_rel8d_info[:ib], hw_instance_rel8d_info[:gib])
+    hw_instance_rel8d_ib_gib = Helper.get_ib_gib!(hw_instance_rel8d_info[:ib], hw_instance_rel8d_info[:gib])
     Logger.debug "hw_instance_rel8d_info: #{inspect hw_instance_rel8d_info}"
     text_instance_rel8d_info = text_instance_rel8d |> Expression.get_info!
-    _text_instance_rel8d_ib_gib = Helper.get_ib_gib!(text_instance_rel8d_info[:ib], text_instance_rel8d_info[:gib])
+    text_instance_rel8d_ib_gib = Helper.get_ib_gib!(text_instance_rel8d_info[:ib], text_instance_rel8d_info[:gib])
     Logger.debug "text_instance_rel8d_info: #{inspect text_instance_rel8d_info}"
 
     assert hw_instance_rel8d_info[:rel8ns]["rel8d"] === [text_instance_ib_gib]
-    assert text_instance_rel8d_info[:rel8ns]["rel8d"] === [hw_instance_ib_gib]
+    assert text_instance_rel8d_info[:rel8ns]["rel8d"] === [hw_instance_rel8d_ib_gib]
     assert hw_instance_rel8d_info[:rel8ns]["prop"] === [text_instance_ib_gib]
     assert hw_instance_rel8d_info[:rel8ns]["text"] === [text_instance_ib_gib]
-    assert text_instance_rel8d_info[:rel8ns]["prop_of"] === [hw_instance_ib_gib]
+    assert text_instance_rel8d_info[:rel8ns]["prop_of"] === [hw_instance_rel8d_ib_gib]
   end
 
   @tag :capture_log
@@ -149,7 +156,7 @@ defmodule IbGib.Expression.HelloWorldTest do
     hw_instance_ib = "hw instance_#{RandomGib.Get.some_letters(5)}"
     # {:ok, {hw_instance, _hw_instance_info, _hw_instance_ib_gib}} =
       # hw |> Expression.gib(:fork, @test_identities_1, hw_instance_ib)
-    hw_instance = hw |> fork!(@test_identities_1, hw_instance_ib)
+    hw_instance = hw |> instance!(@test_identities_1, hw_instance_ib)
 
     Logger.debug "gonna text"
     # Randomized to keep unit tests from overlapping.
@@ -158,11 +165,18 @@ defmodule IbGib.Expression.HelloWorldTest do
 
     Logger.debug "gonna instance text"
     text_instance_ib = "text instance_#{RandomGib.Get.some_letters(5)}"
-    text_instance = text |> fork!(@test_identities_1, text_instance_ib)
+    text_instance = text |> instance!(@test_identities_1, text_instance_ib)
 
     Logger.debug "gonna rel8 'text property'"
 
-    {hw_instance, text_instance} = hw_instance |> rel8!(text_instance, ["prop", "text"], ["prop_of"])
+    hw_instance =
+      hw_instance |> rel8!(text_instance, @test_identities_1, ["text", "prop"], @default_transform_options)
+
+    text_instance =
+      text_instance |> rel8!(hw_instance, @test_identities_1, ["text_of", "prop_of"], @default_transform_options)
+
+    # {hw_instance, text_instance} =
+    #   hw_instance |> rel8!(text_instance, ["prop", "text"], ["prop_of"])
     hw_instance_info = hw_instance |> get_info!
 
     text_instance =
@@ -171,30 +185,6 @@ defmodule IbGib.Expression.HelloWorldTest do
 
     Logger.debug "hw_instance_info: #{inspect hw_instance_info}"
     Logger.debug "text_instance_info: #{inspect text_instance_info}"
-  end
-
-  @tag :capture_log
-  test "hello world with user owner" do
-    {:ok, root} = Expression.Supervisor.start_expression
-
-    hw = root |> fork!(@test_identities_1, "Hello World")
-    hw_info = hw |> get_info!
-
-    user = root |> fork!(@test_identities_1, "user")
-    user_info = user |> get_info!
-
-    {_user, bob} = user |> instance!(@test_identities_1, "bob")
-    bob_info = bob |> get_info!
-    Logger.warn "hw_info: #{inspect hw_info}"
-    Logger.warn "user_info: #{inspect user_info}"
-    Logger.warn "bob_info: #{inspect bob_info}"
-
-    {hw, bob} = hw |> rel8!(bob, ["owner"], ["owner_of"])
-
-    hw_info = hw |> get_info!
-    bob_info = bob |> get_info!
-    Logger.warn "hw_info: #{inspect hw_info}"
-    Logger.warn "bob_info: #{inspect bob_info}"
   end
 
   @tag :capture_log

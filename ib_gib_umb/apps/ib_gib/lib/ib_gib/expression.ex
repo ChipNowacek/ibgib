@@ -442,7 +442,7 @@ defmodule IbGib.Expression do
       this_info |> add_rel8ns(rel8n_names, other_ib_gib)
 
     this_rel8ns = this_info[:rel8ns]
-    Logger.debug "New rel8ns. this_rel8ns: #{this_rel8ns}"
+    Logger.debug "New rel8ns. this_rel8ns: #{inspect this_rel8ns}"
 
     # Now we calculate the new hash and set it to `:gib`.
     this_gib = Helper.hash(this_ib, this_rel8ns, this_data)
@@ -458,7 +458,8 @@ defmodule IbGib.Expression do
 
     Logger.debug "a[:gib] set to gib: #{a[:gib]}"
 
-    on_new_expression_completed(this_ib, this_gib, this_info)
+    {:ok, {this_ib, this_gib, this_info}}
+    # on_new_expression_completed(this_ib, this_gib, this_info)
   end
 
   defp add_rel8ns(this_info, rel8n_names, other_ib_gib) do
@@ -1134,6 +1135,36 @@ defmodule IbGib.Expression do
       {:ok, mut8_ib_gib} <- Helper.get_ib_gib(mut8_info[:ib], mut8_info[:gib])
     ) do
       {:ok, {mut8_ib_gib, mut8_info}}
+    else
+      {:error, reason} ->
+        Logger.error "#{inspect reason}"
+        {:error, reason}
+      error ->
+        Logger.error "#{inspect error}"
+        {:error, "#{inspect error}"}
+    end
+  end
+  defp build_and_save_next_transform("rel8", identity_ib_gibs, src_ib_gib,
+    f_data) do
+
+    # Probably need to actually get this from somewhere, but for now I'm
+    # going with the default until I see the reason otherwise.
+    opts = @default_transform_options
+
+    with(
+    # 1. Create transform
+      {:ok, rel8_info} <-
+        TransformFactory.rel8(src_ib_gib,
+                              f_data["other_ib_gib"],
+                              identity_ib_gibs,
+                              f_data["rel8ns"],
+                              opts),
+      # 2. Save transform
+      {:ok, :ok} <- IbGib.Data.save(rel8_info),
+      # 3. Get the transform's ib^gib
+      {:ok, rel8_ib_gib} <- Helper.get_ib_gib(rel8_info[:ib], rel8_info[:gib])
+    ) do
+      {:ok, {rel8_ib_gib, rel8_info}}
     else
       {:error, reason} ->
         Logger.error "#{inspect reason}"

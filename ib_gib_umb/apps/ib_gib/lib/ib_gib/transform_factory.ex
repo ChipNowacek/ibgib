@@ -10,7 +10,9 @@ defmodule IbGib.TransformFactory do
 
   require Logger
 
+  import IbGib.Macros
   alias IbGib.Helper
+
   use IbGib.Constants, :ib_gib
   use IbGib.Constants, :error_msgs
 
@@ -73,7 +75,7 @@ defmodule IbGib.TransformFactory do
     end
   end
   def fork(src_ib_gib, identity_ib_gibs, dest_ib, opts) do
-    {:error, emsg_invalid_args([src_ib_gib, identity_ib_gibs, dest_ib, opts])}
+    invalid_args([src_ib_gib, identity_ib_gibs, dest_ib, opts])
   end
 
   @doc """
@@ -117,6 +119,7 @@ defmodule IbGib.TransformFactory do
     end
   end
   def mut8(src_ib_gib, identity_ib_gibs, new_data, opts) do
+    invalid_args([src_ib_gib, identity_ib_gibs, new_data, opts])
     {:error, emsg_invalid_args([src_ib_gib, identity_ib_gibs, new_data, opts])}
   end
 
@@ -165,11 +168,7 @@ defmodule IbGib.TransformFactory do
     end
   end
   def rel8(src_ib_gib, other_ib_gib, identity_ib_gibs, rel8ns, opts) do
-    {
-      :error,
-      emsg_invalid_args([src_ib_gib, other_ib_gib, identity_ib_gibs,
-                         rel8ns, opts])
-    }
+    invalid_args([src_ib_gib, other_ib_gib, identity_ib_gibs, rel8ns, opts])
   end
 
   @doc """
