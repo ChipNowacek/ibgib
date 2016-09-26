@@ -149,7 +149,9 @@ defmodule IbGib.Expression do
     Logger.debug "express. identity_ib_gibs: #{inspect identity_ib_gibs}\na_ib_gib: #{a_ib_gib}\n, b_ib_gib: #{b_ib_gib}"
 
     # First, we just store our state with mama and papa ib_gib (and identities)
-    state = %{"expressed" => false, "a_info" => a_info}
+    # state = %{"expressed" => false, "a_info" => a_info}
+    # I don't think any state is required...but maybe the expressed flag would be good.
+    state = %{}
 
     {:ok, state}
   end
@@ -561,7 +563,9 @@ defmodule IbGib.Expression do
     # Logger.debug "bitstring yo"
     add_rel8n(a_info, relation_name, [b])
   end
-  defp add_rel8n(a_info, relation_name, b) when is_map(a_info) and is_bitstring(relation_name) and is_list(b) do
+  defp add_rel8n(a_info, relation_name, b)
+    when is_map(a_info) and is_bitstring(relation_name) and is_list(b) do
+      Logger.debug "a_info:\n#{inspect a_info, pretty: true}\nb:\n#{inspect b, pretty: true}"
     # Logger.debug "array list"
     b_is_list_of_ib_gib =
       b |> all?(fn(item) -> Helper.valid_ib_gib?(item) end)
@@ -732,7 +736,10 @@ defmodule IbGib.Expression do
     # NB: This bypasses adding anything to the dna.
     {:ok, a_ib_gib}
   end
-  def express(identity_ib_gibs, a_ib_gib, a_info, b_ib_gib) do
+  def express(identity_ib_gibs, a_ib_gib, a_info, b_ib_gib)
+    when is_list(identity_ib_gibs) and is_bitstring(a_ib_gib) and
+         is_map(a_info) and is_bitstring(b_ib_gib) do
+    Logger.debug "identity_ib_gibs:\n#{inspect identity_ib_gibs}\na_ib_gib: #{a_ib_gib}\na_info:\n#{inspect a_info, pretty: true}\nb_ib_gib: #{b_ib_gib}"
     {:ok, stem_cell_pid} =
       IbGib.Expression.Supervisor.start_expression({identity_ib_gibs,
                                                     a_ib_gib,
@@ -740,6 +747,11 @@ defmodule IbGib.Expression do
                                                     b_ib_gib})
     GenServer.call(stem_cell_pid,
                    {:express, {identity_ib_gibs, a_ib_gib, a_info, b_ib_gib}})
+  end
+  def express(identity_ib_gibs, a_ib_gib, a_info, b_ib_gib) do
+    emsg = emsg_invalid_args([identity_ib_gibs, a_ib_gib, a_info, b_ib_gib])
+    Logger.error emsg
+    {:error, emsg}
   end
 
   def handle_call({:express, {identity_ib_gibs, a_ib_gib, a_info, b_ib_gib}},
@@ -755,21 +767,64 @@ defmodule IbGib.Expression do
     Logger.warn "express_impl reachhed"
 
     with(
+      # -----------------------
+      # Get plan process and info
       {:ok, b} <- get_process(identity_ib_gibs, b_ib_gib),
+
       {:ok, :ok} <- log_yo(:warn, "1\nb: #{inspect b}"),
-      {:ok, b_info} <- b |> get_info,
-      {:ok, :ok} <- log_yo(:warn, "2\nb_info:\n#{inspect b_info, [pretty: true]}"),
-      {:ok, next_info} <- compile(identity_ib_gibs, a_ib_gib, b_ib_gib, b_info),
-      {:ok, :ok} <- log_yo(:warn, "3\nnext_info:\n#{inspect next_info, pretty: true}"),
-      {:ok, a} <- get_process(identity_ib_gibs, a_ib_gib),
-      {:ok, :ok} <- log_yo(:warn, "4\na: #{inspect a}\nself: #{inspect self}\na_info: #{inspect a_info, pretty: true}"),
+
+      {:ok, plan_info} <- b |> get_info,
+
+      {:ok, :ok} <- log_yo(:warn, "2\nplan_info:\n#{inspect plan_info, [pretty: true]}"),
+      # -----------------------
+      # Compile the plan to a concrete plan, and get the next step (transform)
+      {:ok, {concrete_plan_info, next_step_transform_info, next_step_index}} <-
+        compile(identity_ib_gibs, a_ib_gib, b_ib_gib, plan_info),
+
+      {:ok, :ok} <- log_yo(:warn, "3\nconcrete_plan_info:\n#{inspect concrete_plan_info, pretty: true}\nnext_step_transform_info:\n#{inspect next_step_transform_info, pretty: true}"),
+      # -----------------------
+      # Prepare `a` information.
+      {:ok, :ok} <- log_yo(:warn, "4\na_info: #{inspect a_info, pretty: true}"),
       {:ok, a_info} <-
-        (if is_nil(a_info), do: a |> get_info, else: {:ok, a_info}),
+        (
+          if is_nil(a_info) do
+            case get_process(identity_ib_gibs, a_ib_gib) do
+              {:ok, a} -> a |> get_info
+              {:error, error} -> {:error, error}
+              error -> {:error, inspect error}
+            end
+          else
+            {:ok, a_info}
+          end
+        ),
+
       {:ok, :ok} <- log_yo(:warn, "5\na_info: #{inspect a_info, pretty: true}"),
-      {:ok, result_ib_gib} <- apply_next(a_info, next_info)
+      # -----------------------
+      # We now have both `a` and `b`.
+      # We can now express this "blank" process by applying the next step
+      # transform to `a`.
+      # This is is where we apply_fork, apply_rel8, apply_mut8.
+      # This is an express iteration.
+      {:ok, concrete_plan_ib_gib} <- Helper.get_ib_gib(concrete_plan_info),
+      {:ok, a_info_with_new_dna} <-
+        {:ok, add_rel8n(a_info, "dna", concrete_plan_ib_gib)},
+      {:ok, {this_ib_gib, this_ib, this_gib, this_info}} <-
+        apply_next(a_info_with_new_dna, next_step_transform_info),
+      # -----------------------
+      # Save this info
+      # (This may be premature, since I haven't done anything with dna, and
+      #  also there will be a new "final" plan with additional information that
+      #  will not be rel8d to this)
+      {:ok, :ok} <- IbGib.Data.save(this_info),
+      # -----------------------
+      {:ok, final_ib_gib, final_state} <-
+        on_complete_express_iteration(identity_ib_gibs,
+                                      this_ib_gib,
+                                      this_info,
+                                      concrete_plan_info)
     ) do
       log_yo(:debug, "6")
-      {:ok, result_ib_gib}
+      {:ok, {final_ib_gib, final_state}}
     else
       {:error, reason} ->
         Logger.error "#{inspect reason}"
@@ -780,9 +835,102 @@ defmodule IbGib.Expression do
     end
   end
 
-  defp apply_next(a_info, next_info) do
-    {:ok, {this_ib, this_gib, this_info}} = apply_fork(a_info, next_info)
-    {:ok, result_ib_gib}
+  # At this point the "next" step is the one we've just executed.
+  # If there are further steps to do, then we must do a few things:
+  # * Set the "out" of this step to the ib_gib we've just created.
+  # * Save the new plan.
+  # * Call express recursively on the plan to get the final ib_gib result.
+
+  # If there are no further steps, then we are done and we can just
+  # return this_ib_gib.
+  defp on_complete_express_iteration(identity_ib_gibs, this_ib_gib, this_info, plan_info) do
+    # regardless of if there are further steps, our state is now set to
+    # what we have done so far.
+    new_state = %{:info => this_info}
+
+    if (plan_complete?(plan_info)) do
+      {:ok, this_ib_gib, new_state}
+    else
+      with(
+        # At this point the "next" step is the one we've just executed.
+        {:ok, {next_step, next_step_index}} <- get_next_step(plan_info),
+        {:ok, :ok} <-
+          log_yo(:warn, "huh wha ahhhhh"),
+        new_next_step <- Map.put(next_step, "out", this_ib_gib),
+        {:ok, :ok} <-
+          log_yo(:debug, "plan_info:\n#{inspect plan_info, pretty: true}"),
+        new_steps <-
+          List.replace_at(plan_info[:data]["steps"],
+                          next_step_index - 1,
+                          new_next_step),
+        new_plan_info_data <- Map.put(plan_info[:data], "steps", new_steps),
+        new_plan_info <- Map.put(plan_info, :data, new_plan_info_data),
+
+        {:ok, :ok} <-
+          log_yo(:debug, "safdasdfasdfasdfsdfsdfsdfdsfds"),
+
+        # Increment plan "i" (step index)
+        new_plan_info <- increment_plan_step_index(new_plan_info),
+
+        # Recalculate the gib hash and save
+        new_plan_gib <-
+          Helper.hash(new_plan_info[:ib],
+                      new_plan_info[:rel8ns],
+                      new_plan_info[:data]),
+        new_plan_info <- Map.put(new_plan_info, :gib, new_plan_gib),
+        {:ok, :ok} <-
+          log_yo(:debug, "hrmm..new_plan_info before saving:\n#{inspect new_plan_info, pretty: true}"),
+        {:ok, :ok} <- IbGib.Data.save(new_plan_info),
+
+        {:ok, new_plan_ib_gib} <- Helper.get_ib_gib(new_plan_info),
+
+        {:ok, :ok} <- log_yo(:debug, "recursive????"),
+
+        # Call express recursively with our new information!
+        {:ok, {final_ib_gib, final_state}} <-
+          express(identity_ib_gibs, this_ib_gib, this_info, new_plan_ib_gib)
+      ) do
+        {:ok, {final_ib_gib, final_state}}
+      else
+        {:error, reason} ->
+          Logger.error "#{inspect reason}"
+          {:error, reason}
+        error ->
+          Logger.error "#{inspect error}"
+          {:error, "#{inspect error}"}
+      end
+    end
+  end
+
+  defp plan_complete?(plan_info) do
+    Logger.debug "plan_info:\n#{inspect plan_info, pretty: true}"
+    next_step_index = String.to_integer(plan_info[:data]["i"])
+    step_count = TB.count_steps(plan_info[:data]["steps"])
+    Logger.debug "next_step_index: #{next_step_index}\nstep_count: #{step_count}"
+    # 1-based index
+    cond do
+      next_step_index < step_count -> false
+      next_step_index = step_count -> true
+      next_step_index > step_count -> raise "Invalid next_step_index: #{next_step_index}\nstep_count: #{step_count}\nThe index should be less than or equal to the step count."
+    end
+  end
+
+  defp apply_next(a_info, %{:ib => "fork"} = next_info) do
+    Logger.debug "next_info:\n#{inspect next_info, pretty: true}"
+
+    with(
+      {:ok, {this_ib, this_gib, this_info}} <- apply_fork(a_info, next_info),
+      {:ok, this_ib_gib} <- Helper.get_ib_gib(this_ib, this_gib)
+    ) do
+      {:ok, {this_ib_gib, this_ib, this_gib, this_info}}
+    else
+      {:error, reason} ->
+        Logger.error "#{inspect reason}"
+        {:error, reason}
+      error ->
+        Logger.error "#{inspect error}"
+        {:error, "#{inspect error}"}
+    end
   end
 
   # For now, the implementation is just to call start_expression
@@ -814,16 +962,16 @@ defmodule IbGib.Expression do
       # and we want to return that new transform to express.
       {:ok, {concrete_plan_info,
              concrete_plan_ib_gib,
-             next_step_transform_info}} ->
-        Logger.debug "concrete_plan_ib_gib:\n#{concrete_plan_ib_gib}\nconcrete_plan_info: #{inspect concrete_plan_info, pretty: true}"
-        Logger.warn "after compile"
-        {:ok, next_step_transform_info}
+             next_step_transform_info,
+             next_step_index}} ->
+        # Logger.debug "concrete_plan_ib_gib:\n#{concrete_plan_ib_gib}\nconcrete_plan_info: #{inspect concrete_plan_info, pretty: true}"
+        # Logger.warn "after compile"
+        {:ok, {concrete_plan_info, next_step_transform_info, next_step_index}}
 
       # Something went awry.
       {:error, reason} -> {:error, reason}
       error -> {:error, inspect error}
     end
-
   end
 
   # Warning, this is a big honking monster. Once it's working, we can try to
@@ -831,17 +979,16 @@ defmodule IbGib.Expression do
   # compilation process into its own module, yada yada yada.
   defp concretize_and_save_plan(identity_ib_gibs, a_ib_gib, old_plan_ib_gib, old_plan_info) do
     # Logger.debug "args:\n#{inspect [identity_ib_gibs, a_ib_gib, old_plan_info], [pretty: true]}"
-    available_vars = get_available_vars(a_ib_gib, old_plan_info)
-
-    Logger.debug "available vars:\n#{inspect available_vars, pretty: true}"
-    # Builds a new map with a comprehension.
-    new_plan_info = replace_variables_in_map(available_vars, old_plan_info)
-    Logger.debug "old:\n#{inspect old_plan_info, pretty: true}\nnew:\n#{inspect new_plan_info, pretty: true}"
-
 
     with(
-      # Now we have a possibly more concrete b_info, but it may not be fully
-      # concrete.
+      # Update our available variables
+      available_vars <- get_available_vars(a_ib_gib, old_plan_info),
+
+      # Update our plan with those variables replaced.
+      new_plan_info <- replace_variables_in_map(available_vars, old_plan_info),
+
+      # With the variables replaced, we now have a possibly more concrete
+      # b_info, but it may not be fully concrete.
       {:ok, {next_step, next_step_index}} <- get_next_step(new_plan_info),
 
       # So right now, we have a "next step" that should be concrete, but we have
@@ -894,7 +1041,7 @@ defmodule IbGib.Expression do
     ) do
       # Whew! ':-O
       # Really need to refactor this.
-      {:ok, {new_plan_info, new_plan_ib_gib, next_step_transform_info}}
+      {:ok, {new_plan_info, new_plan_ib_gib, next_step_transform_info, next_step_index}}
     else
       {:error, reason} ->
         Logger.error "#{inspect reason}"
@@ -902,6 +1049,21 @@ defmodule IbGib.Expression do
       error ->
         Logger.error "#{inspect error}"
         {:error, "#{inspect error}"}
+    end
+  end
+
+  defp increment_plan_step_index(new_plan_info) do
+    Logger.warn "new_plan_info:\n#{inspect new_plan_info, pretty: true}"
+    data = new_plan_info[:data]
+    steps_count = TB.count_steps(new_plan_info["steps"])
+    current_i = Integer.parse(data["i"])
+    if current_i < steps_count do
+      data = Map.put(data, "i", current_i + 1)
+      # Return plan with bumped i
+      Map.put(new_plan_info, :data, data)
+    else
+      # Just return plan unchanged
+      new_plan_info
     end
   end
 
@@ -919,14 +1081,18 @@ defmodule IbGib.Expression do
     # going with the default until I see the reason otherwise.
     opts = @default_transform_options
 
+    with(
     # 1. Create transform
-    with {:ok, fork_info} <- TransformFactory.fork(src_ib_gib, identity_ib_gibs, f_data["dest_ib"], opts),
-
+      {:ok, fork_info} <-
+        TransformFactory.fork(src_ib_gib,
+                              identity_ib_gibs,
+                              f_data["dest_ib"],
+                              opts),
       # 2. Save transform
       {:ok, :ok} <- IbGib.Data.save(fork_info),
-
-      {:ok, fork_ib_gib} <- Helper.get_ib_gib(fork_info[:ib], fork_info[:gib]) do
-
+      # 3. Get the transform's ib^gib
+      {:ok, fork_ib_gib} <- Helper.get_ib_gib(fork_info[:ib], fork_info[:gib])
+    ) do
       {:ok, {fork_ib_gib, fork_info}}
     else
       {:error, reason} ->
@@ -940,6 +1106,8 @@ defmodule IbGib.Expression do
 
   defp get_next_step(b_info) do
     # At this point, should always be a next step, i.e. plan isn't complete
+    Logger.debug "b_info:\n#{inspect b_info, pretty: true}"
+    next_step_index = String.to_integer(b_info[:data]["i"])
     steps = b_info[:data]["steps"]
 
     Logger.debug "steps:\n#{inspect steps, pretty: true}"
@@ -947,22 +1115,26 @@ defmodule IbGib.Expression do
     # arrays to non-arrays in maps.
     steps = if is_list(steps), do: steps, else: [steps]
 
-    Logger.debug "steps:\n#{inspect steps, pretty: true}"
+    Logger.debug "steps:\n#{inspect steps, pretty: true}\nnext_step_index: #{next_step_index}"
 
-    {next_step, next_step_index} =
-      steps
-      |> Enum.reduce({nil, 0}, fn(step, {acc_next, i}) ->
-           if (acc_next == nil) do
-             if step["out"] == nil do
-               {step, i}
-             else
-               {nil, i + 1}
-             end
-           else
-             {acc_next, i}
-           end
-         end)
+    # next_step_index is 1-based, Enum.at is 0-based
+    next_step = Enum.at(steps, next_step_index - 1)
+
+    # {next_step, next_step_index} =
+    #   steps
+    #   |> Enum.reduce({nil, 0}, fn(step, {acc_next, i}) ->
+    #        if (acc_next == nil) do
+    #          if step["out"] == nil do
+    #            {step, i}
+    #          else
+    #            {nil, i + 1}
+    #          end
+    #        else
+    #          {acc_next, i}
+    #        end
+    #      end)
     if next_step do
+      Logger.debug "next_step: #{inspect next_step, pretty: true}"
       {:ok, {next_step, next_step_index}}
     else
       {:error, "Next step not found"}
@@ -1355,9 +1527,11 @@ defmodule IbGib.Expression do
       {:ok, plan_ib_gib} <- Helper.get_ib_gib(plan),
 
       # Express (via spawned processes), passing only relevant ib^gib pointers.
-      {:ok, new_ib_gib} <- express(identity_ib_gibs, ib_gib, info, plan_ib_gib)
+      {:ok, new_ib_gib} <- express(identity_ib_gibs, ib_gib, info, plan_ib_gib),
+      {:ok, new_pid} <- IbGib.Expression.Supervisor.start_expression(new_ib_gib)
     ) do
-      {:ok, new_ib_gib}
+      # {:ok, new_ib_gib}
+      {:ok, new_pid}
     else
       {:error, reason} ->
         Logger.error "#{inspect reason}"

@@ -15,6 +15,8 @@ defmodule IbGibTest do
   doctest IbGib.Auth.Identity
   # doctest IbGib.Auth.Session
   doctest IbGib.Data.Schemas.ValidateHelper
+  doctest IbGib.TransformBuilder
+
   import IbGib.Expression
 
   setup context do
@@ -40,7 +42,7 @@ defmodule IbGibTest do
   test "default ib_gib expressions" do
     ["fork", "mut8", "rel8", "query"]
     |> Enum.each(fn(test_ib) ->
-         test_ib_gib = "#{test_ib}#{delim}gib"
+         test_ib_gib = "#{test_ib}#{@delim}gib"
          Logger.debug "test_ib_gib: #{test_ib_gib}"
          {:ok, test} = IbGib.Expression.Supervisor.start_expression(test_ib_gib)
          test_info = test |> get_info!

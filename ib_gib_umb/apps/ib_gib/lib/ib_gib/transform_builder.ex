@@ -13,14 +13,17 @@ defmodule IbGib.TransformBuilder do
 
   %{
     identities: ["id1^123", "id2^234", etc.]
-    vars: []
-    dnas: []
+    dnas: [
 
-
+    ],
+    "i": "1",
     steps: [
       %{
         # name will make this step accessible to proceeding steps via variable
-        name: "some name"
+        "name": "some name"
+
+        # Which step in the plan is this? 1, 2, 3, etc.
+        "i": "1",
 
         # Before compile...
         "ibgib": ""
@@ -98,6 +101,7 @@ defmodule IbGib.TransformBuilder do
           plan = %{
             "identities" => identity_ib_gibs,
             "src" => src,
+            "i" => "1",
             "steps" => []
           }
           {:ok, plan}
@@ -142,7 +146,9 @@ defmodule IbGib.TransformBuilder do
                    "dest_ib" => dest_ib
                   }
                 } = step) do
-    step = Map.put(step, "arg", "[src]")
+    # step = Map.put(step, "arg", "[src]")
+    step_index = count_steps(plan["steps"]) + 1
+    step = Map.put(step, "i", "#{step_index}")
     plan = Map.put(plan, "steps", plan["steps"] ++ step)
     {:ok, plan}
   end
@@ -166,6 +172,44 @@ defmodule IbGib.TransformBuilder do
             )
   end
 
+  @doc """
+  Counts the number of step infos in the given steps list.
+
+  ## Examples
+  (The counting only relies on the "i" entry in the map, so other data is not
+  provided here.)
+
+      iex> steps = [%{"i" => "1"}]
+      ...> IbGib.TransformBuilder.count_steps(steps)
+      1
+
+      iex> steps = [%{"i" => "1"}, %{"i" => "2"}]
+      ...> IbGib.TransformBuilder.count_steps(steps)
+      2
+  """
+  def count_steps(steps)
+  def count_steps(steps) when is_nil(steps) do
+    0
+  end
+  def count_steps(steps) when is_bitstring(steps) do
+    # 1-item lists get morphed into bitstrings for some reason in elixir. :-/
+    count_steps([steps])
+  end
+  def count_steps(steps) when is_list(steps) and length(steps) == 0 do
+    0
+  end
+  def count_steps(steps) when is_list(steps) do
+    steps
+    |> Enum.reduce(0, fn(step, acc) ->
+          i = String.to_integer(step["i"])
+          if i > acc, do: i, else: acc
+       end)
+  end
+  def count_steps(steps) do
+    emsg = emsg_invalid_args(steps)
+    Logger.error emsg
+    raise(emsg)
+  end
   # NOT DRY>>>>NOOOOOOOOOOO
   # THIS IS DUPLICATED IN TRANSFORM_FACTORY/BUILDER
   # Stamping a gib means that it is "official", since a user doesn't (shouldn't)

@@ -51,6 +51,9 @@ defmodule IbGib.Expression.BasicsTest do
     assert is_pid(new_forked_pid)
 
     Logger.debug "fork_result: #{fork_result}, new_forked_pid: #{inspect new_forked_pid}"
+
+    info = Expression.get_info!(new_forked_pid)
+    Logger.debug "info: #{inspect info, pretty: true}"
   end
 
   @tag :capture_log
