@@ -10,6 +10,19 @@ defmodule IbGib.Data.Schemas.Seeds do
   alias IbGib.Data.Schemas.IbGibModel
 
 
+  @doc """
+  Redeclared as helper for .exs file
+  """
+  def delim, do: @delim
+  @doc """
+  Redeclared as helper for .exs file
+  """
+  def root_ib_gib, do: @root_ib_gib
+  @doc """
+  Redeclared as helper for .exs file
+  """
+  def default_rel8ns, do: @default_rel8ns
+
   # Specifiers allow for basic "inheritance" creation.
   # Use case: I want a "text^gib", from which "comment^gib", "url^gib", etc.,
   #           will descend.

@@ -214,11 +214,13 @@ defmodule IbGib.Auth.Identity do
   # authenticated, and we will need to bootstrap an identity for them.
   defp create_identity_if_needed(existing_ib_gib, root_identity, identity_ib)
     when is_nil(existing_ib_gib) do
-    with {:ok, {_, identity}} <-
-           root_identity
-           |> instance(@bootstrap_identity_ib_gib, identity_ib, %{:gib_stamp => true}),
+    with(
+      {:ok, identity} <-
+        root_identity
+        |> instance(@bootstrap_identity_ib_gib, identity_ib, %{"gib_stamp" => "true"}),
       {:ok, identity_info} <- identity |> get_info,
-      {:ok, identity_ib_gib} <- get_ib_gib(identity_info) do
+      {:ok, identity_ib_gib} <- get_ib_gib(identity_info)
+    ) do
       {:ok, {identity_ib_gib, identity_info, identity}}
     else
       {:error, reason} -> {:error, reason}
@@ -245,7 +247,7 @@ defmodule IbGib.Auth.Identity do
     if Map.equal?(identity_info[:data], identity_data) do
       {:ok, identity_ib_gib}
     else
-      opts = %{:gib_stamp => true}
+      opts = %{"gib_stamp" => "true"}
       # Everyone is authorized with at least @bootstrap_identity_ib_gib, and
       # by providing the priv_data, the user has already been authorized with
       # current identity, identity_ib_gib. We are only looking to mut8 if we

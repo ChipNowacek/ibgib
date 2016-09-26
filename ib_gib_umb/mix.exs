@@ -1,6 +1,8 @@
 defmodule IbGibUmb.Mixfile do
   use Mix.Project
 
+  # TODO: Remove "ok" from mix.lock file. It has somehow gotten stuck in there.
+
   def project do
     [apps_path: "apps",
      build_embedded: Mix.env == :prod,

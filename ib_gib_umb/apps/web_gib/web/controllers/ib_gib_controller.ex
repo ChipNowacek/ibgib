@@ -488,7 +488,7 @@ defmodule WebGib.IbGibController do
     with {:ok, identity} <-
       IbGib.Expression.Supervisor.start_expression(identity_ib_gib),
       {:ok, {new_src, _new_identity}} <-
-        src |> Expression.rel8(identity, ["identity"], @default_rel8ns, %{:gib_stamp => true}) do
+        src |> Expression.rel8(identity, ["identity"], @default_rel8ns, %{"gib_stamp" => "true"}) do
       {:ok, new_src}
     else
       {:error, reason} when is_bitstring(reason) -> {:error, reason}

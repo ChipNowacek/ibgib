@@ -83,11 +83,11 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
     m
     |> Enum.reduce_while(running_size,
       fn(item, acc) ->
-        Logger.debug "item: #{inspect item}"
+        # Logger.debug "item: #{inspect item}"
         {key, value} = item
 
-        Logger.debug "key: #{inspect key}\nvalue: #{inspect value}"
-        Logger.debug "is_list(value): #{is_list(value)}"
+        # Logger.debug "key: #{inspect key}\nvalue: #{inspect value}"
+        # Logger.debug "is_list(value): #{is_list(value)}"
         if is_bitstring(key) do
           key_length = key |> String.length
 
@@ -107,7 +107,7 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
                   value_length = value |> String.length
                   new_running_size = acc + key_length + value_length
                   if new_running_size <= max_size do
-                    Logger.debug "new_running_size: #{new_running_size}, max_size: #{max_size}"
+                    # Logger.debug "new_running_size: #{new_running_size}, max_size: #{max_size}"
                     {:cont, new_running_size}
                   else
                     # not valid - too big
@@ -154,7 +154,7 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
               end
           else
             # key invalid
-            Logger.warn "invalid key: #{inspect key, [pretty: true]}"
+            # Logger.warn "invalid key: #{inspect key, [pretty: true]}"
             # not valid
             {:halt, -1}
           end

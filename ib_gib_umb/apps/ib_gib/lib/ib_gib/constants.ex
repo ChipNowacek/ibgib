@@ -44,7 +44,7 @@ defmodule IbGib.Constants do
       # and not a user.
       @gib_stamp "ibGib"
 
-      @default_transform_options %{:gib_stamp => false}
+      @default_transform_options %{"gib_stamp" => "false"}
       @default_transform_src "[src]"
       @default_fork_dest_ib "[src.ib]"
 

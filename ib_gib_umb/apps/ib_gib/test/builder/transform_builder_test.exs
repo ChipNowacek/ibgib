@@ -31,14 +31,14 @@ defmodule IbGib.Builder.TransformBuilderTest do
   test "plan, valid identities" do
     identities = @test_identities_1
 
-    {:ok, _plan} = TB.plan(identities, @default_transform_src)
+    {:ok, _plan} = TB.plan(identities, @default_transform_src, @default_transform_options)
   end
 
   @tag :capture_log
   test "plan, invalid identities" do
     identities = @test_identities_1 ++ ["invalid identity here NO GIB"]
 
-    {:error, _reason} = TB.plan(identities, @default_transform_src)
+    {:error, _reason} = TB.plan(identities, @default_transform_src, @default_transform_options)
   end
 
   @tag :capture_log
@@ -47,7 +47,7 @@ defmodule IbGib.Builder.TransformBuilderTest do
 
     # need legit happy pipe.
     with \
-      {:ok, plan} <- TB.plan(identities, @default_transform_src),
+      {:ok, plan} <- TB.plan(identities, @default_transform_src, @default_transform_options),
       {:ok, plan} <- TB.yo(plan) do
 
       Logger.debug "plan:\n#{inspect plan, [pretty: true]}"
@@ -63,14 +63,13 @@ defmodule IbGib.Builder.TransformBuilderTest do
 
     {:ok, _plan} =
       with \
-        {:ok, plan} <- TB.plan(identities, @default_transform_src),
+        {:ok, plan} <- TB.plan(identities, @default_transform_src, @default_transform_options),
         {:ok, plan} <-
           TB.add_step(plan, %{
             # The name here is just for readability for us, since we aren't
             # referencing it in any subsequent steps.
             "name" => "just fork",
-            "arg" => @default_transform_src,
-            "f" => %{
+            "f_data" => %{
               "type" => "fork",
               "dest_ib" => "[src.ib]"
             }
@@ -94,7 +93,7 @@ defmodule IbGib.Builder.TransformBuilderTest do
     dest_ib = "[src.ib]"
 
     with \
-      {:ok, plan} <- TB.plan(identities, @default_transform_src),
+      {:ok, plan} <- TB.plan(identities, @default_transform_src, @default_transform_options),
       {:ok, plan} <- TB.add_fork(plan, name, dest_ib),
       {:ok, plan} <- TB.yo(plan) do
 

@@ -61,7 +61,9 @@ defmodule IbGib.TransformFactory do
           "identity" => identity_ib_gibs
         }
         data = %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib}
-        gib = Helper.hash(ib, relations, data) |> stamp_if_needed(opts[:gib_stamp])
+        gib =
+          Helper.hash(ib, relations, data) |>
+          stamp_if_needed(opts["gib_stamp"] == "true")
         result = %{
           ib: ib,
           gib: gib,
@@ -83,7 +85,7 @@ defmodule IbGib.TransformFactory do
   `src_ib_gib`. This will perform a merge of the given `new_data` map onto the
   existing `data` map, replacing any identical keys.
 
-  If `opts` :gib_stamp is true, then we will "stamp" the gib, showing that the
+  If `opts` "gib_stamp" is true, then we will "stamp" the gib, showing that the
   gib was done by our engine and not by a user.
   """
   @spec mut8(String.t, list(String.t), map, map) :: {:ok, map} | {:error, String.t}
@@ -105,7 +107,7 @@ defmodule IbGib.TransformFactory do
           "identity" => identity_ib_gibs
         }
         data = %{"src_ib_gib" => src_ib_gib, "new_data" => new_data}
-        gib = Helper.hash(ib, relations, data) |> stamp_if_needed(opts[:gib_stamp])
+        gib = Helper.hash(ib, relations, data) |> stamp_if_needed(opts["gib_stamp"] == "true")
         result = %{
           ib: ib,
           gib: gib,
@@ -154,7 +156,8 @@ defmodule IbGib.TransformFactory do
           "rel8ns" => rel8ns |> Enum.concat(@default_rel8ns) |> Enum.uniq,
         }
         gib =
-          Helper.hash(ib, relations, data) |> stamp_if_needed(opts[:gib_stamp])
+          Helper.hash(ib, relations, data)
+          |> stamp_if_needed(opts["gib_stamp"] == "true")
         result = %{
           ib: ib,
           gib: gib,

@@ -13,9 +13,9 @@ defmodule IbGib.TransformBuilder do
 
   %{
     identities: ["id1^123", "id2^234", etc.]
-    dnas: [
-
-    ],
+    opts: %{
+      "gib_stamp" => "true"
+    },
     "i": "1",
     steps: [
       %{
@@ -95,7 +95,7 @@ defmodule IbGib.TransformBuilder do
   @doc """
   Starts a compiler plan builder (info map).
   """
-  def plan(identity_ib_gibs, src)
+  def plan(identity_ib_gibs, src, opts)
     when is_list(identity_ib_gibs) and length(identity_ib_gibs) >= 1 do
       case validate_identity_ib_gibs(identity_ib_gibs) do
         {:ok, :ok} ->
@@ -103,7 +103,8 @@ defmodule IbGib.TransformBuilder do
             "identities" => identity_ib_gibs,
             "src" => src,
             "i" => "1",
-            "steps" => []
+            "steps" => [],
+            "opts" => opts
           }
           {:ok, plan}
 
@@ -112,7 +113,7 @@ defmodule IbGib.TransformBuilder do
       end
   end
 
-  def yo(plan, opts \\ @default_transform_options) do
+  def yo(plan) do
     ib = "plan"
 
     relations = %{
@@ -122,7 +123,9 @@ defmodule IbGib.TransformBuilder do
       "identity" => plan["identities"]
     }
     data = plan
-    gib = hash(ib, relations, data) |> stamp_if_needed(opts[:gib_stamp])
+    gib =
+      hash(ib, relations, data)
+      |> stamp_if_needed(plan["opts"]["gib_stamp"] == "true")
     result = %{
       ib: ib,
       gib: gib,

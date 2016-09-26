@@ -1,5 +1,4 @@
 alias IbGib.Data.Schemas.Seeds
-use IbGib.Constants, :ib_gib
 
 # These look like "types" to me, but they're not quite building a "type"
 # system. They're also not interfaces, protocols, or anything. They're ib_gib.
@@ -26,8 +25,8 @@ use IbGib.Constants, :ib_gib
   })
 :ok = Seeds.insert(:rel8, %{
   "src" => "[src]",
-  "other" => @root_ib_gib,
-  "rel8ns" => @default_rel8ns
+  "other" => Seeds.root_ib_gib,
+  "rel8ns" => Seeds.default_rel8ns
   })
 
 # Composite Transforms
@@ -36,13 +35,13 @@ use IbGib.Constants, :ib_gib
   "name" => "[rand]",
   "in" => "[src]",
   # The root ib^gib is the "identity" transform/function.
-  "t" => @root_ib_gib,
+  "t" => Seeds.root_ib_gib,
   # "out" => "",
   })
 :ok = Seeds.insert(:plan, %{
   # new_id will be parsed, space-delimited args (I guess)
   "name" => "[new_id 10]",
-  "steps" => ["step#{@delim}gib"]
+  "steps" => ["step#{Seeds.delim}gib"]
   })
 
 # Query

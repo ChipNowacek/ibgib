@@ -10,6 +10,7 @@ defmodule WebGib.Plugs.EnsureMetaQuery do
 
   import WebGib.Gettext
   use IbGib.Constants, :ib_gib
+  use IbGib.Constants, :error_msgs
   use WebGib.Constants, :keys
   alias IbGib.Helper
   import IbGib.{Expression, QueryOptionsFactory}
