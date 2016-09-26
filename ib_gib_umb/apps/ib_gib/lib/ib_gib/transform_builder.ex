@@ -86,6 +86,7 @@ defmodule IbGib.TransformBuilder do
   require Logger
 
   import IbGib.Helper
+  import IbGib.Macros
 
   use IbGib.Constants, :ib_gib
   use IbGib.Constants, :error_msgs
@@ -140,30 +141,52 @@ defmodule IbGib.TransformBuilder do
   """
   def add_step(plan,
                %{"name" => name,
-                #  "arg" => "[src]",
                  "f_data" => %{
                    "type" => "fork",
                    "dest_ib" => dest_ib
                   }
                 } = step) do
-    # step = Map.put(step, "arg", "[src]")
     step_index = count_steps(plan["steps"]) + 1
     step = Map.put(step, "i", "#{step_index}")
-    plan = Map.put(plan, "steps", plan["steps"] ++ step)
+    plan = Map.put(plan, "steps", plan["steps"] ++ [step])
+    {:ok, plan}
+  end
+  def add_step(plan,
+               %{"name" => name,
+                 "f_data" => %{
+                   "type" => "mut8",
+                   "new_data" => new_data
+                  }
+                } = step) do
+    step_index = count_steps(plan["steps"]) + 1
+    step = Map.put(step, "i", "#{step_index}")
+    plan = Map.put(plan, "steps", plan["steps"] ++ [step])
+    {:ok, plan}
+  end
+  def add_step(plan,
+               %{"name" => name,
+                 "f_data" => %{
+                   "type" => "rel8",
+                   "other_ib_gib" => other_ib_gib,
+                   "rel8ns" => rel8ns
+                  }
+                } = step) do
+    rel8ns = rel8ns |> Enum.concat(@default_rel8ns) |> Enum.uniq
+    step_index = count_steps(plan["steps"]) + 1
+    step = Map.put(step, "i", "#{step_index}")
+    plan = Map.put(plan, "steps", plan["steps"] ++ [step])
     {:ok, plan}
   end
   def add_step(plan, step) do
-    emsg = emsg_invalid_args([plan, step])
-    Logger.error emsg
-    {:error, emsg}
+    invalid_args([plan, step])
   end
 
-  def add_fork(plan, name, dest_ib) do
+  def add_fork(plan, name, dest_ib)
+    when is_bitstring(dest_ib) do
     add_step(
               plan,
               %{
                 "name" => name,
-                # "arg" => "[src]",
                 "f_data" => %{
                   "type" => "fork",
                   "dest_ib" => dest_ib
@@ -171,6 +194,46 @@ defmodule IbGib.TransformBuilder do
               }
             )
   end
+  def add_fork(plan, name, dest_ib) do
+    invalid_args([plan, name, dest_ib])
+  end
+
+  def add_mut8(plan, name, new_data)
+    when is_map(new_data) do
+    add_step(
+              plan,
+              %{
+                "name" => name,
+                "f_data" => %{
+                  "type" => "mut8",
+                  "new_data" => new_data
+                }
+              }
+            )
+  end
+  def add_mut8(plan, name, new_data) do
+    invalid_args([plan, name, new_data])
+  end
+
+  def add_rel8(plan, name, other_ib_gib, rel8ns)
+    when is_bitstring(other_ib_gib) and other_ib_gib !== @root_ib_gib and
+         is_list(rel8ns) do
+    add_step(
+              plan,
+              %{
+                "name" => name,
+                "f_data" => %{
+                  "type" => "rel8",
+                  "other_ib_gib" => other_ib_gib,
+                  "rel8ns" => rel8ns |> Enum.concat(@default_rel8ns) |> Enum.uniq,
+                }
+              }
+            )
+  end
+  def add_rel8(plan, name, other_ib_gib, rel8ns) do
+    invalid_args([plan, name, other_ib_gib, rel8ns])
+  end
+
 
   @doc """
   Counts the number of step infos in the given steps list.
@@ -191,8 +254,8 @@ defmodule IbGib.TransformBuilder do
   def count_steps(steps) when is_nil(steps) do
     0
   end
-  def count_steps(steps) when is_bitstring(steps) do
-    # 1-item lists get morphed into bitstrings for some reason in elixir. :-/
+  def count_steps(steps) when is_map(steps) do
+    # 1-item lists get morphed into the item for some reason in elixir. :-/
     count_steps([steps])
   end
   def count_steps(steps) when is_list(steps) and length(steps) == 0 do

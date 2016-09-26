@@ -17,4 +17,11 @@ defmodule IbGib.Macros do
     end
   end
 
+  defmacro invalid_args(args) do
+    quote do
+      emsg = emsg_invalid_args(unquote(args))
+      Logger.error emsg
+      {:error, emsg}
+    end
+  end
 end

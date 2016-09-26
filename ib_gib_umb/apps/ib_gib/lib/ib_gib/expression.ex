@@ -343,7 +343,8 @@ defmodule IbGib.Expression do
 
     Logger.debug "a[:gib] set to gib: #{this_gib}"
 
-    on_new_expression_completed(ib, this_gib, a)
+    {:ok, {ib, this_gib, a}}
+    # on_new_expression_completed(ib, this_gib, a)
   end
 
   defp apply_mut8_metadata(a_data, b_new_data_metadata)
@@ -915,11 +916,11 @@ defmodule IbGib.Expression do
     end
   end
 
-  defp apply_next(a_info, %{:ib => "fork"} = next_info) do
+  defp apply_next(a_info, next_info) do
     Logger.debug "next_info:\n#{inspect next_info, pretty: true}"
-
     with(
-      {:ok, {this_ib, this_gib, this_info}} <- apply_fork(a_info, next_info),
+      {:ok, {this_ib, this_gib, this_info}} <-
+        apply_next_impl(a_info, next_info),
       {:ok, this_ib_gib} <- Helper.get_ib_gib(this_ib, this_gib)
     ) do
       {:ok, {this_ib_gib, this_ib, this_gib, this_info}}
@@ -931,6 +932,16 @@ defmodule IbGib.Expression do
         Logger.error "#{inspect error}"
         {:error, "#{inspect error}"}
     end
+  end
+
+  defp apply_next_impl(a_info, %{:ib => "fork"} = next_info) do
+    apply_fork(a_info, next_info)
+  end
+  defp apply_next_impl(a_info, %{:ib => "mut8"} = next_info) do
+    apply_mut8(a_info, next_info)
+  end
+  defp apply_next_impl(a_info, %{:ib => "rel8"} = next_info) do
+    apply_rel8(a_info, next_info)
   end
 
   # For now, the implementation is just to call start_expression
@@ -1103,6 +1114,35 @@ defmodule IbGib.Expression do
         {:error, "#{inspect error}"}
     end
   end
+  defp build_and_save_next_transform("mut8", identity_ib_gibs, src_ib_gib,
+    f_data) do
+
+    # Probably need to actually get this from somewhere, but for now I'm
+    # going with the default until I see the reason otherwise.
+    opts = @default_transform_options
+
+    with(
+    # 1. Create transform
+      {:ok, mut8_info} <-
+        TransformFactory.mut8(src_ib_gib,
+                              identity_ib_gibs,
+                              f_data["new_data"],
+                              opts),
+      # 2. Save transform
+      {:ok, :ok} <- IbGib.Data.save(mut8_info),
+      # 3. Get the transform's ib^gib
+      {:ok, mut8_ib_gib} <- Helper.get_ib_gib(mut8_info[:ib], mut8_info[:gib])
+    ) do
+      {:ok, {mut8_ib_gib, mut8_info}}
+    else
+      {:error, reason} ->
+        Logger.error "#{inspect reason}"
+        {:error, reason}
+      error ->
+        Logger.error "#{inspect error}"
+        {:error, "#{inspect error}"}
+    end
+  end
 
   defp get_next_step(b_info) do
     # At this point, should always be a next step, i.e. plan isn't complete
@@ -1260,7 +1300,7 @@ defmodule IbGib.Expression do
   Returns the new forked process' pid or an error.
   """
   @spec fork(pid, list(String.t), String.t, map) :: {:ok, pid} | {:error, any}
-  def fork(expr_pid, identity_ib_gibs, dest_ib,
+  def fork(expr_pid, identity_ib_gibs, dest_ib \\ @default_fork_dest_ib,
            opts \\ @default_transform_options)
   def fork(expr_pid, identity_ib_gibs, dest_ib, opts)
     when is_pid(expr_pid) and
@@ -1512,16 +1552,18 @@ defmodule IbGib.Expression do
   # ----------------------------------------------------------------------------
 
   defp fork_impl(identity_ib_gibs, dest_ib, opts, state) do
-    info = state[:info]
-    ib = info[:ib]
-    gib = info[:gib]
-    ib_gib = Helper.get_ib_gib!(ib, gib)
+    Logger.debug "state: #{inspect state}"
 
     with(
+      info <- state[:info],
+      {ib, gib} <- {info[:ib], info[:gib]},
+      {:ok, ib_gib} <- Helper.get_ib_gib(ib, gib),
+
       # Build the plan (_simple_ happy pipe would be awesome)
       {:ok, plan} <- TB.plan(identity_ib_gibs, "[src]"),
-      {:ok, plan} <- TB.add_fork(plan, "fork1", "[src.ib]"),
+      {:ok, plan} <- TB.add_fork(plan, "fork1", dest_ib),
       {:ok, plan} <- TB.yo(plan, opts),
+
       # Save the plan
       {:ok, :ok} <- IbGib.Data.save(plan),
       {:ok, plan_ib_gib} <- Helper.get_ib_gib(plan),
@@ -1540,29 +1582,6 @@ defmodule IbGib.Expression do
         Logger.error "#{inspect error}"
         {:error, "#{inspect error}"}
     end
-
-    # # 1. Create transform
-    # with {:ok, fork_info} <- TransformFactory.fork(Helper.get_ib_gib!(ib, gib), identity_ib_gibs, dest_ib, opts),
-    #
-    #   # 2. Save transform
-    #   {:ok, :ok} <- IbGib.Data.save(fork_info),
-    #
-    #   # 3. Create instance process of fork
-    #   {:ok, fork} <- IbGib.Expression.Supervisor.start_expression({fork_info[:ib], fork_info[:gib]}),
-    #
-    #   # 4. Apply transform
-    #   {:ok, new_pid} <- contact_impl(fork, state) do
-    #
-    #   # 5. Return new process of applied transform
-    #   {:ok, new_pid}
-    # else
-    #   {:error, reason} ->
-    #     Logger.error "#{inspect reason}"
-    #     {:error, reason}
-    #   error ->
-    #     Logger.error "#{inspect error}"
-    #     {:error, "#{inspect error}"}
-    # end
   end
 
   # ----------------------------------------------------------------------------
@@ -1570,27 +1589,27 @@ defmodule IbGib.Expression do
   # ----------------------------------------------------------------------------
 
   defp mut8_impl(identity_ib_gibs, new_data, opts, state) do
-    info = state[:info]
-    ib = info[:ib]
-    gib = info[:gib]
+    Logger.debug "state: #{inspect state}"
 
-    # 1. Create transform
-    with {:ok, mut8_info} <-
-        TransformFactory.mut8(Helper.get_ib_gib!(ib, gib), identity_ib_gibs,
-                              new_data, opts),
+    with(
+      info <- state[:info],
+      {ib, gib} <- {info[:ib], info[:gib]},
+      {:ok, ib_gib} <- Helper.get_ib_gib(ib, gib),
 
-      # 2. Save transform
-      {:ok, :ok} <- IbGib.Data.save(mut8_info),
+      # Build the plan (_simple_ happy pipe would be awesome)
+      {:ok, plan} <- TB.plan(identity_ib_gibs, "[src]"),
+      {:ok, plan} <- TB.add_mut8(plan, "mut81", new_data),
+      {:ok, plan} <- TB.yo(plan, opts),
 
-      # 3. Create instance process of mut8
-      {:ok, mut8} <-
-        IbGib.Expression.Supervisor.start_expression({mut8_info[:ib],
-                                                      mut8_info[:gib]}),
+      # Save the plan
+      {:ok, :ok} <- IbGib.Data.save(plan),
+      {:ok, plan_ib_gib} <- Helper.get_ib_gib(plan),
 
-      # 4. Apply transform
-      {:ok, new_pid} <- contact_impl(mut8, state) do
-
-      # 5. Return new process of applied transform
+      # Express (via spawned processes), passing only relevant ib^gib pointers.
+      {:ok, new_ib_gib} <- express(identity_ib_gibs, ib_gib, info, plan_ib_gib),
+      {:ok, new_pid} <- IbGib.Expression.Supervisor.start_expression(new_ib_gib)
+    ) do
+      # {:ok, new_ib_gib}
       {:ok, new_pid}
     else
       {:error, reason} ->
@@ -1604,31 +1623,30 @@ defmodule IbGib.Expression do
 
   defp rel8_impl(other_pid, identity_ib_gibs, rel8ns, opts, state) do
     Logger.debug "state: #{inspect state}"
-    info = state[:info]
 
-    # 1. Create transform
-    with {:ok, this_ib_gib} <- Helper.get_ib_gib(info[:ib], info[:gib]),
-      {:ok, :ok} <- log_yo(:debug, "what up"),
+    with(
+      info <- state[:info],
+      {ib, gib} <- {info[:ib], info[:gib]},
+      {:ok, ib_gib} <- Helper.get_ib_gib(ib, gib),
       {:ok, other_info} <- IbGib.Expression.get_info(other_pid),
       {:ok, other_ib_gib} <-
         Helper.get_ib_gib(other_info[:ib], other_info[:gib]),
-      {:ok, rel8_info} <-
-        this_ib_gib
-        |> TransformFactory.rel8(other_ib_gib, identity_ib_gibs, rel8ns, opts),
 
-      # 2. Save transform
-      {:ok, :ok} <- IbGib.Data.save(rel8_info),
+      # Build the plan (_simple_ happy pipe would be awesome)
+      {:ok, plan} <- TB.plan(identity_ib_gibs, "[src]"),
+      {:ok, plan} <- TB.add_rel8(plan, "rel81", other_ib_gib, rel8ns),
+      {:ok, plan} <- TB.yo(plan, opts),
 
-      # 3. Create instance process of rel8
-      {:ok, rel8} <-
-        IbGib.Expression.Supervisor.start_expression({rel8_info[:ib],
-                                                      rel8_info[:gib]}),
+      # Save the plan
+      {:ok, :ok} <- IbGib.Data.save(plan),
+      {:ok, plan_ib_gib} <- Helper.get_ib_gib(plan),
 
-      # 4. Apply transform to both this and other
-      {:ok, new_this} <- contact_impl(rel8, state) do
-
-        # 5. Return new processes of applied rel8
-      {:ok, new_this}
+      # Express (via spawned processes), passing only relevant ib^gib pointers.
+      {:ok, new_ib_gib} <- express(identity_ib_gibs, ib_gib, info, plan_ib_gib),
+      {:ok, new_pid} <- IbGib.Expression.Supervisor.start_expression(new_ib_gib)
+    ) do
+      # {:ok, new_ib_gib}
+      {:ok, new_pid}
     else
       {:error, reason} ->
         Logger.error "#{inspect reason}"
@@ -1637,6 +1655,38 @@ defmodule IbGib.Expression do
         Logger.error "#{inspect error}"
         {:error, "#{inspect error}"}
     end
+    #
+    # # 1. Create transform
+    # with {:ok, this_ib_gib} <- Helper.get_ib_gib(info[:ib], info[:gib]),
+    #   {:ok, :ok} <- log_yo(:debug, "what up"),
+    #   {:ok, other_info} <- IbGib.Expression.get_info(other_pid),
+    #   {:ok, other_ib_gib} <-
+    #     Helper.get_ib_gib(other_info[:ib], other_info[:gib]),
+    #   {:ok, rel8_info} <-
+    #     this_ib_gib
+    #     |> TransformFactory.rel8(other_ib_gib, identity_ib_gibs, rel8ns, opts),
+    #
+    #   # 2. Save transform
+    #   {:ok, :ok} <- IbGib.Data.save(rel8_info),
+    #
+    #   # 3. Create instance process of rel8
+    #   {:ok, rel8} <-
+    #     IbGib.Expression.Supervisor.start_expression({rel8_info[:ib],
+    #                                                   rel8_info[:gib]}),
+    #
+    #   # 4. Apply transform to both this and other
+    #   {:ok, new_this} <- contact_impl(rel8, state) do
+    #
+    #     # 5. Return new processes of applied rel8
+    #   {:ok, new_this}
+    # else
+    #   {:error, reason} ->
+    #     Logger.error "#{inspect reason}"
+    #     {:error, reason}
+    #   error ->
+    #     Logger.error "#{inspect error}"
+    #     {:error, "#{inspect error}"}
+    # end
   end
 
   defp instance_impl(@bootstrap_identity_ib_gib, dest_ib, opts, state) do
@@ -1650,22 +1700,29 @@ defmodule IbGib.Expression do
     end
   end
   defp instance_impl(identity_ib_gibs, dest_ib, opts, state) do
-    Logger.debug "_state_: #{inspect state}"
-    Logger.debug "dest_ib: #{dest_ib}"
+    Logger.debug "state: #{inspect state}"
 
-    # I think when we instance, we're just going to keep the same ib. It will
-    # of course create a new gib hash. I think this is what we want to do...
-    # I'm not sure!
-    # info = state[:info]
-    # fork_dest_ib = info[:ib]
-    # fork_dest_ib = Helper.new_id
-    with {:ok, this_ib_gib} <-
-        Helper.get_ib_gib(state[:info][:ib], state[:info][:gib]),
-      {:ok, forked} <- fork_impl(identity_ib_gibs, dest_ib, opts, state),
-      {:ok, :ok} <- log_yo(:debug, "fork complete. forked pid: #{inspect forked}\nself pid: #{inspect self}"),
-      {:ok, instance} <-
-        forked |> rel8(self, identity_ib_gibs, ["instance_of"], opts) do
-      {:ok, instance}
+    with(
+      info <- state[:info],
+      {ib, gib} <- {info[:ib], info[:gib]},
+      {:ok, ib_gib} <- Helper.get_ib_gib(ib, gib),
+
+      # Build the plan (_simple_ happy pipe would be awesome)
+      {:ok, plan} <- TB.plan(identity_ib_gibs, "[src]"),
+      {:ok, plan} <- TB.add_fork(plan, "fork1", dest_ib),
+      {:ok, plan} <- TB.add_rel8(plan, "rel8_2_src", "[plan.src]", ["instance_of"]),
+      {:ok, plan} <- TB.yo(plan, opts),
+
+      # Save the plan
+      {:ok, :ok} <- IbGib.Data.save(plan),
+      {:ok, plan_ib_gib} <- Helper.get_ib_gib(plan),
+
+      # Express (via spawned processes), passing only relevant ib^gib pointers.
+      {:ok, new_ib_gib} <- express(identity_ib_gibs, ib_gib, info, plan_ib_gib),
+      {:ok, new_pid} <- IbGib.Expression.Supervisor.start_expression(new_ib_gib)
+    ) do
+      # {:ok, new_ib_gib}
+      {:ok, new_pid}
     else
       {:error, reason} ->
         Logger.error "#{inspect reason}"
@@ -1674,6 +1731,30 @@ defmodule IbGib.Expression do
         Logger.error "#{inspect error}"
         {:error, "#{inspect error}"}
     end
+    # Logger.debug "_state_: #{inspect state}"
+    # Logger.debug "dest_ib: #{dest_ib}"
+    #
+    # # I think when we instance, we're just going to keep the same ib. It will
+    # # of course create a new gib hash. I think this is what we want to do...
+    # # I'm not sure!
+    # # info = state[:info]
+    # # fork_dest_ib = info[:ib]
+    # # fork_dest_ib = Helper.new_id
+    # with {:ok, this_ib_gib} <-
+    #     Helper.get_ib_gib(state[:info][:ib], state[:info][:gib]),
+    #   {:ok, forked} <- fork_impl(identity_ib_gibs, dest_ib, opts, state),
+    #   {:ok, :ok} <- log_yo(:debug, "fork complete. forked pid: #{inspect forked}\nself pid: #{inspect self}"),
+    #   {:ok, instance} <-
+    #     forked |> rel8(self, identity_ib_gibs, ["instance_of"], opts) do
+    #   {:ok, instance}
+    # else
+    #   {:error, reason} ->
+    #     Logger.error "#{inspect reason}"
+    #     {:error, reason}
+    #   error ->
+    #     Logger.error "#{inspect error}"
+    #     {:error, "#{inspect error}"}
+    # end
   end
 
   defp log_yo(:debug, msg) do

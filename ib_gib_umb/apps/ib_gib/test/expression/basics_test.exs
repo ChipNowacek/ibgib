@@ -41,7 +41,7 @@ defmodule IbGib.Expression.BasicsTest do
     assert get_expr_pid === expr_pid
   end
 
-  # @tag :capture_log
+  @tag :capture_log
   test "create expression, from scratch, root Thing, fork" do
     {result, expr_pid} = Expression.Supervisor.start_expression()
     assert result === :ok
@@ -201,7 +201,7 @@ defmodule IbGib.Expression.BasicsTest do
   end
 
   @tag :capture_log
-  test "create text, create instance from text" do
+  test "create text, create instance from text via forks" do
     # Pids are essentially references to objects. So that is why I'm going to_
     # start changing some of the _pid variables to the actual "instance" itself.
 
