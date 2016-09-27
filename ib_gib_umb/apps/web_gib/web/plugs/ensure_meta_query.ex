@@ -55,7 +55,7 @@ defmodule WebGib.Plugs.EnsureMetaQuery do
           # Execute the actual query
           {:ok, meta_query_result} <-
             first_identity
-            |> query([@bootstrap_identity_ib_gib, first_identity_ib_gib], query_opts),
+            |> query([@root_ib_gib, first_identity_ib_gib], query_opts),
 
           # Parse our results
           {:ok, meta_query_result_info} <- meta_query_result |> get_info,
@@ -101,11 +101,14 @@ defmodule WebGib.Plugs.EnsureMetaQuery do
   defp get_meta_query_opts(identity_ib_gibs)
     when is_list(identity_ib_gibs) do
     # We need to create the user's most recent
+
+    search_identities = identity_ib_gibs -- [@root_ib_gib]
+
     query_opts =
       do_query
       |> where_ib("is", "query_result")
       |> where_rel8ns("ancestor", "with", "ibgib", "query_result#{@delim}gib")
-      |> where_rel8ns("identity", "withany", "ibgib", identity_ib_gibs)
+      |> where_rel8ns("identity", "withany", "ibgib", search_identities)
     {:ok, query_opts}
   end
 
@@ -117,7 +120,10 @@ defmodule WebGib.Plugs.EnsureMetaQuery do
   end
   defp get_first_identity_ib_gib(identity_ib_gibs)
     when is_list(identity_ib_gibs) and identity_ib_gibs != [] do
-    get_first_identity_ib_gib(Enum.at(identity_ib_gibs, 0))
+      identity_ib_gibs
+      |> Enum.filter(&(&1 != @root_ib_gib))
+      |> Enum.at(0)
+      |> get_first_identity_ib_gib()
   end
   defp get_first_identity_ib_gib(identity_ib_gibs) do
     emsg = emsg_invalid_args(identity_ib_gibs)

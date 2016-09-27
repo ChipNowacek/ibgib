@@ -24,7 +24,6 @@ defmodule WebGib.IbGibController do
     Logger.warn "conn: #{inspect conn}"
     Logger.debug "index. params: #{inspect params}"
 
-
     conn
     |> assign(:ib, "ib")
     |> assign(:gib, "gib")
@@ -438,7 +437,7 @@ defmodule WebGib.IbGibController do
   defp do_comment(conn, %{"src_ib_gib" => src_ib_gib, "comment_text" => comment_text}) do
     Logger.debug "src_ib_gib: #{src_ib_gib}\ncomment_text: #{comment_text}"
     case comment_impl(conn, conn.assigns[:root], src_ib_gib, comment_text) do
-      {:ok, {commented_thing, new_comment}} ->
+      {:ok, commented_thing} ->
 
         commented_thing_info = commented_thing |> Expression.get_info!
         ib = commented_thing_info[:ib]
@@ -462,35 +461,31 @@ defmodule WebGib.IbGibController do
          src_ib_gib !== "" and comment_text !== "" do
     Logger.debug "comment_text: #{comment_text}"
 
-    with {:ok, src} <- IbGib.Expression.Supervisor.start_expression(src_ib_gib),
+    with(
+      identity_ib_gibs <- conn |> get_session(@ib_identity_ib_gibs_key),
+      {:ok, src} <- IbGib.Expression.Supervisor.start_expression(src_ib_gib),
       {:ok, comment_gib} <-
         IbGib.Expression.Supervisor.start_expression("comment#{@delim}gib"),
-      {:ok, comment} <- comment_gib |> Expression.fork("comment", @default_transform_options),
-      {:ok, comment} <- comment |> Expression.mut8(%{"text" => comment_text}, @default_transform_options),
       {:ok, comment} <-
-        comment |> tag_identification(get_session(conn, @ib_identity_ib_gibs_key)),
-      {:ok, {new_src, new_comment}} <- src |> Expression.rel8(comment, ["comment"], @default_transform_options) do
-      {:ok, {new_src, new_comment}}
-    else
-      {:error, reason} when is_bitstring(reason) -> {:error, reason}
-      {:error, reason} -> {:error, inspect reason}
-      error -> {:error, inspect error}
-    end
-  end
-
-  # This adds the current user's identity(s) to the given ib_gib src (pid). The
-  # conn session has the characteristic of returning a single bitstring instead
-  # of an array if there is only one identity, thus we have a naming problem.
-  # So the identity info is either a single identity ib_gib bitstring, or a
-  # list of identity ib_gib bitstrings.
-  # Returns either {:ok, new_ib_gib} or {:error, reason}
-  defp tag_identification(src, identity_info)
-  defp tag_identification(src, identity_ib_gib)
-    when is_pid(src) and is_bitstring(identity_ib_gib) do
-    with {:ok, identity} <-
-      IbGib.Expression.Supervisor.start_expression(identity_ib_gib),
-      {:ok, {new_src, _new_identity}} <-
-        src |> Expression.rel8(identity, ["identity"], @default_rel8ns, %{"gib_stamp" => "true"}) do
+        comment_gib
+        |> Expression.fork(identity_ib_gibs,
+                           "comment",
+                           @default_transform_options),
+      {:ok, comment} <-
+        comment
+        |> Expression.mut8(identity_ib_gibs,
+                           %{"text" => comment_text},
+                           @default_transform_options),
+      # {:ok, comment} <-
+      #   comment
+      #   |> tag_identification(get_session(conn, @ib_identity_ib_gibs_key)),
+      {:ok, new_src} <-
+        src
+        |> Expression.rel8(comment,
+                           identity_ib_gibs,
+                           ["comment"],
+                           @default_transform_options)
+    ) do
       {:ok, new_src}
     else
       {:error, reason} when is_bitstring(reason) -> {:error, reason}
@@ -498,22 +493,43 @@ defmodule WebGib.IbGibController do
       error -> {:error, inspect error}
     end
   end
-  defp tag_identification(src, identity_ib_gibs)
-    when is_pid(src) and is_list(identity_ib_gibs) do
-    # For each identity_ib_gib, we pass in the previous src and rel8 it to the
-    # given identity_ib_gib, starting with the passed in src.
-    Enum.reduce(identity_ib_gibs, {:ok, src}, fn (identity_ib_gib, acc) ->
-      case acc do
-        {:ok, this_src} -> tag_identification(this_src, identity_ib_gib)
 
-        # If there is an error at any point, we stop trying to do any more and
-        # just pass the error. Remember, this is not a huge loop, (I don't
-        # plan on it being huge anyway...maybe in the future if this is used
-        # for a bunch of people to "sign" something, who knows.)
-        {:error, reason} -> {:error, reason}
-      end
-    end)
-  end
+  # # This adds the current user's identity(s) to the given ib_gib src (pid). The
+  # # conn session has the characteristic of returning a single bitstring instead
+  # # of an array if there is only one identity, thus we have a naming problem.
+  # # So the identity info is either a single identity ib_gib bitstring, or a
+  # # list of identity ib_gib bitstrings.
+  # # Returns either {:ok, new_ib_gib} or {:error, reason}
+  # defp tag_identification(src, identity_info)
+  # defp tag_identification(src, identity_ib_gib)
+  #   when is_pid(src) and is_bitstring(identity_ib_gib) do
+  #   with {:ok, identity} <-
+  #     IbGib.Expression.Supervisor.start_expression(identity_ib_gib),
+  #     {:ok, new_src} <-
+  #       src |> Expression.rel8(identity, identity_ib_gib, ["identity"], @default_rel8ns, %{"gib_stamp" => "true"}) do
+  #     {:ok, new_src}
+  #   else
+  #     {:error, reason} when is_bitstring(reason) -> {:error, reason}
+  #     {:error, reason} -> {:error, inspect reason}
+  #     error -> {:error, inspect error}
+  #   end
+  # end
+  # defp tag_identification(src, identity_ib_gibs)
+  #   when is_pid(src) and is_list(identity_ib_gibs) do
+  #   # For each identity_ib_gib, we pass in the previous src and rel8 it to the
+  #   # given identity_ib_gib, starting with the passed in src.
+  #   Enum.reduce(identity_ib_gibs, {:ok, src}, fn (identity_ib_gib, acc) ->
+  #     case acc do
+  #       {:ok, this_src} -> tag_identification(this_src, identity_ib_gib)
+  #
+  #       # If there is an error at any point, we stop trying to do any more and
+  #       # just pass the error. Remember, this is not a huge loop, (I don't
+  #       # plan on it being huge anyway...maybe in the future if this is used
+  #       # for a bunch of people to "sign" something, who knows.)
+  #       {:error, reason} -> {:error, reason}
+  #     end
+  #   end)
+  # end
 
 
   # ----------------------------------------------------------------------------
