@@ -79,12 +79,12 @@ defmodule IbGib.Constants do
     quote do
       @test_identities_1 [
         @bootstrap_identity_ib_gib,
-        "test identity1#{@delim}gib"
+        "test identity1#{@delim}ibGib_gib_ibGib"
       ]
       @test_identities_2 [
         @bootstrap_identity_ib_gib,
-        "test identity1#{@delim}gib",
-        "test identity2222222222#{@delim}gib"
+        "test identity1#{@delim}ibGib_gib_ibGib",
+        "test identity2222222222#{@delim}ibGib_gib_ibGib"
       ]
     end
   end

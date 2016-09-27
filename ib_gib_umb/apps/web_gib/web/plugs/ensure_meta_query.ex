@@ -39,14 +39,18 @@ defmodule WebGib.Plugs.EnsureMetaQuery do
       Logger.warn "identity_ib_gibs: #{inspect identity_ib_gibs}"
 
       conn =
-        with {:ok, query_opts} <- get_meta_query_opts(identity_ib_gibs),
+        with(
+          {:ok, query_opts} <- get_meta_query_opts(identity_ib_gibs),
           # Setup the query.
           # We need the first identity ib_gib to do the query
           {:ok, first_identity_ib_gib} <-
             get_first_identity_ib_gib(identity_ib_gibs),
+          :ok <- Logger.warn("first_identity_ib_gib: #{first_identity_ib_gib}"),
           # ...and the process off of which to perform the query
           {:ok, first_identity} <-
             IbGib.Expression.Supervisor.start_expression(first_identity_ib_gib),
+          {:ok, first_identity_info} <- first_identity |> get_info,
+          :ok <- Logger.warn("first_identity_info:\n#{inspect first_identity_info, pretty: true}"),
 
           # Execute the actual query
           {:ok, meta_query_result} <-
@@ -58,8 +62,8 @@ defmodule WebGib.Plugs.EnsureMetaQuery do
           {:ok, meta_query_ib_gib} <-
             get_meta_query_ib_gib(meta_query_result_info),
           {:ok, meta_query_result_ib_gib} <-
-            Helper.get_ib_gib(meta_query_result_info) do
-
+            Helper.get_ib_gib(meta_query_result_info)
+        ) do
           # At this point, our query was executed, and we have both the
           # query's and query result's ib_gib to store in session.
 

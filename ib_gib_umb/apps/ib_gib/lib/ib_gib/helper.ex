@@ -416,6 +416,18 @@ defmodule IbGib.Helper do
     false
   end
 
+  def valid_identity?(@root_ib_gib) do
+    true
+  end
+  def valid_identity?(ib_gib) do
+    if valid_ib_gib?(ib_gib) do
+      {_ib, gib} = separate_ib_gib!(ib_gib)
+      gib_stamped?(gib)
+    else
+      false
+    end
+  end
+
   def validate_identity_ib_gibs(identity_ib_gibs)
     when is_list(identity_ib_gibs) do
     valid_identity_ib_gibs =

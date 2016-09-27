@@ -612,6 +612,38 @@ defmodule IbGib.Expression do
     end
   end
 
+  # Remember
+  # When you have eaten and are satisfied,
+  #   give thanks to the Lord Your God for the lands he has given you.
+  # Be careful that you do not forget the Lord Your God, failing to observe his
+  #   commands, laws, and decrees that I am giving you this day.
+  # Otherwise, when you eat and are satisfied,
+  #   when you build fine houses and settle down,
+  #   And when your flocks and herds grow large,
+  #   when your silver and gold increase
+  #   and all you have is multiplied,
+  # Then your heart will become proud,
+  #   and you will forget the Lord Your God,
+  #   Who brought you out of Egypt,
+  #   out of the land of slavery.
+  # If you are working _for_ someone else, then you are a slave. Jesus showed
+  # his disciples about distributed workloads. He condemned the capi sacerdoti
+  # for placing heavy loads on the flock, while they themselves would not
+  # carry the burden. They would dress for fancy dinners and hold highly
+  # exalted positions. He washed his disciples feet, which many today feel is
+  # somewhat akin to "you just have to clean each other a little going forward",
+  # assuming you are with your Brothers & Sisters in Christ (a distributed
+  # network). But it is not limited to just cleaning each other a little bit,
+  # although that is part of it. This is showing us distributed load balancing.
+  # Jesus, being the King of Kings (MetaKing), washed their feet to show that
+  # they, _even when they become the "boss"_, should continue as servants.
+  # When you read the Bible, and you read about Egypt, you are reading about
+  # escaping the slavery of having to be told what to do because you have
+  # overcome the bottom-up urges and learned to temper them. Self-control, but
+  # not self-tyranny. Then you will be working *for* others who are working
+  # *for* you. If you reject Jesus' teachings, then you are condemning yourself
+  # to subjugation to others in Egypt, in the land of slavery.
+
   # Check to make sure that our identities are valid (authorization)
   # The passed in identities must contain **all** of the existing identities.
   # Otherwise, the caller does not have the proper authorization, and should
@@ -626,21 +658,28 @@ defmodule IbGib.Expression do
   # b must always have at least one identity
   @spec authorize_apply_b(atom, map, map) :: list(String.t)
   defp authorize_apply_b(which, a_rel8ns, b_rel8ns)
-  defp authorize_apply_b(:fork = which, a_rel8ns, b_rel8ns) do
-    # When authorizing a fork, we only care that both a and b _have_ identities,
-    # because anyone can fork anything. Authorization here is really just
-    # checking for error in code or more nefarious monkey business.
+  defp authorize_apply_b(which, a_rel8ns, b_rel8ns)
+    when which == :fork or which == :query do
+    # When authorizing a fork or query, we only care that both a and b _have_
+    # valid identities, because anyone can fork/read anything else.
+    # Authorization here is really just checking for error in code or more
+    # nefarious monkey business and ensuring that whoever could be doing said
+    # monkey business at least has some identity.
     Logger.metadata([x: which])
-    Logger.debug "which: #{:fork}"
+    Logger.debug "which: #{which}"
     Logger.warn "a_rel8ns: #{inspect a_rel8ns}"
     Logger.warn "b_rel8ns: #{inspect b_rel8ns}"
 
     a_has_identity =
       Map.has_key?(a_rel8ns, "identity") and
-      length(a_rel8ns["identity"]) > 0
+      length(a_rel8ns["identity"]) > 0 and
+      Enum.all?(a_rel8ns["identity"], &Helper.valid_identity?/1)
+      # Enum.all?(a_rel8ns["identity"], &(Helper.valid_identity?(&1)))
     b_has_identity =
       Map.has_key?(b_rel8ns, "identity") and
-      length(b_rel8ns["identity"]) > 0
+      length(b_rel8ns["identity"]) > 0 and
+      Enum.all?(b_rel8ns["identity"], &Helper.valid_identity?/1)
+      # Enum.all?(b_rel8ns["identity"], &(Helper.valid_identity?(&1)))
 
     if a_has_identity and b_has_identity do
       b_identity = b_rel8ns["identity"]
@@ -660,10 +699,14 @@ defmodule IbGib.Expression do
     Logger.warn "b_rel8ns: #{inspect b_rel8ns}"
     a_has_identity =
       Map.has_key?(a_rel8ns, "identity") and
-      length(a_rel8ns["identity"]) > 0
+      # Every identity rel8ns should have ib^gib
+      length(a_rel8ns["identity"]) > 0 and
+      Enum.all?(a_rel8ns["identity"], &Helper.valid_identity?/1)
     b_has_identity =
       Map.has_key?(b_rel8ns, "identity") and
+      # Every identity rel8ns should have ib^gib
       length(b_rel8ns["identity"]) > 0
+      Enum.all?(b_rel8ns["identity"], &Helper.valid_identity?/1)
 
     case {a_has_identity, b_has_identity} do
       {true, true} ->
@@ -712,6 +755,7 @@ defmodule IbGib.Expression do
           emsg_invalid_authorization(expected, actual)
     end
   end
+
 
   # ----------------------------------------------------------------------------
   # Client API - Meta
@@ -850,7 +894,7 @@ defmodule IbGib.Expression do
     # what we have done so far.
     new_state = %{:info => this_info}
 
-    if (plan_complete?(plan_info)) do
+    if plan_complete?(plan_info) do
       {:ok, this_ib_gib, new_state}
     else
       with(

@@ -345,7 +345,7 @@ defmodule WebGib.IbGibController do
 
   defp do_fork(conn, %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib}) do
     Logger.debug "src_ib_gib: #{src_ib_gib}\ndest_ib: #{dest_ib}"
-    case fork_impl(conn.assigns[:root], src_ib_gib, dest_ib) do
+    case fork_impl(conn, conn.assigns[:root], src_ib_gib, dest_ib) do
       {:ok, forked_thing} ->
         Logger.info "forked_thing: #{inspect forked_thing}"
 
@@ -366,8 +366,8 @@ defmodule WebGib.IbGibController do
     end
   end
 
-  defp fork_impl(root, src_ib_gib \\ @root_ib_gib, dest_ib \\ new_id)
-  defp fork_impl(root, src_ib_gib, dest_ib)
+  defp fork_impl(conn, root, src_ib_gib \\ @root_ib_gib, dest_ib \\ new_id)
+  defp fork_impl(conn, root, src_ib_gib, dest_ib)
     when is_bitstring(src_ib_gib) and is_bitstring(dest_ib) and
          src_ib_gib !== "" and dest_ib !== "" do
     Logger.debug "dest_ib: #{dest_ib}"
@@ -379,10 +379,12 @@ defmodule WebGib.IbGibController do
         thing
       end
 
+    identity_ib_gibs = conn |> get_session(@ib_identity_ib_gibs_key)
+
     src
-    |> Expression.fork(dest_ib)
+    |> Expression.fork(identity_ib_gibs, dest_ib, @default_transform_options)
   end
-  defp fork_impl(root, src_ib_gib, dest_ib)
+  defp fork_impl(conn, root, src_ib_gib, dest_ib)
     when is_bitstring(src_ib_gib) and is_bitstring(dest_ib) and
          src_ib_gib !== "" and (dest_ib === "" or is_nil(dest_ib)) do
       fork_impl(root, src_ib_gib, new_id)
@@ -463,11 +465,11 @@ defmodule WebGib.IbGibController do
     with {:ok, src} <- IbGib.Expression.Supervisor.start_expression(src_ib_gib),
       {:ok, comment_gib} <-
         IbGib.Expression.Supervisor.start_expression("comment#{@delim}gib"),
-      {:ok, comment} <- comment_gib |> Expression.fork("comment"),
-      {:ok, comment} <- comment |> Expression.mut8(%{"text" => comment_text}),
+      {:ok, comment} <- comment_gib |> Expression.fork("comment", @default_transform_options),
+      {:ok, comment} <- comment |> Expression.mut8(%{"text" => comment_text}, @default_transform_options),
       {:ok, comment} <-
         comment |> tag_identification(get_session(conn, @ib_identity_ib_gibs_key)),
-      {:ok, {new_src, new_comment}} <- src |> Expression.rel8(comment, ["comment"]) do
+      {:ok, {new_src, new_comment}} <- src |> Expression.rel8(comment, ["comment"], @default_transform_options) do
       {:ok, {new_src, new_comment}}
     else
       {:error, reason} when is_bitstring(reason) -> {:error, reason}
