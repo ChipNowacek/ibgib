@@ -817,20 +817,20 @@ defmodule IbGib.Expression do
       # Get plan process and info
       {:ok, b} <- get_process(identity_ib_gibs, b_ib_gib),
 
-      {:ok, :ok} <- log_yo(:warn, "1\nb: #{inspect b}"),
+      # {:ok, :ok} <- log_yo(:warn, "1\nb: #{inspect b}"),
 
       {:ok, plan_info} <- b |> get_info,
 
-      {:ok, :ok} <- log_yo(:warn, "2\nplan_info:\n#{inspect plan_info, [pretty: true]}"),
+      # {:ok, :ok} <- log_yo(:warn, "2\nplan_info:\n#{inspect plan_info, [pretty: true]}"),
       # -----------------------
       # Compile the plan to a concrete plan, and get the next step (transform)
       {:ok, {concrete_plan_info, next_step_transform_info, next_step_index}} <-
         compile(identity_ib_gibs, a_ib_gib, b_ib_gib, plan_info),
 
-      {:ok, :ok} <- log_yo(:warn, "3\nconcrete_plan_info:\n#{inspect concrete_plan_info, pretty: true}\nnext_step_transform_info:\n#{inspect next_step_transform_info, pretty: true}"),
+      # {:ok, :ok} <- log_yo(:warn, "3\nconcrete_plan_info:\n#{inspect concrete_plan_info, pretty: true}\nnext_step_transform_info:\n#{inspect next_step_transform_info, pretty: true}"),
       # -----------------------
       # Prepare `a` information.
-      {:ok, :ok} <- log_yo(:warn, "4\na_info: #{inspect a_info, pretty: true}"),
+      # {:ok, :ok} <- log_yo(:warn, "4\na_info: #{inspect a_info, pretty: true}"),
       {:ok, a_info} <-
         (
           if is_nil(a_info) do
@@ -844,7 +844,7 @@ defmodule IbGib.Expression do
           end
         ),
 
-      {:ok, :ok} <- log_yo(:warn, "5\na_info: #{inspect a_info, pretty: true}"),
+      # {:ok, :ok} <- log_yo(:warn, "5\na_info: #{inspect a_info, pretty: true}"),
       # -----------------------
       # We now have both `a` and `b`.
       # We can now express this "blank" process by applying the next step
@@ -863,13 +863,13 @@ defmodule IbGib.Expression do
       #  will not be rel8d to this)
       {:ok, :ok} <- IbGib.Data.save(this_info),
       # -----------------------
-      {:ok, final_ib_gib, final_state} <-
+      {:ok, {final_ib_gib, final_state}} <-
         on_complete_express_iteration(identity_ib_gibs,
                                       this_ib_gib,
                                       this_info,
                                       concrete_plan_info)
     ) do
-      log_yo(:debug, "6")
+      # log_yo(:debug, "6\nfinal_ib_gib: #{final_ib_gib}\nfinal_state:\n#{inspect final_state, pretty: true}")
       {:ok, {final_ib_gib, final_state}}
     else
       {:error, reason} ->
@@ -895,16 +895,14 @@ defmodule IbGib.Expression do
     new_state = %{:info => this_info}
 
     if plan_complete?(plan_info) do
-      {:ok, this_ib_gib, new_state}
+      {:ok, {this_ib_gib, new_state}}
     else
       with(
         # At this point the "next" step is the one we've just executed.
         {:ok, {next_step, next_step_index}} <- get_next_step(plan_info),
-        {:ok, :ok} <-
-          log_yo(:warn, "huh wha ahhhhh"),
         new_next_step <- Map.put(next_step, "out", this_ib_gib),
-        {:ok, :ok} <-
-          log_yo(:debug, "plan_info:\n#{inspect plan_info, pretty: true}"),
+        # {:ok, :ok} <-
+        #   log_yo(:debug, "plan_info:\n#{inspect plan_info, pretty: true}"),
         new_steps <-
           List.replace_at(plan_info[:data]["steps"],
                           next_step_index - 1,
@@ -912,11 +910,10 @@ defmodule IbGib.Expression do
         new_plan_info_data <- Map.put(plan_info[:data], "steps", new_steps),
         new_plan_info <- Map.put(plan_info, :data, new_plan_info_data),
 
-        {:ok, :ok} <-
-          log_yo(:debug, "safdasdfasdfasdfsdfsdfsdfdsfds"),
-
         # Increment plan "i" (step index)
         new_plan_info <- increment_plan_step_index(new_plan_info),
+        # {:ok, :ok} <-
+        #   log_yo(:debug, "after increment plan step index. new_plan_info:\n#{inspect new_plan_info, pretty: true}"),
 
         # Recalculate the gib hash and save
         new_plan_gib <-
@@ -924,19 +921,19 @@ defmodule IbGib.Expression do
                       new_plan_info[:rel8ns],
                       new_plan_info[:data]),
         new_plan_info <- Map.put(new_plan_info, :gib, new_plan_gib),
-        {:ok, :ok} <-
-          log_yo(:debug, "hrmm..new_plan_info before saving:\n#{inspect new_plan_info, pretty: true}"),
+        # {:ok, :ok} <-
+        #   log_yo(:debug, "hrmm..new_plan_info before saving:\n#{inspect new_plan_info, pretty: true}"),
         {:ok, :ok} <- IbGib.Data.save(new_plan_info),
 
         {:ok, new_plan_ib_gib} <- Helper.get_ib_gib(new_plan_info),
 
-        {:ok, :ok} <- log_yo(:debug, "recursive????"),
+        # {:ok, :ok} <- log_yo(:debug, "recursive????"),
 
         # Call express recursively with our new information!
-        {:ok, {final_ib_gib, final_state}} <-
+        {:ok, final_ib_gib} <-
           express(identity_ib_gibs, this_ib_gib, this_info, new_plan_ib_gib)
       ) do
-        {:ok, {final_ib_gib, final_state}}
+        {:ok, {final_ib_gib, new_state}}
       else
         {:error, reason} ->
           Logger.error "#{inspect reason}"
@@ -981,11 +978,6 @@ defmodule IbGib.Expression do
 
   defp apply_next_impl(a_info, %{:ib => "fork"} = next_info) do
     Logger.warn "next_info:\n#{inspect next_info, pretty: true}"
-    Logger.warn "next_info:\n#{inspect next_info, pretty: true}"
-    Logger.warn "next_info:\n#{inspect next_info, pretty: true}"
-    Logger.warn "next_info:\n#{inspect next_info, pretty: true}"
-    Logger.warn "next_info:\n#{inspect next_info, pretty: true}"
-    Logger.warn "next_info:\n#{inspect next_info, pretty: true}"
     apply_fork(a_info, next_info)
   end
   defp apply_next_impl(a_info, %{:ib => "mut8"} = next_info) do
@@ -1018,7 +1010,7 @@ defmodule IbGib.Expression do
       end
 
     Logger.debug "b_info: #{inspect b_info}"
-    Logger.warn "before compile"
+    # Logger.warn "before compile"
     case concretize_and_save_plan(identity_ib_gibs, a_ib_gib, b_ib_gib, b_info) do
       # We have concretized the plan, including the next step transform,
       # and we want to return that new transform to express.
@@ -1047,7 +1039,7 @@ defmodule IbGib.Expression do
       available_vars <- get_available_vars(a_ib_gib, old_plan_info),
 
       # Update our plan with those variables replaced.
-      new_plan_info <- replace_variables_in_map(available_vars, old_plan_info),
+      new_plan_info <- replace_variables(available_vars, old_plan_info),
 
       # With the variables replaced, we now have a possibly more concrete
       # b_info, but it may not be fully concrete.
@@ -1067,17 +1059,19 @@ defmodule IbGib.Expression do
                                       new_plan_info),
 
       # Fill in the next_step's "ibgib" field
-      {:ok, :ok} <-
-        log_yo(:debug, "before...next_step[ibgib]: #{next_step["ibgib"]}"),
+      # {:ok, :ok} <- log_yo(:debug, "before...next_step[ibgib]: #{next_step["ibgib"]}"),
+      # {:ok, :ok} <- log_yo(:debug, "next_step_transform_info:\n#{inspect next_step_transform_info, pretty: true}"),
       {:ok, next_step} <- {:ok, Map.put(next_step, "ibgib", next_step_ibgib)},
-      {:ok, :ok} <-
-        log_yo(:debug, "after...next_step[ibgib]: #{next_step["ibgib"]}"),
+      # {:ok, :ok} <- log_yo(:debug, "after...next_step[ibgib]: #{next_step["ibgib"]}"),
 
       # Replace the newly edited step in the map
       new_plan_steps <-
         new_plan_info[:data]["steps"] |> convert_to_list_if_needed,
       new_plan_steps <-
-        List.replace_at(new_plan_steps, next_step_index, next_step),
+        List.replace_at(new_plan_steps, next_step_index - 1, next_step),
+      # :ok <- (
+      #   if TB.count_steps(new_plan_info[:data]["steps"]) == 1, do: :ok, else: :error
+      # ), #debugg
       new_plan_data <- Map.put(new_plan_info[:data], "steps", new_plan_steps),
       new_plan_info <- Map.put(new_plan_info, :data, new_plan_data),
 
@@ -1094,11 +1088,10 @@ defmodule IbGib.Expression do
       new_plan_gib <-
         Helper.hash(new_plan_info[:ib], new_plan_rel8ns, new_plan_data),
       new_plan_info <- Map.put(new_plan_info, :gib, new_plan_gib),
-      {:ok, :ok} <-
-        log_yo(:debug, "new_plan_info before saving:\n#{inspect new_plan_info, pretty: true}"),
+      # {:ok, :ok} <- log_yo(:debug, "new_plan_info before saving:\n#{inspect new_plan_info, pretty: true}"),
 
       {:ok, :ok} <- IbGib.Data.save(new_plan_info),
-      {:ok, :ok} <- log_yo(:debug, "saved yaaaaaaaay"),
+      # {:ok, :ok} <- log_yo(:debug, "saved yaaaaaaaay"),
       {:ok, new_plan_ib_gib} <-
         Helper.get_ib_gib(new_plan_info[:ib], new_plan_gib)
     ) do
@@ -1118,13 +1111,15 @@ defmodule IbGib.Expression do
   defp increment_plan_step_index(new_plan_info) do
     Logger.warn "new_plan_info:\n#{inspect new_plan_info, pretty: true}"
     data = new_plan_info[:data]
-    steps_count = TB.count_steps(new_plan_info["steps"])
-    current_i = Integer.parse(data["i"])
+    steps_count = TB.count_steps(data["steps"])
+    current_i = String.to_integer(data["i"])
     if current_i < steps_count do
-      data = Map.put(data, "i", current_i + 1)
+      Logger.debug "bumping i. current_i: #{current_i}. steps_count: #{steps_count}"
+      data = Map.put(data, "i", "#{current_i + 1}")
       # Return plan with bumped i
       Map.put(new_plan_info, :data, data)
     else
+      Logger.debug "i unchanged. current_i: #{current_i}. steps_count: #{steps_count}"
       # Just return plan unchanged
       new_plan_info
     end
@@ -1248,20 +1243,6 @@ defmodule IbGib.Expression do
 
     # next_step_index is 1-based, Enum.at is 0-based
     next_step = Enum.at(steps, next_step_index - 1)
-
-    # {next_step, next_step_index} =
-    #   steps
-    #   |> Enum.reduce({nil, 0}, fn(step, {acc_next, i}) ->
-    #        if (acc_next == nil) do
-    #          if step["out"] == nil do
-    #            {step, i}
-    #          else
-    #            {nil, i + 1}
-    #          end
-    #        else
-    #          {acc_next, i}
-    #        end
-    #      end)
     if next_step do
       Logger.debug "next_step: #{inspect next_step, pretty: true}"
       {:ok, {next_step, next_step_index}}
@@ -1276,24 +1257,41 @@ defmodule IbGib.Expression do
   in values, replacing any value that is a `var_name` and replacing it
   with `var_value`.
   """
-  def replace_variables_in_map(available_vars, map) do
-    Logger.debug "args:\n#{inspect [available_vars, map], pretty: true}"
-    for {key, val} <- map, into: %{} do
-      val =
-        if is_map(val) do
-          # val itself is a map in which we need to replace variables, so call
-          # replace variables recursively to get the new value.
-          val = replace_variables_in_map(available_vars, val)
-        else
-          val
-        end
+  def replace_variables(available_vars, map) when is_map(map) do
+    proc_id = RandomGib.Get.some_letters(4)
+    Logger.metadata(x: proc_id)
+    # Logger.debug "available_vars:\n#{inspect available_vars, pretty: true}\n"
+    Logger.debug "map before:\n#{inspect map, pretty: true}"
+    result =
+      for {key, val} <- map, into: %{} do
+        val = replace_variables(available_vars, val)
 
-      # Logger.debug "val:\n#{inspect val, pretty: true}"
+        # If the Map.get is successful, then replace the variable with it.
+        # If it isn't found, then default to the existing value.
+        {key, Map.get(available_vars, val, val)}
+      end
 
-      # If the Map.get is successful, then replace the variable with it.
-      # If it isn't found, then default to the existing value.
-      {key, Map.get(available_vars, val, val)}
-    end
+    Logger.metadata(x: proc_id)
+    Logger.debug "map after:\n#{inspect result, pretty: true}"
+    result
+  end
+  def replace_variables(available_vars, list) when is_list(list) and length(list) == 0 do
+    Logger.debug "empty list"
+    list
+  end
+  def replace_variables(available_vars, list) when is_list(list) do
+    proc_id = RandomGib.Get.some_letters(4)
+    Logger.metadata(x: proc_id)
+    Logger.debug "list before:\n#{inspect list, pretty: true}"
+    result =
+      Enum.map(list, fn(item) -> replace_variables(available_vars, item) end)
+
+    Logger.metadata(x: proc_id)
+    Logger.debug "list after:\n#{inspect list, pretty: true}"
+    result
+  end
+  def replace_variables(available_vars, str) when is_bitstring(str) do
+    available_vars |> Map.get(str, str)
   end
 
   # Cornerstone
@@ -1321,6 +1319,8 @@ defmodule IbGib.Expression do
     {:ok, {a_ib, _}} = Helper.separate_ib_gib(a_ib_gib)
     plan_src = b_info[:data]["src"]
     {:ok, {plan_src_ib, _}} = Helper.separate_ib_gib(plan_src)
+
+
 
     # Initialize plan variables
     vars = %{
@@ -1790,16 +1790,16 @@ defmodule IbGib.Expression do
     end
   end
 
-  defp log_yo(:debug, msg) do
-    Logger.warn "This log msg is for dev purposes only!!! Should not be run in prod!!!"
-    Logger.debug msg, [pretty: true]
-    {:ok, :ok}
-  end
-  defp log_yo(:warn, msg) do
-    Logger.warn "This log msg is for dev purposes only!!! Should not be run in prod!!!"
-    Logger.warn msg, [pretty: true]
-    {:ok, :ok}
-  end
+  # defp log_yo(:debug, msg) do
+  #   Logger.warn "This log msg is for dev purposes only!!! Should not be run in prod!!!"
+  #   Logger.debug msg, [pretty: true]
+  #   {:ok, :ok}
+  # end
+  # defp log_yo(:warn, msg) do
+  #   Logger.warn "This log msg is for dev purposes only!!! Should not be run in prod!!!"
+  #   Logger.warn msg, [pretty: true]
+  #   {:ok, :ok}
+  # end
 
   defp query_impl(identity_ib_gibs, query_options, state)
     when is_map(query_options) do

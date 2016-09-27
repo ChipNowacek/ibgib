@@ -41,8 +41,8 @@ defmodule IbGib.Expression.HelloWorldTest do
     hw_instance_ib = "hw instance_#{RandomGib.Get.some_letters(5)}"
     {:ok, hw_instance} =
       hw |> Expression.fork(@test_identities_1, hw_instance_ib)
-    hw_instance_info = hw_instance |> Expression.get_info!
-    hw_instance_ib_gib = Helper.get_ib_gib!(hw_instance_info[:ib], hw_instance_info[:gib])
+    # hw_instance_info = hw_instance |> Expression.get_info!
+    # hw_instance_ib_gib = Helper.get_ib_gib!(hw_instance_info[:ib], hw_instance_info[:gib])
 
     Logger.debug "gonna text"
     # Randomized to keep unit tests from overlapping.
@@ -100,8 +100,8 @@ defmodule IbGib.Expression.HelloWorldTest do
     hw_instance_ib = "hw instance_#{RandomGib.Get.some_letters(5)}"
     {:ok, hw_instance} =
       hw |> Expression.fork(@test_identities_1, hw_instance_ib)
-    hw_instance_info = hw_instance |> Expression.get_info!
-    hw_instance_ib_gib = Helper.get_ib_gib!(hw_instance_info[:ib], hw_instance_info[:gib])
+    # hw_instance_info = hw_instance |> Expression.get_info!
+    # hw_instance_ib_gib = Helper.get_ib_gib!(hw_instance_info[:ib], hw_instance_info[:gib])
 
     Logger.debug "gonna text"
     # Randomized to keep unit tests from overlapping.
@@ -133,7 +133,7 @@ defmodule IbGib.Expression.HelloWorldTest do
     hw_instance_rel8d_ib_gib = Helper.get_ib_gib!(hw_instance_rel8d_info[:ib], hw_instance_rel8d_info[:gib])
     Logger.debug "hw_instance_rel8d_info: #{inspect hw_instance_rel8d_info}"
     text_instance_rel8d_info = text_instance_rel8d |> Expression.get_info!
-    text_instance_rel8d_ib_gib = Helper.get_ib_gib!(text_instance_rel8d_info[:ib], text_instance_rel8d_info[:gib])
+    # text_instance_rel8d_ib_gib = Helper.get_ib_gib!(text_instance_rel8d_info[:ib], text_instance_rel8d_info[:gib])
     Logger.debug "text_instance_rel8d_info: #{inspect text_instance_rel8d_info}"
 
     assert hw_instance_rel8d_info[:rel8ns]["rel8d"] === [text_instance_ib_gib]
