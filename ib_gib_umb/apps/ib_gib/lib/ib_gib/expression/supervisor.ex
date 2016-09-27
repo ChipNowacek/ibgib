@@ -80,7 +80,7 @@ defmodule IbGib.Expression.Supervisor do
     args = [{:apply, {a, b}}]
     start(args)
   end
-  def start_expression({identity_ib_gibs, a, @root_ib_gib}) when is_bitstring(a) do
+  def start_expression({_identity_ib_gibs, a, @root_ib_gib}) when is_bitstring(a) do
     Logger.warn "Attempted to start_expression with identity transform"
     {:ok, a}
   end

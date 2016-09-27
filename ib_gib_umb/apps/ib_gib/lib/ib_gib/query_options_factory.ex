@@ -119,7 +119,7 @@ defmodule IbGib.QueryOptionsFactory do
     when is_map(acc_options) and is_bitstring(search_term) and
          is_bitstring(method) and is_valid_ib_method(method) do
 
-    {current_key, current_options, current_details} =
+    {current_key, current_options, _current_details} =
       get_current(acc_options, "ib")
 
 
@@ -150,7 +150,7 @@ defmodule IbGib.QueryOptionsFactory do
     when is_map(acc_options) and is_bitstring(search_term) and
          is_bitstring(method) and is_valid_ib_method(method) do
 
-    {current_key, current_options, current_details} =
+    {current_key, current_options, _current_details} =
       get_current(acc_options, "gib")
 
     this_details = %{
@@ -198,7 +198,7 @@ defmodule IbGib.QueryOptionsFactory do
     when is_map(acc_options) and is_bitstring(search_term) and
          is_bitstring(method) and is_valid_data_method(method) and
          is_bitstring(where) and is_valid_key_and_or_value(where) do
-    {current_key, current_options, current_details} =
+    {current_key, current_options, _current_details} =
       get_current(acc_options, "data")
 
     this_details = %{
@@ -324,7 +324,7 @@ defmodule IbGib.QueryOptionsFactory do
   sorting by `inserted_at` and limiting to 1.
   """
   def most_recent_only(acc_options) do
-    {current_key, current_options, current_details} =
+    {current_key, current_options, _current_details} =
       get_current(acc_options, "time")
 
     this_details = %{

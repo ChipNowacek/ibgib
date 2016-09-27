@@ -229,6 +229,7 @@ defmodule IbGib.TransformFactory do
     end
   end
   defp stamp_if_needed(gib, is_needed) do
+    Logger.warn emsg_invalid_args([gib, is_needed])
     gib
   end
 

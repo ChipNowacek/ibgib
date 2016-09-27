@@ -143,10 +143,10 @@ defmodule IbGib.TransformBuilder do
   `f_data` is the information to create a "transform function" ib_gib.
   """
   def add_step(plan,
-               %{"name" => name,
+               %{"name" => _name,
                  "f_data" => %{
                    "type" => "fork",
-                   "dest_ib" => dest_ib
+                   "dest_ib" => _dest_ib
                   }
                 } = step) do
     step_index = count_steps(plan["steps"]) + 1
@@ -155,10 +155,10 @@ defmodule IbGib.TransformBuilder do
     {:ok, plan}
   end
   def add_step(plan,
-               %{"name" => name,
+               %{"name" => _name,
                  "f_data" => %{
                    "type" => "mut8",
-                   "new_data" => new_data
+                   "new_data" => _new_data
                   }
                 } = step) do
     step_index = count_steps(plan["steps"]) + 1
@@ -167,14 +167,18 @@ defmodule IbGib.TransformBuilder do
     {:ok, plan}
   end
   def add_step(plan,
-               %{"name" => name,
+               %{"name" => _name,
                  "f_data" => %{
                    "type" => "rel8",
-                   "other_ib_gib" => other_ib_gib,
+                   "other_ib_gib" => _other_ib_gib,
                    "rel8ns" => rel8ns
                   }
                 } = step) do
+
     rel8ns = rel8ns |> Enum.concat(@default_rel8ns) |> Enum.uniq
+    step_f_data = Map.put(step["f_data"], "rel8ns", rel8ns)
+    step = Map.put(step, "f_data", step_f_data)
+
     step_index = count_steps(plan["steps"]) + 1
     step = Map.put(step, "i", "#{step_index}")
     plan = Map.put(plan, "steps", plan["steps"] ++ [step])
@@ -291,6 +295,7 @@ defmodule IbGib.TransformBuilder do
     end
   end
   defp stamp_if_needed(gib, is_needed) do
+    Logger.warn "Invalid args: #{inspect [gib, is_needed]}"
     gib
   end
 

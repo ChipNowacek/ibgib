@@ -85,11 +85,11 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
     m
     |> Enum.reduce_while(running_size,
       fn(item, acc) ->
-        Logger.debug "item: #{inspect item}"
+        # Logger.debug "item: #{inspect item}"
         {key, value} = item
 
-        Logger.debug "key: #{inspect key}\nvalue: #{inspect value}"
-        Logger.debug "is_list(value): #{is_list(value)}"
+        # Logger.debug "key: #{inspect key}\nvalue: #{inspect value}"
+        # Logger.debug "is_list(value): #{is_list(value)}"
         if is_bitstring(key) do
           key_length = key |> String.length
 

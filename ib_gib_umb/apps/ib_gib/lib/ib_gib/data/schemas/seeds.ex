@@ -43,7 +43,7 @@ defmodule IbGib.Data.Schemas.Seeds do
     end
     :ok
   end
-  def insert({ib_atom, specifier}, data)
+  def insert({ib_atom, specifier}, _data)
     when is_atom(ib_atom) and is_atom(specifier) and
          (specifier in @specifiers) do
     ib = Atom.to_string(ib_atom)

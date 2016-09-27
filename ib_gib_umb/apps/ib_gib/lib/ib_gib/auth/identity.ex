@@ -236,20 +236,22 @@ defmodule IbGib.Auth.Identity do
     end
   end
   defp create_identity_if_needed(existing_ib_gib, _, _) do
-    with {:ok, identity} <-
+    with(
+     {:ok, identity} <-
         IbGib.Expression.Supervisor.start_expression(existing_ib_gib),
-      {:ok, identity_info} <- identity |> get_info,
-      {:ok, identity_ib_gib} <- get_ib_gib(identity_info) do
+      {:ok, identity_info} <- identity |> get_info
+      # {:ok, identity_ib_gib} <- get_ib_gib(identity_info)
+    ) do
       {:ok, {existing_ib_gib, identity_info, identity}}
     else
       {:error, reason} -> {:error, reason}
     end
   end
 
-  @doc """
-  Looks at the existing `identity_info` and compares it to the given
-  `identity_data`. If it's the same, then it simply returns the identity
-  """
+  # @doc """
+  # Looks at the existing `identity_info` and compares it to the given
+  # `identity_data`. If it's the same, then it simply returns the identity
+  # """
   defp update_data(identity_info, identity_data, identity, identity_ib_gib)
     when is_map(identity_info) and is_map(identity_data) and
          is_pid(identity) and is_bitstring(identity_ib_gib) do

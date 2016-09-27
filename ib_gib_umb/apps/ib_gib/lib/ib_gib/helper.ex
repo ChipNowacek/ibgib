@@ -401,10 +401,16 @@ defmodule IbGib.Helper do
     iex> IbGib.Helper.gib_stamped?("someGIB")
     false
 
-    iex> IbGib.Helper.gib_stamped?("")
+    iex> Logger.disable(self)
+    ...> result = IbGib.Helper.gib_stamped?("")
+    ...> Logger.enable(self)
+    ...> result
     false
 
-    iex> IbGib.Helper.gib_stamped?(%{"not" => "a bitstring"})
+    iex> Logger.disable(self)
+    ...> result = IbGib.Helper.gib_stamped?(%{"not" => "a bitstring"})
+    ...> Logger.enable(self)
+    ...> result
     false
   """
   def gib_stamped?(gib) when is_bitstring(gib) and gib != "" do
@@ -413,6 +419,7 @@ defmodule IbGib.Helper do
     String.ends_with?(gib, @gib_stamp)
   end
   def gib_stamped?(gib) do
+    Logger.warn emsg_invalid_args(gib)
     false
   end
 
