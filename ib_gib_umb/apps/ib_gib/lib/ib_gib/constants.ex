@@ -16,6 +16,7 @@ defmodule IbGib.Constants do
       # if change, must also change in regex below
       @delim "^"
       @root_ib_gib "ib#{@delim}gib"
+      @error_gib "error#{@delim}gib"
 
       defp min_id_length, do: 1
       defp max_id_length, do: 76
@@ -43,7 +44,9 @@ defmodule IbGib.Constants do
       # and not a user.
       @gib_stamp "ibGib"
 
-      @default_transform_options %{:gib_stamp => false}
+      @default_transform_options %{"gib_stamp" => "false"}
+      @default_transform_src "[src]"
+      @default_fork_dest_ib "[src.ib]"
 
       # This key prefix is a helper that indicates some meta action for the
       # corresponding key/value entry in a map.
@@ -76,12 +79,12 @@ defmodule IbGib.Constants do
     quote do
       @test_identities_1 [
         @bootstrap_identity_ib_gib,
-        "test identity1#{@delim}gib"
+        "test identity1#{@delim}ibGib_gib_ibGib"
       ]
       @test_identities_2 [
         @bootstrap_identity_ib_gib,
-        "test identity1#{@delim}gib",
-        "test identity2222222222#{@delim}gib"
+        "test identity1#{@delim}ibGib_gib_ibGib",
+        "test identity2222222222#{@delim}ibGib_gib_ibGib"
       ]
     end
   end

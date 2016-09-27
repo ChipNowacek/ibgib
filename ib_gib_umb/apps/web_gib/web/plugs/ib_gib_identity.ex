@@ -6,6 +6,7 @@ defmodule WebGib.Plugs.IbGibIdentity do
   require Logger
   import Plug.Conn
 
+  use IbGib.Constants, :ib_gib
   use WebGib.Constants, :keys
   use WebGib.Constants, :error_msgs
   alias IbGib.Auth.Identity
@@ -78,7 +79,8 @@ defmodule WebGib.Plugs.IbGibIdentity do
 
         conn
         |> put_session(@ib_session_ib_gib_key, identity_ib_gib)
-        |> put_session(@ib_identity_ib_gibs_key, [identity_ib_gib])
+        |> put_session(@ib_identity_ib_gibs_key,
+                       [@root_ib_gib, identity_ib_gib])
 
       {:error, reason} when is_bitstring(reason) ->
         Logger.error "Error with identity. Reason: #{reason}"

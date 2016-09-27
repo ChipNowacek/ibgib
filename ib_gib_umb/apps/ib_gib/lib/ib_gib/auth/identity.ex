@@ -101,6 +101,15 @@ defmodule IbGib.Auth.Identity do
   @spec get_identity(map, map) :: {:ok, String.t} | {:error, any}
   def get_identity(priv_data, pub_data)
     when is_map(priv_data) and is_map(pub_data) do
+      Logger.warn "get_identity yooooooooooooooooooooo"
+      Logger.warn "get_identity yooooooooooooooooooooo"
+      Logger.warn "get_identity yooooooooooooooooooooo"
+      Logger.warn "get_identity yooooooooooooooooooooo"
+      Logger.warn "get_identity yooooooooooooooooooooo"
+      Logger.warn "get_identity yooooooooooooooooooooo"
+      Logger.warn "get_identity yooooooooooooooooooooo"
+      Logger.warn "get_identity yoooooooooooooooooooooabcasdf"
+      Logger.warn "get_identity yooooooooooooooooooooo"
     with {:ok, root_identity} <- IbGib.Expression.Supervisor.start_expression({"identity", "gib"}),
       {:ok, identity_ib} <- generate_identity_ib(priv_data),
       {:ok, latest} <- get_latest_identity_ib_gib(identity_ib, root_identity),
@@ -214,46 +223,54 @@ defmodule IbGib.Auth.Identity do
   # authenticated, and we will need to bootstrap an identity for them.
   defp create_identity_if_needed(existing_ib_gib, root_identity, identity_ib)
     when is_nil(existing_ib_gib) do
-    with {:ok, {_, identity}} <-
-           root_identity
-           |> instance(@bootstrap_identity_ib_gib, identity_ib, %{:gib_stamp => true}),
+    with(
+      {:ok, identity} <-
+        root_identity
+        |> instance(@bootstrap_identity_ib_gib, identity_ib, %{"gib_stamp" => "true"}),
       {:ok, identity_info} <- identity |> get_info,
-      {:ok, identity_ib_gib} <- get_ib_gib(identity_info) do
+      {:ok, identity_ib_gib} <- get_ib_gib(identity_info)
+    ) do
       {:ok, {identity_ib_gib, identity_info, identity}}
     else
       {:error, reason} -> {:error, reason}
     end
   end
   defp create_identity_if_needed(existing_ib_gib, _, _) do
-    with {:ok, identity} <-
+    with(
+     {:ok, identity} <-
         IbGib.Expression.Supervisor.start_expression(existing_ib_gib),
-      {:ok, identity_info} <- identity |> get_info,
-      {:ok, identity_ib_gib} <- get_ib_gib(identity_info) do
+      {:ok, identity_info} <- identity |> get_info
+      # {:ok, identity_ib_gib} <- get_ib_gib(identity_info)
+    ) do
       {:ok, {existing_ib_gib, identity_info, identity}}
     else
       {:error, reason} -> {:error, reason}
     end
   end
 
-  @doc """
-  Looks at the existing `identity_info` and compares it to the given
-  `identity_data`. If it's the same, then it simply returns the identity
-  """
+  # @doc """
+  # Looks at the existing `identity_info` and compares it to the given
+  # `identity_data`. If it's the same, then it simply returns the identity
+  # """
   defp update_data(identity_info, identity_data, identity, identity_ib_gib)
     when is_map(identity_info) and is_map(identity_data) and
          is_pid(identity) and is_bitstring(identity_ib_gib) do
     if Map.equal?(identity_info[:data], identity_data) do
+      Logger.debug "identity_info up-to-date"
       {:ok, identity_ib_gib}
     else
-      opts = %{:gib_stamp => true}
+      Logger.debug "identity_info out-of-date. identity_info:\n#{inspect identity_info, pretty: true}\nidentity_data:\n#{inspect identity_data, pretty: true}"
+      opts = %{"gib_stamp" => "true"}
       # Everyone is authorized with at least @bootstrap_identity_ib_gib, and
       # by providing the priv_data, the user has already been authorized with
       # current identity, identity_ib_gib. We are only looking to mut8 if we
       # should, so this should be correct authorization.
       authz = [@bootstrap_identity_ib_gib, identity_ib_gib]
-      with {:ok, new_identity} <- identity |> mut8(authz, identity_data, opts),
+      with(
+        {:ok, new_identity} <- identity |> mut8(authz, identity_data, opts),
         {:ok, new_identity_info} <- new_identity |> get_info,
-        {:ok, new_identity_ib_gib} <- new_identity_info |> get_ib_gib do
+        {:ok, new_identity_ib_gib} <- new_identity_info |> get_ib_gib
+      ) do
         {:ok, new_identity_ib_gib}
       else
         {:error, reason} -> {:error, reason}

@@ -10,7 +10,9 @@ defmodule IbGib.TransformFactory do
 
   require Logger
 
+  import IbGib.Macros
   alias IbGib.Helper
+
   use IbGib.Constants, :ib_gib
   use IbGib.Constants, :error_msgs
 
@@ -59,7 +61,9 @@ defmodule IbGib.TransformFactory do
           "identity" => identity_ib_gibs
         }
         data = %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib}
-        gib = Helper.hash(ib, relations, data) |> stamp_if_needed(opts[:gib_stamp])
+        gib =
+          Helper.hash(ib, relations, data) |>
+          stamp_if_needed(opts["gib_stamp"] == "true")
         result = %{
           ib: ib,
           gib: gib,
@@ -73,7 +77,7 @@ defmodule IbGib.TransformFactory do
     end
   end
   def fork(src_ib_gib, identity_ib_gibs, dest_ib, opts) do
-    {:error, emsg_invalid_args([src_ib_gib, identity_ib_gibs, dest_ib, opts])}
+    invalid_args([src_ib_gib, identity_ib_gibs, dest_ib, opts])
   end
 
   @doc """
@@ -81,7 +85,7 @@ defmodule IbGib.TransformFactory do
   `src_ib_gib`. This will perform a merge of the given `new_data` map onto the
   existing `data` map, replacing any identical keys.
 
-  If `opts` :gib_stamp is true, then we will "stamp" the gib, showing that the
+  If `opts` "gib_stamp" is true, then we will "stamp" the gib, showing that the
   gib was done by our engine and not by a user.
   """
   @spec mut8(String.t, list(String.t), map, map) :: {:ok, map} | {:error, String.t}
@@ -103,7 +107,7 @@ defmodule IbGib.TransformFactory do
           "identity" => identity_ib_gibs
         }
         data = %{"src_ib_gib" => src_ib_gib, "new_data" => new_data}
-        gib = Helper.hash(ib, relations, data) |> stamp_if_needed(opts[:gib_stamp])
+        gib = Helper.hash(ib, relations, data) |> stamp_if_needed(opts["gib_stamp"] == "true")
         result = %{
           ib: ib,
           gib: gib,
@@ -117,6 +121,7 @@ defmodule IbGib.TransformFactory do
     end
   end
   def mut8(src_ib_gib, identity_ib_gibs, new_data, opts) do
+    invalid_args([src_ib_gib, identity_ib_gibs, new_data, opts])
     {:error, emsg_invalid_args([src_ib_gib, identity_ib_gibs, new_data, opts])}
   end
 
@@ -151,7 +156,8 @@ defmodule IbGib.TransformFactory do
           "rel8ns" => rel8ns |> Enum.concat(@default_rel8ns) |> Enum.uniq,
         }
         gib =
-          Helper.hash(ib, relations, data) |> stamp_if_needed(opts[:gib_stamp])
+          Helper.hash(ib, relations, data)
+          |> stamp_if_needed(opts["gib_stamp"] == "true")
         result = %{
           ib: ib,
           gib: gib,
@@ -165,11 +171,7 @@ defmodule IbGib.TransformFactory do
     end
   end
   def rel8(src_ib_gib, other_ib_gib, identity_ib_gibs, rel8ns, opts) do
-    {
-      :error,
-      emsg_invalid_args([src_ib_gib, other_ib_gib, identity_ib_gibs,
-                         rel8ns, opts])
-    }
+    invalid_args([src_ib_gib, other_ib_gib, identity_ib_gibs, rel8ns, opts])
   end
 
   @doc """
@@ -212,6 +214,8 @@ defmodule IbGib.TransformFactory do
     {:error, emsg_invalid_args(query_opts)}
   end
 
+  # NOT DRY>>>>NOOOOOOOOOOO
+  # THIS IS DUPLICATED IN TRANSFORM_FACTORY/BUILDER
   # Stamping a gib means that it is "official", since a user doesn't (shouldn't)
   # have the ability to create their own gib.
   @spec stamp_if_needed(String.t, boolean) :: String.t
@@ -225,6 +229,7 @@ defmodule IbGib.TransformFactory do
     end
   end
   defp stamp_if_needed(gib, is_needed) do
+    Logger.warn emsg_invalid_args([gib, is_needed])
     gib
   end
 

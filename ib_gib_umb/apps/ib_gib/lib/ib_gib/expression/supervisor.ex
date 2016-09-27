@@ -80,16 +80,22 @@ defmodule IbGib.Expression.Supervisor do
     args = [{:apply, {a, b}}]
     start(args)
   end
+  def start_expression({_identity_ib_gibs, a, @root_ib_gib}) when is_bitstring(a) do
+    Logger.warn "Attempted to start_expression with identity transform"
+    {:ok, a}
+  end
+  def start_expression({identity_ib_gibs, a, a_info, b})
+    when is_list(identity_ib_gibs) and is_bitstring(a) and
+         (is_map(a_info) or is_nil(a_info)) and is_bitstring(b) do
+    Logger.debug "combining two ib via ib^gib"
+    args = [{:express, {identity_ib_gibs, a, a_info, b}}]
+    start(args)
+  end
 
   defp start(args) do
-    Logger.debug "Existing expression process not found in registry. Going to start a new expression process. start args: #{inspect args}"
+    Logger.debug "Starting new expression process... args: #{inspect args}"
 
     with {:ok, expr_pid} <- Supervisor.start_child(IbGib.Expression.Supervisor, args),
       do: {:ok, expr_pid}
   end
-  # def start_expression(:fork, fork_transform) when is_map(fork_transform) do
-  #   Logger.debug "#{inspect(fork_transform)}"
-  #   args = [{:fork, fork_transform}]
-  #   start(args)
-  # end
 end

@@ -5,57 +5,168 @@ defmodule IbGib.Expression do
 
   For starters, you can think of ib_gib as "things" or "objects". The term also
   will refer to the "name" of a "thing" or "object", represented by an "id"
-  (the `ib`) and the "hash" (the `gib`).
+  (the `ib`) and the "hash" (the `gib`). When you see the term with a `^`, this
+  refers specifically to the "pointer" for the ib_gib. Or if you like thinking
+  in terms of content addressable storage, the ib^gib refers to the "address" of
+  an ib_gib, defined as its `ib` + the delim (`^`) + its `gib`. Examples of this
+  include "ib^gib" to refer to the root ib_gib, "fork^gib", to refer to the
+  root fork transform, "some ib^ABC123" to refer to some example ib_gib.
 
-  "Expression" is the process of how we get "new" and "existing" ib_gib. If we
+  "Expression" is the process by which we "create new" ib_gib or "load existing"
+  ib_gib.
+
+  ## Loading Existing ib_gib
+
+  If we pass in an ib^gib to `IbGib.Expression.Supervisor`, then it
+  will attempt to find an existing ib_gib process. If not found, it will look
+  in an ets cache, and if still not found it will look in the repo.
   express an ib_gib that already exists in our repo, for instance, then it
   will create an `IbGib.Expression` process (supervised by the
-  `IbGib.Expression.Supervisor`) and hydrate its state from the repo. If we
-  are creating a "new" ib_gib or "mutating" an existing ib_gib, or are
-  executing some other action upon an existing ib_gib, then the expression
-  process will create the appropriate transform ib_gib (and processes) and then
-  generate the resultant ib_gib (and process(es)). While doing this, it
-  automatically saves each ib_gib's state in the repo.
+  `IbGib.Expression.Supervisor`) and hydrate its state from the repo.
+
+  ## Creating "New" ib_gib: `fork`, `mut8`, `rel8`
+
+  From a caller's POV, to create an ib_gib, we will usually call one of the
+  main public API functions: `fork`, `mut8`, `rel8`, `query`, or other
+  functions that are built on top of these, e.g. `instance` (which is a `fork`
+  with a subsequent `rel8`).
+
+  In the OOP paradigm, when we think of something "new", we usually mean
+  calling a constructor on a new instance of something. In ibGib, we mean that
+  we are transforming state to create some other state.
+
+  This can be a `fork`, which creates a "new" thing based off of some existing
+  one, and then adds the existing one to its "ancestor" relationship. In OOP,
+  this is similar to inheritance in a class heirarchy or a prototypal
+  inheritance.
+
+  Or it can be a `mut8`, which takes an existing thing and changes its internal
+  `data`. When mut8ing, we will create a relationship of the new thing with the
+  old by adding a "past" rel8n pointing to the original ib^gib.
+
+  We can also `rel8` things, which is like a mut8n, but changing an ib_gib's
+  `rel8ns` instead of its internal `data`. This will also add a `rel8n` to the
+  original ib_gib via the "past" rel8n.
+
+  ## Implementation Details
+
+  Internally, creating new ib_gib equates to bringing two ib_gib "into contact"
+  with each other. Since all ib_gib are immutable, this ends up creating a
+  "pure" functional programming style. So say you call fork on some ib_gib A,
+  like so (I'm omitting some syntax for didactic purposes):
+
+    `B = A |> fork(args)`
+
+  This will take the state from A and the args and create a `plan^gib`
+  descendant which will act as our function, with a plan^gib of something like
+  "plan^ABC". The `IbGib.Expression.Supervisor` will then create a new
+  child expression process that acts like a blank "stem-cell", and then it will
+  call `IbGib.Expression.express/4` on that process, passing in A's ib^gib, A's
+  state, B's ib^gib, and the identity/auth information of the caller.
+
+  This blank process will then express by combining A with B. In this case,
+  it will "apply" plan^ABC, in the process of doing so creating some fork,
+  `fork^XYZ`, and apply that fork. When it is done, there will be a "new"
+  ib_gib process with a state that is very similar to the original, but changed
+  "dna" and "history" `rel8ns` (as well as identity changes). This state will
+  be persisted to the repo as well and put into cache.
+
+  Realistically in code, this is jumping through a bunch of hoops, which in
+  general goes something like this:
+
+  * Client API called, `fork`
+  * `handle_call` for `:fork`
+  * `fork_impl/4` called,
+    * Builds the plan with the fork information
+    * Saves the plan (but not the fork_gib yet)
+  * `express/4` called
+    * Creates a blank "stem cell" process.
+  * `handle_call` for `:express` on blank process.
+  * `express_impl/5` called
+    * Concretizes plan, replacing any variables.
+    * Creates and applies `fork` transform.
+      * `apply_fork` called
+  * Returns newly created process.
 
   ## Init Functions
-  In in the init stage, an expression either loads existing information from
+
+  In the init stage, an expression either loads existing information from
   the `IbGib.Data.Repo` or `IbGib.Data.Cache`, or it does the work of two
   ib_gib coming into contact with each other (see the Apply Functions).
 
+  Note that this is a little fuzzy to me since I've implemented the plan
+  structure for more dynamic transform application. Init and apply are still
+  used though.
+
   ## Apply Functions
+
   These functions are called within init functions on new expressions. Here,
   we take the first ib_gib info (`a`) as our "starting point", and then we
   "apply" `b`, which for starters are pretty much transforms: `fork`, `mut8`,
   and `rel8`. When applying a query, I am not sure how the `a` will come into
   play, but initially it will be pretty much ignored (I think).
 
-  So these apply functions actually perform the "work" of combining two ib_gib.
+  So these apply functions actually perform the "work" of combining two ib_gib,
+  producing a new state in the form of a map.
 
-  ## Basic Client API Functions: `fork`, `mut8`, and `rel8`
-  Each expression process is the state of an ib_gib. The client API functions
-  expose functions for the basic, hard-coded transforms that can be executed
-  using that ib_gib state. These include `fork`, `mut8`, `rel8`. There are also
-  a couple other functions ATOW (2016/08/13): `query` and `instance`.
+  ## FAQ
 
-  The basic workflow is this (I'll use a fork as the example):
+  * Why do I keep quoting "new" as in creating a "new" ib_gib?
 
-  1. Create the fork transform based off of the source expression, save that
-     transform, and create a new running process with that transform's state.
+    "New" is a funny term. Each and every thing in existence can be thought of
+    as both new and old, simultaneously, apart, etc. Because the ascription of
+    the term is not a given. In a more concrete sense, if that's your thing,
+    you can understand that when we bring two ib_gib into contact with each
+    other to "create" a tertiary ib_gib, and if those two things have already
+    been brought into contact before, then they will produce the same result.
+    So it would not create a new thing, it would load an "existing" one. The
+    `gib` hash relies on the `ib`, the `data`, and the `rel8ns`. When it goes
+    to load it into the Repo, it will go "oops, I've already created this".
 
-     So at this point, we have the source expression and a new fork transform
-     expression process, with each's state already persisted to the repo.
+    Anyway, it's not a big thing. But me, personally, developing thing, it pops
+    into my mind that they're not necessarily "new", and they're not necessarily
+    being created, etc. (And they are. ibGib.)
 
-  2. Bring the transform "into contact" with the source expression, which will
-     create a tertiary ib_gib process. During init, this new process will
-     generate its own state that is a combination of the source and the
-     transform, thus "applying" the transform.
+  * What is the point of all of this?
 
-     So, basically, we've created a third ib_gib that is the result of combining
-     our transform and the source. So we will have in the end, the source
-     ib_gib process, a "fork" transform ib_gib process, and the resulting
-     "forked" ib_gib process. In the fork's instance, this new process will have
-     a new `ib`, new `gib`, the same (internal) `data`, and slightly different
-     `rel8ns`, including the source as an "ancestor" of the forked process.
+    There are a lot of "points", i.e. many use cases. You can now think of IoT
+    things, as this allows for a mechanism of relatinships and state to grow
+    and evolve. You can share texts, streams of texts, streams of pictures,
+    organizations of links. You can create reviews, you can share reviews. It's
+    basically like a new-ish microcosm of the interweb, but being content
+    addressable, shareable, identifiable.
+
+    It allows for big data to happen in the foreground, as I call it: LITL Data
+    (Live In The Light Data). This information is _already_ being collected
+    about you. This is bringing it into the light, relying more on
+    authentication than on encryption (but it will run on SSL).
+
+    I personally have been doing gardening recently, and I've come to create
+    photo albums of various sections of the gardens, etc. I can make superficial
+    comments here and there, and I can send a link...but I can't **relate**
+    things. I can't easily organize them. I can't take a photo and tag it with
+    "help", and then have someone else who is searching to lend help adds their
+    comments. I could then give feedback on the help. They could then give
+    feedback on the feedback. **ALL** of it is in the Light!
+
+    If consumers and/or businesses want to encapsulate their own internal
+    functions for producing the data, that's fine. Anyone can read the data. But
+    you have to identify yourself if you want to post new data, which cannot be
+    removed (except for illegal content, flagged, etc.).
+
+    And advertising and "blog" reviews takes on a whole new meaning. *Everyone*
+    who uses products can share what they do and what products they use. You
+    get to see how a product lasts over time, from the initial packaging to
+    the consumer use. You could also publish **before** the product makes it to
+    the consumer! You can publish your car getting worked on, and there is
+    no need for some specialized software to do the fundamental publishing.
+    You could still have specialized software to do the markup and presentation,
+    but the general workflow would be for producers to produce things that are
+    related to the consumers, to attribute relationships. Others can just go
+    around and relate things to each other.
+
+    So basically, it's like Amazon reviews + Twitter streams + Internet links +
+    Git content addressing/hashing + tons more.
   """
 
   use GenServer
@@ -67,10 +178,12 @@ defmodule IbGib.Expression do
   import IbGib.Macros
   alias IbGib.{TransformFactory, Helper, TransformFactory.Mut8Factory}
   alias IbGib.UnauthorizedError
+  alias IbGib.TransformBuilder, as: TB
 
   # ----------------------------------------------------------------------------
   # Constructors
   # ----------------------------------------------------------------------------
+
   @doc """
   Starts an expression via given `args` as follows:
 
@@ -92,6 +205,13 @@ defmodule IbGib.Expression do
     Logger.debug "a: {#{inspect a}\nb: #{inspect b}}"
     GenServer.start_link(__MODULE__, {:apply, {a, b}})
   end
+  def start_link({:express, {identity_ib_gibs, a, a_info, b}})
+    when is_bitstring(a) and (is_map(a_info) or is_nil(a_info)) and
+         is_bitstring(b) do
+    Logger.debug "express. a: {#{a}\nb: #{b}}"
+    GenServer.start_link(__MODULE__, {:express, {identity_ib_gibs, a, a_info, b}})
+  end
+
 
   # ----------------------------------------------------------------------------
   # Inits
@@ -120,16 +240,33 @@ defmodule IbGib.Expression do
   # Creating a "new" ib_gib from two existing ib_gib by "applying" b to a.
   def init({:apply, {a, b}}) when is_map(a) and is_map(b) do
     Logger.metadata([x: :apply])
+
     case {b[:ib], b[:gib]} do
       {"fork", b_gib} when b_gib != "gib" -> apply_fork(a, b)
       {"mut8", b_gib} when b_gib != "gib" -> apply_mut8(a, b)
       {"rel8", b_gib} when b_gib != "gib" -> apply_rel8(a, b)
       {"query", b_gib} when b_gib != "gib" -> apply_query(a, b)
-      {b_ib, b_gib} ->
+      {_b_ib, _b_gib} ->
         err_msg = "unknown combination: a: #{inspect a}, b: #{inspect b}"
         Logger.error err_msg
         {:error, err_msg}
     end
+  end
+  # Creating a "new" ib_gib from two existing ib_gib by "applying" b to a.
+  # This is going to be replacing the :apply version I think. WIP.
+  # I may be able to just remove all of these, and have this be a relatively
+  # blank init process function.
+  def init({:express, {identity_ib_gibs, a_ib_gib, _a_info, b_ib_gib}})
+    when is_bitstring(a_ib_gib) and is_bitstring(b_ib_gib) do
+    Logger.metadata([x: :express])
+    Logger.debug "express. identity_ib_gibs: #{inspect identity_ib_gibs}\na_ib_gib: #{a_ib_gib}\n, b_ib_gib: #{b_ib_gib}"
+
+    # First, we just store our state with mama and papa ib_gib (and identities)
+    # state = %{"expressed" => false, "a_info" => a_info}
+    # I don't think any state is required...but maybe the expressed flag would be good.
+    state = %{}
+
+    {:ok, state}
   end
 
   # Note: Root maps to "ib". All of the others map to the string.
@@ -183,13 +320,9 @@ defmodule IbGib.Expression do
     this_ib = fork_data["dest_ib"]
     this_info = Map.put(this_info, :ib, this_ib)
 
-    # rel8ns is tricky. Should we by default keep rel8ns except past?
-    # Or should we reset and only bring over `dna` and `ancestor`? Others?
-    # tricky...
-    a_dna = Map.get(a[:rel8ns], "dna", [])
     a_ancestor = Map.get(a[:rel8ns], "ancestor", [])
     this_rel8ns = Map.merge(a[:rel8ns], %{"past" => @default_past})
-    this_rel8ns = Map.put(this_rel8ns, "identity", b[:rel8ns]["identity"])
+    this_rel8ns = Map.put(this_rel8ns, "identity", b_identities)
     Logger.debug "this_rel8ns: #{inspect this_rel8ns}"
 
     this_info = Map.put(this_info, :rel8ns, this_rel8ns)
@@ -228,7 +361,7 @@ defmodule IbGib.Expression do
     this_info = Map.put(this_info, :gib, this_gib)
     Logger.debug "this_info: #{inspect this_info}"
 
-    on_new_expression_completed(this_ib, this_gib, this_info)
+    {:ok, {this_ib, this_gib, this_info}}
   end
 
   defp apply_mut8(a, b) do
@@ -318,7 +451,7 @@ defmodule IbGib.Expression do
 
     Logger.debug "a[:gib] set to gib: #{this_gib}"
 
-    on_new_expression_completed(ib, this_gib, a)
+    {:ok, {ib, this_gib, a}}
   end
 
   defp apply_mut8_metadata(a_data, b_new_data_metadata)
@@ -397,7 +530,7 @@ defmodule IbGib.Expression do
       |> Map.put(:rel8ns, a[:rel8ns])
       |> add_rel8n("past", a)
       |> add_rel8n("dna", b)
-    this_rel8ns = this_info[:rel8ns]
+      |> add_rel8n("identity", b_identities)
 
     # Add the rel8ns
     # This is the ib_gib to which we will rel8.
@@ -416,7 +549,7 @@ defmodule IbGib.Expression do
       this_info |> add_rel8ns(rel8n_names, other_ib_gib)
 
     this_rel8ns = this_info[:rel8ns]
-    Logger.debug "New rel8ns. this_rel8ns: #{this_rel8ns}"
+    Logger.debug "New rel8ns. this_rel8ns: #{inspect this_rel8ns}"
 
     # Now we calculate the new hash and set it to `:gib`.
     this_gib = Helper.hash(this_ib, this_rel8ns, this_data)
@@ -432,7 +565,7 @@ defmodule IbGib.Expression do
 
     Logger.debug "a[:gib] set to gib: #{a[:gib]}"
 
-    on_new_expression_completed(this_ib, this_gib, this_info)
+    {:ok, {this_ib, this_gib, this_info}}
   end
 
   defp add_rel8ns(this_info, rel8n_names, other_ib_gib) do
@@ -504,21 +637,25 @@ defmodule IbGib.Expression do
             acc ++ [Helper.get_ib_gib!(ib_gib_model.ib, ib_gib_model.gib)]
           end))
 
-    # who = IbGib.QueryOptionsFactory.get_identities(query_options)
-    #
-    # this_info =
-    #   if who != nil do
-    #     this_info
-    #     |> add_rel8n("identity", who)
-    #   else
-    #     this_info
-    #   end
-
     this_gib = Helper.hash(this_ib, this_info[:rel8ns], this_info[:data])
     this_info = Map.put(this_info, :gib, this_gib)
 
     Logger.debug "this_info is built yo! this_info: #{inspect this_info}"
-    on_new_expression_completed(this_ib, this_gib, this_info)
+
+    with(
+      # {:ok, ib_gib} <- Helper.get_ib_gib(this_ib, this_gib),
+      {:ok, :ok} <- IbGib.Data.save(this_info)
+    ) do
+      Logger.debug "Saved and registered ok. this_info: #{inspect this_info}"
+      {:ok, %{:info => this_info}}
+    else
+      {:error, result} ->
+        Logger.error "Save/Register error result: #{inspect result}"
+        {:error, result}
+      error ->
+        Logger.error "Save/Register error: #{inspect error}"
+        {:error, error}
+    end
   end
 
 
@@ -538,7 +675,9 @@ defmodule IbGib.Expression do
     # Logger.debug "bitstring yo"
     add_rel8n(a_info, relation_name, [b])
   end
-  defp add_rel8n(a_info, relation_name, b) when is_map(a_info) and is_bitstring(relation_name) and is_list(b) do
+  defp add_rel8n(a_info, relation_name, b)
+    when is_map(a_info) and is_bitstring(relation_name) and is_list(b) do
+      Logger.debug "a_info:\n#{inspect a_info, pretty: true}\nb:\n#{inspect b, pretty: true}"
     # Logger.debug "array list"
     b_is_list_of_ib_gib =
       b |> all?(fn(item) -> Helper.valid_ib_gib?(item) end)
@@ -547,10 +686,19 @@ defmodule IbGib.Expression do
       Logger.debug "Adding relation #{relation_name} to a_info. a_info[:rel8ns]: #{inspect a_info[:rel8ns]}"
       a_relations = a_info[:rel8ns]
 
-      relation = Map.get(a_relations, relation_name, [])
-      new_relation = relation ++ b
+      relation_list = Map.get(a_relations, relation_name, [])
 
-      new_a_relations = Map.put(a_relations, relation_name, new_relation)
+      new_relation_list =
+        b
+        |> Enum.reduce(relation_list, fn(rel, acc) ->
+             if Enum.member?(acc, rel) do
+               acc
+             else
+               acc ++ [rel]
+             end
+           end)
+
+      new_a_relations = Map.put(a_relations, relation_name, new_relation_list)
       new_a = Map.put(a_info, :rel8ns, new_a_relations)
       Logger.debug "Added relation #{relation_name} to a_info. a_info[:rel8ns]: #{inspect a_info[:rel8ns]}"
       new_a
@@ -565,23 +713,37 @@ defmodule IbGib.Expression do
     add_rel8n(a_info, relation_name, [b_ib_gib])
   end
 
-  defp on_new_expression_completed(ib, gib, info) do
-    Logger.debug "saving and registering new expression. info: #{inspect info}"
-
-    with {:ok, ib_gib} <- Helper.get_ib_gib(ib, gib),
-      {:ok, :ok} <- IbGib.Data.save(info) do
-
-      Logger.debug "Saved and registered ok. info: #{inspect info}"
-      {:ok, %{:info => info}}
-    else
-      {:error, result} ->
-        Logger.error "Save/Register error result: #{inspect result}"
-        {:error, result}
-      error ->
-        Logger.error "Save/Register error: #{inspect error}"
-        {:error, error}
-    end
-  end
+  # Remember
+  # When you have eaten and are satisfied,
+  #   give thanks to the Lord Your God for the lands he has given you.
+  # Be careful that you do not forget the Lord Your God, failing to observe his
+  #   commands, laws, and decrees that I am giving you this day.
+  # Otherwise, when you eat and are satisfied,
+  #   when you build fine houses and settle down,
+  #   And when your flocks and herds grow large,
+  #   when your silver and gold increase
+  #   and all you have is multiplied,
+  # Then your heart will become proud,
+  #   and you will forget the Lord Your God,
+  #   Who brought you out of Egypt,
+  #   out of the land of slavery.
+  # If you are working _for_ someone else, then you are a slave. Jesus showed
+  # his disciples about distributed workloads. He condemned the capi sacerdoti
+  # for placing heavy loads on the flock, while they themselves would not
+  # carry the burden. They would dress for fancy dinners and hold highly
+  # exalted positions. He washed his disciples feet, which many today feel is
+  # somewhat akin to "you just have to clean each other a little going forward",
+  # assuming you are with your Brothers & Sisters in Christ (a distributed
+  # network). But it is not limited to just cleaning each other a little bit,
+  # although that is part of it. This is showing us distributed load balancing.
+  # Jesus, being the King of Kings (MetaKing), washed their feet to show that
+  # they, _even when they become the "boss"_, should continue as servants.
+  # When you read the Bible, and you read about Egypt, you are reading about
+  # escaping the slavery of having to be told what to do because you have
+  # overcome the bottom-up urges and learned to temper them. Self-control, but
+  # not self-tyranny. Then you will be working *for* others who are working
+  # *for* you. If you reject Jesus' teachings, then you are condemning yourself
+  # to subjugation to others in Egypt, in the land of slavery.
 
   # Check to make sure that our identities are valid (authorization)
   # The passed in identities must contain **all** of the existing identities.
@@ -597,21 +759,28 @@ defmodule IbGib.Expression do
   # b must always have at least one identity
   @spec authorize_apply_b(atom, map, map) :: list(String.t)
   defp authorize_apply_b(which, a_rel8ns, b_rel8ns)
-  defp authorize_apply_b(:fork = which, a_rel8ns, b_rel8ns) do
-    # When authorizing a fork, we only care that both a and b _have_ identities,
-    # because anyone can fork anything. Authorization here is really just
-    # checking for error in code or more nefarious monkey business.
+  defp authorize_apply_b(which, a_rel8ns, b_rel8ns)
+    when which == :fork or which == :query do
+    # When authorizing a fork or query, we only care that both a and b _have_
+    # valid identities, because anyone can fork/read anything else.
+    # Authorization here is really just checking for error in code or more
+    # nefarious monkey business and ensuring that whoever could be doing said
+    # monkey business at least has some identity.
     Logger.metadata([x: which])
-    Logger.debug "which: #{:fork}"
+    Logger.debug "which: #{which}"
     Logger.warn "a_rel8ns: #{inspect a_rel8ns}"
     Logger.warn "b_rel8ns: #{inspect b_rel8ns}"
 
     a_has_identity =
       Map.has_key?(a_rel8ns, "identity") and
-      length(a_rel8ns["identity"]) > 0
+      length(a_rel8ns["identity"]) > 0 and
+      Enum.all?(a_rel8ns["identity"], &Helper.valid_identity?/1)
+      # Enum.all?(a_rel8ns["identity"], &(Helper.valid_identity?(&1)))
     b_has_identity =
       Map.has_key?(b_rel8ns, "identity") and
-      length(b_rel8ns["identity"]) > 0
+      length(b_rel8ns["identity"]) > 0 and
+      Enum.all?(b_rel8ns["identity"], &Helper.valid_identity?/1)
+      # Enum.all?(b_rel8ns["identity"], &(Helper.valid_identity?(&1)))
 
     if a_has_identity and b_has_identity do
       b_identity = b_rel8ns["identity"]
@@ -631,10 +800,14 @@ defmodule IbGib.Expression do
     Logger.warn "b_rel8ns: #{inspect b_rel8ns}"
     a_has_identity =
       Map.has_key?(a_rel8ns, "identity") and
-      length(a_rel8ns["identity"]) > 0
+      # Every identity rel8ns should have ib^gib
+      length(a_rel8ns["identity"]) > 0 and
+      Enum.all?(a_rel8ns["identity"], &Helper.valid_identity?/1)
     b_has_identity =
       Map.has_key?(b_rel8ns, "identity") and
+      # Every identity rel8ns should have ib^gib
       length(b_rel8ns["identity"]) > 0
+      Enum.all?(b_rel8ns["identity"], &Helper.valid_identity?/1)
 
     case {a_has_identity, b_has_identity} do
       {true, true} ->
@@ -684,9 +857,569 @@ defmodule IbGib.Expression do
     end
   end
 
+
   # ----------------------------------------------------------------------------
   # Client API - Meta
   # ----------------------------------------------------------------------------
+
+  defp express_impl(identity_ib_gibs, a_ib_gib, a_info, b_ib_gib, _state) do
+    Logger.warn "express_impl reachhed"
+    Logger.warn "express_impl reachhed"
+
+    with(
+      # -----------------------
+      # Get plan process and info
+      {:ok, b} <- get_process(identity_ib_gibs, b_ib_gib),
+
+      # {:ok, :ok} <- log_yo(:warn, "1\nb: #{inspect b}"),
+
+      {:ok, plan_info} <- b |> get_info,
+
+      # {:ok, :ok} <- log_yo(:warn, "2\nplan_info:\n#{inspect plan_info, [pretty: true]}"),
+      # -----------------------
+      # Compile the plan to a concrete plan, and get the next step (transform)
+      {:ok, {concrete_plan_info, next_step_transform_info, _next_step_index}} <-
+        compile(identity_ib_gibs, a_ib_gib, b_ib_gib, plan_info),
+
+      # {:ok, :ok} <- log_yo(:warn, "3\nconcrete_plan_info:\n#{inspect concrete_plan_info, pretty: true}\nnext_step_transform_info:\n#{inspect next_step_transform_info, pretty: true}"),
+      # -----------------------
+      # Prepare `a` information.
+      # {:ok, :ok} <- log_yo(:warn, "4\na_info: #{inspect a_info, pretty: true}"),
+      {:ok, a_info} <-
+        (
+          if is_nil(a_info) do
+            case get_process(identity_ib_gibs, a_ib_gib) do
+              {:ok, a} -> a |> get_info
+              {:error, error} -> {:error, error}
+              error -> {:error, inspect error}
+            end
+          else
+            {:ok, a_info}
+          end
+        ),
+
+      # {:ok, :ok} <- log_yo(:warn, "5\na_info: #{inspect a_info, pretty: true}"),
+      # -----------------------
+      # We now have both `a` and `b`.
+      # We can now express this "blank" process by applying the next step
+      # transform to `a`.
+      # This is is where we apply_fork, apply_rel8, apply_mut8.
+      # This is an express iteration.
+      {:ok, concrete_plan_ib_gib} <- Helper.get_ib_gib(concrete_plan_info),
+      {:ok, a_info_with_new_dna} <-
+        {:ok, add_rel8n(a_info, "dna", concrete_plan_ib_gib)},
+      {:ok, {this_ib_gib, _this_ib, _this_gib, this_info}} <-
+        apply_next(a_info_with_new_dna, next_step_transform_info),
+      # -----------------------
+      # Save this info
+      # (This may be premature, since I haven't done anything with dna, and
+      #  also there will be a new "final" plan with additional information that
+      #  will not be rel8d to this)
+      {:ok, :ok} <- IbGib.Data.save(this_info),
+      # -----------------------
+      {:ok, {final_ib_gib, final_state}} <-
+        on_complete_express_iteration(identity_ib_gibs,
+                                      this_ib_gib,
+                                      this_info,
+                                      concrete_plan_info)
+    ) do
+      # log_yo(:debug, "6\nfinal_ib_gib: #{final_ib_gib}\nfinal_state:\n#{inspect final_state, pretty: true}")
+      {:ok, {final_ib_gib, final_state}}
+    else
+      {:error, reason} ->
+        Logger.error "#{inspect reason}"
+        {:error, reason}
+      error ->
+        Logger.error "#{inspect error}"
+        {:error, "#{inspect error}"}
+    end
+  end
+
+  # At this point the "next" step is the one we've just executed.
+  # If there are further steps to do, then we must do a few things:
+  # * Set the "out" of this step to the ib_gib we've just created.
+  # * Save the new plan.
+  # * Call express recursively on the plan to get the final ib_gib result.
+
+  # If there are no further steps, then we are done and we can just
+  # return this_ib_gib.
+  defp on_complete_express_iteration(identity_ib_gibs, this_ib_gib, this_info, plan_info) do
+    # regardless of if there are further steps, our state is now set to
+    # what we have done so far.
+    new_state = %{:info => this_info}
+
+    if plan_complete?(plan_info) do
+      {:ok, {this_ib_gib, new_state}}
+    else
+      with(
+        # At this point the "next" step is the one we've just executed.
+        {:ok, {next_step, next_step_index}} <- get_next_step(plan_info),
+        new_next_step <- Map.put(next_step, "out", this_ib_gib),
+        # {:ok, :ok} <-
+        #   log_yo(:debug, "plan_info:\n#{inspect plan_info, pretty: true}"),
+        new_steps <-
+          List.replace_at(plan_info[:data]["steps"],
+                          next_step_index - 1,
+                          new_next_step),
+        new_plan_info_data <- Map.put(plan_info[:data], "steps", new_steps),
+        new_plan_info <- Map.put(plan_info, :data, new_plan_info_data),
+
+        # Increment plan "i" (step index)
+        new_plan_info <- increment_plan_step_index(new_plan_info),
+        # {:ok, :ok} <-
+        #   log_yo(:debug, "after increment plan step index. new_plan_info:\n#{inspect new_plan_info, pretty: true}"),
+
+        # Recalculate the gib hash and save
+        new_plan_gib <-
+          Helper.hash(new_plan_info[:ib],
+                      new_plan_info[:rel8ns],
+                      new_plan_info[:data]),
+        new_plan_info <- Map.put(new_plan_info, :gib, new_plan_gib),
+        # {:ok, :ok} <-
+        #   log_yo(:debug, "hrmm..new_plan_info before saving:\n#{inspect new_plan_info, pretty: true}"),
+        {:ok, :ok} <- IbGib.Data.save(new_plan_info),
+
+        {:ok, new_plan_ib_gib} <- Helper.get_ib_gib(new_plan_info),
+
+        # {:ok, :ok} <- log_yo(:debug, "recursive????"),
+
+        # Call express recursively with our new information!
+        {:ok, final_ib_gib} <-
+          express(identity_ib_gibs, this_ib_gib, this_info, new_plan_ib_gib)
+      ) do
+        {:ok, {final_ib_gib, new_state}}
+      else
+        {:error, reason} ->
+          Logger.error "#{inspect reason}"
+          {:error, reason}
+        error ->
+          Logger.error "#{inspect error}"
+          {:error, "#{inspect error}"}
+      end
+    end
+  end
+
+  defp plan_complete?(plan_info) do
+    Logger.debug "plan_info:\n#{inspect plan_info, pretty: true}"
+    next_step_index = String.to_integer(plan_info[:data]["i"])
+    step_count = TB.count_steps(plan_info[:data]["steps"])
+    Logger.debug "next_step_index: #{next_step_index}\nstep_count: #{step_count}"
+    # 1-based index
+    cond do
+      next_step_index < step_count -> false
+      next_step_index = step_count -> true
+      true -> raise "Invalid next_step_index: #{next_step_index}\nstep_count: #{step_count}\nThe index should be less than or equal to the step count."
+    end
+  end
+
+  defp apply_next(a_info, next_info) do
+    Logger.debug "next_info:\n#{inspect next_info, pretty: true}"
+    with(
+      {:ok, {this_ib, this_gib, this_info}} <-
+        apply_next_impl(a_info, next_info),
+      {:ok, this_ib_gib} <- Helper.get_ib_gib(this_ib, this_gib)
+    ) do
+      {:ok, {this_ib_gib, this_ib, this_gib, this_info}}
+    else
+      {:error, reason} ->
+        Logger.error "#{inspect reason}"
+        {:error, reason}
+      error ->
+        Logger.error "#{inspect error}"
+        {:error, "#{inspect error}"}
+    end
+  end
+
+  defp apply_next_impl(a_info, %{:ib => "fork"} = next_info) do
+    Logger.warn "next_info:\n#{inspect next_info, pretty: true}"
+    apply_fork(a_info, next_info)
+  end
+  defp apply_next_impl(a_info, %{:ib => "mut8"} = next_info) do
+    apply_mut8(a_info, next_info)
+  end
+  defp apply_next_impl(a_info, %{:ib => "rel8"} = next_info) do
+    apply_rel8(a_info, next_info)
+  end
+
+  # For now, the implementation is just to call start_expression
+  defp get_process(_identity_ib_gibs, ib_gib) do
+    Logger.debug "ib_gib: #{ib_gib}"
+    IbGib.Expression.Supervisor.start_expression(ib_gib)
+  end
+
+  defp compile(identity_ib_gibs,
+               a_ib_gib,
+               b_ib_gib,
+               b_info = %{:ib => "plan", :data => %{"src" => src}})
+    when is_list(identity_ib_gibs) and
+         is_bitstring(a_ib_gib) and
+         is_bitstring(b_ib_gib) do
+
+    b_info =
+      if src == "[src]" do
+        b_info_data = Map.put(b_info[:data], "src", a_ib_gib)
+        Map.put(b_info, :data, b_info_data)
+      else
+        b_info
+      end
+
+    Logger.debug "b_info: #{inspect b_info}"
+    # Logger.warn "before compile"
+    case concretize_and_save_plan(identity_ib_gibs, a_ib_gib, b_ib_gib, b_info) do
+      # We have concretized the plan, including the next step transform,
+      # and we want to return that new transform to express.
+      {:ok, {concrete_plan_info,
+             _concrete_plan_ib_gib,
+             next_step_transform_info,
+             next_step_index}} ->
+        # Logger.debug "concrete_plan_ib_gib:\n#{concrete_plan_ib_gib}\nconcrete_plan_info: #{inspect concrete_plan_info, pretty: true}"
+        # Logger.warn "after compile"
+        {:ok, {concrete_plan_info, next_step_transform_info, next_step_index}}
+
+      # Something went awry.
+      {:error, reason} -> {:error, reason}
+      error -> {:error, inspect error}
+    end
+  end
+
+  # Warning, this is a big honking monster. Once it's working, we can try to
+  # refactor it to be more elegantly structured, perhaps taking this whole
+  # compilation process into its own module, yada yada yada.
+  defp concretize_and_save_plan(identity_ib_gibs, a_ib_gib, old_plan_ib_gib, old_plan_info) do
+    # Logger.debug "args:\n#{inspect [identity_ib_gibs, a_ib_gib, old_plan_info], [pretty: true]}"
+
+    with(
+      # Update our available variables
+      available_vars <- get_available_vars(a_ib_gib, old_plan_info),
+
+      # Update our plan with those variables replaced.
+      new_plan_info <- replace_variables(available_vars, old_plan_info),
+
+      # With the variables replaced, we now have a possibly more concrete
+      # b_info, but it may not be fully concrete.
+      {:ok, {next_step, next_step_index}} <- get_next_step(new_plan_info),
+
+      # So right now, we have a "next step" that should be concrete, but we have
+      # not yet created its corresponding primitive transform ib_gib, and it
+      # has no "ibgib" field. So we need to create
+      # the next primitive transform based on the step's f_data, and then
+      # fill in the step's "ibgib" field with that ib^gib, e.g. "fork^ABC1234".
+      {:ok, next_f_data} <- {:ok, next_step["f_data"]},
+      {:ok, {next_step_ibgib, next_step_transform_info}} <-
+        build_and_save_next_transform(next_f_data["type"],
+                                      identity_ib_gibs,
+                                      a_ib_gib,
+                                      next_f_data,
+                                      new_plan_info),
+
+      # Fill in the next_step's "ibgib" field
+      # {:ok, :ok} <- log_yo(:debug, "before...next_step[ibgib]: #{next_step["ibgib"]}"),
+      # {:ok, :ok} <- log_yo(:debug, "next_step_transform_info:\n#{inspect next_step_transform_info, pretty: true}"),
+      {:ok, next_step} <- {:ok, Map.put(next_step, "ibgib", next_step_ibgib)},
+      # {:ok, :ok} <- log_yo(:debug, "after...next_step[ibgib]: #{next_step["ibgib"]}"),
+
+      # Replace the newly edited step in the map
+      new_plan_steps <-
+        new_plan_info[:data]["steps"] |> convert_to_list_if_needed,
+      new_plan_steps <-
+        List.replace_at(new_plan_steps, next_step_index - 1, next_step),
+      # :ok <- (
+      #   if TB.count_steps(new_plan_info[:data]["steps"]) == 1, do: :ok, else: :error
+      # ), #debugg
+      new_plan_data <- Map.put(new_plan_info[:data], "steps", new_plan_steps),
+      new_plan_info <- Map.put(new_plan_info, :data, new_plan_data),
+
+      # We need to add the previous plan to the past rel8n.
+      new_plan_rel8ns_past <-
+        new_plan_info[:rel8ns]["past"] ++ [old_plan_ib_gib],
+      new_plan_rel8ns <-
+        Map.put(new_plan_info[:rel8ns], "past", new_plan_rel8ns_past),
+      new_plan_info <-
+        Map.put(new_plan_info, :rel8ns, new_plan_rel8ns),
+
+      # At this point, our plan itself is concrete for this iteration, and we
+      # need to recalculate the gib hash, and then save it.
+      new_plan_gib <-
+        Helper.hash(new_plan_info[:ib], new_plan_rel8ns, new_plan_data),
+      new_plan_info <- Map.put(new_plan_info, :gib, new_plan_gib),
+      # {:ok, :ok} <- log_yo(:debug, "new_plan_info before saving:\n#{inspect new_plan_info, pretty: true}"),
+
+      {:ok, :ok} <- IbGib.Data.save(new_plan_info),
+      # {:ok, :ok} <- log_yo(:debug, "saved yaaaaaaaay"),
+      {:ok, new_plan_ib_gib} <-
+        Helper.get_ib_gib(new_plan_info[:ib], new_plan_gib)
+    ) do
+      # Whew! ':-O
+      # Really need to refactor this.
+      {:ok, {new_plan_info, new_plan_ib_gib, next_step_transform_info, next_step_index}}
+    else
+      {:error, reason} ->
+        Logger.error "#{inspect reason}"
+        {:error, reason}
+      error ->
+        Logger.error "#{inspect error}"
+        {:error, "#{inspect error}"}
+    end
+  end
+
+  defp increment_plan_step_index(new_plan_info) do
+    Logger.warn "new_plan_info:\n#{inspect new_plan_info, pretty: true}"
+    data = new_plan_info[:data]
+    steps_count = TB.count_steps(data["steps"])
+    current_i = String.to_integer(data["i"])
+    if current_i < steps_count do
+      Logger.debug "bumping i. current_i: #{current_i}. steps_count: #{steps_count}"
+      data = Map.put(data, "i", "#{current_i + 1}")
+      # Return plan with bumped i
+      Map.put(new_plan_info, :data, data)
+    else
+      Logger.debug "i unchanged. current_i: #{current_i}. steps_count: #{steps_count}"
+      # Just return plan unchanged
+      new_plan_info
+    end
+  end
+
+  # I don't know if it's the map encoder or something in elixir, but it likes
+  # to convert a single-item array/list to just the item and forget the list
+  # part of it. Very strange. :-/
+  defp convert_to_list_if_needed(item) when is_bitstring(item), do: [item]
+  defp convert_to_list_if_needed(item) when is_list(item), do: item
+  defp convert_to_list_if_needed(item), do: [item]
+
+  defp build_and_save_next_transform("fork", identity_ib_gibs, src_ib_gib,
+    f_data, plan_info) do
+
+    Logger.warn "fork\nplan_info: #{inspect plan_info, pretty: true}"
+    # Probably need to actually get this from somewhere, but for now I'm
+    # going with the default until I see the reason otherwise.
+    # opts = @default_transform_options
+
+    with(
+      opts <- plan_info[:data]["opts"],
+
+    # 1. Create transform
+      {:ok, fork_info} <-
+        TransformFactory.fork(src_ib_gib,
+                              identity_ib_gibs,
+                              f_data["dest_ib"],
+                              opts),
+      # 2. Save transform
+      {:ok, :ok} <- IbGib.Data.save(fork_info),
+      # 3. Get the transform's ib^gib
+      {:ok, fork_ib_gib} <- Helper.get_ib_gib(fork_info[:ib], fork_info[:gib])
+    ) do
+      {:ok, {fork_ib_gib, fork_info}}
+    else
+      {:error, reason} ->
+        Logger.error "#{inspect reason}"
+        {:error, reason}
+      error ->
+        Logger.error "#{inspect error}"
+        {:error, "#{inspect error}"}
+    end
+  end
+  defp build_and_save_next_transform("mut8", identity_ib_gibs, src_ib_gib,
+    f_data, plan_info) do
+
+    # Probably need to actually get this from somewhere, but for now I'm
+    # going with the default until I see the reason otherwise.
+    # opts = @default_transform_options
+
+    with(
+      opts <- plan_info[:data]["opts"],
+
+    # 1. Create transform
+      {:ok, mut8_info} <-
+        TransformFactory.mut8(src_ib_gib,
+                              identity_ib_gibs,
+                              f_data["new_data"],
+                              opts),
+      # 2. Save transform
+      {:ok, :ok} <- IbGib.Data.save(mut8_info),
+      # 3. Get the transform's ib^gib
+      {:ok, mut8_ib_gib} <- Helper.get_ib_gib(mut8_info[:ib], mut8_info[:gib])
+    ) do
+      {:ok, {mut8_ib_gib, mut8_info}}
+    else
+      {:error, reason} ->
+        Logger.error "#{inspect reason}"
+        {:error, reason}
+      error ->
+        Logger.error "#{inspect error}"
+        {:error, "#{inspect error}"}
+    end
+  end
+  defp build_and_save_next_transform("rel8", identity_ib_gibs, src_ib_gib,
+    f_data, plan_info) do
+
+    # Probably need to actually get this from somewhere, but for now I'm
+    # going with the default until I see the reason otherwise.
+    # opts = @default_transform_options
+
+    with(
+      opts <- plan_info[:data]["opts"],
+
+    # 1. Create transform
+      {:ok, rel8_info} <-
+        TransformFactory.rel8(src_ib_gib,
+                              f_data["other_ib_gib"],
+                              identity_ib_gibs,
+                              f_data["rel8ns"],
+                              opts),
+      # 2. Save transform
+      {:ok, :ok} <- IbGib.Data.save(rel8_info),
+      # 3. Get the transform's ib^gib
+      {:ok, rel8_ib_gib} <- Helper.get_ib_gib(rel8_info[:ib], rel8_info[:gib])
+    ) do
+      {:ok, {rel8_ib_gib, rel8_info}}
+    else
+      {:error, reason} ->
+        Logger.error "#{inspect reason}"
+        {:error, reason}
+      error ->
+        Logger.error "#{inspect error}"
+        {:error, "#{inspect error}"}
+    end
+  end
+
+  defp get_next_step(b_info) do
+    # At this point, should always be a next step, i.e. plan isn't complete
+    Logger.debug "b_info:\n#{inspect b_info, pretty: true}"
+    next_step_index = String.to_integer(b_info[:data]["i"])
+    steps = b_info[:data]["steps"]
+
+    # Logger.debug "steps:\n#{inspect steps, pretty: true}"
+    # Compensate for the very strange behavior of elixir converting single-item
+    # arrays to non-arrays in maps.
+    steps = if is_list(steps), do: steps, else: [steps]
+
+    Logger.debug "steps:\n#{inspect steps, pretty: true}\nnext_step_index: #{next_step_index}"
+
+    # next_step_index is 1-based, Enum.at is 0-based
+    next_step = Enum.at(steps, next_step_index - 1)
+    if next_step do
+      Logger.debug "next_step: #{inspect next_step, pretty: true}"
+      {:ok, {next_step, next_step_index}}
+    else
+      {:error, "Next step not found"}
+    end
+  end
+
+  @doc """
+  Given the `available_vars` in the form of `%{"var_name" => "var_value"}`,
+  this iterates over all entries in the given `map`, including maps nested
+  in values, replacing any value that is a `var_name` and replacing it
+  with `var_value`.
+  """
+  def replace_variables(available_vars, map) when is_map(map) do
+    proc_id = RandomGib.Get.some_letters(4)
+    Logger.metadata(x: proc_id)
+    # Logger.debug "available_vars:\n#{inspect available_vars, pretty: true}\n"
+    Logger.debug "map before:\n#{inspect map, pretty: true}"
+    result =
+      for {key, val} <- map, into: %{} do
+        val = replace_variables(available_vars, val)
+
+        # If the Map.get is successful, then replace the variable with it.
+        # If it isn't found, then default to the existing value.
+        {key, Map.get(available_vars, val, val)}
+      end
+
+    Logger.metadata(x: proc_id)
+    Logger.debug "map after:\n#{inspect result, pretty: true}"
+    result
+  end
+  def replace_variables(_available_vars, list) when is_list(list) and length(list) == 0 do
+    Logger.debug "empty list"
+    list
+  end
+  def replace_variables(available_vars, list) when is_list(list) do
+    proc_id = RandomGib.Get.some_letters(4)
+    Logger.metadata(x: proc_id)
+    Logger.debug "list before:\n#{inspect list, pretty: true}"
+    result =
+      Enum.map(list, fn(item) -> replace_variables(available_vars, item) end)
+
+    Logger.metadata(x: proc_id)
+    Logger.debug "list after:\n#{inspect list, pretty: true}"
+    result
+  end
+  def replace_variables(available_vars, str) when is_bitstring(str) do
+    available_vars |> Map.get(str, str)
+  end
+
+  # Cornerstone
+  # So this is what the Sovereign Lord says: See, I lay a stone in Zion,
+  # a tested stone, a precious Cornerstone for a sure foundation. The One
+  # who relies on it will never be stricken with panic.
+  #
+  # Christ translation: The cornerstone is a foundation layer of coding. The
+  # Cornerstone is a tested stone - unit testing, integration testing, etc.
+  # Test-driven design baby. The One who relies on it will never be stricken
+  # with panic because the One is building its foundation upon a
+  # self-reinforcing informational entity, which isn't reliant upon outside
+  # stimulus. The Cornerstone is hardened across an infinite timespan...*the*
+  # infinite timespan. Think of AI and where we are headed, and other world
+  # colonization...it is a very real possibility that the Cornerstone (aka the
+  # Word, a la message passing) is a coding construct to prepare planets for
+  # assimilation into the one universal body. Try explaining quantum physics to
+  # a bunch of violent tribesmen, and not just the concepts that are
+  # intrinsically involved in the physics, but the meta-concepts that are
+  # necessary to enable an environment to discover these principles.
+
+  defp get_available_vars(a_ib_gib, b_info) do
+    Logger.debug "args: #{inspect [a_ib_gib, b_info], [pretty: true]}"
+
+    {:ok, {a_ib, _}} = Helper.separate_ib_gib(a_ib_gib)
+    plan_src = b_info[:data]["src"]
+    {:ok, {plan_src_ib, _}} = Helper.separate_ib_gib(plan_src)
+
+    # Initialize plan variables
+    vars = %{
+      # The "current" src for this step in the plan
+      "[src]" => a_ib_gib,
+      "[src.ib]" => a_ib,
+
+      # The original src for the transform plan
+      "[plan.src]" => plan_src,
+      "[plan.src.ib]" => plan_src_ib
+    }
+
+    # Add variables available from previously completed steps and return
+    steps = b_info[:data]["steps"]
+    steps =
+      if is_list(steps) do
+        steps
+      else
+        [steps]
+      end
+    Logger.debug "steps:\n#{inspect steps, [pretty: true]}"
+
+    completed_steps =
+      steps
+      |> Enum.filter(fn(step) ->
+           output = step["out"]
+           output != nil and output != ""
+         end)
+    Logger.debug "completed_steps:\n#{inspect completed_steps, [pretty: true]}"
+
+    vars =
+      if completed_steps != nil and Enum.count(completed_steps) > 0 do
+        # Add vars from completed steps
+        completed_steps
+        |> Enum.reduce(vars, fn(step, acc) ->
+             name = step["name"]
+             acc
+             |> Map.put("[#{name}.ibgib]", step["ibgib"])
+             |> Map.put("[#{name}.arg]", step["arg"])
+             |> Map.put("[#{name}.out]", step["out"])
+           end)
+      else
+        vars
+      end
+    Logger.debug "vars:\n#{inspect vars, pretty: true}"
+    vars
+  end
 
   @doc """
   Brings two ib_gib into contact with each other to produce a third, probably
@@ -694,6 +1427,49 @@ defmodule IbGib.Expression do
   """
   def contact(this_pid, that_pid) when is_pid(this_pid) and is_pid(that_pid) do
     GenServer.call(this_pid, {:contact, that_pid})
+  end
+
+  # ----------------------------------------------------------------------------
+  # Client API - Express
+  # ----------------------------------------------------------------------------
+
+  @doc """
+  Express is how we "create new" ib_gib. We pass in two existing ib^gib,
+  and this will be evaluated to generate a tertiary "new" ib_gib.
+
+  The `a_info` is optional (I think). I wanted to only pass the ib^gib, but
+  because of how I have caching set up right now, this approach causes a
+  deadlock. So, pass in the `a_info` optionally. If it exists, which it will
+  when calling this function from this expression process e.g. from `fork_impl`,
+  then it will be used. If not, then the info will be loaded via the given
+  `a_ib_gib`.
+
+  All of this happens within the process' init function, so it is happening
+  in parallel, independent of any other processes.
+  """
+  def express(identity_ib_gibs, a_ib_gib, a_info, b_ib_gib)
+  def express(_identity_ib_gibs, a_ib_gib, _a_info, @root_ib_gib) do
+    # The @root_ib_gib (ib^gib) acts as an "identity" transform, so just return
+    # the incoming ib^gib without touching the server.
+    # NB: This bypasses adding anything to the dna.
+    {:ok, a_ib_gib}
+  end
+  def express(identity_ib_gibs, a_ib_gib, a_info, b_ib_gib)
+    when is_list(identity_ib_gibs) and is_bitstring(a_ib_gib) and
+         is_map(a_info) and is_bitstring(b_ib_gib) do
+    Logger.debug "identity_ib_gibs:\n#{inspect identity_ib_gibs}\na_ib_gib: #{a_ib_gib}\na_info:\n#{inspect a_info, pretty: true}\nb_ib_gib: #{b_ib_gib}"
+    {:ok, stem_cell_pid} =
+      IbGib.Expression.Supervisor.start_expression({identity_ib_gibs,
+                                                    a_ib_gib,
+                                                    a_info,
+                                                    b_ib_gib})
+    GenServer.call(stem_cell_pid,
+                   {:express, {identity_ib_gibs, a_ib_gib, a_info, b_ib_gib}})
+  end
+  def express(identity_ib_gibs, a_ib_gib, a_info, b_ib_gib) do
+    emsg = emsg_invalid_args([identity_ib_gibs, a_ib_gib, a_info, b_ib_gib])
+    Logger.error emsg
+    {:error, emsg}
   end
 
   # ----------------------------------------------------------------------------
@@ -708,7 +1484,7 @@ defmodule IbGib.Expression do
   Returns the new forked process' pid or an error.
   """
   @spec fork(pid, list(String.t), String.t, map) :: {:ok, pid} | {:error, any}
-  def fork(expr_pid, identity_ib_gibs, dest_ib,
+  def fork(expr_pid, identity_ib_gibs, dest_ib \\ @default_fork_dest_ib,
            opts \\ @default_transform_options)
   def fork(expr_pid, identity_ib_gibs, dest_ib, opts)
     when is_pid(expr_pid) and
@@ -865,7 +1641,7 @@ defmodule IbGib.Expression do
   Returns a new version of the given `expr_pid` and the new forked expression.
   E.g. {pid_a0} returns {pid_a1, pid_a_instance)
   """
-  @spec instance(pid, list(String.t), String.t, map) :: {:ok, {pid, pid}} | {:error, any}
+  @spec instance(pid, list(String.t), String.t, map) :: {:ok, pid} | {:error, any}
   def instance(expr_pid,
                identity_ib_gibs,
                dest_ib,
@@ -889,7 +1665,7 @@ defmodule IbGib.Expression do
   @doc """
   Bang version of `instance/2`.
   """
-  @spec instance!(pid, String.t, map) :: {pid, pid} | any
+  @spec instance!(pid, String.t, map) :: pid | any
   def instance!(expr_pid,
                 identity_ib_gibs,
                 dest_ib,
@@ -922,6 +1698,13 @@ defmodule IbGib.Expression do
   # Server
   # ----------------------------------------------------------------------------
 
+  def handle_call({:express, {identity_ib_gibs, a_ib_gib, a_info, b_ib_gib}},
+                  _from,
+                  state) do
+    Logger.metadata([x: :express])
+    {:ok, {new_ib_gib, new_state}} = express_impl(identity_ib_gibs, a_ib_gib, a_info, b_ib_gib, state)
+    {:reply, {:ok, new_ib_gib}, new_state}
+  end
   def handle_call({:contact, other_expr_pid}, _from, state) do
     Logger.metadata([x: :contact])
     {:reply, contact_impl(other_expr_pid, state), state}
@@ -960,23 +1743,27 @@ defmodule IbGib.Expression do
   # ----------------------------------------------------------------------------
 
   defp fork_impl(identity_ib_gibs, dest_ib, opts, state) do
-    info = state[:info]
-    ib = info[:ib]
-    gib = info[:gib]
+    Logger.debug "state: #{inspect state}"
 
-    # 1. Create transform
-    with {:ok, fork_info} <- TransformFactory.fork(Helper.get_ib_gib!(ib, gib), identity_ib_gibs, dest_ib, opts),
+    with(
+      info <- state[:info],
+      {ib, gib} <- {info[:ib], info[:gib]},
+      {:ok, ib_gib} <- Helper.get_ib_gib(ib, gib),
 
-      # 2. Save transform
-      {:ok, :ok} <- IbGib.Data.save(fork_info),
+      # Build the plan (_simple_ happy pipe would be awesome)
+      {:ok, plan} <- TB.plan(identity_ib_gibs, "[src]", opts),
+      {:ok, plan} <- TB.add_fork(plan, "fork1", dest_ib),
+      {:ok, plan} <- TB.yo(plan),
 
-      # 3. Create instance process of fork
-      {:ok, fork} <- IbGib.Expression.Supervisor.start_expression({fork_info[:ib], fork_info[:gib]}),
+      # Save the plan
+      {:ok, :ok} <- IbGib.Data.save(plan),
+      {:ok, plan_ib_gib} <- Helper.get_ib_gib(plan),
 
-      # 4. Apply transform
-      {:ok, new_pid} <- contact_impl(fork, state) do
-
-      # 5. Return new process of applied transform
+      # Express (via spawned processes), passing only relevant ib^gib pointers.
+      {:ok, new_ib_gib} <- express(identity_ib_gibs, ib_gib, info, plan_ib_gib),
+      {:ok, new_pid} <- IbGib.Expression.Supervisor.start_expression(new_ib_gib)
+    ) do
+      # {:ok, new_ib_gib}
       {:ok, new_pid}
     else
       {:error, reason} ->
@@ -993,27 +1780,27 @@ defmodule IbGib.Expression do
   # ----------------------------------------------------------------------------
 
   defp mut8_impl(identity_ib_gibs, new_data, opts, state) do
-    info = state[:info]
-    ib = info[:ib]
-    gib = info[:gib]
+    Logger.debug "state: #{inspect state}"
 
-    # 1. Create transform
-    with {:ok, mut8_info} <-
-        TransformFactory.mut8(Helper.get_ib_gib!(ib, gib), identity_ib_gibs,
-                              new_data, opts),
+    with(
+      info <- state[:info],
+      {ib, gib} <- {info[:ib], info[:gib]},
+      {:ok, ib_gib} <- Helper.get_ib_gib(ib, gib),
 
-      # 2. Save transform
-      {:ok, :ok} <- IbGib.Data.save(mut8_info),
+      # Build the plan (_simple_ happy pipe would be awesome)
+      {:ok, plan} <- TB.plan(identity_ib_gibs, "[src]", opts),
+      {:ok, plan} <- TB.add_mut8(plan, "mut81", new_data),
+      {:ok, plan} <- TB.yo(plan),
 
-      # 3. Create instance process of mut8
-      {:ok, mut8} <-
-        IbGib.Expression.Supervisor.start_expression({mut8_info[:ib],
-                                                      mut8_info[:gib]}),
+      # Save the plan
+      {:ok, :ok} <- IbGib.Data.save(plan),
+      {:ok, plan_ib_gib} <- Helper.get_ib_gib(plan),
 
-      # 4. Apply transform
-      {:ok, new_pid} <- contact_impl(mut8, state) do
-
-      # 5. Return new process of applied transform
+      # Express (via spawned processes), passing only relevant ib^gib pointers.
+      {:ok, new_ib_gib} <- express(identity_ib_gibs, ib_gib, info, plan_ib_gib),
+      {:ok, new_pid} <- IbGib.Expression.Supervisor.start_expression(new_ib_gib)
+    ) do
+      # {:ok, new_ib_gib}
       {:ok, new_pid}
     else
       {:error, reason} ->
@@ -1027,31 +1814,30 @@ defmodule IbGib.Expression do
 
   defp rel8_impl(other_pid, identity_ib_gibs, rel8ns, opts, state) do
     Logger.debug "state: #{inspect state}"
-    info = state[:info]
 
-    # 1. Create transform
-    with {:ok, this_ib_gib} <- Helper.get_ib_gib(info[:ib], info[:gib]),
-      {:ok, :ok} <- log_yo(:debug, "what up"),
+    with(
+      info <- state[:info],
+      {ib, gib} <- {info[:ib], info[:gib]},
+      {:ok, ib_gib} <- Helper.get_ib_gib(ib, gib),
       {:ok, other_info} <- IbGib.Expression.get_info(other_pid),
       {:ok, other_ib_gib} <-
         Helper.get_ib_gib(other_info[:ib], other_info[:gib]),
-      {:ok, rel8_info} <-
-        this_ib_gib
-        |> TransformFactory.rel8(other_ib_gib, identity_ib_gibs, rel8ns, opts),
 
-      # 2. Save transform
-      {:ok, :ok} <- IbGib.Data.save(rel8_info),
+      # Build the plan (_simple_ happy pipe would be awesome)
+      {:ok, plan} <- TB.plan(identity_ib_gibs, "[src]", opts),
+      {:ok, plan} <- TB.add_rel8(plan, "rel81", other_ib_gib, rel8ns),
+      {:ok, plan} <- TB.yo(plan),
 
-      # 3. Create instance process of rel8
-      {:ok, rel8} <-
-        IbGib.Expression.Supervisor.start_expression({rel8_info[:ib],
-                                                      rel8_info[:gib]}),
+      # Save the plan
+      {:ok, :ok} <- IbGib.Data.save(plan),
+      {:ok, plan_ib_gib} <- Helper.get_ib_gib(plan),
 
-      # 4. Apply transform to both this and other
-      {:ok, new_this} <- contact_impl(rel8, state) do
-
-        # 5. Return new processes of applied rel8
-      {:ok, new_this}
+      # Express (via spawned processes), passing only relevant ib^gib pointers.
+      {:ok, new_ib_gib} <- express(identity_ib_gibs, ib_gib, info, plan_ib_gib),
+      {:ok, new_pid} <- IbGib.Expression.Supervisor.start_expression(new_ib_gib)
+    ) do
+      # {:ok, new_ib_gib}
+      {:ok, new_pid}
     else
       {:error, reason} ->
         Logger.error "#{inspect reason}"
@@ -1073,22 +1859,29 @@ defmodule IbGib.Expression do
     end
   end
   defp instance_impl(identity_ib_gibs, dest_ib, opts, state) do
-    Logger.debug "_state_: #{inspect state}"
-    Logger.debug "dest_ib: #{dest_ib}"
+    Logger.debug "state: #{inspect state}"
 
-    # I think when we instance, we're just going to keep the same ib. It will
-    # of course create a new gib hash. I think this is what we want to do...
-    # I'm not sure!
-    # info = state[:info]
-    # fork_dest_ib = info[:ib]
-    # fork_dest_ib = Helper.new_id
-    with {:ok, this_ib_gib} <-
-        Helper.get_ib_gib(state[:info][:ib], state[:info][:gib]),
-      {:ok, forked} <- fork_impl(identity_ib_gibs, dest_ib, opts, state),
-      {:ok, :ok} <- log_yo(:debug, "fork complete. forked pid: #{inspect forked}\nself pid: #{inspect self}"),
-      {:ok, instance} <-
-        forked |> rel8(self, identity_ib_gibs, ["instance_of"], opts) do
-      {:ok, instance}
+    with(
+      info <- state[:info],
+      {ib, gib} <- {info[:ib], info[:gib]},
+      {:ok, ib_gib} <- Helper.get_ib_gib(ib, gib),
+
+      # Build the plan (_simple_ happy pipe would be awesome)
+      {:ok, plan} <- TB.plan(identity_ib_gibs, "[src]", opts),
+      {:ok, plan} <- TB.add_fork(plan, "fork1", dest_ib),
+      {:ok, plan} <- TB.add_rel8(plan, "rel8_2_src", "[plan.src]", ["instance_of"]),
+      {:ok, plan} <- TB.yo(plan),
+
+      # Save the plan
+      {:ok, :ok} <- IbGib.Data.save(plan),
+      {:ok, plan_ib_gib} <- Helper.get_ib_gib(plan),
+
+      # Express (via spawned processes), passing only relevant ib^gib pointers.
+      {:ok, new_ib_gib} <- express(identity_ib_gibs, ib_gib, info, plan_ib_gib),
+      {:ok, new_pid} <- IbGib.Expression.Supervisor.start_expression(new_ib_gib)
+    ) do
+      # {:ok, new_ib_gib}
+      {:ok, new_pid}
     else
       {:error, reason} ->
         Logger.error "#{inspect reason}"
@@ -1099,16 +1892,16 @@ defmodule IbGib.Expression do
     end
   end
 
-  defp log_yo(:debug, msg) do
-    Logger.warn "This log msg is for dev purposes only!!! Should not be run in prod!!!"
-    Logger.debug msg
-    {:ok, :ok}
-  end
-  defp log_yo(:warn, msg) do
-    Logger.warn "This log msg is for dev purposes only!!! Should not be run in prod!!!"
-    Logger.warn msg
-    {:ok, :ok}
-  end
+  # defp log_yo(:debug, msg) do
+  #   Logger.warn "This log msg is for dev purposes only!!! Should not be run in prod!!!"
+  #   Logger.debug msg, [pretty: true]
+  #   {:ok, :ok}
+  # end
+  # defp log_yo(:warn, msg) do
+  #   Logger.warn "This log msg is for dev purposes only!!! Should not be run in prod!!!"
+  #   Logger.warn msg, [pretty: true]
+  #   {:ok, :ok}
+  # end
 
   defp query_impl(identity_ib_gibs, query_options, state)
     when is_map(query_options) do
@@ -1152,4 +1945,10 @@ defmodule IbGib.Expression do
       error -> {:error, "#{inspect error}"}
     end
   end
+
+  # ----------------------------------------------------------------------------
+  # Express Implementation
+  # ----------------------------------------------------------------------------
+
+
 end

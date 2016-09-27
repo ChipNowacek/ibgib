@@ -8,6 +8,8 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
   use IbGib.Constants, :ib_gib
   use IbGib.Constants, :error_msgs
 
+  import IbGib.Macros
+
   @doc """
   Is the src being passed in a non-empty map that contains key/values where the
   key is a string and the value is an array of valid ib_gib.
@@ -60,7 +62,7 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
     Logger.debug "empty map"
     true
   end
-  def valid_data?(_field, src, _max_size) when src === nil do
+  def valid_data?(_field, src, _max_size) when is_nil(src) do
     Logger.debug "nil map"
     true
   end
@@ -107,7 +109,7 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
                   value_length = value |> String.length
                   new_running_size = acc + key_length + value_length
                   if new_running_size <= max_size do
-                    # Logger.debug "new_running_size: #{new_running_size}, max_size: #{max_size}"
+                    Logger.debug "new_running_size: #{new_running_size}, max_size: #{max_size}"
                     {:cont, new_running_size}
                   else
                     # not valid - too big
@@ -128,12 +130,15 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
                 is_list(value) ->
                   new_running_size =
                     Enum.reduce_while(value, acc + key_length, fn(list_item, list_acc) ->
-                      # Must be a list of bitstrings
+                      # Must be a list of bitstrings or maps
                       cond do
                         is_nil(list_item) ->
                           {:cont, list_acc}
                         is_bitstring(list_item) ->
                           {:cont, list_acc + String.length(list_item)}
+                        is_map(list_item) ->
+                          # call recursively with our list_acc running_size
+                          {:cont, get_map_size(list_item, list_acc, max_size)}
                         true ->
                           {:halt, -1}
                       end
@@ -147,10 +152,12 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
 
                 true ->
                   # not valid - value is not a map, string, or nil
+                  Logger.warn "invalid value. Is not a map, string, or nil. value: #{inspect value}"
                   {:halt, -1}
               end
           else
             # key invalid
+            Logger.warn "invalid key: #{inspect key, [pretty: true]}"
             # not valid
             {:halt, -1}
           end
@@ -196,21 +203,22 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
   def invalid_id_length_msg, do: emsg_invalid_id_length
   def invalid_unknown_msg, do: emsg_invalid_unknown_src_maybe
 
-  def do_validate_change(field, src) do
-    case field do
-      :rel8ns ->
-        if map_of_ib_gib_arrays?(field, src) do
-          []
-        else
-          [rel8ns: emsg_invalid_relations]
-        end
-      :data ->
-        if valid_data?(field, src) do
-          []
-        else
-          [data: emsg_invalid_data]
-        end
-      _ -> Logger.error emsg_unknown_field
+  def do_validate_change(:rel8ns, src) do
+    if map_of_ib_gib_arrays?(:rel8ns, src) do
+      []
+    else
+      [rel8ns: emsg_invalid_relations]
     end
+  end
+  def do_validate_change(:data, src) do
+    if valid_data?(:data, src) do
+      []
+    else
+      Logger.error "whaaa. src: #{inspect src, [pretty: true]}"
+      [data: emsg_invalid_data]
+    end
+  end
+  def do_validate_change(field, src) do
+    invalid_args([field, src])
   end
 end

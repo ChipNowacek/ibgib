@@ -1,4 +1,9 @@
 defmodule IbGib.Mixfile do
+  @moduledoc """
+  It's the mix file!...for IbGib!
+  """
+
+
   use Mix.Project
 
   def project do

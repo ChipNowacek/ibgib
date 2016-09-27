@@ -401,10 +401,16 @@ defmodule IbGib.Helper do
     iex> IbGib.Helper.gib_stamped?("someGIB")
     false
 
-    iex> IbGib.Helper.gib_stamped?("")
+    iex> Logger.disable(self)
+    ...> result = IbGib.Helper.gib_stamped?("")
+    ...> Logger.enable(self)
+    ...> result
     false
 
-    iex> IbGib.Helper.gib_stamped?(%{"not" => "a bitstring"})
+    iex> Logger.disable(self)
+    ...> result = IbGib.Helper.gib_stamped?(%{"not" => "a bitstring"})
+    ...> Logger.enable(self)
+    ...> result
     false
   """
   def gib_stamped?(gib) when is_bitstring(gib) and gib != "" do
@@ -413,7 +419,37 @@ defmodule IbGib.Helper do
     String.ends_with?(gib, @gib_stamp)
   end
   def gib_stamped?(gib) do
+    Logger.warn emsg_invalid_args(gib)
     false
+  end
+
+  def valid_identity?(@root_ib_gib) do
+    true
+  end
+  def valid_identity?(ib_gib) do
+    if valid_ib_gib?(ib_gib) do
+      {_ib, gib} = separate_ib_gib!(ib_gib)
+      gib_stamped?(gib)
+    else
+      false
+    end
+  end
+
+  def validate_identity_ib_gibs(identity_ib_gibs)
+    when is_list(identity_ib_gibs) do
+    valid_identity_ib_gibs =
+      length(identity_ib_gibs) > 0 and
+      identity_ib_gibs |> Enum.all?(&(valid_ib_gib?(&1)))
+    if valid_identity_ib_gibs do
+      {:ok, :ok}
+    else
+      emsg = emsg_invalid_args(identity_ib_gibs)
+      Logger.error emsg
+      {:error, emsg}
+    end
+  end
+  def validate_identity_ib_gibs(identity_ib_gibs) do
+    {:error, emsg_invalid_args(identity_ib_gibs)}
   end
 
 end

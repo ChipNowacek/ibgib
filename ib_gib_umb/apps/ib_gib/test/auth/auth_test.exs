@@ -209,4 +209,38 @@ defmodule IbGib.Auth.AuthTest do
     assert a_info[:rel8ns]["identity"] == identity_ib_gibs
   end
 
+  @tag :capture_log
+  test "fork, add identity, rel8, ensure new identity is on rel8d thing" do
+    {:ok, root} = Expression.Supervisor.start_expression()
+
+    initial_test_identities = @test_identities_1
+    a_ib = "a ib here huha"
+    b_ib = "bb bo beee"
+    a  = root |> fork!(initial_test_identities, a_ib)
+    b  = root |> fork!(initial_test_identities, b_ib)
+
+    session_id = RandomGib.Get.some_characters(30)
+    priv_data = %{
+      "session_id" => session_id
+    }
+    ip = "1.2.3.4"
+    pub_data = %{
+      "ip" => ip
+    }
+    {:ok, new_identity_ib_gib} = Identity.get_identity(priv_data, pub_data)
+
+    more_identities = initial_test_identities ++ [new_identity_ib_gib]
+    a = a |> rel8!(b, more_identities, ["rel8d"], @default_transform_options)
+
+    a_info = a |> get_info!
+
+    Logger.debug "a_info:\n#{inspect a_info, pretty: true}"
+    Logger.debug "more_identities: #{inspect more_identities}"
+
+    more_identities
+    |> Enum.each(fn(i) ->
+         assert Enum.member?(a_info[:rel8ns]["identity"], i)
+       end)
+  end
+
 end

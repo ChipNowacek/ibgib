@@ -9,11 +9,42 @@ alias IbGib.Data.Schemas.Seeds
 # "primitives" may be added a later time. I'm just doing some (probably
 # arbitrary) stuff here.
 
-# Basic
+# Root!
 :ok = Seeds.insert(:root)
-:ok = Seeds.insert(:fork)
-:ok = Seeds.insert(:mut8)
-:ok = Seeds.insert(:rel8)
+
+:ok = Seeds.insert(:error)
+
+# Fundamental Transforms
+:ok = Seeds.insert(:fork, %{
+  "src" => "[src]",
+  "dest_ib" => "[src.ib]"
+  })
+:ok = Seeds.insert(:mut8, %{
+  "src" => "[src]",
+  "new_data" => "[src.data]"
+  })
+:ok = Seeds.insert(:rel8, %{
+  "src" => "[src]",
+  "other" => Seeds.root_ib_gib,
+  "rel8ns" => Seeds.default_rel8ns
+  })
+
+# Composite Transforms
+# see https://github.com/ibgib/ibgib/issues/1
+:ok = Seeds.insert(:step, %{
+  "name" => "[rand]",
+  "in" => "[src]",
+  # The root ib^gib is the "identity" transform/function.
+  "t" => Seeds.root_ib_gib,
+  # "out" => "",
+  })
+:ok = Seeds.insert(:plan, %{
+  # new_id will be parsed, space-delimited args (I guess)
+  "name" => "[new_id 10]",
+  "steps" => ["step#{Seeds.delim}gib"]
+  })
+
+# Query
 :ok = Seeds.insert(:query)
 :ok = Seeds.insert(:query_result)
 

@@ -51,6 +51,9 @@ defmodule IbGib.Expression.BasicsTest do
     assert is_pid(new_forked_pid)
 
     Logger.debug "fork_result: #{fork_result}, new_forked_pid: #{inspect new_forked_pid}"
+
+    info = Expression.get_info!(new_forked_pid)
+    Logger.debug "info: #{inspect info, pretty: true}"
   end
 
   @tag :capture_log
@@ -65,17 +68,6 @@ defmodule IbGib.Expression.BasicsTest do
     Logger.debug "fork_result: #{fork_result}, new_forked_pid: #{inspect new_forked_pid}"
 
     forked_info = Expression.get_info!(new_forked_pid)
-    Logger.debug "forked_info: #{inspect forked_info}"
-    Logger.debug "forked_info: #{inspect forked_info}"
-    Logger.debug "forked_info: #{inspect forked_info}"
-    Logger.debug "forked_info: #{inspect forked_info}"
-    Logger.warn "forked_info: #{inspect forked_info}"
-    Logger.warn "forked_info: #{inspect forked_info}"
-    Logger.warn "forked_info: #{inspect forked_info}"
-    Logger.warn "forked_info: #{inspect forked_info}"
-    Logger.warn "forked_info: #{inspect forked_info}"
-    Logger.warn "forked_info: #{inspect forked_info}"
-    Logger.warn "forked_info: #{inspect forked_info}"
     Logger.warn "forked_info: #{inspect forked_info}"
 
     forked_ib_gib = Helper.get_ib_gib!(forked_info[:ib], forked_info[:gib])
@@ -91,6 +83,54 @@ defmodule IbGib.Expression.BasicsTest do
     Logger.debug "mut8d_info: #{inspect mut8d_info}"
 
     assert mut8d_info[:data][prop] === prop_value
+  end
+
+  @tag :capture_log
+  test "rel8, single rel8n" do
+    {:ok, root} = Expression.Supervisor.start_expression()
+
+    a_ib = "a ib here"
+    {:ok, a} = root |> Expression.fork(@test_identities_1, a_ib)
+
+    b_ib = "b Yoooo"
+    {:ok, b} = root |> Expression.fork(@test_identities_1, b_ib)
+    b_ib_gib = b |> Expression.get_info! |> Helper.get_ib_gib!
+
+    test_rel8ns = ["rel8d"]
+    a_rel8d = a |> Expression.rel8!(b, @test_identities_1, test_rel8ns, @default_transform_options)
+    a_rel8d_info = a_rel8d |> Expression.get_info!
+
+    test_rel8ns
+    |> Enum.each(fn(test_rel8n) ->
+         assert Map.has_key?(a_rel8d_info[:rel8ns], test_rel8n)
+         assert Enum.member?(a_rel8d_info[:rel8ns][test_rel8n], b_ib_gib)
+       end)
+
+    Logger.debug "a_rel8d_info:\n#{inspect a_rel8d_info, pretty: true}"
+  end
+
+  @tag :capture_log
+  test "rel8, multi rel8ns" do
+    {:ok, root} = Expression.Supervisor.start_expression()
+
+    a_ib = "a ib here"
+    {:ok, a} = root |> Expression.fork(@test_identities_1, a_ib)
+
+    b_ib = "b Yoooo"
+    {:ok, b} = root |> Expression.fork(@test_identities_1, b_ib)
+    b_ib_gib = b |> Expression.get_info! |> Helper.get_ib_gib!
+
+    test_rel8ns = ["rel8d", "whaaa", "prop", "42"]
+    a_rel8d = a |> Expression.rel8!(b, @test_identities_1, test_rel8ns, @default_transform_options)
+    a_rel8d_info = a_rel8d |> Expression.get_info!
+
+    test_rel8ns
+    |> Enum.each(fn(test_rel8n) ->
+         assert Map.has_key?(a_rel8d_info[:rel8ns], test_rel8n)
+         assert Enum.member?(a_rel8d_info[:rel8ns][test_rel8n], b_ib_gib)
+       end)
+
+    Logger.debug "a_rel8d_info:\n#{inspect a_rel8d_info, pretty: true}"
   end
 
   @tag :capture_log
@@ -198,7 +238,7 @@ defmodule IbGib.Expression.BasicsTest do
   end
 
   @tag :capture_log
-  test "create text, create instance from text" do
+  test "create text, create instance from text via forks" do
     # Pids are essentially references to objects. So that is why I'm going to_
     # start changing some of the _pid variables to the actual "instance" itself.
 
@@ -254,28 +294,24 @@ defmodule IbGib.Expression.BasicsTest do
 
     Logger.warn "gonna instance"
     Logger.warn "gonna instance"
-    Logger.warn "gonna instance"
-    Logger.warn "gonna instance"
-    Logger.warn "gonna instance"
-    Logger.warn "gonna instance"
     instance_ib = "a instance ib #{RandomGib.Get.some_letters(5)}"
     {:ok, a_instance} =
       a |> Expression.instance(@test_identities_1, instance_ib)
     Logger.debug "instance: #{inspect a_instance}"
     Logger.debug "instance: #{inspect a_instance}"
-    Logger.debug "instance: #{inspect a_instance}"
-    Logger.debug "instance: #{inspect a_instance}"
-    Logger.debug "instance: #{inspect a_instance}"
 
     a_instance_info = a_instance |> Expression.get_info!
-    a_instance_ib_gib = Helper.get_ib_gib!(a_instance_info)
+    # a_instance_ib_gib = Helper.get_ib_gib!(a_instance_info)
+
+    Logger.debug "a_instance_info:\n#{inspect a_instance_info, pretty: true}"
 
     # assert(
-    #   new_a_info[:rel8ns]["instance"]
+    #   a[:rel8ns]["instance"]
     #   |> Enum.map(&(String.split(&1, @delim) |> Enum.at(0)))
     #   |> Enum.member?(a_instance_info[:ib])
     # )
-    # assert a_instance_info[:rel8ns]["instance_of"] |> Enum.member?(a_ib_gib)
+    assert Map.has_key?(a_instance_info[:rel8ns], "instance_of")
+    assert a_instance_info[:rel8ns]["instance_of"] |> Enum.member?(a_ib_gib)
   end
 
   @tag :capture_log

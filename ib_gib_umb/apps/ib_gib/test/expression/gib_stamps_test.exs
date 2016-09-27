@@ -33,7 +33,7 @@ defmodule IbGib.Expression.GibStampsTest do
     {:ok, root} = Expression.Supervisor.start_expression()
 
     test_ib = "test ib here uh hrm"
-    test = root |> fork!(@test_identities_1, test_ib, %{:gib_stamp => true})
+    test = root |> fork!(@test_identities_1, test_ib, %{"gib_stamp" => "true"})
     test_info = test |> get_info!
     test_gib = test_info[:gib]
 
@@ -58,7 +58,7 @@ defmodule IbGib.Expression.GibStampsTest do
     {:ok, root} = Expression.Supervisor.start_expression()
 
     test_ib = "test ib here uh hrm"
-    opts = %{:gib_stamp => false}
+    opts = %{"gib_stamp" => "false"}
     test = root |> fork!(@test_identities_1, test_ib, opts)
     test_info = test |> get_info!
     test_gib = test_info[:gib]
@@ -79,18 +79,19 @@ defmodule IbGib.Expression.GibStampsTest do
     assert !Helper.gib_stamped?(test_gib)
   end
 
-  @tag :capture_log
-  test "fork NOT stamped, nil" do
-    {:ok, root} = Expression.Supervisor.start_expression()
-
-    test_ib = "test ib here uh hrm"
-    opts = nil
-    test = root |> fork!(@test_identities_1, test_ib, opts)
-    test_info = test |> get_info!
-    test_gib = test_info[:gib]
-
-    assert !Helper.gib_stamped?(test_gib)
-  end
+  # yagni
+  # @tag :capture_log
+  # test "fork NOT stamped, nil" do
+  #   {:ok, root} = Expression.Supervisor.start_expression()
+  #
+  #   test_ib = "test ib here uh hrm"
+  #   opts = nil
+  #   test = root |> fork!(@test_identities_1, test_ib, opts)
+  #   test_info = test |> get_info!
+  #   test_gib = test_info[:gib]
+  #
+  #   assert !Helper.gib_stamped?(test_gib)
+  # end
 
   # ----------------------------------------------------------------------------
   # mut8
@@ -101,7 +102,7 @@ defmodule IbGib.Expression.GibStampsTest do
     {:ok, root} = Expression.Supervisor.start_expression()
 
     new_data = %{"data" => "some data here"}
-    test = root |> mut8!(@test_identities_1, new_data, %{:gib_stamp => true})
+    test = root |> mut8!(@test_identities_1, new_data, %{"gib_stamp" => "true"})
     test_info = test |> get_info!
     test_gib = test_info[:gib]
 
@@ -126,7 +127,7 @@ defmodule IbGib.Expression.GibStampsTest do
     {:ok, root} = Expression.Supervisor.start_expression()
 
     new_data = %{"data" => "some data here"}
-    opts = %{:gib_stamp => false}
+    opts = %{"gib_stamp" => "false"}
     test = root |> mut8!(@test_identities_1, new_data, opts)
     test_info = test |> get_info!
     test_gib = test_info[:gib]
@@ -147,18 +148,18 @@ defmodule IbGib.Expression.GibStampsTest do
     assert !Helper.gib_stamped?(test_gib)
   end
 
-  @tag :capture_log
-  test "mut8 NOT stamped, nil" do
-    {:ok, root} = Expression.Supervisor.start_expression()
-
-    new_data = %{"data" => "some data here"}
-    opts = nil
-    test = root |> mut8!(@test_identities_1, new_data, opts)
-    test_info = test |> get_info!
-    test_gib = test_info[:gib]
-
-    assert !Helper.gib_stamped?(test_gib)
-  end
+  # @tag :capture_log
+  # test "mut8 NOT stamped, nil" do
+  #   {:ok, root} = Expression.Supervisor.start_expression()
+  #
+  #   new_data = %{"data" => "some data here"}
+  #   opts = nil
+  #   test = root |> mut8!(@test_identities_1, new_data, opts)
+  #   test_info = test |> get_info!
+  #   test_gib = test_info[:gib]
+  #
+  #   assert !Helper.gib_stamped?(test_gib)
+  # end
 
   # ----------------------------------------------------------------------------
   # rel8
@@ -171,32 +172,30 @@ defmodule IbGib.Expression.GibStampsTest do
     a = root |> fork!(@test_identities_1, Helper.new_id)
     b = root |> fork!(@test_identities_1, Helper.new_id)
 
-    opts = %{:gib_stamp => true}
-    {new_a, new_b} = a |> rel8!(b, ["rel8d"], ["rel8d"], opts)
+    opts = %{"gib_stamp" => "true"}
+    new_a = a |> rel8!(b, @test_identities_1, ["rel8d"], opts)
 
     {_new_a_ib, new_a_gib} = new_a |> get_info! |> Helper.get_ib_gib! |> Helper.separate_ib_gib!
-    {_new_b_ib, new_b_gib} = new_b |> get_info! |> Helper.get_ib_gib! |> Helper.separate_ib_gib!
 
     assert Helper.gib_stamped?(new_a_gib)
-    assert Helper.gib_stamped?(new_b_gib)
   end
 
-  @tag :capture_log
-  test "rel8 NOT stamped, implicit false" do
-    {:ok, root} = Expression.Supervisor.start_expression()
-
-    a = root |> fork!(@test_identities_1, Helper.new_id)
-    b = root |> fork!(@test_identities_1, Helper.new_id)
-
-    # _opts not passed explicitly
-    {new_a, new_b} = a |> rel8!(b, ["rel8d"], ["rel8d"])
-
-    {_new_a_ib, new_a_gib} = new_a |> get_info! |> Helper.get_ib_gib! |> Helper.separate_ib_gib!
-    {_new_b_ib, new_b_gib} = new_b |> get_info! |> Helper.get_ib_gib! |> Helper.separate_ib_gib!
-
-    assert !Helper.gib_stamped?(new_a_gib)
-    assert !Helper.gib_stamped?(new_b_gib)
-  end
+  # During refactoring, I've removed the default opts to allow this test.
+  # I plan on enabling it again though at some point.
+  # @tag :capture_log
+  # test "rel8 NOT stamped, implicit false" do
+  #   {:ok, root} = Expression.Supervisor.start_expression()
+  #
+  #   a = root |> fork!(@test_identities_1, Helper.new_id)
+  #   b = root |> fork!(@test_identities_1, Helper.new_id)
+  #
+  #   opts = %{"gib_stamp" => "false"}
+  #   new_a = a |> rel8!(b, @test_identities_1, ["rel8d"], opts)
+  #
+  #   {_new_a_ib, new_a_gib} = new_a |> get_info! |> Helper.get_ib_gib! |> Helper.separate_ib_gib!
+  #
+  #   assert !Helper.gib_stamped?(new_a_gib)
+  # end
 
   @tag :capture_log
   test "rel8 NOT stamped, explicit false" do
@@ -205,14 +204,12 @@ defmodule IbGib.Expression.GibStampsTest do
     a = root |> fork!(@test_identities_1, Helper.new_id)
     b = root |> fork!(@test_identities_1, Helper.new_id)
 
-    opts = %{:gib_stamp => false}
-    {new_a, new_b} = a |> rel8!(b, ["rel8d"], ["rel8d"], opts)
+    opts = %{"gib_stamp" => "false"}
+    new_a = a |> rel8!(b, @test_identities_1, ["rel8d"], opts)
 
     {_new_a_ib, new_a_gib} = new_a |> get_info! |> Helper.get_ib_gib! |> Helper.separate_ib_gib!
-    {_new_b_ib, new_b_gib} = new_b |> get_info! |> Helper.get_ib_gib! |> Helper.separate_ib_gib!
 
     assert !Helper.gib_stamped?(new_a_gib)
-    assert !Helper.gib_stamped?(new_b_gib)
   end
 
   @tag :capture_log
@@ -223,31 +220,27 @@ defmodule IbGib.Expression.GibStampsTest do
     b = root |> fork!(@test_identities_1, Helper.new_id)
 
     opts = %{}
-    {new_a, new_b} = a |> rel8!(b, ["rel8d"], ["rel8d"], opts)
+    new_a = a |> rel8!(b, @test_identities_1, ["rel8d"], opts)
 
     {_new_a_ib, new_a_gib} = new_a |> get_info! |> Helper.get_ib_gib! |> Helper.separate_ib_gib!
-    {_new_b_ib, new_b_gib} = new_b |> get_info! |> Helper.get_ib_gib! |> Helper.separate_ib_gib!
 
     assert !Helper.gib_stamped?(new_a_gib)
-    assert !Helper.gib_stamped?(new_b_gib)
   end
 
-  @tag :capture_log
-  test "rel8 NOT stamped, nil" do
-    {:ok, root} = Expression.Supervisor.start_expression()
-
-    a = root |> fork!(@test_identities_1, Helper.new_id)
-    b = root |> fork!(@test_identities_1, Helper.new_id)
-
-    opts = nil
-    {new_a, new_b} = a |> rel8!(b, ["rel8d"], ["rel8d"], opts)
-
-    {_new_a_ib, new_a_gib} = new_a |> get_info! |> Helper.get_ib_gib! |> Helper.separate_ib_gib!
-    {_new_b_ib, new_b_gib} = new_b |> get_info! |> Helper.get_ib_gib! |> Helper.separate_ib_gib!
-
-    assert !Helper.gib_stamped?(new_a_gib)
-    assert !Helper.gib_stamped?(new_b_gib)
-  end
+  # @tag :capture_log
+  # test "rel8 NOT stamped, nil" do
+  #   {:ok, root} = Expression.Supervisor.start_expression()
+  #
+  #   a = root |> fork!(@test_identities_1, Helper.new_id)
+  #   b = root |> fork!(@test_identities_1, Helper.new_id)
+  #
+  #   opts = nil
+  #   new_a = a |> rel8!(b, @test_identities_1, ["rel8d"], opts)
+  #
+  #   {_new_a_ib, new_a_gib} = new_a |> get_info! |> Helper.get_ib_gib! |> Helper.separate_ib_gib!
+  #
+  #   assert !Helper.gib_stamped?(new_a_gib)
+  # end
 
   # ----------------------------------------------------------------------------
   # instance
@@ -259,7 +252,7 @@ defmodule IbGib.Expression.GibStampsTest do
     test_base = root |> fork!(@test_identities_1, Helper.new_id)
 
     test_ib = "test ib here uh hrm"
-    {_new_test_base, test} = test_base |> instance!(@test_identities_1, test_ib, %{:gib_stamp => true})
+    test = test_base |> instance!(@test_identities_1, test_ib, %{"gib_stamp" => "true"})
     test_info = test |> get_info!
     test_gib = test_info[:gib]
 
@@ -273,7 +266,7 @@ defmodule IbGib.Expression.GibStampsTest do
 
     test_ib = "test ib here uh hrm"
     # opts = nada
-    {_new_test_base, test} = test_base |> instance!(@test_identities_1, test_ib)
+    test = test_base |> instance!(@test_identities_1, test_ib)
     test_info = test |> get_info!
     test_gib = test_info[:gib]
 
@@ -286,8 +279,8 @@ defmodule IbGib.Expression.GibStampsTest do
     test_base = root |> fork!(@test_identities_1, Helper.new_id)
 
     test_ib = "test ib here uh hrm"
-    opts = %{:gib_stamp => false}
-    {_new_test_base, test} = test_base |> instance!(@test_identities_1, test_ib, opts)
+    opts = %{"gib_stamp" => "false"}
+    test = test_base |> instance!(@test_identities_1, test_ib, opts)
     test_info = test |> get_info!
     test_gib = test_info[:gib]
 
@@ -301,25 +294,25 @@ defmodule IbGib.Expression.GibStampsTest do
 
     test_ib = "test ib here uh hrm"
     opts = %{}
-    {_new_test_base, test} = test_base |> instance!(@test_identities_1, test_ib, opts)
+    test = test_base |> instance!(@test_identities_1, test_ib, opts)
     test_info = test |> get_info!
     test_gib = test_info[:gib]
 
     assert !Helper.gib_stamped?(test_gib)
   end
 
-  @tag :capture_log
-  test "instance NOT stamped, nil" do
-    {:ok, root} = Expression.Supervisor.start_expression()
-    test_base = root |> fork!(@test_identities_1, Helper.new_id)
-
-    test_ib = "test ib here uh hrm"
-    opts = nil
-    {_new_test_base, test} = test_base |> instance!(@test_identities_1, test_ib, opts)
-    test_info = test |> get_info!
-    test_gib = test_info[:gib]
-
-    assert !Helper.gib_stamped?(test_gib)
-  end
+  # @tag :capture_log
+  # test "instance NOT stamped, nil" do
+  #   {:ok, root} = Expression.Supervisor.start_expression()
+  #   test_base = root |> fork!(@test_identities_1, Helper.new_id)
+  #
+  #   test_ib = "test ib here uh hrm"
+  #   opts = nil
+  #   test = test_base |> instance!(@test_identities_1, test_ib, opts)
+  #   test_info = test |> get_info!
+  #   test_gib = test_info[:gib]
+  #
+  #   assert !Helper.gib_stamped?(test_gib)
+  # end
 
 end
