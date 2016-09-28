@@ -1560,7 +1560,8 @@ defmodule IbGib.Expression do
   """
   @spec rel8(pid, pid, list(String.t), list(String.t),
              map) :: {:ok, pid} | {:error, any}
-  def rel8(expr_pid, other_pid, identity_ib_gibs, rel8ns, opts)
+  def rel8(expr_pid, other_pid, identity_ib_gibs, rel8ns,
+           opts \\ @default_transform_options)
   def rel8(expr_pid, other_pid, identity_ib_gibs, rel8ns, opts)
     when is_pid(expr_pid) and is_pid(other_pid) and expr_pid !== other_pid and
          is_list(identity_ib_gibs) and length(identity_ib_gibs) >= 1 and
@@ -1581,7 +1582,8 @@ defmodule IbGib.Expression do
   Bang version of `rel8/6`.
   """
   @spec rel8!(pid, pid, list(String.t), list(String.t), map) :: pid
-  def rel8!(expr_pid, other_pid, identity_ib_gibs, rel8ns, opts) do
+  def rel8!(expr_pid, other_pid, identity_ib_gibs, rel8ns,
+            opts \\ @default_transform_options) do
     bang(rel8(expr_pid, other_pid, identity_ib_gibs, rel8ns, opts))
   end
 

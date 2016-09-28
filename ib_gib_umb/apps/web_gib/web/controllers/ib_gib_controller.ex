@@ -443,19 +443,13 @@ defmodule WebGib.IbGibController do
       {:ok, comment} <-
         comment_gib
         |> Expression.fork(identity_ib_gibs,
-                           "comment",
-                           @default_transform_options),
+                           "comment"),
       {:ok, comment} <-
         comment
-        |> Expression.mut8(identity_ib_gibs,
-                           %{"text" => comment_text},
-                           @default_transform_options),
+        |> Expression.mut8(identity_ib_gibs, %{"text" => comment_text}),
       {:ok, new_src} <-
         src
-        |> Expression.rel8(comment,
-                           identity_ib_gibs,
-                           ["comment"],
-                           @default_transform_options),
+        |> Expression.rel8(comment, identity_ib_gibs, ["comment"]),
       {:ok, new_src_info} <- new_src |> Expression.get_info,
       {:ok, new_src_ib_gib} <- get_ib_gib(new_src_info)
     ) do
