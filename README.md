@@ -2,7 +2,7 @@
 
 Don't Panic.
 
-![Current Screenshot of ibGib](/images/screenshots/2016-09-27-ib_gib.png)
+![Current Screenshot of ibGib](/images/animated/2016-09-27-animated.gif)
 
 ## contributing, or just checking ib out
 
