@@ -142,12 +142,6 @@ export class IbScape {
           .append("g")
           .classed('gnode', true);
 
-      // let graphNodes = svgGroup.append("g")
-      //     .attr("class", "nodes")
-      //   .selectAll("circle")
-      //   .data(modifiedNodes)
-      //   .enter();
-
       let graphNodeCircles = graphNodes
           .append("circle")
           .attr("class", "nodes")
@@ -169,6 +163,7 @@ export class IbScape {
       let baseJsonPath = t.baseJsonPath;
       let graphNodeLabels = graphNodes
           .append("text")
+          .attr("text-anchor", "middle")
           .attr("id", d => "label_" + d.js_id)
           .text(d => {
             if (d.render === "text") {
@@ -341,7 +336,10 @@ export class IbScape {
   clearSelectedNode() {
     d3.select("#d3vis")
       .selectAll("circle")
-        .style("opacity", 1);
+        .style("opacity", 1)
+        .attr("stroke", null)
+        .attr("stroke-width", null)
+        ;
 
     if (this.selectedNode) {
       this.tearDownMenu(/*cancelDetails*/ true);
@@ -542,8 +540,12 @@ export class IbScape {
         text = `This is a 'past' version of your current ibGib. You can think of past ibGib kinda like when you 'undo' a text document. Each time you mut8 an ibGib, either by adding/removing a comment or image, changing a comment, etc., you create a 'new' version in time. ibGib retains all histories of all changes of all ibGib!`
       } else if (dIbGib.cat === "dna") {
         text = `Just like a living organism, each ibGib is produced by an internal "dna" code. Each building block is itself an ibGib that you can look at.`;
+      } else if (dIbGib.cat === "identity") {
+        text = `This is an identity ibGib. It lets you know who someone is, and you can add layers of identities to be "more secure". If the ib is a long number, then that is an "anonymous" user. Anyone can have their ib be the same, so be sure to check the gib! (It's that long number after the ^ character in the form of 'ibGib_LETTERSandNUMBERS_ibGib')`;
       } else if (dIbGib.cat === "rel8n") {
-        text = `This is the '${dIbGib.name}' rel8n node. All of its children are rel8ed to the current ibGib by this rel8n. One ibGib can have multiple rel8ns to any other ibGib. You can expand / collapse the rel8n to show / hide its children by either double-clicking or clicking and selecting the "view" button.`
+        text = `This is the '${dIbGib.name}' rel8n node. All of its children are rel8ed to the current ibGib by this rel8n. One ibGib can have multiple rel8ns to any other ibGib. You can expand / collapse the rel8n to show / hide its children by either double-clicking or clicking and selecting the "view" button.`;
+      } else if (dIbGib.ib === "comment") {
+        text = `This is a comment. It contains text...umm..you can comment on just about anything. This particular comment's text is: "${this.naiveCache[dIbGib.ibgib].data.text}"`;
       } else {
         text = `This is one of the related ibGib. Click the information button to get more details about it. You can also navigate to it, expand / collapse any children, fork it, merge it, add comments, pictures, links, and more.`;
       }

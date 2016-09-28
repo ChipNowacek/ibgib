@@ -158,7 +158,7 @@ defmodule WebGib.IbGibController do
     ib_node_ibgib = get_ib_gib!(info)
     {ib_node_ib, ib_node_gib} = separate_ib_gib!(ib_node_ibgib)
     ib_gib_node = %{"id" => "ib#{@delim}gib", "name" => "ib", "cat" => "ibGib", "ibgib" => "ib#{@delim}gib", "js_id" => get_js_id}
-    ib_node = %{"id" => ib_node_ibgib, "name" => ib_node_ib, "cat" => "ib", "ibgib" => ib_node_ibgib, "js_id" => get_js_id, "ib" => ib_node_ib, "gib" => ib_node_gib}
+    ib_node = %{"id" => ib_node_ibgib, "name" => ib_node_ib, "cat" => "ib", "ibgib" => ib_node_ibgib, "js_id" => get_js_id, "ib" => ib_node_ib, "gib" => ib_node_gib, "render" => get_render(ib_node_ibgib, ib_node_ib, ib_node_gib)}
 
     nodes = [ib_gib_node, ib_node]
 
