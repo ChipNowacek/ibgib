@@ -394,27 +394,14 @@ defmodule WebGib.IbGibController do
   # ----------------------------------------------------------------------------
 
   def comment(conn, %{"comment_form_data" => %{"comment_text" => comment_text, "src_ib_gib" => src_ib_gib}} = params) do
+    Logger.metadata(x: :comment_1)
     Logger.debug "conn: #{inspect conn}"
-    Logger.debug "conn.params: #{inspect conn.params}"
-    Logger.debug "params: #{inspect params}"
-    msg = "comment_text: #{comment_text}"
 
-    Logger.warn "Testing gettext: #{gettext @emsg_invalid_comment}"
-
-    if validate(:comment_text, comment_text) and
-                validate(:ib_gib, src_ib_gib) and
-                src_ib_gib != @root_ib_gib do
-      do_comment(conn, %{"src_ib_gib" => src_ib_gib, "comment_text" => comment_text})
-    else
-      conn
-      |> put_flash(:error, gettext @emsg_invalid_comment)
-      |> redirect(to: "/ibgib/#{src_ib_gib}")
-    end
+    comment(conn, %{"comment_text" => comment_text, "src_ib_gib" => src_ib_gib})
   end
   def comment(conn, %{"comment_text" => comment_text, "src_ib_gib" => src_ib_gib} = params) do
+    Logger.metadata(x: :comment_2)
     Logger.debug "conn: #{inspect conn}"
-    Logger.debug "conn.params: #{inspect conn.params}"
-    Logger.debug "params: #{inspect params}"
     msg = "comment_text: #{comment_text}"
 
     Logger.warn "@root_ib_gib: #{@root_ib_gib}"
@@ -422,44 +409,31 @@ defmodule WebGib.IbGibController do
     if validate(:comment_text, comment_text) and
                 validate(:ib_gib, src_ib_gib) and
                 src_ib_gib != @root_ib_gib do
-      Logger.warn "comment is valid"
-      Logger.warn "comment is valid"
-      do_comment(conn, %{"src_ib_gib" => src_ib_gib, "comment_text" => comment_text})
+      Logger.debug "comment is valid. comment_text: #{comment_text}"
+
+      case comment_impl(conn, src_ib_gib, comment_text) do
+        {:ok, new_src_ib_gib} ->
+          conn
+          |> redirect(to: "/ibgib/#{new_src_ib_gib}")
+
+        {:error, reason} ->
+          Logger.error reason
+          friendly_emsg = dgettext "error", @emsg_invalid_comment
+          conn
+          |> put_flash(:error, friendly_emsg)
+          |> redirect(to: "/ibgib")
+      end
     else
-      Logger.warn "comment is INVALID"
-      Logger.warn "comment is INVALID"
+      Logger.debug "comment is INVALID. comment_text: #{comment_text}"
+      friendly_emsg = dgettext "error", @emsg_invalid_comment
       conn
-      |> put_flash(:error, gettext @emsg_invalid_comment)
+      |> put_flash(:error, friendly_emsg)
       |> redirect(to: "/ibgib/#{src_ib_gib}")
     end
   end
 
-  defp do_comment(conn, %{"src_ib_gib" => src_ib_gib, "comment_text" => comment_text}) do
+  defp comment_impl(conn, src_ib_gib, comment_text) do
     Logger.debug "src_ib_gib: #{src_ib_gib}\ncomment_text: #{comment_text}"
-    case comment_impl(conn, conn.assigns[:root], src_ib_gib, comment_text) do
-      {:ok, commented_thing} ->
-
-        commented_thing_info = commented_thing |> Expression.get_info!
-        ib = commented_thing_info[:ib]
-        gib = commented_thing_info[:gib]
-        ib_gib = get_ib_gib!(ib, gib)
-
-        conn
-        |> redirect(to: "/ibgib/#{ib_gib}")
-      other ->
-        # put flash error
-        error_msg = dgettext "error", "Comment failed."
-        Logger.error "#{error_msg}. (#{inspect other})"
-        conn
-        |> put_flash(:error, error_msg)
-        |> redirect(to: "/ibgib")
-    end
-  end
-
-  defp comment_impl(conn, root, src_ib_gib, comment_text)
-    when is_bitstring(src_ib_gib) and is_bitstring(comment_text) and
-         src_ib_gib !== "" and comment_text !== "" do
-    Logger.debug "comment_text: #{comment_text}"
 
     with(
       identity_ib_gibs <- conn |> get_session(@ib_identity_ib_gibs_key),
@@ -476,61 +450,22 @@ defmodule WebGib.IbGibController do
         |> Expression.mut8(identity_ib_gibs,
                            %{"text" => comment_text},
                            @default_transform_options),
-      # {:ok, comment} <-
-      #   comment
-      #   |> tag_identification(get_session(conn, @ib_identity_ib_gibs_key)),
       {:ok, new_src} <-
         src
         |> Expression.rel8(comment,
                            identity_ib_gibs,
                            ["comment"],
-                           @default_transform_options)
+                           @default_transform_options),
+      {:ok, new_src_info} <- new_src |> Expression.get_info,
+      {:ok, new_src_ib_gib} <- get_ib_gib(new_src_info)
     ) do
-      {:ok, new_src}
+      {:ok, new_src_ib_gib}
     else
       {:error, reason} when is_bitstring(reason) -> {:error, reason}
       {:error, reason} -> {:error, inspect reason}
       error -> {:error, inspect error}
     end
   end
-
-  # # This adds the current user's identity(s) to the given ib_gib src (pid). The
-  # # conn session has the characteristic of returning a single bitstring instead
-  # # of an array if there is only one identity, thus we have a naming problem.
-  # # So the identity info is either a single identity ib_gib bitstring, or a
-  # # list of identity ib_gib bitstrings.
-  # # Returns either {:ok, new_ib_gib} or {:error, reason}
-  # defp tag_identification(src, identity_info)
-  # defp tag_identification(src, identity_ib_gib)
-  #   when is_pid(src) and is_bitstring(identity_ib_gib) do
-  #   with {:ok, identity} <-
-  #     IbGib.Expression.Supervisor.start_expression(identity_ib_gib),
-  #     {:ok, new_src} <-
-  #       src |> Expression.rel8(identity, identity_ib_gib, ["identity"], @default_rel8ns, %{"gib_stamp" => "true"}) do
-  #     {:ok, new_src}
-  #   else
-  #     {:error, reason} when is_bitstring(reason) -> {:error, reason}
-  #     {:error, reason} -> {:error, inspect reason}
-  #     error -> {:error, inspect error}
-  #   end
-  # end
-  # defp tag_identification(src, identity_ib_gibs)
-  #   when is_pid(src) and is_list(identity_ib_gibs) do
-  #   # For each identity_ib_gib, we pass in the previous src and rel8 it to the
-  #   # given identity_ib_gib, starting with the passed in src.
-  #   Enum.reduce(identity_ib_gibs, {:ok, src}, fn (identity_ib_gib, acc) ->
-  #     case acc do
-  #       {:ok, this_src} -> tag_identification(this_src, identity_ib_gib)
-  #
-  #       # If there is an error at any point, we stop trying to do any more and
-  #       # just pass the error. Remember, this is not a huge loop, (I don't
-  #       # plan on it being huge anyway...maybe in the future if this is used
-  #       # for a bunch of people to "sign" something, who knows.)
-  #       {:error, reason} -> {:error, reason}
-  #     end
-  #   end)
-  # end
-
 
   # ----------------------------------------------------------------------------
   # Helper
