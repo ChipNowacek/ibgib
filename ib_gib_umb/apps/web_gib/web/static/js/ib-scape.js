@@ -3,9 +3,10 @@ import { d3CircleRadius, d3Scales, d3Colors, d3DefaultCollapsed, d3MenuCommands 
 // import { nerdAlert } from './text-helpers';
 
 export class IbScape {
-  constructor(graphDiv, ibEngine) {
-    this.ibEngine = ibEngine;
+  constructor(graphDiv, baseJsonPath) {
+    this.baseJsonPath = baseJsonPath;
     this.graphDiv = graphDiv;
+    this.naiveCache = {}
 
     this.circleRadius = 10;
 
@@ -54,13 +55,13 @@ export class IbScape {
 
     // Holds child components (nodes, links)
     // Need this for zooming.
-    let vis = svg
+    let svgGroup = svg
         .append('svg:g')
           .attr("id", "d3vis");
-    t.vis = vis;
+    t.svgGroup = svgGroup;
 
     let zoom = d3.zoom().on("zoom", () => {
-      vis.attr("transform",
+      svgGroup.attr("transform",
         `translate(${d3.event.transform.x}, ${d3.event.transform.y})` + " " +
         `scale(${d3.event.transform.k})`);
     });
@@ -88,17 +89,21 @@ export class IbScape {
       // Obviously, this is horrifically non-optimized.
       t.rawData = graph;
       if (!t.workingData) {
-        // let collapsed = ["ancestor", "past", "dna", "query", "rel8d", "identity"]
         let hiddenNodeIds = [];
         graph.nodes.forEach(n => {
-          if (d3DefaultCollapsed.some(c => c === n.cat)) {
+          if (d3DefaultCollapsed.some(rel8n => rel8n === n.cat)) {
+            // If a node's rel8n is in the collapsed cats list, hide it.
             n.visible = false;
             n.collapsed = false;
             hiddenNodeIds.push(n.id);
-          } else if (d3DefaultCollapsed.some(c => c === n.id)) {
+          } else if (d3DefaultCollapsed.some(cat => cat === n.id)) {
+            // If the node's id itself is the rel8n, then keep it visible but
+            // mark it as collapsed.
             n.visible = true;
             n.collapsed = true;
           } else {
+            // The node is not a collapsed rel8n, and it's not in a collapsed
+            // rel8n.
             n.visible = true;
             n.collapsed = false;
           }
@@ -111,7 +116,6 @@ export class IbScape {
           }
         });
 
-
         t.workingData = graph;
       }
 
@@ -123,18 +127,30 @@ export class IbScape {
       // inactive means one of the link's endpoints is hidden.
       let modifiedLinks = graph.links.filter(l => l.active);
 
-      let link = vis.append("g")
+      let graphLinks = svgGroup.append("g")
           .attr("class", "links")
         .selectAll("line")
         .data(modifiedLinks)
         .enter().append("line")
           .attr("stroke-width", function(d) { return Math.sqrt(d.value); });
 
-      let node = vis.append("g")
+
+      let graphNodes = svgGroup
+          .selectAll("g.gnode")
+          .data(modifiedNodes)
+          .enter()
+          .append("g")
+          .classed('gnode', true);
+
+      // let graphNodes = svgGroup.append("g")
+      //     .attr("class", "nodes")
+      //   .selectAll("circle")
+      //   .data(modifiedNodes)
+      //   .enter();
+
+      let graphNodeCircles = graphNodes
+          .append("circle")
           .attr("class", "nodes")
-        .selectAll("circle")
-        .data(modifiedNodes)
-        .enter().append("circle")
           .attr("id", d => d.js_id || null)
           .attr("cursor", "pointer")
           .attr("r", getRadius)
@@ -146,8 +162,46 @@ export class IbScape {
               .on("drag", dragged)
               .on("end", dragended));
 
-      node.append("title")
-          .text(function(d) { return d.id; });
+      graphNodeCircles.append("title")
+          .text(d => d.id);
+          // .text(function(d) { return d.id; });
+
+      let baseJsonPath = t.baseJsonPath;
+      let graphNodeLabels = graphNodes
+          .append("text")
+          .attr("id", d => "label_" + d.js_id)
+          .text(d => {
+            if (d.render === "text") {
+              if (d.ibgib in t.naiveCache) {
+                let jsonData = t.naiveCache[d.ibgib]
+                if (jsonData && jsonData.data && jsonData.data.text) {
+                  return jsonData.data.text;
+                } else {
+                  return "?";
+                }
+              } else {
+                d3.json(baseJsonPath + d.ibgib, res => {
+                  t.naiveCache[d.ibgib] = res;
+                  let labelText =
+                      res && res.data && res.data.text ?
+                      res.data.text :
+                      "?";
+                  d3.select("#label_" + d.js_id)
+                    .text(labelText);
+                });
+
+                return "...";
+              }
+            } else {
+              return "";
+            }
+          })
+      // graphNodes.append("image")
+      //     .attr("xlink:href", "https://github.com/favicon.ico")
+      //     .attr("x", -8)
+      //     .attr("y", -8)
+      //     .attr("width", 16)
+      //     .attr("height", 16);
 
       simulation
           .nodes(graph.nodes)
@@ -158,15 +212,23 @@ export class IbScape {
           .links(graph.links);
 
       function ticked() {
-        link
-            .attr("x1", function(d) { return d.source.x; })
-            .attr("y1", function(d) { return d.source.y; })
-            .attr("x2", function(d) { return d.target.x; })
-            .attr("y2", function(d) { return d.target.y; });
+        graphLinks
+            .attr("x1", d => d.source.x)
+            .attr("y1", d => d.source.y)
+            .attr("x2", d => d.target.x)
+            .attr("y2", d => d.target.y);
 
-        node
-            .attr("cx", function(d) { return d.x; })
-            .attr("cy", function(d) { return d.y; });
+        // Translate the groups
+        graphNodes
+            .attr("transform", d => 'translate(' + [d.x, d.y] + ')');
+
+        // graphNodeCircles
+        //     .attr("cx", function(d) { return d.x; })
+        //     .attr("cy", function(d) { return d.y; });
+        //
+        // graphNodeLabels
+        //     .attr("cx", function(d) { return d.x - 100; })
+        //     .attr("cy", function(d) { return d.y; });
       }
     });
 
@@ -445,7 +507,6 @@ export class IbScape {
       this.destroyStuff();
       this.update(null);
     } else if (dCommand.name == "fork") {
-      // this.ibEngine.fork(dIbGib.ibgib);
       this.execFork(dIbGib)
     } else if (dCommand.name == "goto") {
       this.execGoto(dIbGib);
@@ -569,9 +630,15 @@ export class IbScape {
 
       // activate links
       this.workingData.links.forEach(l => {
-        if (l.source.js_id === dRel8n.js_id || l.target.js_id === dRel8n.js_id) {
-          l.active = true;
-        }
+        // if (l.source.js_id === dRel8n.js_id || l.target.js_id === dRel8n.js_id) {
+        let blah = dRel8n;
+        let blah2 = l.source;
+        let blah3 = l.target;
+        let b = blah;
+        b = blah2;
+        b = blah3;
+
+        l.active = l.source.visible && l.target.visible;
       });
     } else {
       // collapse
@@ -586,9 +653,7 @@ export class IbScape {
 
       // activate links
       this.workingData.links.forEach(l => {
-        if (l.source.js_id === dRel8n.js_id) {
-          l.active = false;
-        }
+        l.active = l.source.visible && l.target.visible;
       });
     }
   }
@@ -646,7 +711,7 @@ export class IbScape {
 
     delete(this.svg);
     delete(this.view);
-    delete(this.vis);
+    delete(this.svgGroup);
     delete(this.simulation);
     delete(this.height);
     delete(this.width);

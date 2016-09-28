@@ -15,13 +15,14 @@ defmodule WebGib.IbGibView do
           "ibgib": "#{@ib_gib}",
           "data-metaqueryibgib": "#{@meta_query_ib_gib}",
           "data-metaqueryresultibgib": "#{@meta_query_result_ib_gib}",
-          "data-path": "#{WebGib.Router.Helpers.ib_gib_path(WebGib.Endpoint, :getd3, "")}",
+          "data-path": "#{WebGib.Router.Helpers.ib_gib_path(WebGib.Endpoint, :get, "")}",
+          "d3-data-path": "#{WebGib.Router.Helpers.ib_gib_path(WebGib.Endpoint, :getd3, "")}",
           "data-open-path": "#{WebGib.Router.Helpers.ib_gib_path(WebGib.Endpoint, :show, "")}",
           "visibility": "hidden"
         ]
       end
       # div [class: "ib-info-border"] do
-        
+
       # end
     end
   end

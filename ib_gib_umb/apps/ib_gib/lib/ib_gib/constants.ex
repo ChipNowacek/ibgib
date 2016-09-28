@@ -74,6 +74,12 @@ defmodule IbGib.Constants do
     end
   end
 
+  def validation do
+    quote do
+      @max_comment_text_size 127
+    end
+  end
+
   # For use with testing.
   def test do
     quote do

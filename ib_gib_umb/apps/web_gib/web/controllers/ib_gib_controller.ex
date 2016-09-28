@@ -7,11 +7,11 @@ defmodule WebGib.IbGibController do
   # Usings, imports, etc.
   # ----------------------------------------------------------------------------
 
+  use IbGib.Constants, :validation
   use WebGib.Web, :controller
 
   alias IbGib.TransformFactory.Mut8Factory
   alias IbGib.Expression
-
 
   # ----------------------------------------------------------------------------
   # Controller Commands
@@ -98,8 +98,8 @@ defmodule WebGib.IbGibController do
   # ----------------------------------------------------------------------------
 
   def get(conn, %{"ib_gib" => ib_gib} = params) do
-    # Logger.warn "mimicking latency....don't do this in production!"
-    # Process.sleep(5000)
+    Logger.warn "mimicking latency....don't do this in production!"
+    Process.sleep(RandomGib.Get.one_of([5000, 2000, 1000, 7000, 3000]))
     Logger.debug "JSON get. conn: #{inspect conn}"
     Logger.debug "JSON get. params: #{inspect params}"
     with {:ok, pid} <- IbGib.Expression.Supervisor.start_expression(ib_gib),
@@ -173,12 +173,20 @@ defmodule WebGib.IbGibController do
         # First get the node representing the rel8n itself.
         {group_node, group_link} = create_rel8n_group_node_and_link(rel8n, ib_node)
 
-        # Now get the node and links for each ib^gib that belonds to that
+        # Now get the node and links for each ib^gib that belongs to that
         # rel8n.
-        {item_nodes, item_links} = Enum.reduce(rel8n_ibgibs, {[],[]}, fn(r_ibgib, {acc2_nodes, acc2_links}) ->
-          {item_node, item_link} = create_rel8n_item_node_and_link(r_ibgib, rel8n)
-          {acc2_nodes ++ [item_node], acc2_links ++ [item_link]}
-        end)
+        {item_nodes, item_links, prev_ib_gib} =
+          rel8n_ibgibs
+          |> Enum.reverse
+          |> Enum.reduce({[],[], nil},
+              fn(r_ibgib, {acc2_nodes, acc2_links, acc2_prev_ibgib}) ->
+                {item_node, item_link} = create_rel8n_item_node_and_link(r_ibgib, rel8n, acc2_prev_ibgib)
+                {
+                  acc2_nodes ++ [item_node],
+                  acc2_links ++ [item_link],
+                  r_ibgib
+                }
+              end)
 
         # Return the accumulated {nodes, links}
         {
@@ -199,15 +207,43 @@ defmodule WebGib.IbGibController do
     result
   end
 
-  defp create_rel8n_item_node_and_link(ibgib, rel8n) do
+  @doc """
+  These will relate to each other, not all to the group
+  """
+  @linear_rel8ns ["past", "ancestor", "dna"]
+
+  defp create_rel8n_item_node_and_link(ibgib, rel8n, prev_ibgib) do
     {ib, gib} = separate_ib_gib!(ibgib)
-    item_node = %{"id" => "#{rel8n}: #{ibgib}", "name" => ib, "cat" => rel8n, "ibgib" => "#{ibgib}", "js_id" => get_js_id, "ib" => ib, "gib" => gib}
-    item_link = %{"source" => rel8n, "target" => "#{rel8n}: #{ibgib}", "value" => 1}
+    item_node = %{
+      "id" => "#{rel8n}: #{ibgib}",
+      "name" => ib,
+      "cat" => rel8n,
+      "ibgib" => "#{ibgib}",
+      "js_id" => get_js_id,
+      "ib" => ib,
+      "gib" => gib,
+      "render" => get_render(ibgib, ib, gib)
+    }
+
+    item_link =
+      if rel8n in @linear_rel8ns and !is_nil(prev_ibgib) do
+        # %{"source" => rel8n, "target" => "#{rel8n}: #{ibgib}", "value" => 1}
+        %{"source" => "#{rel8n}: #{prev_ibgib}", "target" => "#{rel8n}: #{ibgib}", "value" => 1, "rel8n" => "#{rel8n}"}
+      else
+        %{"source" => rel8n, "target" => "#{rel8n}: #{ibgib}", "value" => 1, "rel8n" => "#{rel8n}"}
+      end
     result = {item_node, item_link}
     Logger.debug "item node: #{inspect result}"
     result
   end
 
+  defp get_render(_ibgib, ib, _gib) do
+    # (Very) Naive implementation to start with.
+    case ib do
+      "comment" -> "text"
+      _ -> "any"
+    end
+  end
 
   # ----------------------------------------------------------------------------
   # Mut8
@@ -478,8 +514,9 @@ defmodule WebGib.IbGibController do
     # size.
     Logger.warn "comment_text: #{comment_text}"
     Logger.warn "string length comment_text: #{String.length(comment_text)}"
-    Logger.warn "max_data_size: #{max_data_size}"
-    String.length(comment_text) < max_data_size
+    Logger.warn "@max_comment_text_size: #{@max_comment_text_size}"
+
+    String.length(comment_text) < @max_comment_text_size
   end
   defp validate(:comment_text, comment_text) do
     Logger.warn "Invalid comment_text: #{inspect comment_text}"

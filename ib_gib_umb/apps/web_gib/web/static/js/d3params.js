@@ -1,15 +1,15 @@
 var d3CircleRadius = 10;
 
 let d3Scales = {
-  "rel8n": 1.2,
-  "dna": .5,
-  "ancestor": .5,
-  "past": 1,
-  "ib": 3,
+  "rel8n": 1.5,
+  "dna": 1,
+  "ancestor": 1,
+  "past": 2,
+  "ib": 6.5,
   "ibGib": 5,
   "result": 2,
-  "rel8d": 1.5,
-  "default": 1.5
+  "rel8d": 2,
+  "default": 2
 };
 
 let d3Colors = {

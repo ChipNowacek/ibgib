@@ -26,6 +26,7 @@ import { IbGibChannel } from "./socket"
 
 import { IbScape } from "./ib-scape";
 
+
 // import { getData } from './miserables.js';
 
 class App {
@@ -44,13 +45,14 @@ class App {
 
       // This is our base json path that we will use to pull anything down.
       let baseJsonPath = divIbGibData.getAttribute("data-path");
+      let baseD3JsonPath = divIbGibData.getAttribute("d3-data-path");
 
       // Create the ibScape, which is the d3 "landscape" for the ibgib.
       let graphDiv = document.querySelector("#ib-d3-graph-div");
-      this.ibScape = new IbScape(graphDiv);
+      this.ibScape = new IbScape(graphDiv, baseJsonPath);
 
       // We set the ibScape to get its json data
-      let data = baseJsonPath + ibgib;
+      let data = baseD3JsonPath + ibgib;
       this.ibScape.update(data);
     }
 
