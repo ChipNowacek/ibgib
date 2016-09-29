@@ -71,7 +71,11 @@ export class IbScape {
     let simulation = d3.forceSimulation()
         .velocityDecay(0.55)
         // .force("link", d3.forceLink(links).distance(20).strength(1))
-        .force("link", d3.forceLink().distance(20).strength(.8).id(function(d) { return d.id; }))
+        .force("link",
+               d3.forceLink()
+                 .distance(getLinkDistance)
+                 .strength(.8)
+                 .id(d => d.id))
         .force("charge", d3.forceManyBody().strength(25))
         .force("collide", d3.forceCollide(3 * d3CircleRadius))
         .force("center", d3.forceCenter(t.width / 2, t.height / 2));
@@ -379,6 +383,17 @@ export class IbScape {
       // return "/favicon.ico";
       // return "https://github.com/favicon.ico";
     }
+
+    function getLinkDistance(l) {
+      // debugger;
+      if (l.target.id === "comment") {
+        return 150;
+      } else if (l.target.cat === "rel8n") {
+        return 10;
+      } else {
+        return 15;
+      }
+    }
   }
 
   clearSelectedNode() {
@@ -588,6 +603,7 @@ export class IbScape {
         .attr("value", dIbGib.ibgib);
     };
     this.showDetails("comment", init);
+    $("#comment_form_data_text").focus();
   }
 
   execHelp(dIbGib) {

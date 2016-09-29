@@ -48,7 +48,8 @@ defmodule WebGib.Web.Components.IbScape do
             input [id: "comment_form_data_src_ib_gib", name: "comment_form_data[src_ib_gib]",type: "hidden", value: ""]
             input [name: "_utf8", type: "hidden", value: "✓"]
             p "Comment: "
-            input [id: "comment_form_data_text", name: "comment_form_data[comment_text]",  type: "text", value: "ib"]
+            # input [id: "comment_form_data_text", name: "comment_form_data[comment_text]",  type: "text", value: "ib"]
+            textarea [id: "comment_form_data_text", name: "comment_form_data[comment_text]", value: "ib"]
             input [name: "_csrf_token", type: "hidden", value: Phoenix.Controller.get_csrf_token]
             div [class: "ib-tooltip"] do
               button [type: "submit"] do
