@@ -1,4 +1,5 @@
 import * as d3 from 'd3';
+import * as d3text from 'd3-textwrap';
 import { d3CircleRadius, d3Scales, d3Colors, d3DefaultCollapsed, d3MenuCommands } from './d3params';
 // import { nerdAlert } from './text-helpers';
 
@@ -129,9 +130,9 @@ export class IbScape {
 
       let graphLinks = svgGroup.append("g")
           .attr("class", "links")
-        .selectAll("line")
-        .data(modifiedLinks)
-        .enter().append("line")
+          .selectAll("line")
+          .data(modifiedLinks)
+          .enter().append("line")
           .attr("stroke-width", function(d) { return Math.sqrt(d.value); });
 
 
@@ -160,43 +161,50 @@ export class IbScape {
           .text(d => d.id);
           // .text(function(d) { return d.id; });
 
-      let baseJsonPath = t.baseJsonPath;
       let graphNodeLabels = graphNodes
           .append("text")
+          .attr("font-size", "3px")
           .attr("text-anchor", "middle")
           .attr("id", d => "label_" + d.js_id)
-          .text(d => {
-            if (d.render === "text") {
-              if (d.ibgib in t.naiveCache) {
-                let jsonData = t.naiveCache[d.ibgib]
-                if (jsonData && jsonData.data && jsonData.data.text) {
-                  return jsonData.data.text;
-                } else {
-                  return "?";
-                }
-              } else {
-                d3.json(baseJsonPath + d.ibgib, res => {
-                  t.naiveCache[d.ibgib] = res;
-                  let labelText =
-                      res && res.data && res.data.text ?
-                      res.data.text :
-                      "?";
-                  d3.select("#label_" + d.js_id)
-                    .text(labelText);
-                });
+          .text(getNodeLabel)
+          // .text(d => "012345678 012345678 012345678 012345678 012345678 012345678 012345678 012345678 012345678 012345678 012345678 012345678 ")
 
-                return "...";
-              }
-            } else {
-              return "";
-            }
-          })
-      // graphNodes.append("image")
-      //     .attr("xlink:href", "https://github.com/favicon.ico")
-      //     .attr("x", -8)
-      //     .attr("y", -8)
-      //     .attr("width", 16)
-      //     .attr("height", 16);
+      // graphNodeLabels.append("title")
+      //     .text(d => getNodeLabel(d));
+
+      // create a text wrapping function
+      var wrap = d3text.textwrap()
+          .bounds({height: 75, width: 35})
+          .method('tspans');
+      t.wrap = wrap;
+
+      graphNodeLabels
+          .call(wrap)
+          .attr("text-anchor", "middle");
+
+      // setTimeout(() => {
+      //   // wrap all text
+      //   d3.selectAll('text').call(wrap);
+      //   // graphNodeLabels.call(wrap);
+      // }, 1000)
+
+      let graphNodeImages = graphNodes
+          .append("image")
+          .attr("xlink:href", getNodeImage)
+          .attr("cursor", "pointer")
+          .on("click", nodeClicked)
+          .attr("x", -8)
+          .attr("y", -8)
+          .attr("width", 16)
+          .attr("height", 16)
+          .on("dblclick", nodeDblClicked)
+          .call(d3.drag()
+              .on("start", dragstarted)
+              .on("drag", dragged)
+              .on("end", dragended));
+
+      graphNodeImages.append("title")
+          .text(d => d.id);
 
       simulation
           .nodes(graph.nodes)
@@ -217,13 +225,6 @@ export class IbScape {
         graphNodes
             .attr("transform", d => 'translate(' + [d.x, d.y] + ')');
 
-        // graphNodeCircles
-        //     .attr("cx", function(d) { return d.x; })
-        //     .attr("cy", function(d) { return d.y; });
-        //
-        // graphNodeLabels
-        //     .attr("cx", function(d) { return d.x - 100; })
-        //     .attr("cy", function(d) { return d.y; });
       }
     });
 
@@ -279,22 +280,12 @@ export class IbScape {
 
         setTimeout(() => {
           if (t.maybeDoubleClicking) {
-            // It's still set after the timeout, so we didn't do a double-click.
-            // I apologize for poor naming.
-            // let divIbGibData = document.querySelector("#ibgib-data");
-            // let openPath = divIbGibData.getAttribute("data-open-path");
-            // if (d.cat !== "rel8n" && d.ibgib !== "ib^gib" && d.cat !== "ib") {
-            //   console.log(`clicked ibgib: ${d.ibgib}`)
-            //   location.href = openPath + d.ibgib;
-            // }
-
             if (t.selectedDatum && t.selectedDatum.js_id == d.js_id) {
               t.clearSelectedNode();
             } else {
               t.clearSelectedNode();
               t.selectNode(d);
             }
-
             delete t.maybeDoubleClicking;
           }
         }, 300);
@@ -330,6 +321,45 @@ export class IbScape {
       if (!d3.event.active) simulation.alphaTarget(0);
       d.fx = null;
       d.fy = null;
+    }
+
+    function getNodeLabel(d) {
+      if (d.render === "text") {
+        if (d.ibgib in t.naiveCache) {
+          let jsonData = t.naiveCache[d.ibgib]
+          if (jsonData && jsonData.data && jsonData.data.text) {
+            return jsonData.data.text;
+          } else {
+            return "?";
+          }
+        } else {
+          d3.json(t.baseJsonPath + d.ibgib, res => {
+            t.naiveCache[d.ibgib] = res;
+            let labelText =
+                res && res.data && res.data.text ?
+                res.data.text :
+                "?";
+
+            d3.select("#label_" + d.js_id)
+              .text(labelText)
+              .call(t.wrap);
+          });
+
+          return "...";
+        }
+      } else {
+        return "";
+      }
+    }
+
+    function getNodeImage(d) {
+      if (d.ib === "comment") {
+        return "";
+      } else {
+        return "/images/ibgib_100x200.png";
+      }
+      // return "/favicon.ico";
+      // return "https://github.com/favicon.ico";
     }
   }
 

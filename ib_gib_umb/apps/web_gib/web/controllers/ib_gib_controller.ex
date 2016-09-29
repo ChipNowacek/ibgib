@@ -99,7 +99,7 @@ defmodule WebGib.IbGibController do
 
   def get(conn, %{"ib_gib" => ib_gib} = params) do
     Logger.warn "mimicking latency....don't do this in production!"
-    Process.sleep(RandomGib.Get.one_of([5000, 2000, 1000, 7000, 3000]))
+    Process.sleep(RandomGib.Get.one_of([1500, 500, 1000, 2000]))
     Logger.debug "JSON get. conn: #{inspect conn}"
     Logger.debug "JSON get. params: #{inspect params}"
     with {:ok, pid} <- IbGib.Expression.Supervisor.start_expression(ib_gib),

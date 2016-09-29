@@ -16,7 +16,7 @@ let d3Colors = {
   // "rel8n": "#C3ECFA",
   "dna": "#C5DADE",
   "ancestor": "lightgray",
-  "past": "darkgray",
+  "past": "#A9CBD6",
   "comment": "#FCA430",
   "ib": "#F2EC41",
   "ibGib": "#76963e",

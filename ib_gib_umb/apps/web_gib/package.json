@@ -11,6 +11,7 @@
     "bootstrap": "^3.3.7",
     "d3": "^4.2.2",
     "d3-force": "^1.0.2",
+    "d3-textwrap": "^2.0.0",
     "font-awesome": "^4.6.3",
     "glslify": "^5.1.0",
     "phoenix": "file:../../deps/phoenix",
