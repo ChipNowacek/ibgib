@@ -143,6 +143,20 @@ export class IbScape {
           .append("g")
           .classed('gnode', true);
 
+      let graphNodeHyperlinks = graphNodes
+          .append("foreignObject")
+          .attr("name", "graphNodeLink")
+          .attr("width", 1)
+          .attr("height", 1)
+          .html(d => {
+            let graphNodeLinkId = "link_" + d.js_id;
+            return `<a id="${graphNodeLinkId}" href="#"></a>`;
+          });
+
+      d3.selectAll("[name=graphNodeLink]")
+          .select("a")
+          .on("click", nodeClicked);
+
       let graphNodeCircles = graphNodes
           .append("circle")
           .attr("class", "nodes")
@@ -158,23 +172,21 @@ export class IbScape {
               .on("end", dragended));
 
       graphNodeCircles.append("title")
-          .text(d => d.id);
-          // .text(function(d) { return d.id; });
+          .text(getNodeLabel);
 
       let graphNodeLabels = graphNodes
           .append("text")
+          .attr("id", d => "label_" + d.js_id)
           .attr("font-size", "3px")
           .attr("text-anchor", "middle")
-          .attr("id", d => "label_" + d.js_id)
           .text(getNodeLabel)
-          // .text(d => "012345678 012345678 012345678 012345678 012345678 012345678 012345678 012345678 012345678 012345678 012345678 012345678 ")
 
-      // graphNodeLabels.append("title")
-      //     .text(d => getNodeLabel(d));
+      graphNodeLabels.append("title")
+          .text(getNodeLabel);
 
       // create a text wrapping function
       var wrap = d3text.textwrap()
-          .bounds({height: 75, width: 35})
+          .bounds({height: 75, width: 25})
           .method('tspans');
       t.wrap = wrap;
 
@@ -182,14 +194,9 @@ export class IbScape {
           .call(wrap)
           .attr("text-anchor", "middle");
 
-      // setTimeout(() => {
-      //   // wrap all text
-      //   d3.selectAll('text').call(wrap);
-      //   // graphNodeLabels.call(wrap);
-      // }, 1000)
-
       let graphNodeImages = graphNodes
           .append("image")
+          .attr("id", d => "img_" + d.js_id)
           .attr("xlink:href", getNodeImage)
           .attr("cursor", "pointer")
           .on("click", nodeClicked)
@@ -342,7 +349,18 @@ export class IbScape {
 
             d3.select("#label_" + d.js_id)
               .text(labelText)
-              .call(t.wrap);
+              .call(t.wrap)
+              .select('title')
+              .text(labelText);
+
+            d3.select("#" + d.js_id)
+              .select('title')
+              .text(labelText);
+
+            d3.select("#img_" + d.js_id)
+              .select('title')
+              .text(labelText);
+
           });
 
           return "...";
@@ -493,6 +511,21 @@ export class IbScape {
         .append("title")
         .text(d => `${d.text}: ${d.description}`);
 
+    let menuNodeHyperlinks = nodeGroup
+        .append("foreignObject")
+        .attr("name", "menuNodeHyperlink")
+        .attr("width", 1)
+        .attr("height", 1)
+        .html(d => {
+          let menuNodeHyperlinkId = "menulink_" + d.id;
+          return `<a id="${menuNodeHyperlinkId}" href="#"></a>`;
+        });
+
+    d3.selectAll("[name=menuNodeHyperlink]")
+        .select("a")
+        .on("click", menuNodeClicked);
+
+
     let nodes = graph.nodes;
 
     t.menuSimulation
@@ -506,6 +539,10 @@ export class IbScape {
 
       let posTweak = 5;
       nodeTexts
+        .attr("x", d => d.x)
+        .attr("y", d => d.y);
+
+      menuNodeHyperlinks
         .attr("x", d => d.x)
         .attr("y", d => d.y);
     }
