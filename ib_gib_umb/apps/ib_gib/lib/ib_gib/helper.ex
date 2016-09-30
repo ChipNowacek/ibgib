@@ -227,8 +227,7 @@ defmodule IbGib.Helper do
     "135672D7505A3BCEC8055D368E99C6EBF80174031C73763D53952743D73835BB"
   """
   @spec hash(String.t | binary) :: String.t
-  def hash(s)
-    when is_bitstring(s) or is_binary(s) do
+  def hash(s) when is_bitstring(s) or is_binary(s) do
   :sha256
     |> :crypto.hash(@hash_salt <> s)
     |> Base.encode16

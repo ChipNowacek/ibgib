@@ -10,8 +10,9 @@ defmodule IbGib.Data do
   require Logger
   import Ecto.Query
 
-  alias IbGib.Data.Schemas.IbGibModel
+  alias IbGib.Data.Schemas.{IbGibModel, BinaryModel}
   alias IbGib.Data.Repo
+  alias IbGib.Helper
 
   @doc """
   Takes the given `info`, validates it, inserts it in the repo, and then puts
@@ -33,17 +34,17 @@ defmodule IbGib.Data do
   """
   @spec save(map) :: {:ok, :ok} | {:error, any()}
   def save(info) when is_map(info) do
-    # I can't figure out how to do a multi-line with clause!
-    with {:ok, _model} <- insert_into_repo(info),
-         {:ok, :ok}    <- IbGib.Data.Cache.put(IbGib.Helper.get_ib_gib!(info[:ib], info[:gib]), info) do
-        {:ok, :ok}
+    with(
+      {:ok, _model} <- insert_into_repo(info),
+      {:ok, :ok} <-
+        IbGib.Data.Cache.put(Helper.get_ib_gib!(info[:ib], info[:gib]), info)
+    ) do
+      {:ok, :ok}
     else
-      # Need to improve this. :X
       {:error, :already} ->
         Logger.info "Tried to save info data that already exists."
         {:ok, :ok}
-      # {:error, changeset} ->
-      #   {:error, "Save failed. changeset: #{inspect changeset}"}
+
       failure -> {:error, "Save failed: #{inspect failure}"}
     end
   end
@@ -115,7 +116,34 @@ defmodule IbGib.Data do
     models_array
   end
 
-  def query_iteration(%{"ib" => ib_options, "gib" => gib_options, "data" => data_options, "rel8ns" => rel8ns_options, "time" => time_options, "meta" => meta_options}) do
+  @doc """
+  Hashes the given `binary` to create the `binary_id`. Inserts the binary
+  into the repo using the `IbGib.Data.Schemas.BinaryModel`.
+
+  Returns {:ok, binary_id} (hash) or {:error, reason}
+  """
+  @spec save_binary(binary) :: {:ok, String.t} | {:error, String.t}
+  def save_binary(binary_data) do
+    binary_id = Helper.hash(binary_data)
+    with(
+      {:ok, _model} <- insert_into_repo({binary_id, binary_data})
+    ) do
+      {:ok, binary_id}
+    else
+      {:error, :already} ->
+        Logger.info "Tried to save info data that already exists. binary_id: #{binary_id}"
+        {:ok, binary_id}
+
+      failure ->
+        {:error, "Save binary failed. binary_id: #{binary_id}. Failure: #{inspect failure}"}
+    end
+  end
+
+  # ----------------------------------------------------------------------------
+  # Private Functions
+  # ----------------------------------------------------------------------------
+
+  defp query_iteration(%{"ib" => ib_options, "gib" => gib_options, "data" => data_options, "rel8ns" => rel8ns_options, "time" => time_options, "meta" => meta_options}) do
     _ = Logger.warn "query iteration yo"
 
     model =
@@ -135,10 +163,6 @@ defmodule IbGib.Data do
     # result is an array of IbGibModel structs
     result
   end
-
-  # ----------------------------------------------------------------------------
-  # Private Functions
-  # ----------------------------------------------------------------------------
 
   # Options is a map of maps. Each internal map is itself a where clause
   # description.
@@ -377,6 +401,33 @@ defmodule IbGib.Data do
           {:error, changeset}
         end
     end
+  end
+  defp insert_into_repo({binary_id, binary_data})
+    when is_bitstring(binary_id) and is_binary(binary_data) do
+      _ = Logger.debug "inserting into repo. binary_id: #{binary_id}"
+      insert_result =
+        %BinaryModel{}
+        |> BinaryModel.changeset(%{
+             binary_id: binary_id,
+             binary_data: binary_data
+           })
+       |> Repo.insert
+      case insert_result do
+        {:ok, model} ->
+          _ = Logger.debug "Inserted changeset.\nbinary_id: #{binary_id}"
+          {:ok, model}
+
+        {:error, changeset} ->
+          already_error = {"has already been taken", []}
+          if Enum.count(changeset.errors) == 1 and
+             changeset.errors[:binary_id] == already_error do
+            _ = Logger.debug "Did NOT insert changeset. Already exists.\nbinary_id: #{binary_id}"
+            {:error, :already}
+          else
+            _ = Logger.error "Error inserting changeset.\nbinary_id: #{binary_id}"
+            {:error, changeset}
+          end
+      end
   end
 
   defp get_from_repo(ib, gib) do

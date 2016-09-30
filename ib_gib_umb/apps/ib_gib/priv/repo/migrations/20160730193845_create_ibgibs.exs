@@ -1,4 +1,9 @@
 defmodule IbGib.Data.Repo.Migrations.CreateIbgibs do
+  @moduledoc """
+  Create the primary tables, keys, etc., for the
+  `IbGib.Data.Schemas.IbGibModel`.
+  """
+
   use Ecto.Migration
 
   def change do

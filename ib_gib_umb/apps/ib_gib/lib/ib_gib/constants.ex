@@ -21,6 +21,7 @@ defmodule IbGib.Constants do
       # defp min_id_length, do: 1
       @min_id_length 1
       @max_id_length 76
+      @hash_length 64
       @min_ib_gib_length 3 # min + delim + min
       @max_ib_gib_length 153 # max + delim + max
       @max_data_size 8_192_000 # 8 MB max internal data

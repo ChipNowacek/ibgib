@@ -30,8 +30,6 @@ defmodule WebGib.IbGibController do
     |> assign(:ib_gib, @root_ib_gib)
     |> add_meta_query
     |> redirect(to: ib_gib_path(WebGib.Endpoint, :show, get_session(conn, @meta_query_result_ib_gib_key)))
-    # |> redirect()
-    # |> render("index.html")
   end
 
   defp add_meta_query(conn) do
@@ -589,10 +587,11 @@ defmodule WebGib.IbGibController do
   defp save_to_bin_store(path) do
     with(
       {:ok, body} <- File.read(path),
-      bin_data <- IO.iodata_to_binary(body),
-      :ok <- :ok
+      binary_data <- IO.iodata_to_binary(body),
+      # the binary_id is a hash of the binary data.
+      {:ok, binary_id} <- IbGib.Data.save_binary(binary_data)
     ) do
-      {:ok, "ok"}
+      {:ok, binary_id}
     else
       {:error, reason} when is_bitstring(reason) -> {:error, reason}
       {:error, reason} -> {:error, inspect reason}

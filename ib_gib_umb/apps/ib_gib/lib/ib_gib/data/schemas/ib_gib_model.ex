@@ -2,12 +2,15 @@ defmodule IbGib.Data.Schemas.IbGibModel do
   @moduledoc """
   This is the primary model that simply persists IbGib in the db.
   """
+
+
   use IbGib.Constants, :ib_gib
   use IbGib.Constants, :error_msgs
 
   use Ecto.Schema
   import Ecto.Changeset
   alias IbGib.Data.Schemas.ValidateHelper
+
 
   schema "ibgibs" do
     field :ib, :string
