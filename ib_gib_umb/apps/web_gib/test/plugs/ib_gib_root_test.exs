@@ -14,11 +14,11 @@ defmodule WebGib.Test.Plugs.IbGibRootTest do
 
   @tag :capture_log
   test "GET /, home page doesn't get root injected", %{conn: conn} do
-    Logger.warn "plug test here"
+    _ = Logger.warn "plug test here"
     conn = get conn, "/"
 
     root = conn.assigns[:root]
-    Logger.debug "root: #{inspect root}"
+    _ = Logger.debug "root: #{inspect root}"
     assert is_nil(root)
     # assert html_response(conn, 200) =~ "Welcome to Phoenix!"
   end

@@ -101,15 +101,15 @@ defmodule IbGib.Auth.Identity do
   @spec get_identity(map, map) :: {:ok, String.t} | {:error, any}
   def get_identity(priv_data, pub_data)
     when is_map(priv_data) and is_map(pub_data) do
-      Logger.warn "get_identity yooooooooooooooooooooo"
-      Logger.warn "get_identity yooooooooooooooooooooo"
-      Logger.warn "get_identity yooooooooooooooooooooo"
-      Logger.warn "get_identity yooooooooooooooooooooo"
-      Logger.warn "get_identity yooooooooooooooooooooo"
-      Logger.warn "get_identity yooooooooooooooooooooo"
-      Logger.warn "get_identity yooooooooooooooooooooo"
-      Logger.warn "get_identity yoooooooooooooooooooooabcasdf"
-      Logger.warn "get_identity yooooooooooooooooooooo"
+      _ = Logger.warn "get_identity yooooooooooooooooooooo"
+      _ = Logger.warn "get_identity yooooooooooooooooooooo"
+      _ = Logger.warn "get_identity yooooooooooooooooooooo"
+      _ = Logger.warn "get_identity yooooooooooooooooooooo"
+      _ = Logger.warn "get_identity yooooooooooooooooooooo"
+      _ = Logger.warn "get_identity yooooooooooooooooooooo"
+      _ = Logger.warn "get_identity yooooooooooooooooooooo"
+      _ = Logger.warn "get_identity yoooooooooooooooooooooabcasdf"
+      _ = Logger.warn "get_identity yooooooooooooooooooooo"
     with {:ok, root_identity} <- IbGib.Expression.Supervisor.start_expression({"identity", "gib"}),
       {:ok, identity_ib} <- generate_identity_ib(priv_data),
       {:ok, latest} <- get_latest_identity_ib_gib(identity_ib, root_identity),
@@ -226,7 +226,7 @@ defmodule IbGib.Auth.Identity do
     with(
       {:ok, identity} <-
         root_identity
-        |> instance(@bootstrap_identity_ib_gib, identity_ib, %{"gib_stamp" => "true"}),
+        |> instance([@bootstrap_identity_ib_gib], identity_ib, %{"gib_stamp" => "true"}),
       {:ok, identity_info} <- identity |> get_info,
       {:ok, identity_ib_gib} <- get_ib_gib(identity_info)
     ) do
@@ -256,10 +256,10 @@ defmodule IbGib.Auth.Identity do
     when is_map(identity_info) and is_map(identity_data) and
          is_pid(identity) and is_bitstring(identity_ib_gib) do
     if Map.equal?(identity_info[:data], identity_data) do
-      Logger.debug "identity_info up-to-date"
+      _ = Logger.debug "identity_info up-to-date"
       {:ok, identity_ib_gib}
     else
-      Logger.debug "identity_info out-of-date. identity_info:\n#{inspect identity_info, pretty: true}\nidentity_data:\n#{inspect identity_data, pretty: true}"
+      _ = Logger.debug "identity_info out-of-date. identity_info:\n#{inspect identity_info, pretty: true}\nidentity_data:\n#{inspect identity_data, pretty: true}"
       opts = %{"gib_stamp" => "true"}
       # Everyone is authorized with at least @bootstrap_identity_ib_gib, and
       # by providing the priv_data, the user has already been authorized with

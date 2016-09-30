@@ -29,16 +29,16 @@ defmodule WebGib.Plugs.EnsureIbGibSession do
     If it doesn't exist, redirect the user to the home page.
   """
   def call(conn, options) do
-    Logger.debug "ensure plug yo."
+    _ = Logger.debug "ensure plug yo."
     current_ib_session = conn |> get_session(@ib_session_id_key)
     if current_ib_session == nil do
-      Logger.debug "current ib session is nil"
+      _ = Logger.debug "current ib session is nil"
       conn
       |> put_flash(:error, gettext "Please read ibGib's vision before using our application!")
       |> redirect(to: "/")
       |> halt
     else
-      Logger.debug "current ib session exists"
+      _ = Logger.debug "current ib session exists"
       conn
     end
   end

@@ -39,7 +39,7 @@ defmodule IbGib.TransformFactory.Mut8Factory do
     when is_bitstring(old_key_name) and is_bitstring(new_key_name) do
     %{
       get_meta_key(:mut8_rename_key) =>
-        old_key_name <> rename_operator <> new_key_name
+        old_key_name <> @rename_operator <> new_key_name
     }
   end
 
@@ -49,12 +49,12 @@ defmodule IbGib.TransformFactory.Mut8Factory do
   See `remove_key/1` and `rename_key/2`.
   See `IbGib.Expression.mut8/2`.
   """
-  @spec get_meta_key(atom) :: String.t
+  @spec get_meta_key(:mut8_remove_key | :mut8_rename_key) :: String.t
   def get_meta_key(which)
   def get_meta_key(:mut8_remove_key) do
-    map_key_meta_prefix <> "remove_key"
+    @map_key_meta_prefix <> "remove_key"
   end
   def get_meta_key(:mut8_rename_key) do
-    map_key_meta_prefix <> "rename_key"
+    @map_key_meta_prefix <> "rename_key"
   end
 end

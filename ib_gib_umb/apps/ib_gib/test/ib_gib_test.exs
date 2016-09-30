@@ -43,7 +43,7 @@ defmodule IbGibTest do
     ["fork", "mut8", "rel8", "query"]
     |> Enum.each(fn(test_ib) ->
          test_ib_gib = "#{test_ib}#{@delim}gib"
-         Logger.debug "test_ib_gib: #{test_ib_gib}"
+         _ = Logger.debug "test_ib_gib: #{test_ib_gib}"
          {:ok, test} = IbGib.Expression.Supervisor.start_expression(test_ib_gib)
          test_info = test |> get_info!
          assert test_info.ib == test_ib

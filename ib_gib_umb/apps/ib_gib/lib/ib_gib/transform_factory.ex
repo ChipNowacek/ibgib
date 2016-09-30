@@ -26,7 +26,7 @@ defmodule IbGib.TransformFactory do
       {:ok, :ok}
     else
       emsg = emsg_invalid_args(identity_ib_gibs)
-      Logger.error emsg
+      _ = Logger.error emsg
       {:error, emsg}
     end
   end
@@ -219,7 +219,8 @@ defmodule IbGib.TransformFactory do
   # Stamping a gib means that it is "official", since a user doesn't (shouldn't)
   # have the ability to create their own gib.
   @spec stamp_if_needed(String.t, boolean) :: String.t
-  defp stamp_if_needed(gib, is_needed) when is_boolean(is_needed) do
+  defp stamp_if_needed(gib, is_needed)
+    when is_bitstring(gib) and is_boolean(is_needed) do
     if is_needed do
       # I'm both prepending and appending for visual purposes. When querying,
       # I only need to search for: where gib `LIKE` "#{gib_stamp}%"
@@ -229,7 +230,7 @@ defmodule IbGib.TransformFactory do
     end
   end
   defp stamp_if_needed(gib, is_needed) do
-    Logger.warn emsg_invalid_args([gib, is_needed])
+    _ = Logger.warn emsg_invalid_args([gib, is_needed])
     gib
   end
 

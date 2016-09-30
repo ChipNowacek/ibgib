@@ -1,5 +1,6 @@
 defmodule WebGib.Endpoint do
   use Phoenix.Endpoint, otp_app: :web_gib
+  use IbGib.Constants, :ib_gib
 
   socket "/ibgibsocket", WebGib.IbGibSocket
 
@@ -25,7 +26,10 @@ defmodule WebGib.Endpoint do
   plug Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json],
     pass: ["*/*"],
-    json_decoder: Poison
+    json_decoder: Poison,
+    length: @max_data_size - 1_024_000,
+    read_length: 1_024_000,
+    read_timeout: 30_000
 
   plug Plug.MethodOverride
   plug Plug.Head

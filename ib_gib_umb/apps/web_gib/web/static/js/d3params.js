@@ -5,7 +5,7 @@ let d3Scales = {
   "dna": 1,
   "ancestor": 1,
   "past": 2,
-  "ib": 6.5,
+  "ib": 7,
   "ibGib": 5,
   "result": 2,
   "rel8d": 2,

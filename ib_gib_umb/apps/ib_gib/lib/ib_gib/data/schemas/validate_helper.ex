@@ -53,21 +53,21 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
 
   Returns true if it's a map of valid
   """
-  def valid_data?(_field, src, max_size \\ max_data_size)
+  def valid_data?(_field, src, max_size \\ @max_data_size)
   def valid_data?(_field, src, max_size) when is_map(src) and map_size(src) > 0 do
     get_map_size(src, 0, max_size) !== -1
   end
   def valid_data?(_field, src, _max_size)
     when is_map(src) and map_size(src) === 0 do
-    Logger.debug "empty map"
+    _ = Logger.debug "empty map"
     true
   end
   def valid_data?(_field, src, _max_size) when is_nil(src) do
-    Logger.debug "nil map"
+    _ = Logger.debug "nil map"
     true
   end
   def valid_data?(_field, _src, _max_size) do
-    Logger.debug "other"
+    _ = Logger.debug "other"
     false
   end
 
@@ -78,23 +78,23 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
 
   Returns -1 if running_size exceeds max_size at any point.
   """
-  def get_map_size(m, running_size \\ 0, max_size \\ max_data_size)
+  def get_map_size(m, running_size \\ 0, max_size \\ @max_data_size)
     when is_map(m) and is_integer(max_size) and is_integer(running_size) do
     # We're going to iterate over each item in the map. If we ever hit the
     # max size, then we're going to abort immediately and return -1.
     m
     |> Enum.reduce_while(running_size,
       fn(item, acc) ->
-        # Logger.debug "item: #{inspect item}"
+        # _ = Logger.debug "item: #{inspect item}"
         {key, value} = item
 
-        # Logger.debug "key: #{inspect key}\nvalue: #{inspect value}"
-        # Logger.debug "is_list(value): #{is_list(value)}"
+        # _ = Logger.debug "key: #{inspect key}\nvalue: #{inspect value}"
+        # _ = Logger.debug "is_list(value): #{is_list(value)}"
         if is_bitstring(key) do
           key_length = key |> String.length
 
           key_valid? =
-            is_bitstring(key) and key_length > 0 and key_length <= max_id_length
+            is_bitstring(key) and key_length > 0 and key_length <= @max_id_length
 
           if key_valid? do
             value_valid? =
@@ -109,7 +109,7 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
                   value_length = value |> String.length
                   new_running_size = acc + key_length + value_length
                   if new_running_size <= max_size do
-                    Logger.debug "new_running_size: #{new_running_size}, max_size: #{max_size}"
+                    _ = Logger.debug "new_running_size: #{new_running_size}, max_size: #{max_size}"
                     {:cont, new_running_size}
                   else
                     # not valid - too big
@@ -152,12 +152,12 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
 
                 true ->
                   # not valid - value is not a map, string, or nil
-                  Logger.warn "invalid value. Is not a map, string, or nil. value: #{inspect value}"
+                  _ = Logger.warn "invalid value. Is not a map, string, or nil. value: #{inspect value}"
                   {:halt, -1}
               end
           else
             # key invalid
-            Logger.warn "invalid key: #{inspect key, [pretty: true]}"
+            _ = Logger.warn "invalid key: #{inspect key, [pretty: true]}"
             # not valid
             {:halt, -1}
           end
@@ -189,12 +189,12 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
     # 2. Return a single shortcut logical `and` operation.
 
     # valid ib_gib length
-    ib_gib_length >= min_ib_gib_length && ib_gib_length <= max_ib_gib_length and
+    ib_gib_length >= @min_ib_gib_length && ib_gib_length <= @max_ib_gib_length and
     # ib_gib has a single delimiter between two strings
     has_delim && array_length === 2 and
     # valid individual ib and gib lengths
-    ib_length >= min_id_length && ib_length <= max_id_length and
-    gib_length >= min_id_length && gib_length <= max_id_length
+    ib_length >= @min_id_length && ib_length <= @max_id_length and
+    gib_length >= @min_id_length && gib_length <= @max_id_length
   end
   def valid_ib_gib?(_) do
     false
@@ -214,7 +214,7 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
     if valid_data?(:data, src) do
       []
     else
-      Logger.error "whaaa. src: #{inspect src, [pretty: true]}"
+      _ = Logger.error "whaaa. src: #{inspect src, [pretty: true]}"
       [data: emsg_invalid_data]
     end
   end

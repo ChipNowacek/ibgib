@@ -77,7 +77,7 @@ defmodule IbGib.Data.DataTest do
     Data.save!(model)
     {:ok, got_model} = Data.load(ib, gib)
 
-    Logger.debug "got_model: #{inspect got_model}"
+    _ = Logger.debug "got_model: #{inspect got_model}"
     assert got_model.ib === ib
     assert got_model.gib === model.gib
     assert got_model.rel8ns === model.rel8ns
@@ -99,7 +99,7 @@ defmodule IbGib.Data.DataTest do
     Data.save!(model)
     got_model = Data.load!(ib, gib)
 
-    Logger.debug "got_model: #{inspect got_model}"
+    _ = Logger.debug "got_model: #{inspect got_model}"
     assert got_model.ib === ib
     assert got_model.gib === model.gib
     assert got_model.rel8ns === model.rel8ns
@@ -153,7 +153,7 @@ defmodule IbGib.Data.DataTest do
     Data.save!(model)
     {:ok, got_model} = Data.load(ib, gib)
 
-    Logger.debug "got_model: #{inspect got_model}"
+    _ = Logger.debug "got_model: #{inspect got_model}"
     assert got_model.ib === ib
     assert got_model.gib === model.gib
     assert got_model.rel8ns === model.rel8ns
@@ -175,7 +175,7 @@ defmodule IbGib.Data.DataTest do
     Data.save!(model)
     got_model = Data.load!(ib, gib)
 
-    Logger.debug "got_model: #{inspect got_model}"
+    _ = Logger.debug "got_model: #{inspect got_model}"
     assert got_model.ib === ib
     assert got_model.gib === model.gib
     assert got_model.rel8ns === model.rel8ns

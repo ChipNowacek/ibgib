@@ -10,10 +10,10 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
   alias IbGib.Data.Schemas.ValidateHelper
   use IbGib.Constants, :ib_gib
 
-  def random_min_id, do: Get.some_letters(min_id_length)
-  def random_max_id, do: Get.some_letters(max_id_length)
+  def random_min_id, do: Get.some_letters(@min_id_length)
+  def random_max_id, do: Get.some_letters(@max_id_length)
 
-  def too_long_id, do: Get.some_letters(max_id_length + 1)
+  def too_long_id, do: Get.some_letters(@max_id_length + 1)
   def too_short_id, do: ""
 
   def random_mid_id, do: Get.some_letters(10)
@@ -122,7 +122,7 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
       },
     ]
     |> Enum.each(fn(test_map) ->
-      Logger.debug "test_map: #{inspect test_map}"
+      _ = Logger.debug "test_map: #{inspect test_map}"
       assert ValidateHelper.map_of_ib_gib_arrays?(:some_field, test_map)
     end)
   end
@@ -146,7 +146,7 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
       },
     ]
     |> Enum.each(fn(test_map) ->
-      Logger.debug "test_map: #{inspect test_map}"
+      _ = Logger.debug "test_map: #{inspect test_map}"
       assert !ValidateHelper.map_of_ib_gib_arrays?(:some_field, test_map)
     end)
   end
@@ -203,7 +203,7 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
     test_max_size = 100_000
     test_value_length = div(test_max_size, 2) - 1 # reserve 1 length for key
     test_value = Enum.reduce(1..test_value_length, "", fn(_, acc) -> "a" <> acc end)
-    Logger.debug "test_value: #{test_value}"
+    _ = Logger.debug "test_value: #{test_value}"
     # test_value = Enum.reduce([0, 5], fn(x, acc) -> "a" <<>> acc end)
     test_map = %{
       "a" => test_value,
@@ -217,7 +217,7 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
     test_max_size = 100_000
     test_value_length = div(test_max_size, 2) - 1 # reserve 1 length for key
     test_value = Enum.reduce(1..test_value_length, "", fn(_, acc) -> "a" <> acc end)
-    Logger.debug "test_value: #{test_value}"
+    _ = Logger.debug "test_value: #{test_value}"
     # test_value = Enum.reduce([0, 5], fn(x, acc) -> "a" <<>> acc end)
     test_map = %{
       "a" => test_value,
@@ -232,7 +232,7 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
     test_max_size = 100_000
     test_value_length = div(test_max_size, 2) - 2
     test_value = Enum.reduce(1..test_value_length, "", fn(_, acc) -> "a" <> acc end)
-    Logger.debug "test_value: #{test_value}"
+    _ = Logger.debug "test_value: #{test_value}"
     # test_value = Enum.reduce([0, 5], fn(x, acc) -> "a" <<>> acc end)
     test_map = %{
       "a" => test_value,

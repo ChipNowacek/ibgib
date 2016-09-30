@@ -52,7 +52,7 @@ defmodule IbGib.Data do
   Bang version of `save/1`.
   """
   def save!(info) when is_map(info) do
-    Logger.warn "info: #{inspect info}"
+    _ = Logger.warn "info: #{inspect info}"
     case save(info) do
       {:ok, :ok} -> :ok
       {:error, reason} -> raise reason
@@ -99,24 +99,24 @@ defmodule IbGib.Data do
   """
   @spec query(map) :: any
   def query(info) do
-    Logger.warn "query yo. info: #{inspect info}"
+    _ = Logger.warn "query yo. info: #{inspect info}"
 
     models_array =
       info
       |> Enum.reduce([], fn({i, query_opts}, acc) ->
-        Logger.warn "iteration number: #{i}"
+        _ = Logger.warn "iteration number: #{i}"
         iter_result = query_iteration(query_opts)
         acc ++ iter_result
       end)
       |> Enum.uniq_by(&(&1.ib <> &1.gib))
       # |> Enum.sort(&(&1.inserted_at < &2.inserted_at))
 
-    Logger.debug "models_array: #{inspect models_array}"
+    _ = Logger.debug "models_array: #{inspect models_array}"
     models_array
   end
 
   def query_iteration(%{"ib" => ib_options, "gib" => gib_options, "data" => data_options, "rel8ns" => rel8ns_options, "time" => time_options, "meta" => meta_options}) do
-    Logger.warn "query iteration yo"
+    _ = Logger.warn "query iteration yo"
 
     model =
       IbGibModel
@@ -131,7 +131,7 @@ defmodule IbGib.Data do
 
     result = model |> Repo.all
 
-    # Logger.debug "data query result yo-=------------------------\n#{inspect result}"
+    # _ = Logger.debug "data query result yo-=------------------------\n#{inspect result}"
     # result is an array of IbGibModel structs
     result
   end
@@ -146,7 +146,7 @@ defmodule IbGib.Data do
     ib_options)
     when is_map(ib_options) and map_size(ib_options) > 0 and
          is_bitstring(search_term) and is_bitstring(method) do
-    Logger.warn "adding ib_options: #{inspect ib_options}"
+    _ = Logger.warn "adding ib_options: #{inspect ib_options}"
 
     case method do
       "is" ->
@@ -204,30 +204,30 @@ defmodule IbGib.Data do
     when is_map(data_options) and map_size(data_options) > 0 and
          is_bitstring(search_term) and is_bitstring(method) and
          is_bitstring(where) do
-    Logger.warn "yoooooooooooooooo"
+    _ = Logger.warn "yoooooooooooooooo"
 
     case {where, method} do
       {"key", "is"} ->
-        Logger.warn "key is"
+        _ = Logger.warn "key is"
         query =
           query
           |> where([x], fragment("? \\? ?", x.data, ^search_term))
         query
       {"key", "like"} ->
-        Logger.warn "key like"
+        _ = Logger.warn "key like"
         wrapped_search_term = wrap_if_needed(search_term)
         query =
           query
           |> where(fragment("(SELECT count(*) FROM jsonb_each_text(data) WHERE key ILIKE ?) > 0", ^wrapped_search_term))
         query
       {"value", "is"} ->
-        Logger.warn "value is"
+        _ = Logger.warn "value is"
         query =
           query
           |> where(fragment("(SELECT count(*) FROM jsonb_each_text(data) WHERE value = ?) > 0", ^search_term))
         query
       {"value", "like"} ->
-        Logger.warn "key like"
+        _ = Logger.warn "key like"
         wrapped_search_term = wrap_if_needed(search_term)
         query =
           query
@@ -264,17 +264,17 @@ defmodule IbGib.Data do
       case {with_or_without, method} do
 
         {"with", "ibgib"} ->
-          Logger.warn "with ib_gib. where: #{where}. search_term: #{search_term}"
+          _ = Logger.warn "with ib_gib. where: #{where}. search_term: #{search_term}"
           query
           |> where(fragment("? IN (SELECT jsonb_array_elements_text(rel8ns -> ?))", ^search_term, ^where))
 
         {"without", "ibgib"} ->
-          Logger.warn "with ib_gib. where: #{where}. search_term: #{search_term}"
+          _ = Logger.warn "with ib_gib. where: #{where}. search_term: #{search_term}"
           query
           |> where(fragment("? NOT IN (SELECT jsonb_array_elements_text(rel8ns -> ?))", ^search_term, ^where))
 
         {"with", "ib"} ->
-          Logger.warn "with ib. where: #{where}. search_term: #{search_term}"
+          _ = Logger.warn "with ib. where: #{where}. search_term: #{search_term}"
           regex = ""
           query
           |> where(fragment("? IN (SELECT substring( jsonb_array_elements_text(rel8ns -> ?) FROM '^[^^]+'))", ^search_term, ^where))
@@ -282,13 +282,13 @@ defmodule IbGib.Data do
         # not going to worry about implementing this right now since low
         # priority
         # {"without", "ib"} ->
-        #   Logger.warn "with ib. where: #{where}. search_term: #{search_term}"
+        #   _ = Logger.warn "with ib. where: #{where}. search_term: #{search_term}"
         #   regex = ""
         #   query
         #   |> where(fragment("? NOT IN (SELECT substring( jsonb_array_elements_text(rel8ns -> ?) FROM '^[^^]+'))", ^search_term, ^where))
 
         _ ->
-          Logger.warn "unknown {with_or_without, method}: {#{with_or_without}, #{method}}"
+          _ = Logger.warn "unknown {with_or_without, method}: {#{with_or_without}, #{method}}"
           query
       end
   end
@@ -299,12 +299,12 @@ defmodule IbGib.Data do
          is_list(search_term) and is_bitstring(method) and
          is_bitstring(where) and is_bitstring(with_or_without)do
 
-      Logger.warn "add_rel8ns_options_iteration with search_term as list"
+      _ = Logger.warn "add_rel8ns_options_iteration with search_term as list"
 
       case {with_or_without, method} do
 
         {"withany", "ibgib"} ->
-          Logger.warn "with ib_gib. where: #{where}. search_term: #{search_term}"
+          _ = Logger.warn "with ib_gib. where: #{where}. search_term: #{search_term}"
           query
           |> where(
                fragment(
@@ -313,12 +313,12 @@ defmodule IbGib.Data do
              )
 
         _ ->
-          Logger.warn "unknown {with_or_without, method}: {#{with_or_without}, #{method}}"
+          _ = Logger.warn "unknown {with_or_without, method}: {#{with_or_without}, #{method}}"
           query
       end
   end
   defp add_rel8ns_options_iteration(query, opts) do
-    Logger.warn "unknown rel8ns options: #{inspect opts}"
+    _ = Logger.warn "unknown rel8ns options: #{inspect opts}"
     query
   end
 
@@ -332,7 +332,7 @@ defmodule IbGib.Data do
         |> limit(1)
 
       _ ->
-        Logger.warn "unknown time option. how: #{how}"
+        _ = Logger.warn "unknown time option. how: #{how}"
         query
     end
   end
@@ -351,7 +351,7 @@ defmodule IbGib.Data do
   #
   # Returns {:ok, model} or {:error, changeset}
   defp insert_into_repo(info) when is_map(info) do
-    Logger.debug "inserting into repo. info: #{inspect info}"
+    _ = Logger.debug "inserting into repo. info: #{inspect info}"
     insert_result =
       %IbGibModel{}
       |> IbGibModel.changeset(%{
@@ -363,17 +363,17 @@ defmodule IbGib.Data do
      |> Repo.insert
     case insert_result do
       {:ok, model} ->
-        Logger.debug "Inserted changeset.\nib: #{info[:ib]}\ngib: #{info[:gib]}\nmodel: #{inspect model}"
+        _ = Logger.debug "Inserted changeset.\nib: #{info[:ib]}\ngib: #{info[:gib]}\nmodel: #{inspect model}"
         {:ok, model}
 
       {:error, changeset} ->
         already_error = {"has already been taken", []}
         if Enum.count(changeset.errors) == 1 and
            changeset.errors[:ib] == already_error do
-          Logger.debug "Did NOT insert changeset. Already exists.\nib: #{info[:ib]}\ngib: #{info[:gib]}\nchangeset: #{inspect changeset}"
+          _ = Logger.debug "Did NOT insert changeset. Already exists.\nib: #{info[:ib]}\ngib: #{info[:gib]}\nchangeset: #{inspect changeset}"
           {:error, :already}
         else
-          Logger.error "Error inserting changeset.\nib: #{info[:ib]}\ngib: #{info[:gib]}\nchangeset: #{inspect changeset}"
+          _ = Logger.error "Error inserting changeset.\nib: #{info[:ib]}\ngib: #{info[:gib]}\nchangeset: #{inspect changeset}"
           {:error, changeset}
         end
     end
@@ -385,7 +385,7 @@ defmodule IbGib.Data do
       |> where(ib: ^ib, gib: ^gib)
       |> Repo.one
 
-    Logger.debug "got model: #{inspect model}"
+    _ = Logger.debug "got model: #{inspect model}"
     if model == nil do
       {:error, :not_found}
     else

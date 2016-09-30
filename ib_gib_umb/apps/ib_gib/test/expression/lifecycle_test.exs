@@ -73,7 +73,7 @@ defmodule IbGib.Expression.LifecycleTest do
     {c_result2, _} = IbGib.Expression.Registry.get_process(c_ib_gib)
     assert c_result2 === :error
 
-    Logger.warn "b2: #{inspect b2}"
+    _ = Logger.warn "b2: #{inspect b2}"
   end
 
 
@@ -101,13 +101,13 @@ defmodule IbGib.Expression.LifecycleTest do
     _dummy = root |> fork!(@test_identities_1, Helper.new_id)
 
     {:ok, c2} = IbGib.Expression.Supervisor.start_expression(c_ib_gib)
-    Logger.debug "c2: #{inspect c2}"
+    _ = Logger.debug "c2: #{inspect c2}"
     c2_info = c2 |> get_info!
 
     d = c2 |> fork!(@test_identities_1, Helper.new_id)
     d_info = d |> get_info!
-    Logger.warn "c2_info: #{inspect c2_info}"
-    Logger.warn "d_info: #{inspect d_info}"
+    _ = Logger.warn "c2_info: #{inspect c2_info}"
+    _ = Logger.warn "d_info: #{inspect d_info}"
   end
 
 end

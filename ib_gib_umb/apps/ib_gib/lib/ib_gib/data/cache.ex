@@ -19,7 +19,7 @@ defmodule IbGib.Data.Cache do
   """
   @spec start_link(atom()) :: {:ok, pid()} | :ignore | {:error, {:already_started, pid()} | term()}
   def start_link(name \\ @srv_name) when is_atom(name) do
-    # Logger.debug ("name: #{name}")
+    # _ = Logger.debug ("name: #{name}")
     GenServer.start_link(__MODULE__, name, [name: name])
   end
 
@@ -33,7 +33,7 @@ defmodule IbGib.Data.Cache do
   Returns {:ok, :ok} or {:error, reason}
   """
   def put(key, value, name \\ @srv_name) when is_bitstring(key) do
-    Logger.debug "putting in cache..."
+    _ = Logger.debug "putting in cache..."
     GenServer.call(name, {:put, {key, value}})
   end
 
@@ -43,7 +43,7 @@ defmodule IbGib.Data.Cache do
   Returns {:ok, value} or {:error, reason}
   """
   def get(key, name \\ @srv_name) do
-    Logger.debug "getting from cache..."
+    _ = Logger.debug "getting from cache..."
     GenServer.call(name, {:get, key})
   end
 
@@ -53,7 +53,7 @@ defmodule IbGib.Data.Cache do
   # ----------------------------------------------------------------------------
 
   def init(srv_name) when is_atom(srv_name) do
-    # Logger.debug "srv_name: #{srv_name}"
+    # _ = Logger.debug "srv_name: #{srv_name}"
 
     items = :ets.new(srv_name, [:named_table, read_concurrency: true])
 
@@ -61,18 +61,18 @@ defmodule IbGib.Data.Cache do
   end
 
   def handle_call({:put, {key, value}}, _from, {items}) do
-    Logger.debug "inspect items: #{inspect items}"
+    _ = Logger.debug "inspect items: #{inspect items}"
 
     {:reply, put_impl(items, key, value), {items}}
   end
   def handle_call({:get, key}, _from, {items}) do
-    Logger.debug "inspect items: #{inspect items}"
+    _ = Logger.debug "inspect items: #{inspect items}"
 
     {:reply, get_impl(items, key), {items}}
   end
 
   defp get_impl(items, key) do
-    Logger.debug "key: #{key}"
+    _ = Logger.debug "key: #{key}"
     case :ets.lookup(items, key) do
       [{^key, value}] -> {:ok, value}
       [] -> {:error, :not_found}
@@ -80,12 +80,12 @@ defmodule IbGib.Data.Cache do
   end
 
   defp put_impl(items, key, value) do
-    Logger.debug "key: #{key}\nvalue: #{inspect value}"
+    _ = Logger.debug "key: #{key}\nvalue: #{inspect value}"
     insert_result = :ets.insert_new(items, {key, value})
     if insert_result do
       {:ok, :ok}
     else
-      Logger.warn "Attempted to insert duplicate key in cache. key: #{key}"
+      _ = Logger.warn "Attempted to insert duplicate key in cache. key: #{key}"
       {:error, :already}
     end
   end

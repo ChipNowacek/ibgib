@@ -12,19 +12,19 @@ defmodule IbGib.Data.CacheTest do
 
   @tag :capture_log
   test "start cache", %{test_name: test_name} do
-    # Logger.debug "#{inspect test_name}"
+    # _ = Logger.debug "#{inspect test_name}"
     result = IbGib.Data.Cache.start_link(test_name)
-    Logger.debug inspect(result)
+    _ = Logger.debug inspect(result)
   end
 
   @tag :capture_log
   test "start cache twice, should fail", %{test_name: test_name} do
     {result1, _term1} = IbGib.Data.Cache.start_link(test_name)
-    Logger.debug inspect("result1: #{result1}")
+    _ = Logger.debug inspect("result1: #{result1}")
     assert result1 === :ok
 
     {result2, _term2}  = IbGib.Data.Cache.start_link(test_name)
-    Logger.debug inspect("result2: #{result2}")
+    _ = Logger.debug inspect("result2: #{result2}")
     assert result2 === :error
   end
 
@@ -87,7 +87,7 @@ defmodule IbGib.Data.CacheTest do
   #
   # @tag :capture_log
   # test "register then get process", %{test_name: test_name} do
-  #   # Logger.debug "#{inspect test_name}"
+  #   # _ = Logger.debug "#{inspect test_name}"
   #   result = IbGib.Data.Cache.start_link(test_name)
   #
   #   {:ok, pid} = IbGib.Expression.start_link({"ib", "gib"})
@@ -101,13 +101,13 @@ defmodule IbGib.Data.CacheTest do
   #   assert get_result === :ok
   #   assert get_pid === pid
   #
-  #   Logger.debug "get_pid: #{inspect get_pid}"
+  #   _ = Logger.debug "get_pid: #{inspect get_pid}"
   # end
 
 
   # @tag :capture_log
   # test "get unregistered process should fail", %{test_name: test_name} do
-  #   # Logger.debug "#{inspect test_name}"
+  #   # _ = Logger.debug "#{inspect test_name}"
   #   result = IbGib.Data.Cache.start_link(test_name)
   #
   #   {:ok, pid} = IbGib.Expression.start_link({"ib", "gib"})
@@ -117,6 +117,6 @@ defmodule IbGib.Data.CacheTest do
   #   assert get_result === :error
   #   assert get_term === :not_found
   #
-  #   Logger.debug "get_term: #{get_term}"
+  #   _ = Logger.debug "get_term: #{get_term}"
   # end
 end

@@ -25,8 +25,8 @@ defmodule IbGib.Data.Schemas.IbGibModel do
     content
     |> cast(params, @required_fields, @optional_fields)
     |> validate_required([:ib, :gib, :rel8ns])
-    |> validate_length(:ib, min: min_id_length, max: max_id_length)
-    |> validate_length(:gib, min: min_id_length, max: max_id_length)
+    |> validate_length(:ib, min: @min_id_length, max: @max_id_length)
+    |> validate_length(:gib, min: @min_id_length, max: @max_id_length)
     |> validate_change(:rel8ns, &ValidateHelper.do_validate_change(&1,&2))
     |> validate_change(:data, &ValidateHelper.do_validate_change(&1,&2))
     |> unique_constraint(:ib, name: :ibgibs_ib_gib_index)

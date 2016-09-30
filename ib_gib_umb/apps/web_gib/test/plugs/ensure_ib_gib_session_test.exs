@@ -14,24 +14,24 @@ defmodule WebGib.Test.Plugs.EnsureIbGibSessionTest do
 
   @tag :capture_log
   test "GET /", %{conn: conn} do
-    Logger.warn "plug test here"
+    _ = Logger.warn "plug test here"
     conn = get conn, "/"
 
-    Logger.debug "conn: #{inspect conn}"
+    _ = Logger.debug "conn: #{inspect conn}"
     assert conn.status === 200
     assert !conn.halted
     # root = conn.assigns[:root]
-    # Logger.debug "root: #{inspect root}"
+    # _ = Logger.debug "root: #{inspect root}"
     # assert is_pid(root)
     # assert html_response(conn, 200) =~ "Welcome to Phoenix!"
   end
 
   @tag :capture_log
   test "GET /login, should redirect/halt", %{conn: conn} do
-    Logger.warn "plug test here"
+    _ = Logger.warn "plug test here"
     conn = get conn, "/ibgib"
 
-    Logger.debug "conn: #{inspect conn}"
+    _ = Logger.debug "conn: #{inspect conn}"
     assert conn.status === 302
     assert conn.halted
   end

@@ -19,7 +19,7 @@ defmodule IbGib.Expression.Registry do
   processes that this registry will be tracking.
   """
   def start_link(name \\ @registry_name) do
-    # Logger.debug ("name: #{name}")
+    # _ = Logger.debug ("name: #{name}")
     GenServer.start_link(__MODULE__, name, [name: name])
   end
 
@@ -53,7 +53,7 @@ defmodule IbGib.Expression.Registry do
   # ----------------------------------------------------------------------------
 
   def init(_srv_name) do
-    # Logger.debug "srv_name: #{srv_name}"
+    # _ = Logger.debug "srv_name: #{srv_name}"
 
     # `expressions` maps expr_ib_gib to expression pid
     expressions = %{}
@@ -68,14 +68,14 @@ defmodule IbGib.Expression.Registry do
   end
 
   def handle_call({:register, {expr_ib_gib, expr_pid}}, _from, {expressions, refs}) do
-    # Logger.debug "inspect expressions: #{inspect expressions}"
-    # Logger.debug "inspect refs: #{inspect refs}"
+    # _ = Logger.debug "inspect expressions: #{inspect expressions}"
+    # _ = Logger.debug "inspect refs: #{inspect refs}"
     {:ok, {expressions, refs}} = register_impl(expressions, expr_ib_gib, expr_pid, refs)
     {:reply, :ok, {expressions, refs}}
   end
   def handle_call({:get_process, {expr_ib_gib}}, _from, {expressions, refs}) do
-    # Logger.debug "inspect expressions: #{inspect expressions}"
-    # Logger.debug "inspect refs: #{inspect refs}"
+    # _ = Logger.debug "inspect expressions: #{inspect expressions}"
+    # _ = Logger.debug "inspect refs: #{inspect refs}"
 
     {:reply, get_process_impl(expressions, expr_ib_gib), {expressions, refs}}
   end
@@ -86,19 +86,19 @@ defmodule IbGib.Expression.Registry do
   """
   def handle_info({:DOWN, ref, :process, _pid, _reason}, {expressions, refs}) do
     {expr_ib_gib, refs} = Map.pop(refs, ref)
-    Logger.debug "Removed ref: #{inspect ref}"
+    _ = Logger.debug "Removed ref: #{inspect ref}"
     {expr_pid, expressions} = Map.pop(expressions, expr_ib_gib)
-    Logger.debug "Removing expr_pid: #{inspect expr_pid}"
+    _ = Logger.debug "Removing expr_pid: #{inspect expr_pid}"
     # :ets.delete(expressions, expression)
     {:noreply, {expressions, refs}}
   end
   def handle_info(msg, state) do
-    Logger.debug "msg: #{msg}"
+    _ = Logger.debug "msg: #{msg}"
     {:noreply, state}
   end
 
   defp get_process_impl(expressions, expr_ib_gib) do
-    Logger.debug "expr_ib_gib: #{expr_ib_gib}"
+    _ = Logger.debug "expr_ib_gib: #{expr_ib_gib}"
     case Map.fetch(expressions, expr_ib_gib) do
       {:ok, value} -> {:ok, value}
       :error -> {:error, :not_found}
@@ -109,11 +109,11 @@ defmodule IbGib.Expression.Registry do
     case get_process_impl(expressions, expr_ib_gib) do
       {:ok, _pid} ->
         # Already exists.
-        Logger.debug "expr_ib_gib (#{expr_ib_gib}) already exists"
+        _ = Logger.debug "expr_ib_gib (#{expr_ib_gib}) already exists"
         {:ok, {expressions, refs}}
       {:error, _reason} ->
         # Doesn't exist, so register it
-        Logger.debug "expr_ib_gib (#{expr_ib_gib}) does not exist. registering..."
+        _ = Logger.debug "expr_ib_gib (#{expr_ib_gib}) does not exist. registering..."
         ref = Process.monitor(expr_pid)
         refs = Map.put(refs, ref, expr_ib_gib)
         expressions = Map.put(expressions, expr_ib_gib, expr_pid)

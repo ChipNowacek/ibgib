@@ -47,27 +47,27 @@ defmodule IbGib.Expression.Supervisor do
   def start_expression(args \\ @root_ib_gib)
   def start_expression(expr_ib_gib) when is_bitstring(expr_ib_gib) do
     ib_gib = String.split(expr_ib_gib, @delim, parts: 2)
-    Logger.debug "ib_gib: #{inspect ib_gib}"
+    _ = Logger.debug "ib_gib: #{inspect ib_gib}"
 
 
     {get_result, expr_pid} = Registry.get_process(expr_ib_gib)
     if get_result == :ok do
-      Logger.debug "already started expr: #{expr_ib_gib}"
+      _ = Logger.debug "already started expr: #{expr_ib_gib}"
       {:ok, expr_pid}
     else
       args = [{:ib_gib, {Enum.at(ib_gib, 0), Enum.at(ib_gib, 1)}}]
 
       start(args)
       # result = Supervisor.start_child(IbGib.Expression.Supervisor, args)
-      # Logger.debug "start_child result: #{inspect result}"
+      # _ = Logger.debug "start_child result: #{inspect result}"
       # case result do
       #   {:ok, expr_pid} ->
-      #     Logger.debug "start_child result matches {ok, expr_pid}"
+      #     _ = Logger.debug "start_child result matches {ok, expr_pid}"
       #     register_result = IbGib.Expression.Registry.register(expr_ib_gib, expr_pid)
-      #     Logger.debug "register_result: #{inspect register_result}"
+      #     _ = Logger.debug "register_result: #{inspect register_result}"
       #     {:ok, expr_pid}
       #   error ->
-      #     Logger.debug "start_child result matches error"
+      #     _ = Logger.debug "start_child result matches error"
       #     {:error, "could not register expression with registry"}
       # end
     end
@@ -76,24 +76,24 @@ defmodule IbGib.Expression.Supervisor do
     start_expression(Helper.get_ib_gib!(ib, gib))
   end
   def start_expression({a, b}) when is_map(a) and is_map(b) do
-    Logger.debug "combining two ib"
+    _ = Logger.debug "combining two ib"
     args = [{:apply, {a, b}}]
     start(args)
   end
   def start_expression({_identity_ib_gibs, a, @root_ib_gib}) when is_bitstring(a) do
-    Logger.warn "Attempted to start_expression with identity transform"
+    _ = Logger.warn "Attempted to start_expression with identity transform"
     {:ok, a}
   end
   def start_expression({identity_ib_gibs, a, a_info, b})
     when is_list(identity_ib_gibs) and is_bitstring(a) and
          (is_map(a_info) or is_nil(a_info)) and is_bitstring(b) do
-    Logger.debug "combining two ib via ib^gib"
+    _ = Logger.debug "combining two ib via ib^gib"
     args = [{:express, {identity_ib_gibs, a, a_info, b}}]
     start(args)
   end
 
   defp start(args) do
-    Logger.debug "Starting new expression process... args: #{inspect args}"
+    _ = Logger.debug "Starting new expression process... args: #{inspect args}"
 
     with {:ok, expr_pid} <- Supervisor.start_child(IbGib.Expression.Supervisor, args),
       do: {:ok, expr_pid}

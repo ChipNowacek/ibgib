@@ -73,7 +73,7 @@ defmodule IbGib.Helper do
   end
   def get_ib_gib(ib, gib) do
     error_msg = "ib and gib are not both bitstrings with length > 0. ib: #{inspect ib}. gib: #{inspect gib}"
-    Logger.error error_msg
+    _ = Logger.error error_msg
     {:error, error_msg}
   end
 
@@ -122,7 +122,7 @@ defmodule IbGib.Helper do
   end
   def separate_ib_gib(ib_gib) do
     error_msg = "ib_gib must be a bitstring with a valid delim (#{@delim}). ib_gib: #{inspect ib_gib}"
-    Logger.error error_msg
+    _ = Logger.error error_msg
     {:error, error_msg}
   end
 
@@ -222,10 +222,14 @@ defmodule IbGib.Helper do
     iex> IbGib.Helper.hash("oijwfensdfjoIEFas283e7NISWEFJOIwe98wefj")
     "E3F6683D94E3FDD2222055BE047FC80CADAD3BA775B5CC3A7AEC6427850D4F54"
 
+    iex> s = <<255, 216, 255, 224, 0, 16, 74, 70, 73, 70, 0, 1, 1, 0>>
+    ...> IbGib.Helper.hash(s)
+    "135672D7505A3BCEC8055D368E99C6EBF80174031C73763D53952743D73835BB"
   """
-  @spec hash(String.t) :: String.t
-  def hash(s) when is_bitstring(s) do
-    :sha256
+  @spec hash(String.t | binary) :: String.t
+  def hash(s)
+    when is_bitstring(s) or is_binary(s) do
+  :sha256
     |> :crypto.hash(@hash_salt <> s)
     |> Base.encode16
   end
@@ -237,7 +241,7 @@ defmodule IbGib.Helper do
   Determines if the given `ib` is valid.
   Only letters, digits, underscores, dashes, and spaces allowed.
 
-  See IbGib.Constants.ib_gib.regex_valid_ib.
+  See IbGib.Constants.ib_gib.@regex_valid_ib.
 
   ## Examples
       iex> IbGib.Helper.valid_ib?("ib")
@@ -262,9 +266,9 @@ defmodule IbGib.Helper do
   def valid_ib?(ib) when is_bitstring(ib) do
     ib_length = ib |> String.length
 
-    ib_length >= min_id_length and
-      ib_length <= max_id_length and
-      Regex.match?(regex_valid_ib, ib)
+    ib_length >= @min_id_length and
+      ib_length <= @max_id_length and
+      Regex.match?(@regex_valid_ib, ib)
   end
   def valid_ib?(_) do
     false
@@ -274,7 +278,7 @@ defmodule IbGib.Helper do
   Determines if the given `gib` is valid. Only letters, digits, underscores
   allowed.
 
-  See IbGib.Constants.ib_gib.regex_valid_gib.
+  See IbGib.Constants.ib_gib.@regex_valid_gib.
 
   ## Examples
       iex> IbGib.Helper.valid_gib?("gib")
@@ -302,9 +306,9 @@ defmodule IbGib.Helper do
   def valid_gib?(gib) when is_bitstring(gib) do
     gib_length = gib |> String.length
 
-    gib_length >= min_id_length and
-      gib_length <= max_id_length and
-      Regex.match?(regex_valid_gib, gib)
+    gib_length >= @min_id_length and
+      gib_length <= @max_id_length and
+      Regex.match?(@regex_valid_gib, gib)
   end
   def valid_gib?(_) do
     false
@@ -315,7 +319,7 @@ defmodule IbGib.Helper do
   Determines if the given `ib_gib` is valid.
   Only letters, digits, underscores allowed.
 
-  See IbGib.Constants.ib_gib.regex_valid_ib_gib.
+  See IbGib.Constants.ib_gib.@regex_valid_ib_gib.
 
   ## Examples
       iex> IbGib.Helper.valid_ib_gib?("ib^gib")
@@ -354,9 +358,9 @@ defmodule IbGib.Helper do
   def valid_ib_gib?(ib_gib) when is_bitstring(ib_gib) do
     ib_gib_length = ib_gib |> String.length
 
-    ib_gib_length >= min_ib_gib_length and
-      ib_gib_length <= max_ib_gib_length and
-      Regex.match?(regex_valid_ib_gib, ib_gib)
+    ib_gib_length >= @min_ib_gib_length and
+      ib_gib_length <= @max_ib_gib_length and
+      Regex.match?(@regex_valid_ib_gib, ib_gib)
   end
   def valid_ib_gib?(_) do
     false
@@ -419,7 +423,7 @@ defmodule IbGib.Helper do
     String.ends_with?(gib, @gib_stamp)
   end
   def gib_stamped?(gib) do
-    Logger.warn emsg_invalid_args(gib)
+    _ = Logger.warn emsg_invalid_args(gib)
     false
   end
 
@@ -444,7 +448,7 @@ defmodule IbGib.Helper do
       {:ok, :ok}
     else
       emsg = emsg_invalid_args(identity_ib_gibs)
-      Logger.error emsg
+      _ = Logger.error emsg
       {:error, emsg}
     end
   end

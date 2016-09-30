@@ -13,6 +13,7 @@ defmodule IbGib.Macros do
         {:ok, value} -> value
         {:error, error} when is_bitstring(error) -> raise error
         {:error, error} -> raise inspect error
+        error -> raise inspect error
       end
     end
   end
@@ -20,7 +21,7 @@ defmodule IbGib.Macros do
   defmacro invalid_args(args) do
     quote do
       emsg = emsg_invalid_args(unquote(args))
-      Logger.error emsg
+      _ = Logger.error emsg
       {:error, emsg}
     end
   end

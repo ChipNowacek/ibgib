@@ -50,7 +50,7 @@ defmodule IbGib.Auth.AuthTest do
     {:ok, identity} = Expression.Supervisor.start_expression(identity_ib_gib)
     identity_info = identity |> get_info!
 
-    Logger.debug "identity_info: #{inspect identity_info}"
+    _ = Logger.debug "identity_info: #{inspect identity_info}"
 
     {_identity_ib, identity_gib} = Helper.separate_ib_gib!(identity_ib_gib)
     assert Helper.gib_stamped?(identity_gib)
@@ -79,7 +79,7 @@ defmodule IbGib.Auth.AuthTest do
     {:ok, identity} = Expression.Supervisor.start_expression(identity_ib_gib)
     identity_info = identity |> get_info!
 
-    Logger.warn "identity_info: #{inspect identity_info}"
+    _ = Logger.warn "identity_info: #{inspect identity_info}"
   end
 
 
@@ -93,7 +93,7 @@ defmodule IbGib.Auth.AuthTest do
     {:ok, a} = root |> fork(identity_ib_gibs, dest_ib)
     a_info = a |> get_info!
 
-    Logger.debug "a_info: #{inspect a_info}"
+    _ = Logger.debug "a_info: #{inspect a_info}"
 
     assert Map.has_key?(a_info[:rel8ns], "identity")
     assert a_info[:rel8ns]["identity"] == identity_ib_gibs
@@ -109,7 +109,7 @@ defmodule IbGib.Auth.AuthTest do
     {:ok, a} = root |> fork(identity_ib_gibs, dest_ib)
     a_info = a |> get_info!
 
-    Logger.debug "a_info: #{inspect a_info}"
+    _ = Logger.debug "a_info: #{inspect a_info}"
 
     assert Map.has_key?(a_info[:rel8ns], "identity")
     assert a_info[:rel8ns]["identity"] == identity_ib_gibs
@@ -125,7 +125,7 @@ defmodule IbGib.Auth.AuthTest do
     {:error, result} =
       root |> fork(identity_ib_gibs, dest_ib)
 
-    Logger.debug "result: #{inspect result}"
+    _ = Logger.debug "result: #{inspect result}"
   end
 
   @tag :capture_log
@@ -138,7 +138,7 @@ defmodule IbGib.Auth.AuthTest do
     {:error, result} =
       root |> fork(identity_ib_gibs, dest_ib)
 
-    Logger.debug "result: #{inspect result}"
+    _ = Logger.debug "result: #{inspect result}"
   end
 
   @tag :capture_log
@@ -151,7 +151,7 @@ defmodule IbGib.Auth.AuthTest do
     {:error, result} =
       root |> fork(identity_ib_gibs, dest_ib)
 
-    Logger.debug "result: #{inspect result}"
+    _ = Logger.debug "result: #{inspect result}"
   end
 
   @tag :capture_log
@@ -170,7 +170,7 @@ defmodule IbGib.Auth.AuthTest do
     {:error, result} =
       root |> fork(identity_ib_gibs, dest_ib)
 
-    Logger.debug "result: #{inspect result}"
+    _ = Logger.debug "result: #{inspect result}"
   end
 
   @tag :capture_log
@@ -185,7 +185,7 @@ defmodule IbGib.Auth.AuthTest do
     {:ok, a} = root |> mut8(identity_ib_gibs, test_kv, @default_transform_options)
     a_info = a |> get_info!
 
-    Logger.debug "a_info: #{inspect a_info}"
+    _ = Logger.debug "a_info: #{inspect a_info}"
 
     assert Map.has_key?(a_info[:rel8ns], "identity")
     assert a_info[:rel8ns]["identity"] == identity_ib_gibs
@@ -203,7 +203,7 @@ defmodule IbGib.Auth.AuthTest do
     {:ok, a} = root |> mut8(identity_ib_gibs, test_kv, @default_transform_options)
     a_info = a |> get_info!
 
-    Logger.debug "a_info: #{inspect a_info}"
+    _ = Logger.debug "a_info: #{inspect a_info}"
 
     assert Map.has_key?(a_info[:rel8ns], "identity")
     assert a_info[:rel8ns]["identity"] == identity_ib_gibs
@@ -234,8 +234,8 @@ defmodule IbGib.Auth.AuthTest do
 
     a_info = a |> get_info!
 
-    Logger.debug "a_info:\n#{inspect a_info, pretty: true}"
-    Logger.debug "more_identities: #{inspect more_identities}"
+    _ = Logger.debug "a_info:\n#{inspect a_info, pretty: true}"
+    _ = Logger.debug "more_identities: #{inspect more_identities}"
 
     more_identities
     |> Enum.each(fn(i) ->

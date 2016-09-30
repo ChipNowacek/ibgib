@@ -89,7 +89,7 @@ defmodule IbGib.QueryOptionsFactory do
       }
 
     result = Map.put(acc_options, "#{next_key}", options)
-    Logger.debug "union result: #{inspect result}"
+    _ = Logger.debug "union result: #{inspect result}"
     result
   end
 
@@ -314,7 +314,7 @@ defmodule IbGib.QueryOptionsFactory do
     else
       # Not all search terms are bitstrings, so it's an invalid call
       # Just return the accumulated options
-      Logger.error("Invalid search_term_list: #{inspect search_term_list}")
+      _ = Logger.error("Invalid search_term_list: #{inspect search_term_list}")
       acc_options
     end
   end
@@ -342,30 +342,30 @@ defmodule IbGib.QueryOptionsFactory do
   # This part extracts the current stuff out of the accumulated options
   # (`acc_options`).
   defp get_current(acc_options, category) do
-    Logger.debug "acc_options: #{inspect acc_options}"
+    _ = Logger.debug "acc_options: #{inspect acc_options}"
     current_key = "#{map_size(acc_options)}"
     current_options = acc_options[current_key]
     current_details = current_options[category]
     if map_size(current_details) > 0 do
-      Logger.warn "Tried to do more than one where data statement"
+      _ = Logger.warn "Tried to do more than one where data statement"
     end
 
-    # Logger.debug "current_key: #{current_key}"
-    # Logger.debug "current_options: #{inspect current_options}"
-    # Logger.debug "current_details: #{inspect current_details}"
+    # _ = Logger.debug "current_key: #{current_key}"
+    # _ = Logger.debug "current_options: #{inspect current_options}"
+    # _ = Logger.debug "current_details: #{inspect current_details}"
 
     {current_key, current_options, current_details}
   end
 
   defp insert_details(acc_options, current_key, current_options, category, details) do
-    Logger.debug "details: #{inspect details}"
+    _ = Logger.debug "details: #{inspect details}"
     current_options = Map.put(current_options, category, details)
 
     # result = Map.merge(acc_options, %{"ib" => ib_options})
     # for the current query union clause
     result = Map.put(acc_options, current_key, current_options)
 
-    Logger.debug "result of insert_details: #{inspect result}"
+    _ = Logger.debug "result of insert_details: #{inspect result}"
     result
   end
 

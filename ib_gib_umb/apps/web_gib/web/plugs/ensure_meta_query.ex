@@ -30,13 +30,13 @@ defmodule WebGib.Plugs.EnsureMetaQuery do
 
   """
   def call(conn, options) do
-    Logger.debug "ensure meta_query_result_ib_gib in session hooraaaaah."
+    _ = Logger.debug "ensure meta_query_result_ib_gib in session hooraaaaah."
     current = conn |> get_session(@meta_query_result_ib_gib_key)
 
     if current == nil do
-      Logger.debug "current meta query ib_gib is nil. conn: #{inspect conn}"
+      _ = Logger.debug "current meta query ib_gib is nil. conn: #{inspect conn}"
       identity_ib_gibs = conn |> get_session(@ib_identity_ib_gibs_key)
-      Logger.warn "identity_ib_gibs: #{inspect identity_ib_gibs}"
+      _ = Logger.warn "identity_ib_gibs: #{inspect identity_ib_gibs}"
 
       conn =
         with(
@@ -45,12 +45,12 @@ defmodule WebGib.Plugs.EnsureMetaQuery do
           # We need the first identity ib_gib to do the query
           {:ok, first_identity_ib_gib} <-
             get_first_identity_ib_gib(identity_ib_gibs),
-          :ok <- Logger.warn("first_identity_ib_gib: #{first_identity_ib_gib}"),
+          _ <- _ = Logger.warn("first_identity_ib_gib: #{first_identity_ib_gib}"),
           # ...and the process off of which to perform the query
           {:ok, first_identity} <-
             IbGib.Expression.Supervisor.start_expression(first_identity_ib_gib),
           {:ok, first_identity_info} <- first_identity |> get_info,
-          :ok <- Logger.warn("first_identity_info:\n#{inspect first_identity_info, pretty: true}"),
+          _ <- _ = Logger.warn("first_identity_info:\n#{inspect first_identity_info, pretty: true}"),
 
           # Execute the actual query
           {:ok, meta_query_result} <-
@@ -67,19 +67,19 @@ defmodule WebGib.Plugs.EnsureMetaQuery do
           # At this point, our query was executed, and we have both the
           # query's and query result's ib_gib to store in session.
 
-          Logger.debug "meta_query_result_ib_gib: #{meta_query_result_ib_gib}"
+          _ = Logger.debug "meta_query_result_ib_gib: #{meta_query_result_ib_gib}"
           conn =
             conn
             |> put_session(@meta_query_ib_gib_key, meta_query_ib_gib)
             |> put_session(@meta_query_result_ib_gib_key,
                            meta_query_result_ib_gib)
 
-          Logger.debug "inserted meta query ib^gib into session: #{meta_query_ib_gib}"
-          Logger.debug "inserted meta query result ib^gib into session: #{meta_query_result_ib_gib}"
+          _ = Logger.debug "inserted meta query ib^gib into session: #{meta_query_ib_gib}"
+          _ = Logger.debug "inserted meta query result ib^gib into session: #{meta_query_result_ib_gib}"
           conn
         else
           error ->
-            Logger.error "Error: #{inspect error}"
+            _ = Logger.error "Error: #{inspect error}"
             conn
             |> put_flash(:error, gettext "There was a problem getting your meta query.")
             |> redirect(to: "/")
@@ -87,7 +87,7 @@ defmodule WebGib.Plugs.EnsureMetaQuery do
         end
       conn
     else
-      Logger.debug "current meta query ib_gib is NOT nil"
+      _ = Logger.debug "current meta query ib_gib is NOT nil"
       conn
     end
   end
@@ -127,7 +127,7 @@ defmodule WebGib.Plugs.EnsureMetaQuery do
   end
   defp get_first_identity_ib_gib(identity_ib_gibs) do
     emsg = emsg_invalid_args(identity_ib_gibs)
-    Logger.error emsg
+    _ = Logger.error emsg
     {:error, emsg}
   end
 

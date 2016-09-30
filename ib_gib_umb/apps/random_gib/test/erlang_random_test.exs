@@ -7,7 +7,7 @@ defmodule ErlangRandomTests do
   # :random tests
   test "erlang random seed os timestamp" do
     result = :random.seed(:os.timestamp)
-    Logger.debug(result)
+    _ = Logger.debug(result)
   end
 
 
@@ -19,13 +19,13 @@ defmodule ErlangRandomTests do
     # non-constant seed.
 
     result = :rand.uniform()
-    Logger.debug(result)
+    _ = Logger.debug(result)
   end
 
   # fails because wrong argument
   # test "erlang rand seed erlang now" do
   #   result = :rand.seed(:erlang.now)
-  #   Logger.debug result
+  #   _ = Logger.debug result
   # end
 
   test "erlang rand seed :exs1024" do

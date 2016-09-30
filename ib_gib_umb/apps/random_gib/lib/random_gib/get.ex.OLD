@@ -17,13 +17,13 @@ defmodule RandomGib.Get do
   Starts a worker server with a new seed.
   """
   def start_link(name) do
-    # Logger.debug("GenServer starting...")
+    # _ = Logger.debug("GenServer starting...")
     # Agent.start_link(__MODULE__, fn -> %{} end, [name: name])
     # arg1: Where the callbacks are implemented.
     # arg2: Init argument (passed to `init`)
     # arg3: List of options, e.g. name of server
     result = GenServer.start_link(__MODULE__, :ok, name: name)
-    # Logger.debug("GenServer started.")
+    # _ = Logger.debug("GenServer started.")
     result
   end
 
@@ -152,7 +152,7 @@ defmodule RandomGib.Get do
     percent = :rand.uniform()
     result = Enum.filter(src, fn _item -> :rand.uniform() > percent end)
     if Enum.count(result) === 0 do
-      Logger.debug("Recursing some_of")
+      _ = Logger.debug("Recursing some_of")
       some_of_impl(src)
     else
       result

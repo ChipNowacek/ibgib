@@ -45,7 +45,7 @@ defmodule IbGib.Expression.ExtraMut8Test do
 
     b_info = b |> get_info!
 
-    Logger.debug "b_info: #{inspect b_info}"
+    _ = Logger.debug "b_info: #{inspect b_info}"
 
     assert map_size(b_info[:data]) === 0
   end
@@ -69,7 +69,7 @@ defmodule IbGib.Expression.ExtraMut8Test do
 
     b_info = b |> get_info!
 
-    Logger.debug "b_info: #{inspect b_info}"
+    _ = Logger.debug "b_info: #{inspect b_info}"
 
     assert Map.keys(b_info[:data]) === [test_key2]
   end

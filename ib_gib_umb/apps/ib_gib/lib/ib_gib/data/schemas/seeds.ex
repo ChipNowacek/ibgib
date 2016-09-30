@@ -26,20 +26,22 @@ defmodule IbGib.Data.Schemas.Seeds do
   # Specifiers allow for basic "inheritance" creation.
   # Use case: I want a "text^gib", from which "comment^gib", "url^gib", etc.,
   #           will descend.
-  @specifiers [:text_child]
+  # (I wanted to do all of this manually in the db, but it's just simpler to do
+  # it here.)
+  @specifiers [:text_child, :binary_child]
 
   def insert(ib_atom, data \\ %{})
   def insert(ib_atom, data)
     when is_atom(ib_atom) and is_map(data) do
     ib = Atom.to_string(ib_atom)
-    Logger.info "Inserting #{ib}..."
+    _ = Logger.info "Inserting #{ib}..."
     try do
       case Repo.insert(get_seed(ib_atom)) do
-        {:ok, _struct} -> Logger.warn "Inserted #{ib} successfully."
-        {:error, error} -> Logger.error "Insert #{ib} failed. error: #{inspect error}"
+        {:ok, _struct} -> _ = Logger.warn "Inserted #{ib} successfully."
+        {:error, error} -> _ = Logger.error "Insert #{ib} failed. error: #{inspect error}"
       end
     rescue
-      error -> Logger.error "Insert #{ib} failed. error: #{inspect error}"
+      error -> _ = Logger.error "Insert #{ib} failed. error: #{inspect error}"
     end
     :ok
   end
@@ -50,11 +52,11 @@ defmodule IbGib.Data.Schemas.Seeds do
     Logger.info "Inserting #{ib}..."
     try do
       case Repo.insert(get_seed({ib, specifier})) do
-        {:ok, _struct} -> Logger.warn "Inserted #{ib} successfully."
-        {:error, error} -> Logger.error "Insert #{ib} failed. error: #{inspect error}"
+        {:ok, _struct} -> _ = Logger.warn "Inserted #{ib} successfully."
+        {:error, error} -> _ = Logger.error "Insert #{ib} failed. error: #{inspect error}"
       end
     rescue
-      error -> Logger.error "Insert #{ib} failed. error: #{inspect error}"
+      error -> _ = Logger.error "Insert #{ib} failed. error: #{inspect error}"
     end
     :ok
   end
@@ -66,7 +68,7 @@ defmodule IbGib.Data.Schemas.Seeds do
   end
   def get_seed(ib_string, data)
     when is_bitstring(ib_string) and is_map(data) do
-    Logger.debug "getting seed ib_gib #{ib_string} expression."
+    _ = Logger.debug "getting seed ib_gib #{ib_string} expression."
     %IbGibModel{
       ib: ib_string,
       gib: "gib",
@@ -94,13 +96,28 @@ defmodule IbGib.Data.Schemas.Seeds do
   end
   # This overload is for generating seeds that "descend" (forked from) text^gib.
   def get_seed({ib_string, :text_child}, data) do
-    Logger.debug "get_seed :text_child. ib_string: #{ib_string}"
+    _ = Logger.debug "get_seed :text_child. ib_string: #{ib_string}"
     %IbGibModel{
       ib: ib_string,
       gib: "gib",
       rel8ns: %{
         "dna" => @default_dna,
         "ancestor" => @default_ancestor ++ ["text#{@delim}gib"],
+        "past" => @default_past,
+        "identity" => @default_identity
+        },
+      data: data
+    }
+  end
+  # This overload is for generating seeds that "descend" (forked from) text^gib.
+  def get_seed({ib_string, :binary_child}, data) do
+    _ = Logger.debug "get_seed :binary_child. ib_string: #{ib_string}"
+    %IbGibModel{
+      ib: ib_string,
+      gib: "gib",
+      rel8ns: %{
+        "dna" => @default_dna,
+        "ancestor" => @default_ancestor ++ ["binary#{@delim}gib"],
         "past" => @default_past,
         "identity" => @default_identity
         },

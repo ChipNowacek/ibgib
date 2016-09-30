@@ -50,7 +50,7 @@ defmodule IbGib.Builder.TransformBuilderTest do
       {:ok, plan} <- TB.plan(identities, @default_transform_src, @default_transform_options),
       {:ok, plan} <- TB.yo(plan) do
 
-      Logger.debug "plan:\n#{inspect plan, [pretty: true]}"
+      _ = Logger.debug "plan:\n#{inspect plan, [pretty: true]}"
       {:ok, plan}
     end
   end
@@ -76,7 +76,7 @@ defmodule IbGib.Builder.TransformBuilderTest do
           }),
         {:ok, plan} <- TB.yo(plan) do
 
-        Logger.debug "plan:\n#{inspect plan, [pretty: true]}"
+        _ = Logger.debug "plan:\n#{inspect plan, [pretty: true]}"
         {:ok, plan}
       end
 
@@ -97,7 +97,7 @@ defmodule IbGib.Builder.TransformBuilderTest do
       {:ok, plan} <- TB.add_fork(plan, name, dest_ib),
       {:ok, plan} <- TB.yo(plan) do
 
-      Logger.debug "plan:\n#{inspect plan, [pretty: true]}"
+      _ = Logger.debug "plan:\n#{inspect plan, [pretty: true]}"
       {:ok, plan}
     end
   end

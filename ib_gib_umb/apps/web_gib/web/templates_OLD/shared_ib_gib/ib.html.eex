@@ -1,9 +1,0 @@
-<div class="ib-info-border ib-gib-element ib-circular-menuable ib-ib">
-  <div class="ib-hidden">
-    <%= render WebGib.SharedIbGibView, "ib_button.html", [conn: @conn, ib: @ib, gib: @gib, ib_gib: @ib_gib] %>
-  </div>
-
-  <span class="ib-green ib-circular-menuable ib-big-ibgib-text"><%= @ib %></span>
-
-
-</div>

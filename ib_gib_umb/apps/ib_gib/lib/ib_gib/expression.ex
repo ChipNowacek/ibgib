@@ -197,18 +197,18 @@ defmodule IbGib.Expression do
   def start_link(args)
   def start_link({:ib_gib, {ib, gib}}) do
     # expr_id = Helper.new_id |> String.downcase
-    Logger.debug "{ib, gib}: {#{inspect ib}, #{inspect gib}}"
+    _ = Logger.debug "{ib, gib}: {#{inspect ib}, #{inspect gib}}"
     GenServer.start_link(__MODULE__, {:ib_gib, {ib, gib}})
   end
   def start_link({:apply, {a, b}}) when is_map(a) and is_map(b) do
     # expr_id = Helper.new_id |> String.downcase
-    Logger.debug "a: {#{inspect a}\nb: #{inspect b}}"
+    _ = Logger.debug "a: {#{inspect a}\nb: #{inspect b}}"
     GenServer.start_link(__MODULE__, {:apply, {a, b}})
   end
   def start_link({:express, {identity_ib_gibs, a, a_info, b}})
     when is_bitstring(a) and (is_map(a_info) or is_nil(a_info)) and
          is_bitstring(b) do
-    Logger.debug "express. a: {#{a}\nb: #{b}}"
+    _ = Logger.debug "express. a: {#{a}\nb: #{b}}"
     GenServer.start_link(__MODULE__, {:express, {identity_ib_gibs, a, a_info, b}})
   end
 
@@ -233,7 +233,7 @@ defmodule IbGib.Expression do
     if register_result == :ok do
       {:ok, %{:info => info}}
     else
-      Logger.error "Register expression error: #{inspect register_result}"
+      _ = Logger.error "Register expression error: #{inspect register_result}"
       {:error, register_result}
     end
   end
@@ -248,7 +248,7 @@ defmodule IbGib.Expression do
       {"query", b_gib} when b_gib != "gib" -> apply_query(a, b)
       {_b_ib, _b_gib} ->
         err_msg = "unknown combination: a: #{inspect a}, b: #{inspect b}"
-        Logger.error err_msg
+        _ = Logger.error err_msg
         {:error, err_msg}
     end
   end
@@ -259,7 +259,7 @@ defmodule IbGib.Expression do
   def init({:express, {identity_ib_gibs, a_ib_gib, _a_info, b_ib_gib}})
     when is_bitstring(a_ib_gib) and is_bitstring(b_ib_gib) do
     Logger.metadata([x: :express])
-    Logger.debug "express. identity_ib_gibs: #{inspect identity_ib_gibs}\na_ib_gib: #{a_ib_gib}\n, b_ib_gib: #{b_ib_gib}"
+    _ = Logger.debug "express. identity_ib_gibs: #{inspect identity_ib_gibs}\na_ib_gib: #{a_ib_gib}\n, b_ib_gib: #{b_ib_gib}"
 
     # First, we just store our state with mama and papa ib_gib (and identities)
     # state = %{"expressed" => false, "a_info" => a_info}
@@ -278,7 +278,7 @@ defmodule IbGib.Expression do
 
   # Builds the default ib_gib structure for "primitive"-like ib_gib.
   defp get_default(ib_string) when is_bitstring(ib_string) do
-    Logger.debug "initializing ib_gib #{ib_string} expression."
+    _ = Logger.debug "initializing ib_gib #{ib_string} expression."
     %{
       :ib => ib_string,
       :gib => "gib",
@@ -305,8 +305,8 @@ defmodule IbGib.Expression do
   # ----------------------------------------------------------------------------
 
   defp apply_fork(a, b) do
-    Logger.debug "applying fork b to ib_gib a.\na: #{inspect a}\nb: #{inspect b}\n"
-    Logger.debug "a[:rel8ns]: #{inspect a[:rel8ns]}"
+    _ = Logger.debug "applying fork b to ib_gib a.\na: #{inspect a}\nb: #{inspect b}\n"
+    _ = Logger.debug "a[:rel8ns]: #{inspect a[:rel8ns]}"
 
     # First authorize
     b_identities = authorize_apply_b(:fork, a[:rel8ns], b[:rel8ns])
@@ -323,14 +323,14 @@ defmodule IbGib.Expression do
     a_ancestor = Map.get(a[:rel8ns], "ancestor", [])
     this_rel8ns = Map.merge(a[:rel8ns], %{"past" => @default_past})
     this_rel8ns = Map.put(this_rel8ns, "identity", b_identities)
-    Logger.debug "this_rel8ns: #{inspect this_rel8ns}"
+    _ = Logger.debug "this_rel8ns: #{inspect this_rel8ns}"
 
     this_info = Map.put(this_info, :rel8ns, this_rel8ns)
-    Logger.debug "this_info: #{inspect this_info}"
+    _ = Logger.debug "this_info: #{inspect this_info}"
 
     # We add the fork itself to the relations `dna`.
     this_info = this_info |> add_rel8n("dna", b)
-    Logger.debug "fork_data[\"src_ib_gib\"]: #{fork_data["src_ib_gib"]}"
+    _ = Logger.debug "fork_data[\"src_ib_gib\"]: #{fork_data["src_ib_gib"]}"
 
 
     this_info =
@@ -342,13 +342,13 @@ defmodule IbGib.Expression do
         this_info |> add_rel8n("ancestor", fork_data["src_ib_gib"])
       end
 
-    Logger.debug "this_info: #{inspect this_info}"
+    _ = Logger.debug "this_info: #{inspect this_info}"
 
     # Copy the data over. Data is considered to be "small", so should be
     # copyable.
     this_data = Map.get(a, :data, %{})
     this_info = Map.put(this_info, :data, this_data)
-    Logger.debug "this_info: #{inspect this_info}"
+    _ = Logger.debug "this_info: #{inspect this_info}"
 
     # Now we calculate the new hash and set it to `:gib`.
     this_gib = Helper.hash(this_ib, this_info[:rel8ns], this_data)
@@ -359,15 +359,15 @@ defmodule IbGib.Expression do
         this_gib
       end
     this_info = Map.put(this_info, :gib, this_gib)
-    Logger.debug "this_info: #{inspect this_info}"
+    _ = Logger.debug "this_info: #{inspect this_info}"
 
     {:ok, {this_ib, this_gib, this_info}}
   end
 
   defp apply_mut8(a, b) do
     # We are applying a mut8 transform.
-    Logger.debug "applying mut8 b to ib_gib a.\na: #{inspect a}\nb: #{inspect b}\n"
-    Logger.debug "a[:rel8ns]: #{inspect a[:rel8ns]}"
+    _ = Logger.debug "applying mut8 b to ib_gib a.\na: #{inspect a}\nb: #{inspect b}\n"
+    _ = Logger.debug "a[:rel8ns]: #{inspect a[:rel8ns]}"
 
     # First authorize
     b_identities = authorize_apply_b(:mut8, a[:rel8ns], b[:rel8ns])
@@ -380,7 +380,7 @@ defmodule IbGib.Expression do
     ib = a[:ib]
     original_gib = a[:gib]
     original_ib_gib = Helper.get_ib_gib!(ib, original_gib)
-    Logger.debug "retaining ib. a[:ib]...: #{ib}"
+    _ = Logger.debug "retaining ib. a[:ib]...: #{ib}"
 
     # Passed authorization.
     # I do not call add_rel8n for this, because I want it to overwrite.
@@ -395,38 +395,38 @@ defmodule IbGib.Expression do
 
     a_data = Map.get(a, :data, %{})
     b_data = Map.get(b, :data, %{})
-    Logger.debug "a_data: #{inspect a_data}\nb_data: #{inspect b_data}"
+    _ = Logger.debug "a_data: #{inspect a_data}\nb_data: #{inspect b_data}"
 
     b_new_data_metadata =
       b_data["new_data"]
       |> Enum.filter(fn(entry) ->
-         Logger.debug "creating metadata. entry: #{inspect entry}"
-           Logger.debug "entry: #{inspect entry}"
+         _ = Logger.debug "creating metadata. entry: #{inspect entry}"
+           _ = Logger.debug "entry: #{inspect entry}"
            {entry_key, _} = entry
-           entry_key |> String.starts_with?(map_key_meta_prefix)
+           entry_key |> String.starts_with?(@map_key_meta_prefix)
          end)
       |> Enum.reduce(%{}, fn(entry, acc) ->
            {key, value} = entry
            acc |> Map.put(key, value)
          end)
-    Logger.debug "b_new_data_metadata: #{inspect b_new_data_metadata}"
+    _ = Logger.debug "b_new_data_metadata: #{inspect b_new_data_metadata}"
 
     a_data = a_data |> apply_mut8_metadata(b_new_data_metadata)
-    Logger.debug "a_data: #{inspect a_data}"
+    _ = Logger.debug "a_data: #{inspect a_data}"
 
     b_new_data =
       b_data["new_data"]
       |> Enum.filter(fn(entry) ->
-           Logger.debug "creating data without metadata. entry: #{inspect entry}"
+           _ = Logger.debug "creating data without metadata. entry: #{inspect entry}"
            {entry_key, _} = entry
-           !String.starts_with?(entry_key, map_key_meta_prefix)
+           !String.starts_with?(entry_key, @map_key_meta_prefix)
          end)
       |> Enum.reduce(%{}, fn(entry, acc) ->
            {key, value} = entry
            acc |> Map.put(key, value)
          end)
-    Logger.debug "b_new_data: #{inspect b_new_data}"
-    Logger.debug "a_data: #{inspect a_data}"
+    _ = Logger.debug "b_new_data: #{inspect b_new_data}"
+    _ = Logger.debug "a_data: #{inspect a_data}"
 
     merged_data =
       if map_size(b_new_data) > 0 do
@@ -435,7 +435,7 @@ defmodule IbGib.Expression do
         a_data
       end
 
-    Logger.debug "merged data: #{inspect merged_data}"
+    _ = Logger.debug "merged data: #{inspect merged_data}"
     a = Map.put(a, :data, merged_data)
 
     # Now we calculate the new hash and set it to `:gib`.
@@ -446,36 +446,36 @@ defmodule IbGib.Expression do
       else
         this_gib
       end
-    Logger.debug "this_gib: #{this_gib}"
+    _ = Logger.debug "this_gib: #{this_gib}"
     a = Map.put(a, :gib, this_gib)
 
-    Logger.debug "a[:gib] set to gib: #{this_gib}"
+    _ = Logger.debug "a[:gib] set to gib: #{this_gib}"
 
     {:ok, {ib, this_gib, a}}
   end
 
   defp apply_mut8_metadata(a_data, b_new_data_metadata)
     when map_size(b_new_data_metadata) > 0 do
-    Logger.debug "a_data start: #{inspect a_data}"
+    _ = Logger.debug "a_data start: #{inspect a_data}"
 
     remove_key = Mut8Factory.get_meta_key(:mut8_remove_key)
     rename_key = Mut8Factory.get_meta_key(:mut8_rename_key)
-    Logger.debug "remove_key: #{remove_key}"
-    Logger.debug "rename_key: #{rename_key}"
+    _ = Logger.debug "remove_key: #{remove_key}"
+    _ = Logger.debug "rename_key: #{rename_key}"
 
     b_new_data_metadata
     |> Enum.reduce(a_data, fn(entry, acc) ->
          {key, value} = entry
-         Logger.debug "key: #{key}"
+         _ = Logger.debug "key: #{key}"
          cond do
            key === remove_key ->
-             Logger.debug "remove_key. {key, value}: {#{key}, #{value}}"
+             _ = Logger.debug "remove_key. {key, value}: {#{key}, #{value}}"
              acc = Map.drop(acc, [value])
 
            key === rename_key ->
-             Logger.debug "rename_key. {key, value}: {#{key}, #{value}}"
-             [old_key_name, new_key_name] = String.split(value, rename_operator)
-             Logger.debug "old_key_name: #{old_key_name}, new: #{new_key_name}"
+             _ = Logger.debug "rename_key. {key, value}: {#{key}, #{value}}"
+             [old_key_name, new_key_name] = String.split(value, @rename_operator)
+             _ = Logger.debug "old_key_name: #{old_key_name}, new: #{new_key_name}"
              data_value = a_data |> Map.get(old_key_name)
              acc =
                acc
@@ -483,7 +483,7 @@ defmodule IbGib.Expression do
                |> Map.put(new_key_name, data_value)
 
            true ->
-             Logger.error "Unknown mut8_metadata key: #{key}"
+             _ = Logger.error "Unknown mut8_metadata key: #{key}"
              a_data
          end
        end)
@@ -495,8 +495,8 @@ defmodule IbGib.Expression do
 
   defp apply_rel8(a, b) do
     # We are applying a rel8 transform.
-    Logger.debug "applying rel8 b to ib_gib a.\na: #{inspect a}\nb: #{inspect b}\n"
-    Logger.debug "a[:rel8ns]: #{inspect a[:rel8ns]}"
+    _ = Logger.debug "applying rel8 b to ib_gib a.\na: #{inspect a}\nb: #{inspect b}\n"
+    _ = Logger.debug "a[:rel8ns]: #{inspect a[:rel8ns]}"
 
     # First authorize
     b_identities = authorize_apply_b(:rel8, a[:rel8ns], b[:rel8ns])
@@ -507,7 +507,7 @@ defmodule IbGib.Expression do
     src_ib_gib = b[:data]["src_ib_gib"]
     if a_ib_gib != src_ib_gib do
       emsg = emsg_invalid_rel8_src_mismatch(src_ib_gib, a_ib_gib)
-      Logger.error emsg
+      _ = Logger.error emsg
       raise IbGib.InvalidRel8Error, emsg
     end
 
@@ -543,13 +543,13 @@ defmodule IbGib.Expression do
         [] -> @default_rel8ns
         valid_rel8n_names -> valid_rel8n_names
       end
-    Logger.debug "rel8n_names: #{inspect rel8n_names}"
+    _ = Logger.debug "rel8n_names: #{inspect rel8n_names}"
 
     this_info =
       this_info |> add_rel8ns(rel8n_names, other_ib_gib)
 
     this_rel8ns = this_info[:rel8ns]
-    Logger.debug "New rel8ns. this_rel8ns: #{inspect this_rel8ns}"
+    _ = Logger.debug "New rel8ns. this_rel8ns: #{inspect this_rel8ns}"
 
     # Now we calculate the new hash and set it to `:gib`.
     this_gib = Helper.hash(this_ib, this_rel8ns, this_data)
@@ -559,11 +559,11 @@ defmodule IbGib.Expression do
       else
         this_gib
       end
-    Logger.debug "this_gib: #{this_gib}"
+    _ = Logger.debug "this_gib: #{this_gib}"
 
     this_info = Map.put(this_info, :gib, this_gib)
 
-    Logger.debug "a[:gib] set to gib: #{a[:gib]}"
+    _ = Logger.debug "a[:gib] set to gib: #{a[:gib]}"
 
     {:ok, {this_ib, this_gib, this_info}}
   end
@@ -600,12 +600,12 @@ defmodule IbGib.Expression do
   end
 
   defp apply_query(a, b) do
-    Logger.debug "a: #{inspect a}\nb: #{inspect b}"
+    _ = Logger.debug "a: #{inspect a}\nb: #{inspect b}"
     b_identities = authorize_apply_b(:query, a[:rel8ns], b[:rel8ns])
 
     query_options = b[:data]["options"]
     result = IbGib.Data.query(query_options)
-    Logger.debug "query result: #{inspect result}"
+    _ = Logger.debug "query result: #{inspect result}"
 
     this_info = %{}
     this_ib = "query_result"
@@ -640,20 +640,20 @@ defmodule IbGib.Expression do
     this_gib = Helper.hash(this_ib, this_info[:rel8ns], this_info[:data])
     this_info = Map.put(this_info, :gib, this_gib)
 
-    Logger.debug "this_info is built yo! this_info: #{inspect this_info}"
+    _ = Logger.debug "this_info is built yo! this_info: #{inspect this_info}"
 
     with(
       # {:ok, ib_gib} <- Helper.get_ib_gib(this_ib, this_gib),
       {:ok, :ok} <- IbGib.Data.save(this_info)
     ) do
-      Logger.debug "Saved and registered ok. this_info: #{inspect this_info}"
+      _ = Logger.debug "Saved and registered ok. this_info: #{inspect this_info}"
       {:ok, %{:info => this_info}}
     else
       {:error, result} ->
-        Logger.error "Save/Register error result: #{inspect result}"
+        _ = Logger.error "Save/Register error result: #{inspect result}"
         {:error, result}
       error ->
-        Logger.error "Save/Register error: #{inspect error}"
+        _ = Logger.error "Save/Register error: #{inspect error}"
         {:error, error}
     end
   end
@@ -672,18 +672,18 @@ defmodule IbGib.Expression do
   #     %{ib: "some ib", gib: "some_gib", rel8ns: %{"ancestor" => ["ib^gib", "ib b^gib_b"]}}
   defp add_rel8n(a_info, relation_name, b)
   defp add_rel8n(a_info, relation_name, b) when is_map(a_info) and is_bitstring(relation_name) and is_bitstring(b) do
-    # Logger.debug "bitstring yo"
+    # _ = Logger.debug "bitstring yo"
     add_rel8n(a_info, relation_name, [b])
   end
   defp add_rel8n(a_info, relation_name, b)
     when is_map(a_info) and is_bitstring(relation_name) and is_list(b) do
-      Logger.debug "a_info:\n#{inspect a_info, pretty: true}\nb:\n#{inspect b, pretty: true}"
-    # Logger.debug "array list"
+      _ = Logger.debug "a_info:\n#{inspect a_info, pretty: true}\nb:\n#{inspect b, pretty: true}"
+    # _ = Logger.debug "array list"
     b_is_list_of_ib_gib =
       b |> all?(fn(item) -> Helper.valid_ib_gib?(item) end)
 
     if b_is_list_of_ib_gib do
-      Logger.debug "Adding relation #{relation_name} to a_info. a_info[:rel8ns]: #{inspect a_info[:rel8ns]}"
+      _ = Logger.debug "Adding relation #{relation_name} to a_info. a_info[:rel8ns]: #{inspect a_info[:rel8ns]}"
       a_relations = a_info[:rel8ns]
 
       relation_list = Map.get(a_relations, relation_name, [])
@@ -700,15 +700,15 @@ defmodule IbGib.Expression do
 
       new_a_relations = Map.put(a_relations, relation_name, new_relation_list)
       new_a = Map.put(a_info, :rel8ns, new_a_relations)
-      Logger.debug "Added relation #{relation_name} to a_info. a_info[:rel8ns]: #{inspect a_info[:rel8ns]}"
+      _ = Logger.debug "Added relation #{relation_name} to a_info. a_info[:rel8ns]: #{inspect a_info[:rel8ns]}"
       new_a
     else
-      Logger.debug "Tried to add relation list of non-valid ib_gib."
+      _ = Logger.debug "Tried to add relation list of non-valid ib_gib."
       a_info
     end
   end
   defp add_rel8n(a_info, relation_name, b) when is_map(a_info) and is_bitstring(relation_name) and is_map(b) do
-    # Logger.debug "mappy mappy"
+    # _ = Logger.debug "mappy mappy"
     b_ib_gib = Helper.get_ib_gib!(b[:ib], b[:gib])
     add_rel8n(a_info, relation_name, [b_ib_gib])
   end
@@ -767,9 +767,9 @@ defmodule IbGib.Expression do
     # nefarious monkey business and ensuring that whoever could be doing said
     # monkey business at least has some identity.
     Logger.metadata([x: which])
-    Logger.debug "which: #{which}"
-    Logger.warn "a_rel8ns: #{inspect a_rel8ns}"
-    Logger.warn "b_rel8ns: #{inspect b_rel8ns}"
+    _ = Logger.debug "which: #{which}"
+    _ = Logger.warn "a_rel8ns: #{inspect a_rel8ns}"
+    _ = Logger.warn "b_rel8ns: #{inspect b_rel8ns}"
 
     a_has_identity =
       Map.has_key?(a_rel8ns, "identity") and
@@ -785,7 +785,7 @@ defmodule IbGib.Expression do
     if a_has_identity and b_has_identity do
       b_identity = b_rel8ns["identity"]
     else
-      Logger.error "DOH! Unidentified #{which} apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
+      _ = Logger.error "DOH! Unidentified #{which} apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
       expected = "a_has_identity: true, b_has_identity: true"
       actual = "a_has_identity: #{a_has_identity},
                 b_has_identity: #{b_has_identity}"
@@ -795,9 +795,9 @@ defmodule IbGib.Expression do
   end
   defp authorize_apply_b(which, a_rel8ns, b_rel8ns) when is_atom(which) do
     Logger.metadata([x: which])
-    Logger.debug "which: #{inspect which}"
-    Logger.warn "a_rel8ns: #{inspect a_rel8ns}"
-    Logger.warn "b_rel8ns: #{inspect b_rel8ns}"
+    _ = Logger.debug "which: #{inspect which}"
+    _ = Logger.warn "a_rel8ns: #{inspect a_rel8ns}"
+    _ = Logger.warn "b_rel8ns: #{inspect b_rel8ns}"
     a_has_identity =
       Map.has_key?(a_rel8ns, "identity") and
       # Every identity rel8ns should have ib^gib
@@ -823,7 +823,7 @@ defmodule IbGib.Expression do
           # unauthorized: a requires auth, b does not have any/all
           expected = a_rel8ns["identity"]
           actual = b_rel8ns["identity"]
-          Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
+          _ = Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
           raise UnauthorizedError, message:
             emsg_invalid_authorization(expected, actual)
         end
@@ -833,7 +833,7 @@ defmodule IbGib.Expression do
         # expected: [something], actual: nil
         expected = "a_has_identity: true, b_has_identity: true"
         actual = "a_has_identity: false, b_has_identity: true"
-        Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
+        _ = Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
         raise UnauthorizedError, message:
           emsg_invalid_authorization(expected, actual)
 
@@ -842,7 +842,7 @@ defmodule IbGib.Expression do
         # expected: a_identity, actual: nil
         expected = a_rel8ns["identity"]
         actual = nil
-        Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
+        _ = Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
         raise UnauthorizedError, message:
           emsg_invalid_authorization(expected, actual)
 
@@ -851,7 +851,7 @@ defmodule IbGib.Expression do
         # expected: [something], actual: nil
         expected = "a_has_identity: true, b_has_identity: true"
         actual = "a_has_identity: false, b_has_identity: false"
-        Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
+        _ = Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
         raise UnauthorizedError, message:
           emsg_invalid_authorization(expected, actual)
     end
@@ -863,8 +863,8 @@ defmodule IbGib.Expression do
   # ----------------------------------------------------------------------------
 
   defp express_impl(identity_ib_gibs, a_ib_gib, a_info, b_ib_gib, _state) do
-    Logger.warn "express_impl reachhed"
-    Logger.warn "express_impl reachhed"
+    _ = Logger.warn "express_impl reachhed"
+    _ = Logger.warn "express_impl reachhed"
 
     with(
       # -----------------------
@@ -927,10 +927,10 @@ defmodule IbGib.Expression do
       {:ok, {final_ib_gib, final_state}}
     else
       {:error, reason} ->
-        Logger.error "#{inspect reason}"
+        _ = Logger.error "#{inspect reason}"
         {:error, reason}
       error ->
-        Logger.error "#{inspect error}"
+        _ = Logger.error "#{inspect error}"
         {:error, "#{inspect error}"}
     end
   end
@@ -990,20 +990,20 @@ defmodule IbGib.Expression do
         {:ok, {final_ib_gib, new_state}}
       else
         {:error, reason} ->
-          Logger.error "#{inspect reason}"
+          _ = Logger.error "#{inspect reason}"
           {:error, reason}
         error ->
-          Logger.error "#{inspect error}"
+          _ = Logger.error "#{inspect error}"
           {:error, "#{inspect error}"}
       end
     end
   end
 
   defp plan_complete?(plan_info) do
-    Logger.debug "plan_info:\n#{inspect plan_info, pretty: true}"
+    _ = Logger.debug "plan_info:\n#{inspect plan_info, pretty: true}"
     next_step_index = String.to_integer(plan_info[:data]["i"])
     step_count = TB.count_steps(plan_info[:data]["steps"])
-    Logger.debug "next_step_index: #{next_step_index}\nstep_count: #{step_count}"
+    _ = Logger.debug "next_step_index: #{next_step_index}\nstep_count: #{step_count}"
     # 1-based index
     cond do
       next_step_index < step_count -> false
@@ -1013,7 +1013,7 @@ defmodule IbGib.Expression do
   end
 
   defp apply_next(a_info, next_info) do
-    Logger.debug "next_info:\n#{inspect next_info, pretty: true}"
+    _ = Logger.debug "next_info:\n#{inspect next_info, pretty: true}"
     with(
       {:ok, {this_ib, this_gib, this_info}} <-
         apply_next_impl(a_info, next_info),
@@ -1022,16 +1022,16 @@ defmodule IbGib.Expression do
       {:ok, {this_ib_gib, this_ib, this_gib, this_info}}
     else
       {:error, reason} ->
-        Logger.error "#{inspect reason}"
+        _ = Logger.error "#{inspect reason}"
         {:error, reason}
       error ->
-        Logger.error "#{inspect error}"
+        _ = Logger.error "#{inspect error}"
         {:error, "#{inspect error}"}
     end
   end
 
   defp apply_next_impl(a_info, %{:ib => "fork"} = next_info) do
-    Logger.warn "next_info:\n#{inspect next_info, pretty: true}"
+    _ = Logger.warn "next_info:\n#{inspect next_info, pretty: true}"
     apply_fork(a_info, next_info)
   end
   defp apply_next_impl(a_info, %{:ib => "mut8"} = next_info) do
@@ -1043,7 +1043,7 @@ defmodule IbGib.Expression do
 
   # For now, the implementation is just to call start_expression
   defp get_process(_identity_ib_gibs, ib_gib) do
-    Logger.debug "ib_gib: #{ib_gib}"
+    _ = Logger.debug "ib_gib: #{ib_gib}"
     IbGib.Expression.Supervisor.start_expression(ib_gib)
   end
 
@@ -1063,8 +1063,8 @@ defmodule IbGib.Expression do
         b_info
       end
 
-    Logger.debug "b_info: #{inspect b_info}"
-    # Logger.warn "before compile"
+    _ = Logger.debug "b_info: #{inspect b_info}"
+    # _ = Logger.warn "before compile"
     case concretize_and_save_plan(identity_ib_gibs, a_ib_gib, b_ib_gib, b_info) do
       # We have concretized the plan, including the next step transform,
       # and we want to return that new transform to express.
@@ -1072,8 +1072,8 @@ defmodule IbGib.Expression do
              _concrete_plan_ib_gib,
              next_step_transform_info,
              next_step_index}} ->
-        # Logger.debug "concrete_plan_ib_gib:\n#{concrete_plan_ib_gib}\nconcrete_plan_info: #{inspect concrete_plan_info, pretty: true}"
-        # Logger.warn "after compile"
+        # _ = Logger.debug "concrete_plan_ib_gib:\n#{concrete_plan_ib_gib}\nconcrete_plan_info: #{inspect concrete_plan_info, pretty: true}"
+        # _ = Logger.warn "after compile"
         {:ok, {concrete_plan_info, next_step_transform_info, next_step_index}}
 
       # Something went awry.
@@ -1086,7 +1086,7 @@ defmodule IbGib.Expression do
   # refactor it to be more elegantly structured, perhaps taking this whole
   # compilation process into its own module, yada yada yada.
   defp concretize_and_save_plan(identity_ib_gibs, a_ib_gib, old_plan_ib_gib, old_plan_info) do
-    # Logger.debug "args:\n#{inspect [identity_ib_gibs, a_ib_gib, old_plan_info], [pretty: true]}"
+    # _ = Logger.debug "args:\n#{inspect [identity_ib_gibs, a_ib_gib, old_plan_info], [pretty: true]}"
 
     with(
       # Update our available variables
@@ -1154,26 +1154,26 @@ defmodule IbGib.Expression do
       {:ok, {new_plan_info, new_plan_ib_gib, next_step_transform_info, next_step_index}}
     else
       {:error, reason} ->
-        Logger.error "#{inspect reason}"
+        _ = Logger.error "#{inspect reason}"
         {:error, reason}
       error ->
-        Logger.error "#{inspect error}"
+        _ = Logger.error "#{inspect error}"
         {:error, "#{inspect error}"}
     end
   end
 
   defp increment_plan_step_index(new_plan_info) do
-    Logger.warn "new_plan_info:\n#{inspect new_plan_info, pretty: true}"
+    _ = Logger.warn "new_plan_info:\n#{inspect new_plan_info, pretty: true}"
     data = new_plan_info[:data]
     steps_count = TB.count_steps(data["steps"])
     current_i = String.to_integer(data["i"])
     if current_i < steps_count do
-      Logger.debug "bumping i. current_i: #{current_i}. steps_count: #{steps_count}"
+      _ = Logger.debug "bumping i. current_i: #{current_i}. steps_count: #{steps_count}"
       data = Map.put(data, "i", "#{current_i + 1}")
       # Return plan with bumped i
       Map.put(new_plan_info, :data, data)
     else
-      Logger.debug "i unchanged. current_i: #{current_i}. steps_count: #{steps_count}"
+      _ = Logger.debug "i unchanged. current_i: #{current_i}. steps_count: #{steps_count}"
       # Just return plan unchanged
       new_plan_info
     end
@@ -1189,7 +1189,7 @@ defmodule IbGib.Expression do
   defp build_and_save_next_transform("fork", identity_ib_gibs, src_ib_gib,
     f_data, plan_info) do
 
-    Logger.warn "fork\nplan_info: #{inspect plan_info, pretty: true}"
+    _ = Logger.warn "fork\nplan_info: #{inspect plan_info, pretty: true}"
     # Probably need to actually get this from somewhere, but for now I'm
     # going with the default until I see the reason otherwise.
     # opts = @default_transform_options
@@ -1211,10 +1211,10 @@ defmodule IbGib.Expression do
       {:ok, {fork_ib_gib, fork_info}}
     else
       {:error, reason} ->
-        Logger.error "#{inspect reason}"
+        _ = Logger.error "#{inspect reason}"
         {:error, reason}
       error ->
-        Logger.error "#{inspect error}"
+        _ = Logger.error "#{inspect error}"
         {:error, "#{inspect error}"}
     end
   end
@@ -1242,10 +1242,10 @@ defmodule IbGib.Expression do
       {:ok, {mut8_ib_gib, mut8_info}}
     else
       {:error, reason} ->
-        Logger.error "#{inspect reason}"
+        _ = Logger.error "#{inspect reason}"
         {:error, reason}
       error ->
-        Logger.error "#{inspect error}"
+        _ = Logger.error "#{inspect error}"
         {:error, "#{inspect error}"}
     end
   end
@@ -1274,31 +1274,31 @@ defmodule IbGib.Expression do
       {:ok, {rel8_ib_gib, rel8_info}}
     else
       {:error, reason} ->
-        Logger.error "#{inspect reason}"
+        _ = Logger.error "#{inspect reason}"
         {:error, reason}
       error ->
-        Logger.error "#{inspect error}"
+        _ = Logger.error "#{inspect error}"
         {:error, "#{inspect error}"}
     end
   end
 
   defp get_next_step(b_info) do
     # At this point, should always be a next step, i.e. plan isn't complete
-    Logger.debug "b_info:\n#{inspect b_info, pretty: true}"
+    _ = Logger.debug "b_info:\n#{inspect b_info, pretty: true}"
     next_step_index = String.to_integer(b_info[:data]["i"])
     steps = b_info[:data]["steps"]
 
-    # Logger.debug "steps:\n#{inspect steps, pretty: true}"
+    # _ = Logger.debug "steps:\n#{inspect steps, pretty: true}"
     # Compensate for the very strange behavior of elixir converting single-item
     # arrays to non-arrays in maps.
     steps = if is_list(steps), do: steps, else: [steps]
 
-    Logger.debug "steps:\n#{inspect steps, pretty: true}\nnext_step_index: #{next_step_index}"
+    _ = Logger.debug "steps:\n#{inspect steps, pretty: true}\nnext_step_index: #{next_step_index}"
 
     # next_step_index is 1-based, Enum.at is 0-based
     next_step = Enum.at(steps, next_step_index - 1)
     if next_step do
-      Logger.debug "next_step: #{inspect next_step, pretty: true}"
+      _ = Logger.debug "next_step: #{inspect next_step, pretty: true}"
       {:ok, {next_step, next_step_index}}
     else
       {:error, "Next step not found"}
@@ -1314,8 +1314,8 @@ defmodule IbGib.Expression do
   def replace_variables(available_vars, map) when is_map(map) do
     proc_id = RandomGib.Get.some_letters(4)
     Logger.metadata(x: proc_id)
-    # Logger.debug "available_vars:\n#{inspect available_vars, pretty: true}\n"
-    Logger.debug "map before:\n#{inspect map, pretty: true}"
+    # _ = Logger.debug "available_vars:\n#{inspect available_vars, pretty: true}\n"
+    _ = Logger.debug "map before:\n#{inspect map, pretty: true}"
     result =
       for {key, val} <- map, into: %{} do
         val = replace_variables(available_vars, val)
@@ -1326,22 +1326,22 @@ defmodule IbGib.Expression do
       end
 
     Logger.metadata(x: proc_id)
-    Logger.debug "map after:\n#{inspect result, pretty: true}"
+    _ = Logger.debug "map after:\n#{inspect result, pretty: true}"
     result
   end
   def replace_variables(_available_vars, list) when is_list(list) and length(list) == 0 do
-    Logger.debug "empty list"
+    _ = Logger.debug "empty list"
     list
   end
   def replace_variables(available_vars, list) when is_list(list) do
     proc_id = RandomGib.Get.some_letters(4)
     Logger.metadata(x: proc_id)
-    Logger.debug "list before:\n#{inspect list, pretty: true}"
+    _ = Logger.debug "list before:\n#{inspect list, pretty: true}"
     result =
       Enum.map(list, fn(item) -> replace_variables(available_vars, item) end)
 
     Logger.metadata(x: proc_id)
-    Logger.debug "list after:\n#{inspect list, pretty: true}"
+    _ = Logger.debug "list after:\n#{inspect list, pretty: true}"
     result
   end
   def replace_variables(available_vars, str) when is_bitstring(str) do
@@ -1368,7 +1368,7 @@ defmodule IbGib.Expression do
   # necessary to enable an environment to discover these principles.
 
   defp get_available_vars(a_ib_gib, b_info) do
-    Logger.debug "args: #{inspect [a_ib_gib, b_info], [pretty: true]}"
+    _ = Logger.debug "args: #{inspect [a_ib_gib, b_info], [pretty: true]}"
 
     {:ok, {a_ib, _}} = Helper.separate_ib_gib(a_ib_gib)
     plan_src = b_info[:data]["src"]
@@ -1393,7 +1393,7 @@ defmodule IbGib.Expression do
       else
         [steps]
       end
-    Logger.debug "steps:\n#{inspect steps, [pretty: true]}"
+    _ = Logger.debug "steps:\n#{inspect steps, [pretty: true]}"
 
     completed_steps =
       steps
@@ -1401,7 +1401,7 @@ defmodule IbGib.Expression do
            output = step["out"]
            output != nil and output != ""
          end)
-    Logger.debug "completed_steps:\n#{inspect completed_steps, [pretty: true]}"
+    _ = Logger.debug "completed_steps:\n#{inspect completed_steps, [pretty: true]}"
 
     vars =
       if completed_steps != nil and Enum.count(completed_steps) > 0 do
@@ -1417,7 +1417,7 @@ defmodule IbGib.Expression do
       else
         vars
       end
-    Logger.debug "vars:\n#{inspect vars, pretty: true}"
+    _ = Logger.debug "vars:\n#{inspect vars, pretty: true}"
     vars
   end
 
@@ -1457,7 +1457,7 @@ defmodule IbGib.Expression do
   def express(identity_ib_gibs, a_ib_gib, a_info, b_ib_gib)
     when is_list(identity_ib_gibs) and is_bitstring(a_ib_gib) and
          is_map(a_info) and is_bitstring(b_ib_gib) do
-    Logger.debug "identity_ib_gibs:\n#{inspect identity_ib_gibs}\na_ib_gib: #{a_ib_gib}\na_info:\n#{inspect a_info, pretty: true}\nb_ib_gib: #{b_ib_gib}"
+    _ = Logger.debug "identity_ib_gibs:\n#{inspect identity_ib_gibs}\na_ib_gib: #{a_ib_gib}\na_info:\n#{inspect a_info, pretty: true}\nb_ib_gib: #{b_ib_gib}"
     {:ok, stem_cell_pid} =
       IbGib.Expression.Supervisor.start_expression({identity_ib_gibs,
                                                     a_ib_gib,
@@ -1468,7 +1468,7 @@ defmodule IbGib.Expression do
   end
   def express(identity_ib_gibs, a_ib_gib, a_info, b_ib_gib) do
     emsg = emsg_invalid_args([identity_ib_gibs, a_ib_gib, a_info, b_ib_gib])
-    Logger.error emsg
+    _ = Logger.error emsg
     {:error, emsg}
   end
 
@@ -1494,7 +1494,7 @@ defmodule IbGib.Expression do
   end
   def fork(expr_pid, identity_ib_gibs, dest_ib, opts) do
     emsg = emsg_invalid_args([expr_pid, identity_ib_gibs, dest_ib, opts])
-    Logger.error emsg
+    _ = Logger.error emsg
     {:error, emsg}
   end
 
@@ -1531,7 +1531,7 @@ defmodule IbGib.Expression do
   # end
   def mut8(expr_pid, identity_ib_gibs, new_data, opts) do
     emsg = emsg_invalid_args([expr_pid, identity_ib_gibs, new_data, opts])
-    Logger.error emsg
+    _ = Logger.error emsg
     {:error, emsg}
   end
 
@@ -1567,14 +1567,14 @@ defmodule IbGib.Expression do
          is_list(identity_ib_gibs) and length(identity_ib_gibs) >= 1 and
          is_list(rel8ns) and length(rel8ns) >= 1 and
          is_map(opts) do
-    Logger.debug "rel8 huh"
+    _ = Logger.debug "rel8 huh"
     GenServer.call(expr_pid, {:rel8, other_pid, identity_ib_gibs, rel8ns, opts})
   end
   def rel8(expr_pid, other_pid, identity_ib_gibs, rel8ns, opts) do
     emsg = emsg_invalid_args([
         expr_pid, other_pid, identity_ib_gibs, rel8ns, opts
       ])
-    Logger.error emsg
+    _ = Logger.error emsg
     {:error, emsg}
   end
 
@@ -1617,7 +1617,7 @@ defmodule IbGib.Expression do
   end
   def query(expr_pid, identity_ib_gibs, query_options) do
     emsg = emsg_invalid_args([expr_pid, identity_ib_gibs, query_options])
-    Logger.error(emsg)
+    _ = Logger.error(emsg)
     {:error, emsg}
   end
 
@@ -1660,14 +1660,14 @@ defmodule IbGib.Expression do
   def instance(expr_pid, identity_ib_gibs, dest_ib, opts)
     when is_pid(expr_pid) and is_list(identity_ib_gibs) and
          is_bitstring(dest_ib) do
-    Logger.debug "bad opts: #{inspect opts}"
+    _ = Logger.debug "bad opts: #{inspect opts}"
     GenServer.call(expr_pid, {:instance, identity_ib_gibs, dest_ib, %{}})
   end
 
   @doc """
   Bang version of `instance/2`.
   """
-  @spec instance!(pid, String.t, map) :: pid | any
+  @spec instance!(pid, list(String.t), String.t, map) :: pid | any
   def instance!(expr_pid,
                 identity_ib_gibs,
                 dest_ib,
@@ -1680,7 +1680,7 @@ defmodule IbGib.Expression do
   def instance!(expr_pid, identity_ib_gibs, dest_ib, opts)
     when is_pid(expr_pid) and is_list(identity_ib_gibs) and
          is_bitstring(dest_ib) do
-    Logger.debug "bad opts: #{inspect opts}"
+    _ = Logger.debug "bad opts: #{inspect opts}"
     bang(instance(expr_pid, identity_ib_gibs, dest_ib, %{}))
   end
 
@@ -1745,7 +1745,7 @@ defmodule IbGib.Expression do
   # ----------------------------------------------------------------------------
 
   defp fork_impl(identity_ib_gibs, dest_ib, opts, state) do
-    Logger.debug "state: #{inspect state}"
+    _ = Logger.debug "state: #{inspect state}"
 
     with(
       info <- state[:info],
@@ -1769,10 +1769,10 @@ defmodule IbGib.Expression do
       {:ok, new_pid}
     else
       {:error, reason} ->
-        Logger.error "#{inspect reason}"
+        _ = Logger.error "#{inspect reason}"
         {:error, reason}
       error ->
-        Logger.error "#{inspect error}"
+        _ = Logger.error "#{inspect error}"
         {:error, "#{inspect error}"}
     end
   end
@@ -1782,7 +1782,7 @@ defmodule IbGib.Expression do
   # ----------------------------------------------------------------------------
 
   defp mut8_impl(identity_ib_gibs, new_data, opts, state) do
-    Logger.debug "state: #{inspect state}"
+    _ = Logger.debug "state: #{inspect state}"
 
     with(
       info <- state[:info],
@@ -1806,16 +1806,16 @@ defmodule IbGib.Expression do
       {:ok, new_pid}
     else
       {:error, reason} ->
-        Logger.error "#{inspect reason}"
+        _ = Logger.error "#{inspect reason}"
         {:error, reason}
       error ->
-        Logger.error "#{inspect error}"
+        _ = Logger.error "#{inspect error}"
         {:error, "#{inspect error}"}
     end
   end
 
   defp rel8_impl(other_pid, identity_ib_gibs, rel8ns, opts, state) do
-    Logger.debug "state: #{inspect state}"
+    _ = Logger.debug "state: #{inspect state}"
 
     with(
       info <- state[:info],
@@ -1842,26 +1842,26 @@ defmodule IbGib.Expression do
       {:ok, new_pid}
     else
       {:error, reason} ->
-        Logger.error "#{inspect reason}"
+        _ = Logger.error "#{inspect reason}"
         {:error, reason}
       error ->
-        Logger.error "#{inspect error}"
+        _ = Logger.error "#{inspect error}"
         {:error, "#{inspect error}"}
     end
   end
 
   defp instance_impl(@bootstrap_identity_ib_gib, dest_ib, opts, state) do
-    Logger.debug "state: #{inspect state}"
+    _ = Logger.debug "state: #{inspect state}"
     this_ib_gib = Helper.get_ib_gib!(state[:info])
     if this_ib_gib == @identity_ib_gib do
-      Logger.debug "instancing #{@identity_ib_gib}"
+      _ = Logger.debug "instancing #{@identity_ib_gib}"
       instance_impl([@bootstrap_identity_ib_gib], dest_ib, opts, state)
     else
       {:error, emsg_only_instance_bootstrap_identity_from_identity_gib}
     end
   end
   defp instance_impl(identity_ib_gibs, dest_ib, opts, state) do
-    Logger.debug "state: #{inspect state}"
+    _ = Logger.debug "state: #{inspect state}"
 
     with(
       info <- state[:info],
@@ -1886,28 +1886,28 @@ defmodule IbGib.Expression do
       {:ok, new_pid}
     else
       {:error, reason} ->
-        Logger.error "#{inspect reason}"
+        _ = Logger.error "#{inspect reason}"
         {:error, reason}
       error ->
-        Logger.error "#{inspect error}"
+        _ = Logger.error "#{inspect error}"
         {:error, "#{inspect error}"}
     end
   end
 
   # defp log_yo(:debug, msg) do
-  #   Logger.warn "This log msg is for dev purposes only!!! Should not be run in prod!!!"
-  #   Logger.debug msg, [pretty: true]
+  #   _ = Logger.warn "This log msg is for dev purposes only!!! Should not be run in prod!!!"
+  #   _ = Logger.debug msg, [pretty: true]
   #   {:ok, :ok}
   # end
   # defp log_yo(:warn, msg) do
-  #   Logger.warn "This log msg is for dev purposes only!!! Should not be run in prod!!!"
-  #   Logger.warn msg, [pretty: true]
+  #   _ = Logger.warn "This log msg is for dev purposes only!!! Should not be run in prod!!!"
+  #   _ = Logger.warn msg, [pretty: true]
   #   {:ok, :ok}
   # end
 
   defp query_impl(identity_ib_gibs, query_options, state)
     when is_map(query_options) do
-    Logger.debug "_state_: #{inspect state}"
+    _ = Logger.debug "_state_: #{inspect state}"
 
     # 1. Create query ib_gib
     with {:ok, query_info} <-
@@ -1926,17 +1926,17 @@ defmodule IbGib.Expression do
       {:ok, new_pid}
     else
       {:error, reason} ->
-        Logger.error "#{inspect reason}"
+        _ = Logger.error "#{inspect reason}"
         {:error, reason}
       error ->
-        Logger.error "#{inspect error}"
+        _ = Logger.error "#{inspect error}"
         {:error, "#{inspect error}"}
     end
   end
 
   defp contact_impl(other_pid, state) when is_pid(other_pid) and is_map(state) do
-    Logger.debug "state: #{inspect state}"
-    Logger.debug "other_expr_pid: #{inspect other_pid}"
+    _ = Logger.debug "state: #{inspect state}"
+    _ = Logger.debug "other_expr_pid: #{inspect other_pid}"
 
     with {:ok, other_info} <- get_info(other_pid),
       {:ok, new_pid} <-

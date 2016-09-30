@@ -16,7 +16,7 @@ defmodule WebGib.Plugs.IbGibRoot do
   Returns `:ok` by default.
   """
   def init(options) do
-    Logger.debug "inspect options: #{inspect options}"
+    _ = Logger.debug "inspect options: #{inspect options}"
     options
   end
 

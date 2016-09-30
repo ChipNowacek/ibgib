@@ -21,7 +21,7 @@ defmodule RandomGibTest do
   test "RandomGib.Get.one_of char list" do
     src = 'abcdefg'
     result = RandomGib.Get.one_of(src)
-    Logger.debug("list: #{:erlang.iolist_to_binary(<<result>>)}")
+    _ = Logger.debug("list: #{:erlang.iolist_to_binary(<<result>>)}")
     assert Enum.member?(src, result)
   end
 
@@ -36,7 +36,7 @@ defmodule RandomGibTest do
   test "RandomGib.Get.one_of string (binary)" do
     src = "abcdefg"
     result = RandomGib.Get.one_of(src)
-    Logger.debug("string: #{result}")
+    _ = Logger.debug("string: #{result}")
     assert String.contains?(src, result)
   end
 
@@ -44,7 +44,7 @@ defmodule RandomGibTest do
   test "RandomGib.Get.one_of empty string (binary)" do
     src = ""
     result = RandomGib.Get.one_of(src)
-    Logger.debug("string: #{result}")
+    _ = Logger.debug("string: #{result}")
     assert result === ""
   end
 
@@ -77,7 +77,7 @@ defmodule RandomGibTest do
   test "RandomGib.Get.some_of string (binary)" do
     src = "abcdef"
     result = RandomGib.Get.some_of(src)
-    Logger.debug("result string: #{result}")
+    _ = Logger.debug("result string: #{result}")
     for <<c <- src>>, do: assert String.contains?(src, <<c>>)
   end
 
@@ -86,7 +86,7 @@ defmodule RandomGibTest do
     src = "ab"
     for _ <- 1..100 do
       result = RandomGib.Get.some_of(src)
-      Logger.debug("result string: #{result}")
+      _ = Logger.debug("result string: #{result}")
       assert String.length(result) > 0
     end
   end
@@ -95,7 +95,7 @@ defmodule RandomGibTest do
   test "RandomGib.Get.some_of empty string (binary) returns empty string" do
     src = ""
     result = RandomGib.Get.some_of(src)
-    Logger.debug("string: #{result}")
+    _ = Logger.debug("string: #{result}")
     assert result === ""
   end
 
@@ -123,7 +123,7 @@ defmodule RandomGibTest do
     count = 1000
     valid_characters = "abAB^"
     result = RandomGib.Get.some_characters(count, valid_characters)
-    Logger.debug "result: #{result}"
+    _ = Logger.debug "result: #{result}"
     assert String.length(result) === count
 
     # out of a thousand, there should be a freakin a usually

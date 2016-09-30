@@ -69,14 +69,14 @@ export class IbScape {
     view.call(zoom);
 
     let simulation = d3.forceSimulation()
-        .velocityDecay(0.55)
+        .velocityDecay(0.45)
         // .force("link", d3.forceLink(links).distance(20).strength(1))
         .force("link",
                d3.forceLink()
                  .distance(getLinkDistance)
-                 .strength(.8)
+                 .strength(.7)
                  .id(d => d.id))
-        .force("charge", d3.forceManyBody().strength(25))
+        .force("charge", d3.forceManyBody().strength(-25))
         .force("collide", d3.forceCollide(3 * d3CircleRadius))
         .force("center", d3.forceCenter(t.width / 2, t.height / 2));
     t.simulation = simulation;
@@ -376,22 +376,22 @@ export class IbScape {
 
     function getNodeImage(d) {
       if (d.ib === "comment") {
-        return "";
+        return null;
       } else {
         return "/images/ibgib_100x200.png";
       }
-      // return "/favicon.ico";
-      // return "https://github.com/favicon.ico";
     }
 
     function getLinkDistance(l) {
       // debugger;
       if (l.target.id === "comment") {
-        return 150;
-      } else if (l.target.cat === "rel8n") {
-        return 10;
-      } else {
+        return 200;
+      } else if (l.target.cat === "comment") {
         return 15;
+      } else if (l.target.cat === "rel8n") {
+        return 50;
+      } else {
+        return 100;
       }
     }
   }
@@ -594,7 +594,18 @@ export class IbScape {
       this.execHelp(dIbGib);
     } else if (dCommand.name == "comment") {
       this.execComment(dIbGib);
+    } else if (dCommand.name == "pic") {
+      this.execPic(dIbGib);
     }
+  }
+
+  execPic(dIbGib) {
+    let init = () => {
+      d3.select("#pic_form_data_src_ib_gib")
+        .attr("value", dIbGib.ibgib);
+    };
+    this.showDetails("pic", init);
+    $("#pic_form_data_file").focus();
   }
 
   execComment(dIbGib) {
@@ -686,6 +697,7 @@ export class IbScape {
         .attr("value", dIbGib.ibgib);
     };
     this.showDetails("fork", init);
+    $("#fork_form_data_dest_ib").focus();
   }
 
   cancelDetails() {
@@ -851,10 +863,10 @@ export class IbScape {
       commands = ["help", "fork", "goto"];
     } else if (d.cat === "ib") {
       // commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link"];
-      commands = ["help", "fork", "comment"];
+      commands = ["help", "fork", "comment", "pic"];
     } else {
       // commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link", "goto"];
-      commands = ["help", "fork", "goto", "comment"];
+      commands = ["help", "fork", "goto", "comment", "pic"];
     }
 
     let nodes = commands.map(cmdName => d3MenuCommands.filter(cmd => cmd.name == cmdName)[0]);

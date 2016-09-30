@@ -50,10 +50,10 @@ defmodule IbGib.Expression.BasicsTest do
     assert fork_result === :ok
     assert is_pid(new_forked_pid)
 
-    Logger.debug "fork_result: #{fork_result}, new_forked_pid: #{inspect new_forked_pid}"
+    _ = Logger.debug "fork_result: #{fork_result}, new_forked_pid: #{inspect new_forked_pid}"
 
     info = Expression.get_info!(new_forked_pid)
-    Logger.debug "info: #{inspect info, pretty: true}"
+    _ = Logger.debug "info: #{inspect info, pretty: true}"
   end
 
   @tag :capture_log
@@ -65,13 +65,13 @@ defmodule IbGib.Expression.BasicsTest do
     assert fork_result === :ok
     assert is_pid(new_forked_pid)
 
-    Logger.debug "fork_result: #{fork_result}, new_forked_pid: #{inspect new_forked_pid}"
+    _ = Logger.debug "fork_result: #{fork_result}, new_forked_pid: #{inspect new_forked_pid}"
 
     forked_info = Expression.get_info!(new_forked_pid)
-    Logger.warn "forked_info: #{inspect forked_info}"
+    _ = Logger.warn "forked_info: #{inspect forked_info}"
 
     forked_ib_gib = Helper.get_ib_gib!(forked_info[:ib], forked_info[:gib])
-    Logger.debug "forked_ib_gib: #{forked_ib_gib}"
+    _ = Logger.debug "forked_ib_gib: #{forked_ib_gib}"
 
     prop = "prop_name"
     prop_value = "prop value yo"
@@ -80,7 +80,7 @@ defmodule IbGib.Expression.BasicsTest do
     assert mut8_result === :ok
 
     mut8d_info = Expression.get_info!(new_mut8_pid)
-    Logger.debug "mut8d_info: #{inspect mut8d_info}"
+    _ = Logger.debug "mut8d_info: #{inspect mut8d_info}"
 
     assert mut8d_info[:data][prop] === prop_value
   end
@@ -106,7 +106,7 @@ defmodule IbGib.Expression.BasicsTest do
          assert Enum.member?(a_rel8d_info[:rel8ns][test_rel8n], b_ib_gib)
        end)
 
-    Logger.debug "a_rel8d_info:\n#{inspect a_rel8d_info, pretty: true}"
+    _ = Logger.debug "a_rel8d_info:\n#{inspect a_rel8d_info, pretty: true}"
   end
 
   @tag :capture_log
@@ -130,7 +130,7 @@ defmodule IbGib.Expression.BasicsTest do
          assert Enum.member?(a_rel8d_info[:rel8ns][test_rel8n], b_ib_gib)
        end)
 
-    Logger.debug "a_rel8d_info:\n#{inspect a_rel8d_info, pretty: true}"
+    _ = Logger.debug "a_rel8d_info:\n#{inspect a_rel8d_info, pretty: true}"
   end
 
   @tag :capture_log
@@ -145,15 +145,15 @@ defmodule IbGib.Expression.BasicsTest do
     assert fork_result === :ok
     assert is_pid(new_forked_pid)
 
-    Logger.debug "fork_result: #{fork_result}, new_forked_pid: #{inspect new_forked_pid}"
+    _ = Logger.debug "fork_result: #{fork_result}, new_forked_pid: #{inspect new_forked_pid}"
 
     forked_info = Expression.get_info!(new_forked_pid)
-    Logger.debug "forked_info: #{inspect forked_info}"
+    _ = Logger.debug "forked_info: #{inspect forked_info}"
 
     assert forked_info[:ib] === text
 
     forked_ib_gib = Helper.get_ib_gib!(forked_info[:ib], forked_info[:gib])
-    Logger.debug "forked_ib_gib: #{forked_ib_gib}"
+    _ = Logger.debug "forked_ib_gib: #{forked_ib_gib}"
   end
 
   @tag :capture_log
@@ -172,30 +172,30 @@ defmodule IbGib.Expression.BasicsTest do
     assert fork_result === :ok
     assert is_pid(new_forked_pid)
 
-    Logger.debug "fork_result: #{fork_result}, new_forked_pid: #{inspect new_forked_pid}"
+    _ = Logger.debug "fork_result: #{fork_result}, new_forked_pid: #{inspect new_forked_pid}"
 
     forked_info = Expression.get_info!(new_forked_pid)
-    Logger.debug "forked_info: #{inspect forked_info}"
+    _ = Logger.debug "forked_info: #{inspect forked_info}"
 
     assert forked_info[:ib] === text
 
     forked_ib_gib = Helper.get_ib_gib!(forked_info[:ib], forked_info[:gib])
-    Logger.debug "forked_ib_gib: #{forked_ib_gib}"
+    _ = Logger.debug "forked_ib_gib: #{forked_ib_gib}"
 
     {fork_result_b, new_forked_pid_b} = Expression.fork(new_forked_pid, @test_identities_1, text)
     assert fork_result_b === :ok
     assert is_pid(new_forked_pid_b)
     assert new_forked_pid_b !== new_forked_pid
 
-    Logger.debug "fork_result_b: #{fork_result_b}, new_forked_pid_b: #{inspect new_forked_pid_b}"
+    _ = Logger.debug "fork_result_b: #{fork_result_b}, new_forked_pid_b: #{inspect new_forked_pid_b}"
 
     forked_info_b = Expression.get_info!(new_forked_pid_b)
-    Logger.debug "forked_info_b: #{inspect forked_info_b}"
+    _ = Logger.debug "forked_info_b: #{inspect forked_info_b}"
 
     assert forked_info_b[:ib] === text
 
     forked_ib_gib_b = Helper.get_ib_gib!(forked_info_b[:ib], forked_info_b[:gib])
-    Logger.debug "forked_ib_gib_b: #{forked_ib_gib_b}\nforked_ib_gib: #{forked_ib_gib}"
+    _ = Logger.debug "forked_ib_gib_b: #{forked_ib_gib_b}\nforked_ib_gib: #{forked_ib_gib}"
 
     assert forked_ib_gib_b !== forked_ib_gib
 
@@ -219,18 +219,18 @@ defmodule IbGib.Expression.BasicsTest do
     assert fork_result === :ok
     assert is_pid(new_forked_pid)
 
-    Logger.debug "fork_result: #{fork_result}, new_forked_pid: #{inspect new_forked_pid}"
+    _ = Logger.debug "fork_result: #{fork_result}, new_forked_pid: #{inspect new_forked_pid}"
 
     forked_info = Expression.get_info!(new_forked_pid)
-    Logger.debug "forked_info: #{inspect forked_info}"
+    _ = Logger.debug "forked_info: #{inspect forked_info}"
 
     assert forked_info[:ib] === text
 
     forked_ib_gib = Helper.get_ib_gib!(forked_info[:ib], forked_info[:gib])
-    Logger.debug "forked_ib_gib: #{forked_ib_gib}"
+    _ = Logger.debug "forked_ib_gib: #{forked_ib_gib}"
 
     {fork_result_b, _reason_b} = Expression.fork(ib_gib_pid, @test_identities_1, text)
-    Logger.debug "fork_result_b: #{inspect fork_result_b}"
+    _ = Logger.debug "fork_result_b: #{inspect fork_result_b}"
 
     # I've changed this so that it will NOT error out
     # assert fork_result_b === :error
@@ -253,12 +253,12 @@ defmodule IbGib.Expression.BasicsTest do
     assert is_pid(text_thing)
 
     text_info = text_thing |> Expression.get_info!
-    Logger.debug "text_info: #{inspect text_info}"
+    _ = Logger.debug "text_info: #{inspect text_info}"
 
     assert text_info[:ib] === text_ib
 
     text_ib_gib = Helper.get_ib_gib!(text_info[:ib], text_info[:gib])
-    Logger.debug "text_ib_gib: #{text_ib_gib}"
+    _ = Logger.debug "text_ib_gib: #{text_ib_gib}"
 
     text_instance_ib = "text instance_#{RandomGib.Get.some_letters(5)}"
     {fork_text_for_instance_result, text_instance} =
@@ -268,15 +268,15 @@ defmodule IbGib.Expression.BasicsTest do
     assert is_pid(text_instance)
     assert text_instance !== text_thing
 
-    Logger.debug "fork_text_for_instance_result: #{fork_text_for_instance_result}, text_instance: #{inspect text_instance}"
+    _ = Logger.debug "fork_text_for_instance_result: #{fork_text_for_instance_result}, text_instance: #{inspect text_instance}"
 
     text_instance_info = text_instance |> Expression.get_info!
-    Logger.debug "text_instance_info: #{inspect text_instance_info}"
+    _ = Logger.debug "text_instance_info: #{inspect text_instance_info}"
 
     assert text_instance_info[:ib] === text_instance_ib
 
     text_instance_ib_gib = Helper.get_ib_gib!(text_instance_info[:ib], text_instance_info[:gib])
-    Logger.debug "text_instance_ib_gib: #{text_instance_ib_gib}\ntext_ib_gib: #{text_ib_gib}"
+    _ = Logger.debug "text_instance_ib_gib: #{text_instance_ib_gib}\ntext_ib_gib: #{text_ib_gib}"
 
     assert text_instance_ib_gib !== text_ib_gib
   end
@@ -290,20 +290,20 @@ defmodule IbGib.Expression.BasicsTest do
     a = root |> Expression.fork!(@test_identities_1, a_ib)
     a_info = a |> Expression.get_info!
     a_ib_gib = Helper.get_ib_gib!(a_info)
-    Logger.debug "a: #{inspect a}\na_info: #{inspect a_info}\na_ib_gib: #{a_ib_gib}"
+    _ = Logger.debug "a: #{inspect a}\na_info: #{inspect a_info}\na_ib_gib: #{a_ib_gib}"
 
-    Logger.warn "gonna instance"
-    Logger.warn "gonna instance"
+    _ = Logger.warn "gonna instance"
+    _ = Logger.warn "gonna instance"
     instance_ib = "a instance ib #{RandomGib.Get.some_letters(5)}"
     {:ok, a_instance} =
       a |> Expression.instance(@test_identities_1, instance_ib)
-    Logger.debug "instance: #{inspect a_instance}"
-    Logger.debug "instance: #{inspect a_instance}"
+    _ = Logger.debug "instance: #{inspect a_instance}"
+    _ = Logger.debug "instance: #{inspect a_instance}"
 
     a_instance_info = a_instance |> Expression.get_info!
     # a_instance_ib_gib = Helper.get_ib_gib!(a_instance_info)
 
-    Logger.debug "a_instance_info:\n#{inspect a_instance_info, pretty: true}"
+    _ = Logger.debug "a_instance_info:\n#{inspect a_instance_info, pretty: true}"
 
     # assert(
     #   a[:rel8ns]["instance"]

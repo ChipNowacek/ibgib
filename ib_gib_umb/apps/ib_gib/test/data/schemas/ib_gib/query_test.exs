@@ -46,16 +46,16 @@ defmodule IbGib.Data.Schemas.IbGib.QueryTest do
     }
     changeset = IbGibModel.changeset(%IbGibModel{}, model)
 
-    Logger.debug "changeset: #{inspect changeset}"
+    _ = Logger.debug "changeset: #{inspect changeset}"
     TestHelper.succeed_insert(changeset)
-    Logger.debug "succeed insert. changeset: #{inspect changeset}"
+    _ = Logger.debug "succeed insert. changeset: #{inspect changeset}"
 
     got_model =
       IbGibModel
       |> where(ib: ^ib)
       |> Repo.one
 
-    Logger.debug "got_model: #{inspect got_model}"
+    _ = Logger.debug "got_model: #{inspect got_model}"
     assert got_model.ib === ib
     assert got_model.gib === model.gib
     assert got_model.rel8ns === model.rel8ns
@@ -75,16 +75,16 @@ defmodule IbGib.Data.Schemas.IbGib.QueryTest do
     }
     changeset = IbGibModel.changeset(%IbGibModel{}, model)
 
-    Logger.debug "changeset: #{inspect changeset}"
+    _ = Logger.debug "changeset: #{inspect changeset}"
     TestHelper.succeed_insert(changeset)
-    Logger.debug "succeed insert. changeset: #{inspect changeset}"
+    _ = Logger.debug "succeed insert. changeset: #{inspect changeset}"
 
     got_model =
       IbGibModel
       |> where(ib: ^ib)
       |> Repo.one
 
-    Logger.debug "got_model: #{inspect got_model}"
+    _ = Logger.debug "got_model: #{inspect got_model}"
     assert got_model.ib === ib
     assert got_model.gib === model.gib
     assert got_model.rel8ns === model.rel8ns

@@ -59,4 +59,8 @@ Seeds.insert(:text)
 Seeds.insert({:comment, :text_child})
 Seeds.insert({:url, :text_child})
 
+# Binary Related
+Seeds.insert(:binary)
+Seeds.insert({:pic, :binary_child})
+
 Seeds.insert(:number)

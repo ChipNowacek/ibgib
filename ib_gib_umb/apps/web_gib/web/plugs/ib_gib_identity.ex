@@ -27,11 +27,11 @@ defmodule WebGib.Plugs.IbGibIdentity do
   Initialize ib_gib identity logic.
   """
   def call(conn, options) do
-    Logger.debug "uh huh hrm....whaaa"
+    _ = Logger.debug "uh huh hrm....whaaa"
     identity_ib_gibs = get_session(conn, @ib_identity_ib_gibs_key)
 
     if identity_ib_gibs == nil do
-      Logger.debug "no identity ib gibs (nil)"
+      _ = Logger.debug "no identity ib gibs (nil)"
 
       session_ib_gib = get_session_ib_gib(conn)
       {priv_data, pub_data} = get_priv_and_pub_data(conn, session_ib_gib)
@@ -49,7 +49,7 @@ defmodule WebGib.Plugs.IbGibIdentity do
     # This shouldn't happen, since we have WebGib.Plugs.EnsureIbGibSession
     # But I'm checking anyway.
     if session_ib_gib == nil do
-      Logger.error @emsg_invalid_session
+      _ = Logger.error @emsg_invalid_session
       raise WebGib.Errors.SessionError
     end
     session_ib_gib
@@ -74,7 +74,7 @@ defmodule WebGib.Plugs.IbGibIdentity do
   defp get_and_put_session_identity(conn, priv_data, pub_data) do
     case Identity.get_identity(priv_data, pub_data) do
       {:ok, identity_ib_gib} ->
-        Logger.warn "putting identity_ib_gib into session. identity_ib_gib: #{identity_ib_gib}"
+        _ = Logger.warn "putting identity_ib_gib into session. identity_ib_gib: #{identity_ib_gib}"
         # {:ok, identity} = Expression.Supervisor.start_expression(identity_ib_gib)
 
         conn
@@ -83,15 +83,15 @@ defmodule WebGib.Plugs.IbGibIdentity do
                        [@root_ib_gib, identity_ib_gib])
 
       {:error, reason} when is_bitstring(reason) ->
-        Logger.error "Error with identity. Reason: #{reason}"
+        _ = Logger.error "Error with identity. Reason: #{reason}"
         raise WebGib.Errors.IdentityError
 
       {:error, reason} ->
-        Logger.error "Error with identity. Reason: #{inspect reason}"
+        _ = Logger.error "Error with identity. Reason: #{inspect reason}"
         raise WebGib.Errors.IdentityError
 
       error ->
-        Logger.error "Error with identity. Reason: #{inspect error}"
+        _ = Logger.error "Error with identity. Reason: #{inspect error}"
         raise WebGib.Errors.IdentityError
     end
   end

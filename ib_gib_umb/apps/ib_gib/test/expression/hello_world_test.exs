@@ -31,34 +31,34 @@ defmodule IbGib.Expression.HelloWorldTest do
     {:ok, root} = Expression.Supervisor.start_expression()
 
     # Randomized to keep unit tests from overlapping.
-    Logger.debug "gonna hw"
+    _ = Logger.debug "gonna hw"
     hw_ib = "hw_#{RandomGib.Get.some_letters(5)}"
     {:ok, hw} = root |> Expression.fork(@test_identities_1, hw_ib)
     # hw_info = hw_thing |> Expression.get_info!
     # hw_ib_gib = Helper.get_ib_gib!(hw_info[:ib], hw_info[:gib])
 
-    Logger.debug "gonna instance hw"
+    _ = Logger.debug "gonna instance hw"
     hw_instance_ib = "hw instance_#{RandomGib.Get.some_letters(5)}"
     {:ok, hw_instance} =
       hw |> Expression.fork(@test_identities_1, hw_instance_ib)
     # hw_instance_info = hw_instance |> Expression.get_info!
     # hw_instance_ib_gib = Helper.get_ib_gib!(hw_instance_info[:ib], hw_instance_info[:gib])
 
-    Logger.debug "gonna text"
+    _ = Logger.debug "gonna text"
     # Randomized to keep unit tests from overlapping.
     text_ib = "text_#{RandomGib.Get.some_letters(5)}"
     {:ok, text} = root |> Expression.fork(@test_identities_1, text_ib)
     # text_info = text_thing |> Expression.get_info!
     # text_ib_gib = Helper.get_ib_gib!(text_info[:ib], text_info[:gib])
 
-    Logger.debug "gonna instance text"
+    _ = Logger.debug "gonna instance text"
     text_instance_ib = "text instance_#{RandomGib.Get.some_letters(5)}"
     {:ok, text_instance} =
       text |> Expression.fork(@test_identities_1, text_instance_ib)
     text_instance_info = text_instance |> Expression.get_info!
     text_instance_ib_gib = Helper.get_ib_gib!(text_instance_info[:ib], text_instance_info[:gib])
 
-    Logger.debug "gonna rel8"
+    _ = Logger.debug "gonna rel8"
     # {:ok, {hw_instance_rel8d, text_instance_rel8d}} =
     #   hw_instance |> Expression.rel8(text_instance)
     {:ok, hw_instance_rel8d} =
@@ -75,10 +75,10 @@ defmodule IbGib.Expression.HelloWorldTest do
 
     hw_instance_rel8d_info = hw_instance_rel8d |> Expression.get_info!
     hw_instance_rel8d_ib_gib = Helper.get_ib_gib!(hw_instance_rel8d_info[:ib], hw_instance_rel8d_info[:gib])
-    Logger.debug "hw_instance_rel8d_info: #{inspect hw_instance_rel8d_info}"
+    _ = Logger.debug "hw_instance_rel8d_info: #{inspect hw_instance_rel8d_info}"
     text_instance_rel8d_info = text_instance_rel8d |> Expression.get_info!
     _text_instance_rel8d_ib_gib = Helper.get_ib_gib!(text_instance_rel8d_info[:ib], text_instance_rel8d_info[:gib])
-    Logger.debug "text_instance_rel8d_info: #{inspect text_instance_rel8d_info}"
+    _ = Logger.debug "text_instance_rel8d_info: #{inspect text_instance_rel8d_info}"
 
     assert hw_instance_rel8d_info[:rel8ns]["rel8d"] === [text_instance_ib_gib]
     assert text_instance_rel8d_info[:rel8ns]["rel8d"] === [hw_instance_rel8d_ib_gib]
@@ -90,34 +90,34 @@ defmodule IbGib.Expression.HelloWorldTest do
     {:ok, root} = Expression.Supervisor.start_expression()
 
     # Randomized to keep unit tests from overlapping.
-    Logger.debug "gonna hw"
+    _ = Logger.debug "gonna hw"
     hw_ib = "hw_#{RandomGib.Get.some_letters(5)}"
     {:ok, hw} = root |> Expression.fork(@test_identities_1, hw_ib)
     # hw_info = hw_thing |> Expression.get_info!
     # hw_ib_gib = Helper.get_ib_gib!(hw_info[:ib], hw_info[:gib])
 
-    Logger.debug "gonna instance hw"
+    _ = Logger.debug "gonna instance hw"
     hw_instance_ib = "hw instance_#{RandomGib.Get.some_letters(5)}"
     {:ok, hw_instance} =
       hw |> Expression.fork(@test_identities_1, hw_instance_ib)
     # hw_instance_info = hw_instance |> Expression.get_info!
     # hw_instance_ib_gib = Helper.get_ib_gib!(hw_instance_info[:ib], hw_instance_info[:gib])
 
-    Logger.debug "gonna text"
+    _ = Logger.debug "gonna text"
     # Randomized to keep unit tests from overlapping.
     text_ib = "text_#{RandomGib.Get.some_letters(5)}"
     {:ok, text} = root |> Expression.fork(@test_identities_1, text_ib)
     # text_info = text_thing |> Expression.get_info!
     # text_ib_gib = Helper.get_ib_gib!(text_info[:ib], text_info[:gib])
 
-    Logger.debug "gonna instance text"
+    _ = Logger.debug "gonna instance text"
     text_instance_ib = "text instance_#{RandomGib.Get.some_letters(5)}"
     {:ok, text_instance} =
       text |> Expression.fork(@test_identities_1, text_instance_ib)
     text_instance_info = text_instance |> Expression.get_info!
     text_instance_ib_gib = Helper.get_ib_gib!(text_instance_info[:ib], text_instance_info[:gib])
 
-    Logger.debug "gonna rel8 'text property'"
+    _ = Logger.debug "gonna rel8 'text property'"
     # {:ok, {hw_instance_rel8d, text_instance_rel8d}} =
     #   hw_instance |> Expression.rel8(text_instance, ["prop", "text"], ["prop_of"])
     {:ok, hw_instance_rel8d} = hw_instance |> Expression.rel8(text_instance, @test_identities_1, ["prop", "text"], @default_transform_options)
@@ -131,10 +131,10 @@ defmodule IbGib.Expression.HelloWorldTest do
 
     hw_instance_rel8d_info = hw_instance_rel8d |> Expression.get_info!
     hw_instance_rel8d_ib_gib = Helper.get_ib_gib!(hw_instance_rel8d_info[:ib], hw_instance_rel8d_info[:gib])
-    Logger.debug "hw_instance_rel8d_info: #{inspect hw_instance_rel8d_info}"
+    _ = Logger.debug "hw_instance_rel8d_info: #{inspect hw_instance_rel8d_info}"
     text_instance_rel8d_info = text_instance_rel8d |> Expression.get_info!
     # text_instance_rel8d_ib_gib = Helper.get_ib_gib!(text_instance_rel8d_info[:ib], text_instance_rel8d_info[:gib])
-    Logger.debug "text_instance_rel8d_info: #{inspect text_instance_rel8d_info}"
+    _ = Logger.debug "text_instance_rel8d_info: #{inspect text_instance_rel8d_info}"
 
     assert hw_instance_rel8d_info[:rel8ns]["rel8d"] === [text_instance_ib_gib]
     assert text_instance_rel8d_info[:rel8ns]["rel8d"] === [hw_instance_rel8d_ib_gib]
@@ -148,26 +148,26 @@ defmodule IbGib.Expression.HelloWorldTest do
     {:ok, root} = Expression.Supervisor.start_expression()
 
     # Randomized to keep unit tests from overlapping.
-    Logger.debug "gonna hw"
+    _ = Logger.debug "gonna hw"
     hw_ib = "hw_#{RandomGib.Get.some_letters(5)}"
     {:ok, hw} = root |> Expression.fork(@test_identities_1, hw_ib)
 
-    Logger.debug "gonna instance hw"
+    _ = Logger.debug "gonna instance hw"
     hw_instance_ib = "hw instance_#{RandomGib.Get.some_letters(5)}"
     # {:ok, {hw_instance, _hw_instance_info, _hw_instance_ib_gib}} =
       # hw |> Expression.gib(:fork, @test_identities_1, hw_instance_ib)
     hw_instance = hw |> instance!(@test_identities_1, hw_instance_ib)
 
-    Logger.debug "gonna text"
+    _ = Logger.debug "gonna text"
     # Randomized to keep unit tests from overlapping.
     text_ib = "text_#{RandomGib.Get.some_letters(5)}"
     {:ok, text} = root |> Expression.fork(@test_identities_1, text_ib)
 
-    Logger.debug "gonna instance text"
+    _ = Logger.debug "gonna instance text"
     text_instance_ib = "text instance_#{RandomGib.Get.some_letters(5)}"
     text_instance = text |> instance!(@test_identities_1, text_instance_ib)
 
-    Logger.debug "gonna rel8 'text property'"
+    _ = Logger.debug "gonna rel8 'text property'"
 
     hw_instance =
       hw_instance |> rel8!(text_instance, @test_identities_1, ["text", "prop"], @default_transform_options)
@@ -183,8 +183,8 @@ defmodule IbGib.Expression.HelloWorldTest do
       text_instance |> mut8!(@test_identities_1, %{"content" => "Hello World!"})
     text_instance_info = text_instance |> get_info!
 
-    Logger.debug "hw_instance_info: #{inspect hw_instance_info}"
-    Logger.debug "text_instance_info: #{inspect text_instance_info}"
+    _ = Logger.debug "hw_instance_info: #{inspect hw_instance_info}"
+    _ = Logger.debug "text_instance_info: #{inspect text_instance_info}"
   end
 
   @tag :capture_log
@@ -193,7 +193,7 @@ defmodule IbGib.Expression.HelloWorldTest do
 
     hw = root |> fork!(@test_identities_1, Helper.new_id)
     hw_info = hw |> get_info!
-    Logger.warn "hw_info: #{inspect hw_info}"
+    _ = Logger.warn "hw_info: #{inspect hw_info}"
 
     hw_info[:rel8ns]["dna"] |> Enum.each(fn (ig) ->
         Logger.info "ig: #{ig}"
@@ -204,6 +204,6 @@ defmodule IbGib.Expression.HelloWorldTest do
 
     # {hw, hwi} = hw |> instance!
     # hwi_info = hwi |> get_info!
-    # Logger.warn "hwi_info: #{inspect hwi_info}"
+    # _ = Logger.warn "hwi_info: #{inspect hwi_info}"
   end
 end

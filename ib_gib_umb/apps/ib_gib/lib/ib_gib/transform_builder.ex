@@ -277,7 +277,7 @@ defmodule IbGib.TransformBuilder do
   end
   def count_steps(steps) do
     emsg = emsg_invalid_args(steps)
-    Logger.error emsg
+    _ = Logger.error emsg
     raise(emsg)
   end
   # NOT DRY>>>>NOOOOOOOOOOO
@@ -295,7 +295,7 @@ defmodule IbGib.TransformBuilder do
     end
   end
   defp stamp_if_needed(gib, is_needed) do
-    Logger.warn "Invalid args: #{inspect [gib, is_needed]}"
+    _ = Logger.warn "Invalid args: #{inspect [gib, is_needed]}"
     gib
   end
 
@@ -313,7 +313,7 @@ defmodule IbGib.TransformBuilder do
   # end
   # def with_data(:fork, data) do
   #   emsg = emsg_invalid_args([:fork, data])
-  #   Logger.error emsg
+  #   _ = Logger.error emsg
   #   {:error, emsg}
   # end
   # def with_data(:mut8, %{"src" => src, "new_data" => new_data} = data) do
@@ -346,7 +346,7 @@ defmodule IbGib.TransformBuilder do
   # end
   # def with_data(transform_type, data) do
   #   emsg = emsg_invalid_args([transform_type, data])
-  #   Logger.error emsg
+  #   _ = Logger.error emsg
   #   {:error, emsg}
   # end
   #

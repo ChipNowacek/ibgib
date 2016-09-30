@@ -32,18 +32,18 @@ defmodule IbGib.Data.Schemas.IbGib.ValidationTest do
 
   @tag :capture_log
   test "model, valid, minimum" do
-    Logger.debug "start...yo...."
+    _ = Logger.debug "start...yo...."
 
     changeset = IbGibModel.changeset(%IbGibModel{}, %{
                     ib: Get.some_letters(20),
                     gib: Get.some_letters(20),
-                    # data: %{Get.some_letters(5) => Get.some_letters(min_id_length)},
+                    # data: %{Get.some_letters(5) => Get.some_letters(@min_id_length)},
                     rel8ns: %{
-                      Get.some_letters(5) => ["#{Get.some_letters(min_ib_gib_length)}#{@delim}#{Get.some_letters(min_ib_gib_length)}"]
+                      Get.some_letters(5) => ["#{Get.some_letters(@min_ib_gib_length)}#{@delim}#{Get.some_letters(@min_ib_gib_length)}"]
                     }
                   })
 
-    Logger.debug "changeset: #{inspect changeset}"
+    _ = Logger.debug "changeset: #{inspect changeset}"
     TestHelper.succeed_insert(changeset)
   end
 
@@ -52,12 +52,12 @@ defmodule IbGib.Data.Schemas.IbGib.ValidationTest do
     changeset = IbGibModel.changeset(%IbGibModel{}, %{
                     ib: Get.some_letters(20),
                     gib: Get.some_letters(20),
-                    data: %{Get.some_letters(5) => Get.some_letters(min_id_length)},
+                    data: %{Get.some_letters(5) => Get.some_letters(@min_id_length)},
                     rel8ns: %{
-                      Get.some_letters(5) => ["#{Get.some_letters(min_ib_gib_length)}#{@delim}#{Get.some_letters(min_ib_gib_length)}"]
+                      Get.some_letters(5) => ["#{Get.some_letters(@min_ib_gib_length)}#{@delim}#{Get.some_letters(@min_ib_gib_length)}"]
                     }
                   })
-    Logger.debug "changeset: #{inspect changeset}"
+    _ = Logger.debug "changeset: #{inspect changeset}"
 
     TestHelper.succeed_insert(changeset)
   end
@@ -69,10 +69,10 @@ defmodule IbGib.Data.Schemas.IbGib.ValidationTest do
                     gib: Get.some_letters(20),
                     data: %{},
                     rel8ns: %{
-                      Get.some_letters(5) => ["#{Get.some_letters(min_ib_gib_length)}#{@delim}#{Get.some_letters(min_ib_gib_length)}"]
+                      Get.some_letters(5) => ["#{Get.some_letters(@min_ib_gib_length)}#{@delim}#{Get.some_letters(@min_ib_gib_length)}"]
                     }
                   })
-    Logger.debug "changeset: #{inspect changeset}"
+    _ = Logger.debug "changeset: #{inspect changeset}"
 
     TestHelper.succeed_insert(changeset)
   end
@@ -84,10 +84,10 @@ defmodule IbGib.Data.Schemas.IbGib.ValidationTest do
                     gib: Get.some_letters(20),
                     data: nil,
                     rel8ns: %{
-                      Get.some_letters(5) => ["#{Get.some_letters(min_ib_gib_length)}#{@delim}#{Get.some_letters(min_ib_gib_length)}"]
+                      Get.some_letters(5) => ["#{Get.some_letters(@min_ib_gib_length)}#{@delim}#{Get.some_letters(@min_ib_gib_length)}"]
                     }
                   })
-    Logger.debug "changeset: #{inspect changeset}"
+    _ = Logger.debug "changeset: #{inspect changeset}"
 
     TestHelper.succeed_insert(changeset)
   end
@@ -97,7 +97,7 @@ defmodule IbGib.Data.Schemas.IbGib.ValidationTest do
     changeset = IbGibModel.changeset(%IbGibModel{}, %{
                       #
                     })
-    Logger.debug "changeset: #{inspect changeset}"
+    _ = Logger.debug "changeset: #{inspect changeset}"
 
     TestHelper.flunk_insert(changeset, :ib, @required_msg)
     TestHelper.flunk_insert(changeset, :gib, @required_msg)
@@ -107,10 +107,10 @@ defmodule IbGib.Data.Schemas.IbGib.ValidationTest do
   @tag :capture_log
   test "ib and gib, invalid, too long" do
     changeset = IbGibModel.changeset(%IbGibModel{}, %{
-                    ib: Get.some_letters(max_id_length + 1), # too many
-                    gib: Get.some_letters(max_id_length + 1) # too many
+                    ib: Get.some_letters(@max_id_length + 1), # too many
+                    gib: Get.some_letters(@max_id_length + 1) # too many
                   })
-    Logger.debug "changeset: #{inspect changeset}"
+    _ = Logger.debug "changeset: #{inspect changeset}"
     TestHelper.flunk_insert(changeset, :ib, @at_most_msg)
     TestHelper.flunk_insert(changeset, :gib, @at_most_msg)
   end
@@ -121,7 +121,7 @@ defmodule IbGib.Data.Schemas.IbGib.ValidationTest do
                     ib: "", # too few
                     gib: "" # too few
                   })
-    Logger.debug "changeset: #{inspect changeset}"
+    _ = Logger.debug "changeset: #{inspect changeset}"
     TestHelper.flunk_insert(changeset, :ib, @required_msg)
     TestHelper.flunk_insert(changeset, :gib, @required_msg)
   end
@@ -137,7 +137,7 @@ defmodule IbGib.Data.Schemas.IbGib.ValidationTest do
   @tag :capture_log
   test "rel8ns, invalid, ib_gib too long" do
     changeset = IbGibModel.changeset(%IbGibModel{}, %{
-                  rel8ns: %{Get.some_letters(5) => Get.some_letters((2 * max_id_length) + 2)}
+                  rel8ns: %{Get.some_letters(5) => Get.some_letters((2 * @max_id_length) + 2)}
                 })
     TestHelper.flunk_insert(changeset, :rel8ns, emsg_invalid_relations)
   end
@@ -147,7 +147,7 @@ defmodule IbGib.Data.Schemas.IbGib.ValidationTest do
     changeset = IbGibModel.changeset(%IbGibModel{}, %{
       rel8ns: %{
           Get.some_letters(5) => Get.some_letters(2),
-          Get.some_letters(5) => Get.some_letters((2 * max_id_length) + 2),
+          Get.some_letters(5) => Get.some_letters((2 * @max_id_length) + 2),
           Get.some_letters(5) => Get.some_letters(5)
       }
     })

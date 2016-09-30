@@ -1,7 +1,0 @@
-<div id="ib-main-circular-menu" class="ib-hidden">
-  <%= render WebGib.SharedIbGibView, "ib_button.html", [conn: @conn, ib: @ib, gib: @gib, ib_gib: @ib_gib] %>
-</div>
-
-<div class="ib-info-border ib-circular-menuable">
-    <%= render WebGib.SharedIbGibView, "ib.html", [conn: @conn, ib: @ib, gib: @gib, ib_gib: @ib_gib] %>
-</div>

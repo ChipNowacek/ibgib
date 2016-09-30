@@ -18,16 +18,18 @@ defmodule IbGib.Constants do
       @root_ib_gib "ib#{@delim}gib"
       @error_gib "error#{@delim}gib"
 
-      defp min_id_length, do: 1
-      defp max_id_length, do: 76
-      defp min_ib_gib_length, do: 3 # min + delim + min
-      defp max_ib_gib_length, do: 153 # max + delim + max
-      defp max_data_size, do: 10_240_000 # 10 MB max internal data
+      # defp min_id_length, do: 1
+      @min_id_length 1
+      @max_id_length 76
+      @min_ib_gib_length 3 # min + delim + min
+      @max_ib_gib_length 153 # max + delim + max
+      @max_data_size 8_192_000 # 8 MB max internal data
+      # defp max_data_size, do: @max_data_size
       # one or more word chars, underscore, dash
-      defp regex_valid_ib, do: ~r/^[\w\d_-\s]+$/
-      defp regex_valid_gib, do: ~r/^[\w\d]+$/
+      @regex_valid_ib ~r/^[\w\d_-\s]+$/
+      @regex_valid_gib ~r/^[\w\d]+$/
       # delim hardcoded in!!!!
-      defp regex_valid_ib_gib, do: ~r/^[\w\d_-\s]+\^[\w\d]+$/
+      @regex_valid_ib_gib ~r/^[\w\d_-\s]+\^[\w\d]+$/
 
       @default_dna [@root_ib_gib]
       @default_past [@root_ib_gib]
@@ -55,8 +57,8 @@ defmodule IbGib.Constants do
       # Use case for this is that I want to be able to delete/edit an existing
       # key via a mut8. So if an ib_gib's data has `"a" => "a value"` and I want
       # to delete that key/value pair.
-      defp map_key_meta_prefix, do: "meta__"
-      defp rename_operator, do: ">rename>"
+      @map_key_meta_prefix "meta__"
+      @rename_operator ">rename>"
 
       # This is used for creating identities themselves when the user is not
       # yet authenticated. You need identities to create ib_gib, but you don't

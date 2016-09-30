@@ -48,7 +48,8 @@ defmodule IbGib.Mixfile do
       {:ecto, ">= 2.0.2"}, # frozen at this point because ecto migrate fails at 2.0.4
       {:poison, "~> 2.1"},
       {:random_gib, in_umbrella: true},
-      {:credo, "~> 0.4", only: [:dev, :test]}
+      {:credo, "~> 0.4", only: [:dev, :test]},
+      {:dialyxir, "~> 0.3.5", only: [:dev]}
     ]
   end
 
