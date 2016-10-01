@@ -7,8 +7,12 @@ defmodule WebGib.IbGibController do
   # Usings, imports, etc.
   # ----------------------------------------------------------------------------
 
-  use IbGib.Constants, :validation
   use WebGib.Web, :controller
+
+  use IbGib.Constants, :validation
+  use WebGib.Constants, :config
+
+
 
   alias IbGib.TransformFactory.Mut8Factory
   alias IbGib.Expression
@@ -134,11 +138,21 @@ defmodule WebGib.IbGibController do
     end
   end
   def getd3(conn, params) do
-    _ = Logger.debug "JSON get. conn: #{inspect conn}"
-    _ = Logger.debug "JSON get. params: #{inspect params}"
+    _ = Logger.debug "getd3. conn: #{inspect conn}\nparams: #{inspect params}"
     _ = Logger.error @emsg_invalid_ibgib_url
     json(conn, %{error: @emsg_invalid_ibgib_url})
   end
+
+  # def get_image(conn, %{"binary_id" => binary_id} = params) do
+  #   case IbGib.Data.load_binary(binary_id) do
+  #
+  #   end
+  # end
+  # def get_image(conn, params) do
+  #   _ = Logger.debug "get_image. conn: #{inspect conn}\nparams: #{inspect params}"
+  #   _ = Logger.error @emsg_invalid_ibgib_url
+  #   json(conn, %{error: @emsg_invalid_ibgib_url})
+  # end
 
   defp get_js_id(), do: "#{RandomGib.Get.some_letters(10)}"
 
@@ -239,6 +253,7 @@ defmodule WebGib.IbGibController do
     # (Very) Naive implementation to start with.
     case ib do
       "comment" -> "text"
+      "pic" -> "image"
       _ -> "any"
     end
   end
@@ -515,9 +530,7 @@ defmodule WebGib.IbGibController do
             "src_ib_gib" => src_ib_gib} = params) do
     Logger.metadata(x: :pic_2)
     _ = Logger.debug "conn: #{inspect conn}"
-    _ = Logger.warn ""
-
-    _ = Logger.warn "@root_ib_gib: #{@root_ib_gib}"
+    _ = Logger.warn "pic_data: #{inspect pic_data}"
 
     if validate(:pic_data, {content_type, filename, path}) and
                 validate(:ib_gib, src_ib_gib) and
@@ -561,14 +574,15 @@ defmodule WebGib.IbGibController do
         |> Expression.fork(identity_ib_gibs,
                            "pic"),
       # Generates a bin_id to use in image data.
-      {:ok, bin_id} <- save_to_bin_store(path),
+      {:ok, {bin_id, ext}} <- save_to_bin_store(conn, content_type, path, filename),
       {:ok, pic} <-
         pic
         |> Expression.mut8(identity_ib_gibs,
                            %{
                              "content_type" => content_type,
                              "filename" => filename,
-                             "bin_id" => bin_id
+                             "bin_id" => bin_id,
+                             "ext" => ext
                             }),
       {:ok, new_src} <-
         src
@@ -584,18 +598,49 @@ defmodule WebGib.IbGibController do
     end
   end
 
-  defp save_to_bin_store(path) do
+  defp save_to_bin_store(conn, content_type, path, filename) do
+    _ = Logger.debug "yo"
     with(
       {:ok, body} <- File.read(path),
+      :ok <- Logger.debug("1"),
       binary_data <- IO.iodata_to_binary(body),
+      :ok <- Logger.debug("2"),
+      binary_id <- hash(binary_data),
+      # stp <- static_path(conn, "/files/yo.png"),
+      # :ok <- Logger.debug("3. path: #{path}\nstatic_path: #{stp}"),
+      :ok <- Logger.debug("3. path: #{path}"),
+      {:ok, :ok} <- ensure_path_exists(@upload_files_path),
+      ext <- Path.extname(filename),
+      target_full_path <-
+        Path.join(@upload_files_path, binary_id <> ext),
+      :ok <- Logger.debug("4. target_full_path: #{target_full_path}"),
+      # {:ok, _bytes_copied} <- File.copy(path, target_full_path)
+      :ok <- File.cp(path, target_full_path)
       # the binary_id is a hash of the binary data.
-      {:ok, binary_id} <- IbGib.Data.save_binary(binary_data)
+      # {:ok, binary_id} <- IbGib.Data.save_binary(binary_data)
     ) do
-      {:ok, binary_id}
+      {:ok, {binary_id, ext}}
     else
       {:error, reason} when is_bitstring(reason) -> {:error, reason}
       {:error, reason} -> {:error, inspect reason}
       error -> {:error, inspect error}
+    end
+  end
+
+  # @upload_files_path "/var/www/web_gib/files/"
+  defp ensure_path_exists(@upload_files_path) do
+    path = @upload_files_path
+    if File.exists?(path) do
+      _ = Logger.debug "File exists: #{path}"
+      {:ok, :ok}
+    else
+      _ = Logger.debug "File does not exist: #{path}"
+      case File.mkdir_p(path) do
+        :ok -> {:ok, :ok}
+        {:error, reason} ->
+          _ = Logger.error "Could not mkdir_p(#{path}). reason: #{inspect reason}"
+          {:error, reason}
+      end
     end
   end
 

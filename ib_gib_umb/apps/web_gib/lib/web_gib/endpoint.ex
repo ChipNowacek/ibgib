@@ -1,6 +1,7 @@
 defmodule WebGib.Endpoint do
   use Phoenix.Endpoint, otp_app: :web_gib
   use IbGib.Constants, :ib_gib
+  use WebGib.Constants, :config
 
   socket "/ibgibsocket", WebGib.IbGibSocket
 
@@ -10,7 +11,10 @@ defmodule WebGib.Endpoint do
   # when deploying your static files in production.
   plug Plug.Static,
     at: "/", from: :web_gib, gzip: false,
-    only: ~w(css fonts images js favicon.ico robots.txt)
+    only: ~w(css fonts images js files favicon.ico robots.txt)
+
+  plug Plug.Static,
+    at: "files/", from: @upload_files_path, gzip: false
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.

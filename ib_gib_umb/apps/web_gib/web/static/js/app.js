@@ -25,6 +25,8 @@ import { IbGibChannel } from "./socket"
 // import { IbScape } from "./ibscape-pixi";
 
 import { IbScape } from "./ib-scape";
+import { IbGibCache } from "./services/ibgib-cache";
+import { IbGibImageProvider } from "./services/ibgib-image-provider";
 
 
 // import { getData } from './miserables.js';
@@ -36,6 +38,9 @@ class App {
 
     let divIbGibData = document.querySelector("#ibgib-data");
     if (divIbGibData) {
+      let ibGibCache = new IbGibCache();
+      let ibGibImageProvider = new IbGibImageProvider(ibGibCache);
+
       // // I'm not sure if these are really useful anymore.
       // let query = divIbGibData.getAttribute("data-metaqueryibgib");
       // let queryResult = divIbGibData.getAttribute("data-metaqueryresultibgib");
@@ -49,7 +54,10 @@ class App {
 
       // Create the ibScape, which is the d3 "landscape" for the ibgib.
       let graphDiv = document.querySelector("#ib-d3-graph-div");
-      this.ibScape = new IbScape(graphDiv, baseJsonPath);
+
+
+
+      this.ibScape = new IbScape(graphDiv, baseJsonPath, ibGibCache, ibGibImageProvider);
 
       // We set the ibScape to get its json data
       let data = baseD3JsonPath + ibgib;

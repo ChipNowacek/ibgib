@@ -154,6 +154,14 @@ defmodule IbGib.Constants do
       def emsg_invalid_rel8_src_mismatch(src_ib_gib, a_ib_gib) do
         "A rel8 transform was attempted, but the src_ib_gib (#{src_ib_gib}) does not match the ib_gib which is transforming (#{a_ib_gib})."
       end
+
+      def emsg_not_found do
+        "The item was not found. :-/"
+      end
+
+      def emsg_hash_mismatch do
+        "The hashes do not match."
+      end
     end
   end
 

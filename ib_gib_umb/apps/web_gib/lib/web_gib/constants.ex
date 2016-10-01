@@ -23,6 +23,14 @@ defmodule WebGib.Constants do
     end
   end
 
+  def config do
+    quote do
+      # @upload_files_path "/var/www/web_gib/files/"
+      @upload_files_path "./files/"
+      # @upload_files_path "/var/www/app/files/"
+    end
+  end
+
   def error_msgs do
     quote do
       @emsg_invalid_dest_ib "Only letters, numbers, spaces, dashes, underscores are allowed for the destination ib. Just hit the back button to return."
@@ -37,6 +45,7 @@ defmodule WebGib.Constants do
 
     end
   end
+
   def fork do
     quote do
       def fork_label do

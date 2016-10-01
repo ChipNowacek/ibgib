@@ -10,6 +10,8 @@ defmodule IbGib.Data do
   require Logger
   import Ecto.Query
 
+  use IbGib.Constants, :error_msgs
+
   alias IbGib.Data.Schemas.{IbGibModel, BinaryModel}
   alias IbGib.Data.Repo
   alias IbGib.Helper
@@ -76,7 +78,7 @@ defmodule IbGib.Data do
     # For now, simply gets the value from the cache
     case IbGib.Data.Cache.get(key) do
       {:ok, value} -> {:ok, value}
-      {:error, _} -> get_from_repo(ib, gib)
+      {:error, _} -> get_from_repo(:ibgib, {ib, gib})
     end
   end
 
@@ -136,6 +138,25 @@ defmodule IbGib.Data do
 
       failure ->
         {:error, "Save binary failed. binary_id: #{binary_id}. Failure: #{inspect failure}"}
+    end
+  end
+
+  @doc """
+  Retrieves the binary data associated with the given `binary_id`.
+  This will hash the data against the id to be sure that it is not compromised.
+  """
+  @spec load_binary(String.t) :: {:ok, binary} | {:error, String.t}
+  def load_binary(binary_id) do
+    case get_from_repo(:binary, binary_id) do
+      {:ok, binary_info} ->
+        binary_data_hash = Helper.hash(binary_info[:binary_data])
+        if binary_data_hash == binary_id do
+          {:ok, binary_info[:binary_data]}
+        else
+          {:error, emsg_hash_mismatch}
+        end
+      {:error, :not_found} -> {:error, emsg_not_found}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -430,7 +451,7 @@ defmodule IbGib.Data do
       end
   end
 
-  defp get_from_repo(ib, gib) do
+  defp get_from_repo(:ibgib, {ib, gib}) do
     model =
       IbGibModel
       |> where(ib: ^ib, gib: ^gib)
@@ -444,6 +465,19 @@ defmodule IbGib.Data do
       {:ok, %{:ib => ib, :gib => gib, :data => data, :rel8ns => rel8ns}}
     end
   end
+  defp get_from_repo(:binary, binary_id) do
+    model =
+      BinaryModel
+      |> where(binary_id: ^binary_id)
+      |> Repo.one
+
+      if model == nil do
+        {:error, :not_found}
+      else
+        {:ok, %{:binary_id => binary_id, :binary_data => model.binary_data}}
+      end
+  end
+
 
   # Wraps the search_term in `%`s for use with LIKE clauses, but only if it
   # doesn't already contain a `%` sign.

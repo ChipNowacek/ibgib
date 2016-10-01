@@ -2,12 +2,15 @@ import * as d3 from 'd3';
 import * as d3text from 'd3-textwrap';
 import { d3CircleRadius, d3Scales, d3Colors, d3DefaultCollapsed, d3MenuCommands } from './d3params';
 // import { nerdAlert } from './text-helpers';
+import * as ibHelper from './services/ibgib-helper';
+
 
 export class IbScape {
-  constructor(graphDiv, baseJsonPath) {
-    this.baseJsonPath = baseJsonPath;
+  constructor(graphDiv, baseJsonPath, ibGibCache, ibGibImageProvider) {
     this.graphDiv = graphDiv;
-    this.naiveCache = {}
+    this.baseJsonPath = baseJsonPath;
+    this.ibGibCache = ibGibCache;
+    this.ibGibImageProvider = ibGibImageProvider;
 
     this.circleRadius = 10;
 
@@ -336,19 +339,16 @@ export class IbScape {
 
     function getNodeLabel(d) {
       if (d.render === "text") {
-        if (d.ibgib in t.naiveCache) {
-          let jsonData = t.naiveCache[d.ibgib]
-          if (jsonData && jsonData.data && jsonData.data.text) {
-            return jsonData.data.text;
-          } else {
-            return "?";
-          }
+        let ibGibJson = t.ibGibCache.get(d.ibgib);
+        if (ibGibJson) {
+          return getDataText(ibGibJson) || "?";
         } else {
-          d3.json(t.baseJsonPath + d.ibgib, res => {
-            t.naiveCache[d.ibgib] = res;
+          d3.json(t.baseJsonPath + d.ibgib, ibGibJson => {
+            t.ibGibCache.add(ibGibJson);
+
             let labelText =
-                res && res.data && res.data.text ?
-                res.data.text :
+                ibGibJson && ibGibJson.data && ibGibJson.data.text ?
+                ibGibJson.data.text :
                 "?";
 
             d3.select("#label_" + d.js_id)
@@ -364,7 +364,6 @@ export class IbScape {
             d3.select("#img_" + d.js_id)
               .select('title')
               .text(labelText);
-
           });
 
           return "...";
@@ -374,16 +373,45 @@ export class IbScape {
       }
     }
 
+
     function getNodeImage(d) {
       if (d.ib === "comment") {
         return null;
+      } else if (d.render && d.render === "image") {
+        let ibGibJson = t.ibGibCache.get(d.ibgib);
+        if (ibGibJson) {
+          return t.ibGibImageProvider.getFullImageUrl(d.ibgib, ibGibJson)
+        } else {
+          d3.json(t.baseJsonPath + d.ibgib, ibGibJson => {
+            t.ibGibCache.add(ibGibJson);
+
+            let imageUrl = t.ibGibImageProvider.getFullImageUrl(d.ibgib, ibGibJson);
+
+            let label = ibGibJson.data.filename;
+            d3.select("#img_" + d.js_id)
+              .attr("xlink:href", imageUrl)
+              .select('title')
+              .text(label);
+
+            d3.select("#label_" + d.js_id)
+              .text("")
+              .call(t.wrap)
+              .select('title')
+              .text(label);
+
+            d3.select("#" + d.js_id)
+              .select('title')
+              .text(label);
+          });
+
+          return "...";
+        }
       } else {
         return "/images/ibgib_100x200.png";
       }
     }
 
     function getLinkDistance(l) {
-      // debugger;
       if (l.target.id === "comment") {
         return 200;
       } else if (l.target.cat === "comment") {
@@ -618,7 +646,6 @@ export class IbScape {
   }
 
   execHelp(dIbGib) {
-
     let init = () => {
       console.log("initializing help...");
       let text = "Hrmmm...you shouldn't be seeing this! This means that I " +
@@ -639,7 +666,9 @@ export class IbScape {
       } else if (dIbGib.cat === "rel8n") {
         text = `This is the '${dIbGib.name}' rel8n node. All of its children are rel8ed to the current ibGib by this rel8n. One ibGib can have multiple rel8ns to any other ibGib. You can expand / collapse the rel8n to show / hide its children by either double-clicking or clicking and selecting the "view" button.`;
       } else if (dIbGib.ib === "comment") {
-        text = `This is a comment. It contains text...umm..you can comment on just about anything. This particular comment's text is: "${this.naiveCache[dIbGib.ibgib].data.text}"`;
+        let ibGibJson = this.ibGibCache.get(dIbGib.ibgib);
+        let commentText = ibHelper.getDataText(ibGibJson);
+        text = `This is a comment. It contains text...umm..you can comment on just about anything. This particular comment's text is: "${commentText}"`;
       } else {
         text = `This is one of the related ibGib. Click the information button to get more details about it. You can also navigate to it, expand / collapse any children, fork it, merge it, add comments, pictures, links, and more.`;
       }
