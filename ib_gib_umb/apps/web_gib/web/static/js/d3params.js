@@ -9,6 +9,7 @@ let d3Scales = {
   "ibGib": 5,
   "result": 2,
   "rel8d": 2,
+  "pic": 3,
   "default": 2
 };
 

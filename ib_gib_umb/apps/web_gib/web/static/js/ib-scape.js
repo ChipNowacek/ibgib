@@ -72,15 +72,16 @@ export class IbScape {
     view.call(zoom);
 
     let simulation = d3.forceSimulation()
-        .velocityDecay(0.45)
+        .velocityDecay(0.55)
         // .force("link", d3.forceLink(links).distance(20).strength(1))
         .force("link",
                d3.forceLink()
                  .distance(getLinkDistance)
-                 .strength(.7)
+                 .strength(.8)
                  .id(d => d.id))
         .force("charge", d3.forceManyBody().strength(-25))
-        .force("collide", d3.forceCollide(3 * d3CircleRadius))
+        // .force("collide", d3.forceCollide(3 * d3CircleRadius))
+        .force("collide", d3.forceCollide(getCollideDistance))
         .force("center", d3.forceCenter(t.width / 2, t.height / 2));
     t.simulation = simulation;
 
@@ -164,6 +165,11 @@ export class IbScape {
           .select("a")
           .on("click", nodeClicked);
 
+      let graphImageDefs = graphNodes
+          .append("defs")
+          .attr("id", "imgDefs");
+      t.graphImageDefs = graphImageDefs;
+
       let graphNodeCircles = graphNodes
           .append("circle")
           .attr("class", "nodes")
@@ -238,7 +244,6 @@ export class IbScape {
         // Translate the groups
         graphNodes
             .attr("transform", d => 'translate(' + [d.x, d.y] + ')');
-
       }
     });
 
@@ -341,7 +346,7 @@ export class IbScape {
       if (d.render === "text") {
         let ibGibJson = t.ibGibCache.get(d.ibgib);
         if (ibGibJson) {
-          return getDataText(ibGibJson) || "?";
+          return ibHelper.getDataText(ibGibJson) || "?";
         } else {
           d3.json(t.baseJsonPath + d.ibgib, ibGibJson => {
             t.ibGibCache.add(ibGibJson);
@@ -380,28 +385,16 @@ export class IbScape {
       } else if (d.render && d.render === "image") {
         let ibGibJson = t.ibGibCache.get(d.ibgib);
         if (ibGibJson) {
-          return t.ibGibImageProvider.getFullImageUrl(d.ibgib, ibGibJson)
+          let imageUrl =
+            t.ibGibImageProvider.getFullImageUrl(d.ibgib, ibGibJson);
+          makeImageNode(d, ibGibJson, imageUrl);
         } else {
           d3.json(t.baseJsonPath + d.ibgib, ibGibJson => {
             t.ibGibCache.add(ibGibJson);
 
             let imageUrl = t.ibGibImageProvider.getFullImageUrl(d.ibgib, ibGibJson);
 
-            let label = ibGibJson.data.filename;
-            d3.select("#img_" + d.js_id)
-              .attr("xlink:href", imageUrl)
-              .select('title')
-              .text(label);
-
-            d3.select("#label_" + d.js_id)
-              .text("")
-              .call(t.wrap)
-              .select('title')
-              .text(label);
-
-            d3.select("#" + d.js_id)
-              .select('title')
-              .text(label);
+            makeImageNode(d, ibGibJson, imageUrl);
           });
 
           return "...";
@@ -411,16 +404,60 @@ export class IbScape {
       }
     }
 
+    function makeImageNode(d, ibGibJson, imageUrl) {
+      let patternId = "imgDef_" + d.js_id;
+      let imagePattern = t.graphImageDefs
+        .append("pattern")
+        .attr("id", patternId)
+        .attr("height", 1)
+        .attr("width", 1)
+        .attr("x", 0)
+        .attr("y", 0);
+
+      imagePattern
+        .append("image")
+        .attr("x", -75)
+        .attr("y", -75)
+        .attr("height", 270)
+        .attr("width", 270)
+        .attr("xlink:href", imageUrl);
+
+      let label = ibGibJson.data.filename;
+      d3.select("#img_" + d.js_id)
+        .remove();
+
+      d3.select("#label_" + d.js_id)
+        .text("")
+        .call(t.wrap)
+        .select('title')
+        .text(label);
+
+      d3.select("#" + d.js_id)
+        .attr("fill", `url(#${patternId})`)
+        .select('title')
+        .text(label);
+
+    }
+
     function getLinkDistance(l) {
       if (l.target.id === "comment") {
         return 200;
       } else if (l.target.cat === "comment") {
         return 15;
+      } else if (l.target.id === "pic") {
+        return 200;
+      } else if (l.target.cat === "pic") {
+        return 80;
       } else if (l.target.cat === "rel8n") {
         return 50;
       } else {
         return 100;
       }
+    }
+
+    function getCollideDistance(dIbGib, i, allIbGibs) {
+      let scale = d3Scales[dIbGib.cat] || 3;
+      return scale * d3CircleRadius;
     }
   }
 
@@ -756,14 +793,6 @@ export class IbScape {
 
       // activate links
       this.workingData.links.forEach(l => {
-        // if (l.source.js_id === dRel8n.js_id || l.target.js_id === dRel8n.js_id) {
-        let blah = dRel8n;
-        let blah2 = l.source;
-        let blah3 = l.target;
-        let b = blah;
-        b = blah2;
-        b = blah3;
-
         l.active = l.source.visible && l.target.visible;
       });
     } else {

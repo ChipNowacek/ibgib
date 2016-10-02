@@ -16,8 +16,7 @@ export class IbGibCache {
 
   get(ibGib) {
     if (ibGib in this.naiveCache) {
-      let ibGibJson = this.naiveCache[ibGib];
-      return ibHelper.getDataText(ibGibJson) || "?";
+      return this.naiveCache[ibGib];
     } else {
       return null;
     }
