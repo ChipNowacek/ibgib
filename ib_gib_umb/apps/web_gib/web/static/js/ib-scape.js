@@ -149,7 +149,12 @@ export class IbScape {
           .data(modifiedNodes)
           .enter()
           .append("g")
-          .classed('gnode', true);
+          .classed('gnode', true)
+          .call(d3.drag()
+              .on("start", dragstarted)
+              .on("drag", dragged)
+              .on("end", dragended));
+
 
       let graphNodeHyperlinks = graphNodes
           .append("foreignObject")
@@ -178,11 +183,7 @@ export class IbScape {
           .attr("r", getRadius)
           .attr("fill", getColor)
           .on("click", nodeClicked)
-          .on("dblclick", nodeDblClicked)
-          .call(d3.drag()
-              .on("start", dragstarted)
-              .on("drag", dragged)
-              .on("end", dragended));
+          .on("dblclick", nodeDblClicked);
 
       graphNodeCircles.append("title")
           .text(getNodeLabel);
