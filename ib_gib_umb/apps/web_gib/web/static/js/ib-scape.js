@@ -545,7 +545,7 @@ export class IbScape {
     // If i put the json file in another folder, it won't get loaded.
     // Maybe something to do with brunch, I don't know.
     // d3.json("../images/d3Menu.json", function(error, graph) {
-    let graph = t.getJson(d);
+    let graph = t.getMenuCommandsJson(d);
 
     let nodeGroup =
       t.menuVis.append("g")
@@ -662,7 +662,17 @@ export class IbScape {
       this.execComment(dIbGib);
     } else if (dCommand.name == "pic") {
       this.execPic(dIbGib);
+    } else if (dCommand.name == "fullscreen") {
+      console.log("command fullscreen clicked");
+      this.execFullscreen(dIbGib);
     }
+  }
+
+  execFullscreen(dIbGib) {
+    let imageUrl =
+      this.ibGibImageProvider.getFullImageUrl(dIbGib.ibgib);
+
+    location.href = imageUrl;
   }
 
   execPic(dIbGib) {
@@ -911,8 +921,8 @@ export class IbScape {
    * This menu is what shows the commands for the user to do, e.g. "fork",
    * "merge", etc.
    */
-  getJson(d) {
-    // TODO: ib-scape.js getJson: When we have client-side dynamicism (prefs, whatever), then we need to change this to take that into account when building the popup menu.
+  getMenuCommandsJson(d) {
+    // TODO: ib-scape.js getMenuCommandsJson: When we have client-side dynamicism (prefs, whatever), then we need to change this to take that into account when building the popup menu.
     let commands = [];
 
     if (d.cat === "rel8n") {
@@ -926,6 +936,10 @@ export class IbScape {
     } else {
       // commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link", "goto"];
       commands = ["help", "fork", "goto", "comment", "pic"];
+    }
+
+    if (d.cat == "pic") {
+      commands.push("fullscreen");
     }
 
     let nodes = commands.map(cmdName => d3MenuCommands.filter(cmd => cmd.name == cmdName)[0]);

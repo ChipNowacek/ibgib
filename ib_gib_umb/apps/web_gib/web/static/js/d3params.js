@@ -169,8 +169,15 @@ var d3MenuCommands = [
     "icon": "\uf0a6",
     "description": "Navigate to the ibGib.",
     "color": "#C7FF4F"
+  },
+  {
+    "id": "menu-fullscreen",
+    "name": "fullscreen",
+    "text": "View Fullscreen",
+    "icon": "\uf0b2",
+    "description": "View fullscreen.",
+    "color": "pink"
   }
-
 ];
 
 export { d3CircleRadius, d3Scales, d3Colors, d3DefaultCollapsed, d3MenuCommands };
