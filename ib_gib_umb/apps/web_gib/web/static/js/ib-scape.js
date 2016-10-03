@@ -407,20 +407,25 @@ export class IbScape {
 
     function makeImageNode(d, ibGibJson, imageUrl) {
       let patternId = "imgDef_" + d.js_id;
+      // Magic numbers here...I don't really know what they do. :-X
       let imagePattern = t.graphImageDefs
         .append("pattern")
         .attr("id", patternId)
+        // I really have no idea about these 1s.
         .attr("height", 1)
         .attr("width", 1)
         .attr("x", 0)
         .attr("y", 0);
 
+        // Magic numbers here...I don't really know what they do. :-X
       imagePattern
         .append("image")
+        // Some kind of offset
         .attr("x", -75)
         .attr("y", -75)
-        .attr("height", 270)
-        .attr("width", 270)
+        // Some kind of sizing. I have it set to fill the whole circle
+        .attr("height", 300)
+        .attr("width", 300)
         .attr("xlink:href", imageUrl);
 
       let label = ibGibJson.data.filename;
@@ -938,7 +943,7 @@ export class IbScape {
       commands = ["help", "fork", "goto", "comment", "pic"];
     }
 
-    if (d.cat == "pic") {
+    if (d.render && d.render == "image") {
       commands.push("fullscreen");
     }
 
