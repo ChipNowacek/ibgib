@@ -89,7 +89,7 @@ defmodule WebGib.Web.Components.IbScape do
             input [id: "link_form_data_src_ib_gib", name: "link_form_data[src_ib_gib]",type: "hidden", value: ""]
             input [name: "_utf8", type: "hidden", value: "✓"]
             p "Enter hyperlink URL: "
-            textarea [id: "link_form_data_text", name: "link_form_data[link_text]", value: ""]
+            input [id: "link_form_data_text", name: "link_form_data[link_text]", value: ""]
             input [name: "_csrf_token", type: "hidden", value: Phoenix.Controller.get_csrf_token]
             div [class: "ib-tooltip"] do
               button [type: "submit"] do
