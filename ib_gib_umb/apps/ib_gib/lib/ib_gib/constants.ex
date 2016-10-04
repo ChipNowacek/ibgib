@@ -80,6 +80,8 @@ defmodule IbGib.Constants do
   def validation do
     quote do
       @max_comment_text_size 127
+      @min_link_text_size 10 # http://a.b
+      @max_link_text_size 1024
     end
   end
 

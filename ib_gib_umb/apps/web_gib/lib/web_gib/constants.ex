@@ -43,6 +43,8 @@ defmodule WebGib.Constants do
 
       @emsg_invalid_comment "The comment is invalid."
 
+      @emsg_invalid_link "The link is invalid."
+
     end
   end
 

@@ -42,7 +42,7 @@ defmodule WebGib.Web.Components.IbScape do
         end
 
         # Comment details
-        # This is shown when the user presses the fork button on an ibGib.
+        # This is shown when the user presses the comment button on an ibGib.
         div [id: "ib-comment-details", class: "ib-details-off"] do
           form [action: "/ibgib/comment", method: "post"] do
             input [id: "comment_form_data_src_ib_gib", name: "comment_form_data[src_ib_gib]",type: "hidden", value: ""]
@@ -81,9 +81,25 @@ defmodule WebGib.Web.Components.IbScape do
             end
           end
         end
-        # div [id: "ib-scape-details-close"] do
-        #   button [id: "ib-scape-details-close-btn"], do: "Cancel"
-        # end
+
+        # Link details
+        # This is shown when the user presses the link button on an ibGib.
+        div [id: "ib-link-details", class: "ib-details-off"] do
+          form [action: "/ibgib/link", method: "post"] do
+            input [id: "link_form_data_src_ib_gib", name: "link_form_data[src_ib_gib]",type: "hidden", value: ""]
+            input [name: "_utf8", type: "hidden", value: "✓"]
+            p "Enter hyperlink URL: "
+            textarea [id: "link_form_data_text", name: "link_form_data[link_text]", value: ""]
+            input [name: "_csrf_token", type: "hidden", value: Phoenix.Controller.get_csrf_token]
+            div [class: "ib-tooltip"] do
+              button [type: "submit"] do
+                span [class: "ib-center-glyph glyphicon glyphicon-link ib-green"]
+                span [class: "ib-tooltiptext"], do: gettext("Add Link")
+              end
+            end
+          end
+        end
+
       end
     end
   end

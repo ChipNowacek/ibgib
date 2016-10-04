@@ -254,6 +254,7 @@ defmodule WebGib.IbGibController do
     case ib do
       "comment" -> "text"
       "pic" -> "image"
+      "link" -> "text"
       _ -> "any"
     end
   end
@@ -645,6 +646,83 @@ defmodule WebGib.IbGibController do
   end
 
   # ----------------------------------------------------------------------------
+  # Link
+  # ----------------------------------------------------------------------------
+
+  def link(conn, %{"link_form_data" => %{"link_text" => link_text, "src_ib_gib" => src_ib_gib}} = params) do
+    Logger.metadata(x: :link_1)
+    _ = Logger.debug "conn: #{inspect conn}"
+
+    link(conn, %{"link_text" => link_text, "src_ib_gib" => src_ib_gib})
+  end
+  def link(conn, %{"link_text" => link_text, "src_ib_gib" => src_ib_gib} = params) do
+    Logger.metadata(x: :link_2)
+    _ = Logger.debug "conn: #{inspect conn}"
+    msg = "link_text: #{link_text}"
+
+    _ = Logger.warn "@root_ib_gib: #{@root_ib_gib}"
+    link_text =
+      if String.starts_with?(link_text, "http") do
+        link_text
+      else
+        "https://" <> link_text
+      end
+
+    if validate(:link_text, link_text) and
+                validate(:ib_gib, src_ib_gib) and
+                src_ib_gib != @root_ib_gib do
+      _ = Logger.debug "link is valid. link_text: #{link_text}"
+
+      case link_impl(conn, src_ib_gib, link_text) do
+        {:ok, new_src_ib_gib} ->
+          conn
+          |> redirect(to: "/ibgib/#{new_src_ib_gib}")
+
+        {:error, reason} ->
+          _ = Logger.error reason
+          friendly_emsg = dgettext "error", @emsg_invalid_link
+          conn
+          |> put_flash(:error, friendly_emsg)
+          |> redirect(to: "/ibgib")
+      end
+    else
+      _ = Logger.debug "link is INVALID. link_text: #{link_text}"
+      friendly_emsg = dgettext "error", @emsg_invalid_link
+      conn
+      |> put_flash(:error, friendly_emsg)
+      |> redirect(to: "/ibgib/#{src_ib_gib}")
+    end
+  end
+
+  defp link_impl(conn, src_ib_gib, link_text) do
+    _ = Logger.debug "src_ib_gib: #{src_ib_gib}\nlink_text: #{link_text}"
+
+    with(
+      identity_ib_gibs <- conn |> get_session(@ib_identity_ib_gibs_key),
+      {:ok, src} <- IbGib.Expression.Supervisor.start_expression(src_ib_gib),
+      {:ok, link_gib} <-
+        IbGib.Expression.Supervisor.start_expression("link#{@delim}gib"),
+      {:ok, link} <-
+        link_gib
+        |> Expression.instance(identity_ib_gibs, "link"),
+      {:ok, link} <-
+        link
+        |> Expression.mut8(identity_ib_gibs, %{"text" => link_text}),
+      {:ok, new_src} <-
+        src
+        |> Expression.rel8(link, identity_ib_gibs, ["link"]),
+      {:ok, new_src_info} <- new_src |> Expression.get_info,
+      {:ok, new_src_ib_gib} <- get_ib_gib(new_src_info)
+    ) do
+      {:ok, new_src_ib_gib}
+    else
+      {:error, reason} when is_bitstring(reason) -> {:error, reason}
+      {:error, reason} -> {:error, inspect reason}
+      error -> {:error, inspect error}
+    end
+  end
+
+  # ----------------------------------------------------------------------------
   # Helper
   # ----------------------------------------------------------------------------
 
@@ -672,6 +750,22 @@ defmodule WebGib.IbGibController do
   defp validate(:pic_data, {content_type, filename, path}) do
     _ = Logger.warn "validating pic_data..."
     !!content_type and !!filename and !!path and File.exists?(path)
+  end
+  defp validate(:link_text, link_text) when is_bitstring(link_text) do
+    # Right now, I don't really care what text is in there. Will need to do
+    # fancier validation later obviously. But I'm not too concerned with text
+    # length at the moment, just so long as it is less than the allowed data
+    # size.
+    _ = Logger.warn "link_text: #{link_text}"
+
+    # Just check the bare minimum right now.
+    link_text_length = String.length(link_text)
+    link_text_length >= @min_link_text_size and
+      link_text_length <= @max_link_text_size
+  end
+  defp validate(:link_text, link_text) do
+    _ = Logger.warn "Invalid link_text: #{inspect link_text}"
+    false
   end
   defp validate(:ib_gib, ib_gib) when is_bitstring(ib_gib) do
     Logger.info "valid_ib_gib?: #{valid_ib_gib?(ib_gib)}"
