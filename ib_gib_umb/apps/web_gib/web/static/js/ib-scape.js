@@ -344,44 +344,52 @@ export class IbScape {
     }
 
     function getNodeLabel(d) {
-      if (d.render === "text") {
+      if (d.render === "text" || d.render == "link") {
         let ibGibJson = t.ibGibCache.get(d.ibgib);
         if (ibGibJson) {
-          return ibHelper.getDataText(ibGibJson) || "?";
+          // hack because it's double-adding the label texts when
+          // expand/collapase and I don't know why.
+          setTimeout(() => updateLabelText(d, ibGibJson), 700);
+          return "loading...";
         } else {
+          // We don't yet have the json for this particular data
+          // So we need to load the json, and when it returns we will
+          // set the label then.
           d3.json(t.baseJsonPath + d.ibgib, ibGibJson => {
             t.ibGibCache.add(ibGibJson);
-
-            let labelText =
-                ibGibJson && ibGibJson.data && ibGibJson.data.text ?
-                ibGibJson.data.text :
-                "?";
-
-            d3.select("#label_" + d.js_id)
-              .text(labelText)
-              .call(t.wrap)
-              .select('title')
-              .text(labelText);
-
-            d3.select("#" + d.js_id)
-              .select('title')
-              .text(labelText);
-
-            d3.select("#img_" + d.js_id)
-              .select('title')
-              .text(labelText);
+            updateLabelText(d, ibGibJson);
           });
-
-          return "...";
+          return "loading...";
         }
       } else {
+        // Label gets no text because it's not rendered as text.
         return "";
       }
     }
 
+    function updateLabelText(d, ibGibJson) {
+      let labelText =
+          ibGibJson && ibGibJson.data && ibGibJson.data.text ?
+          ibGibJson.data.text :
+          "?";
+
+      d3.select("#label_" + d.js_id)
+        .text(labelText)
+        .call(t.wrap)
+        .select('title')
+        .text(labelText);
+
+      d3.select("#" + d.js_id)
+        .select('title')
+        .text(labelText);
+
+      d3.select("#img_" + d.js_id)
+        .select('title')
+        .text(labelText);
+    }
 
     function getNodeImage(d) {
-      if (d.ib === "comment") {
+      if (d.render === "text") {
         return null;
       } else if (d.render && d.render === "image") {
         let ibGibJson = t.ibGibCache.get(d.ibgib);
@@ -446,18 +454,14 @@ export class IbScape {
     }
 
     function getLinkDistance(l) {
-      if (l.target.id === "comment") {
-        return 200;
-      } else if (l.target.cat === "comment") {
-        return 15;
-      } else if (l.target.id === "pic") {
-        return 200;
-      } else if (l.target.cat === "pic") {
-        return 80;
+      if (["comment", "pic", "link"].some(x => x == l.target.id)) {
+        return 150;
+      } else if (["comment", "pic", "link"].some(x => x == l.target.cat)) {
+        return 30;
       } else if (l.target.cat === "rel8n") {
         return 50;
       } else {
-        return 100;
+        return 80;
       }
     }
 
@@ -668,34 +672,25 @@ export class IbScape {
     } else if (dCommand.name == "pic") {
       this.execPic(dIbGib);
     } else if (dCommand.name == "fullscreen") {
-      console.log("command fullscreen clicked");
       this.execFullscreen(dIbGib);
+    } else if (dCommand.name == "link") {
+      this.execLink(dIbGib);
+    } else if (dCommand.name == "externallink") {
+      this.execExternalLink(dIbGib);
     }
   }
 
-  execFullscreen(dIbGib) {
-    let imageUrl =
-      this.ibGibImageProvider.getFullImageUrl(dIbGib.ibgib);
-
-    location.href = imageUrl;
-  }
-
-  execPic(dIbGib) {
+  execFork(dIbGib) {
     let init = () => {
-      d3.select("#pic_form_data_src_ib_gib")
+      d3.select("#fork_form_data_src_ib_gib")
         .attr("value", dIbGib.ibgib);
     };
-    this.showDetails("pic", init);
-    $("#pic_form_data_file").focus();
+    this.showDetails("fork", init);
+    $("#fork_form_data_dest_ib").focus();
   }
 
-  execComment(dIbGib) {
-    let init = () => {
-      d3.select("#comment_form_data_src_ib_gib")
-        .attr("value", dIbGib.ibgib);
-    };
-    this.showDetails("comment", init);
-    $("#comment_form_data_text").focus();
+  execGoto(dIbGib) {
+    location.href = `/ibgib/${dIbGib.ibgib}`
   }
 
   execHelp(dIbGib) {
@@ -718,10 +713,16 @@ export class IbScape {
         text = `This is an identity ibGib. It lets you know who someone is, and you can add layers of identities to be "more secure". If the ib is a long number, then that is an "anonymous" user. Anyone can have their ib be the same, so be sure to check the gib! (It's that long number after the ^ character in the form of 'ibGib_LETTERSandNUMBERS_ibGib')`;
       } else if (dIbGib.cat === "rel8n") {
         text = `This is the '${dIbGib.name}' rel8n node. All of its children are rel8ed to the current ibGib by this rel8n. One ibGib can have multiple rel8ns to any other ibGib. You can expand / collapse the rel8n to show / hide its children by either double-clicking or clicking and selecting the "view" button.`;
-      } else if (dIbGib.ib === "comment") {
+      } else if (dIbGib.cat === "pic") {
+        text = `This is a picture that you have uploaded! Viewing it in fullscreen will open the image in a new window or tab, depending on your browser preferences. Navigating to it will take you to the pic's ibGib itself.`;
+      } else if (dIbGib.cat === "comment") {
         let ibGibJson = this.ibGibCache.get(dIbGib.ibgib);
         let commentText = ibHelper.getDataText(ibGibJson);
         text = `This is a comment. It contains text...umm..you can comment on just about anything. This particular comment's text is: "${commentText}"`;
+      } else if (dIbGib.cat === "link") {
+        let ibGibJson = this.ibGibCache.get(dIbGib.ibgib);
+        let linkText = ibHelper.getDataText(ibGibJson);
+        text = `This is a hyperlink to somewhere outside of ibGib. If you want to navigate to the external link, then choose the open external link command. If you want to goto the link's ibGib, then click the goto navigation.\n\nLink: "${linkText}"`;
       } else {
         text = `This is one of the related ibGib. Click the information button to get more details about it. You can also navigate to it, expand / collapse any children, fork it, merge it, add comments, pictures, links, and more.`;
       }
@@ -732,8 +733,56 @@ export class IbScape {
     this.showDetails("help", init);
   }
 
-  execGoto(dIbGib) {
-    location.href = `/ibgib/${dIbGib.ibgib}`
+  execComment(dIbGib) {
+    let init = () => {
+      d3.select("#comment_form_data_src_ib_gib")
+        .attr("value", dIbGib.ibgib);
+    };
+    this.showDetails("comment", init);
+    $("#comment_form_data_text").focus();
+  }
+
+  execPic(dIbGib) {
+    let init = () => {
+      d3.select("#pic_form_data_src_ib_gib")
+        .attr("value", dIbGib.ibgib);
+    };
+    this.showDetails("pic", init);
+    $("#pic_form_data_file").focus();
+  }
+
+  execFullscreen(dIbGib) {
+    let imageUrl =
+      this.ibGibImageProvider.getFullImageUrl(dIbGib.ibgib);
+
+    location.href = imageUrl;
+  }
+
+  execLink(dIbGib) {
+    let init = () => {
+      d3.select("#link_form_data_src_ib_gib")
+        .attr("value", dIbGib.ibgib);
+    };
+    this.showDetails("link", init);
+    $("#link_form_data_text").focus();
+  }
+
+  execFullscreen(dIbGib) {
+    let imageUrl =
+      this.ibGibImageProvider.getFullImageUrl(dIbGib.ibgib);
+
+    window.open(imageUrl,'_blank');
+    // location.href = imageUrl;
+  }
+
+  execExternalLink(dIbGib) {
+    let ibGibJson = this.ibGibCache.get(dIbGib.ibgib);
+    let url = ibHelper.getDataText(ibGibJson);
+    if (url) {
+      window.open(url,'_blank');
+    } else {
+      alert("Error opening external link... :-/");
+    }
   }
 
   /**
@@ -771,15 +820,6 @@ export class IbScape {
     //   .on("click", this.cancelDetails);
 
     this.tearDownMenu(/*cancelDetails*/ false);
-  }
-
-  execFork(dIbGib) {
-    let init = () => {
-      d3.select("#fork_form_data_src_ib_gib")
-        .attr("value", dIbGib.ibgib);
-    };
-    this.showDetails("fork", init);
-    $("#fork_form_data_dest_ib").focus();
   }
 
   cancelDetails() {
@@ -937,14 +977,17 @@ export class IbScape {
       commands = ["help", "fork", "goto"];
     } else if (d.cat === "ib") {
       // commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link"];
-      commands = ["help", "fork", "comment", "pic"];
+      commands = ["help", "fork", "comment", "pic", "link"];
     } else {
       // commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link", "goto"];
-      commands = ["help", "fork", "goto", "comment", "pic"];
+      commands = ["help", "fork", "goto", "comment", "pic", "link"];
     }
 
     if (d.render && d.render == "image") {
       commands.push("fullscreen");
+    }
+    if (d.cat === "link") {
+      commands.push("externallink");
     }
 
     let nodes = commands.map(cmdName => d3MenuCommands.filter(cmd => cmd.name == cmdName)[0]);

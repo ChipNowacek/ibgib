@@ -58,6 +58,7 @@ Seeds.insert(:bootstrap_identity)
 Seeds.insert(:text)
 Seeds.insert({:comment, :text_child})
 Seeds.insert({:url, :text_child})
+Seeds.insert({:link, :text_child})
 
 # Binary Related
 Seeds.insert(:binary)
