@@ -64,8 +64,10 @@ class App {
       this.ibScape.update(data);
     }
 
-    this.ibGibChannel = new IbGibChannel();
-    this.ibGibChannel.connect();
+    if (!this.ibGibChannel) {
+      this.ibGibChannel = new IbGibChannel();
+      this.ibGibChannel.connect();
+    }
 
     // let socket = new Socket("/socket", {
     //   logger: ((kind, msg, data) => { console.log(`${kind}: ${msg}`, data) })

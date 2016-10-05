@@ -20,6 +20,9 @@ defmodule WebGib.Constants do
 
       @meta_query_ib_gib_key "meta_query_ib_gib"
       @meta_query_result_ib_gib_key "meta_query_result_ib_gib"
+
+      @ident_email_token_key "ident_email_token"
+      @ident_pin_hash_key "ident_pin_hash"
     end
   end
 
@@ -45,6 +48,8 @@ defmodule WebGib.Constants do
 
       @emsg_invalid_link "The link is invalid."
 
+      @emsg_invalid_email "The email is invalid."
+      @emsg_email_send_failed "There were problems sending the login email."
     end
   end
 

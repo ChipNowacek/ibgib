@@ -54,3 +54,5 @@ config :web_gib, WebGib.Repo,
   #
   # To psql into the container.
   # `docker run -it --rm --link postgres-ctr:postgres postgres psql -d web_gib_dev -h postgres -U postgres`
+
+import_config "dev.secret.exs"

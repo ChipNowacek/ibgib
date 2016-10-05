@@ -677,6 +677,8 @@ export class IbScape {
       this.execLink(dIbGib);
     } else if (dCommand.name == "externallink") {
       this.execExternalLink(dIbGib);
+    } else if (dCommand.name == "identemail") {
+      this.execIdentEmail(dIbGib);
     }
   }
 
@@ -783,6 +785,15 @@ export class IbScape {
     } else {
       alert("Error opening external link... :-/");
     }
+  }
+
+  execIdentEmail(dIbGib) {
+    let init = () => {
+      d3.select("#ident_form_data_src_ib_gib")
+        .attr("value", dIbGib.ibgib);
+    };
+    this.showDetails("ident", init);
+    $("#ident_form_data_text").focus();
   }
 
   /**
@@ -974,13 +985,13 @@ export class IbScape {
       commands = ["help", "view"];
     } else if (d.ibgib && d.ibgib === "ib^gib") {
       // commands = ["help", "fork", "meta", "query"];
-      commands = ["help", "fork", "goto"];
+      commands = ["help", "fork", "goto", "identemail"];
     } else if (d.cat === "ib") {
       // commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link"];
-      commands = ["help", "fork", "comment", "pic", "link"];
+      commands = ["help", "fork", "comment", "pic", "link", "identemail"];
     } else {
       // commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link", "goto"];
-      commands = ["help", "fork", "goto", "comment", "pic", "link"];
+      commands = ["help", "fork", "goto", "comment", "pic", "link", "identemail"];
     }
 
     if (d.render && d.render == "image") {

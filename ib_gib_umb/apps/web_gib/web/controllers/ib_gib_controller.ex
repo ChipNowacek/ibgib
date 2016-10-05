@@ -723,6 +723,115 @@ defmodule WebGib.IbGibController do
   end
 
   # ----------------------------------------------------------------------------
+  # Identity
+  # ----------------------------------------------------------------------------
+  # The user can add multiple levels of identity. The user starts off with an
+  # identity from the session. This is the analog to an "anonymous" identity.
+  # The user can also add identity by logging in with a valid email. We will
+  # allow for an optional small challenge, kind of like a one-time pin. We will
+  # send a link to the email address which contains a random token (not the pin)
+  # and store this token in session. When the user clicks on the email link,
+  # We will see the token in session and match it against the link. If the
+  # one-time pin was provided, we will challenge for that as well. If this
+  # succeeds, we will create the email identity if needed, spin off a mut8
+  # identity to "log" the successful login and return the original email
+  # identity. This way, the user is always "signing" with the same identity
+  # ibGib, but we still keep a record of successful logins. I think we'll also
+  # "log" invalid login attempts as well.
+  # ----------------------------------------------------------------------------
+
+
+  # Email identity clause
+  def ident(conn,
+            %{"ident_form_data" =>
+              %{"ident_type" => "email",
+                "ident_text" => email_addr,
+                "ident_pin" => ident_pin,
+                "src_ib_gib" => src_ib_gib}} = params) do
+    Logger.metadata(x: :ident_1)
+    _ = Logger.debug "conn: #{inspect conn}"
+
+    ident(conn,
+          %{"ident_type" => "email",
+            "ident_text" => email_addr,
+            "ident_pin" => ident_pin,
+            "src_ib_gib" => src_ib_gib})
+  end
+  # Email identity clause
+  def ident(conn,
+            %{"ident_type" => "email",
+              "ident_text" => email_addr,
+              "ident_pin" => ident_pin,
+              "src_ib_gib" => src_ib_gib} = params) do
+    Logger.metadata(x: :ident_2)
+    _ = Logger.debug "conn: #{inspect conn}"
+    msg = "email_addr: #{email_addr}"
+
+    if validate(:email_addr, email_addr) and validate(:ib_gib, src_ib_gib) do
+      _ = Logger.debug "ident is valid. email_addr: #{email_addr}"
+
+      case start_email_impl(conn, src_ib_gib, email_addr, ident_pin) do
+        {:ok, conn} ->
+          conn
+          |> put_flash(:info, gettext "Email sent. Open the link provided in this browser.")
+          |> redirect(to: "/ibgib/#{src_ib_gib}")
+
+        {:error, reason} ->
+          _ = Logger.error reason
+          friendly_emsg = dgettext "error", @emsg_email_send_failed
+          conn
+          |> put_flash(:error, friendly_emsg)
+          |> redirect(to: "/ibgib/#{src_ib_gib}")
+      end
+    else
+      _ = Logger.debug "ident is INVALID. email_addr: #{email_addr}"
+      friendly_emsg = dgettext "error", @emsg_invalid_email
+      conn
+      |> put_flash(:error, friendly_emsg)
+      |> redirect(to: "/ibgib/#{src_ib_gib}")
+    end
+  end
+  def ident(conn, params) do
+    Logger.metadata(x: :ident_2)
+    Logger.warn "ident yo"
+    Logger.warn "ident yo"
+    Logger.warn "ident yo"
+    Logger.warn "ident yo"
+    Logger.warn "ident yo"
+    Logger.warn "ident yo"
+    Logger.warn "ident yo"
+    Logger.info "conn: #{inspect conn}"
+  end
+
+  defp start_email_impl(conn, src_ib_gib, email_addr, ident_pin) do
+    _ = Logger.debug "src_ib_gib: #{src_ib_gib}\nemail_addr: #{email_addr}"
+
+    with(
+      identity_ib_gibs <- conn |> get_session(@ib_identity_ib_gibs_key),
+      ident_email_token <- hash(new_id()),
+      conn <- put_session(conn, @ident_email_token_key, ident_email_token),
+      conn <- put_session(conn, @ident_pin_hash_key, hash(ident_pin)),
+      {:ok, :ok} <- send_email_login(email_addr, ident_email_token)
+    ) do
+      {:ok, conn}
+    else
+      {:error, reason} when is_bitstring(reason) -> {:error, reason}
+      {:error, reason} -> {:error, inspect reason}
+      error -> {:error, inspect error}
+    end
+  end
+
+  defp send_email_login(email_addr, ident_email_token) do
+    Logger.debug "email_addr: #{email_addr}"
+    try do
+      WebGib.Mailer.send_login_token(email_addr, ident_email_token)
+      {:ok, :ok}
+    rescue
+      e in RuntimeError -> {:error, inspect e}
+    end
+  end
+
+  # ----------------------------------------------------------------------------
   # Helper
   # ----------------------------------------------------------------------------
 
@@ -752,10 +861,6 @@ defmodule WebGib.IbGibController do
     !!content_type and !!filename and !!path and File.exists?(path)
   end
   defp validate(:link_text, link_text) when is_bitstring(link_text) do
-    # Right now, I don't really care what text is in there. Will need to do
-    # fancier validation later obviously. But I'm not too concerned with text
-    # length at the moment, just so long as it is less than the allowed data
-    # size.
     _ = Logger.warn "link_text: #{link_text}"
 
     # Just check the bare minimum right now.
@@ -765,6 +870,20 @@ defmodule WebGib.IbGibController do
   end
   defp validate(:link_text, link_text) do
     _ = Logger.warn "Invalid link_text: #{inspect link_text}"
+    false
+  end
+  defp validate(:email_addr, email_addr) when is_bitstring(email_addr) do
+    _ = Logger.warn "email_addr: #{email_addr}"
+
+    # Just check the bare minimum right now.
+    email_addr_length = String.length(email_addr)
+    valid =
+      email_addr_length >= @min_email_addr_size and
+      email_addr_length <= @max_email_addr_size and
+      Regex.match?(@regex_valid_email_addr, email_addr)
+  end
+  defp validate(:email_addr, email_addr) do
+    _ = Logger.warn "Invalid email_addr: #{inspect email_addr}"
     false
   end
   defp validate(:ib_gib, ib_gib) when is_bitstring(ib_gib) do

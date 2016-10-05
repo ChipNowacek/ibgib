@@ -185,6 +185,14 @@ var d3MenuCommands = [
     "icon": "\uf08e",
     "description": "Open external link",
     "color": "#C7FF4F"
+  },
+  {
+    "id": "menu-identemail",
+    "name": "identemail",
+    "text": "Login via email",
+    "icon": "\uf090",
+    "description": "Sends an email containing a link to login",
+    "color": "#FFFFFF"
   }
 ];
 
