@@ -34,7 +34,7 @@ config :web_gib, WebGib.Endpoint,
 # config :phoenix, :stacktrace_depth, 20
 
 # Configure your database
-config :web_gib, WebGib.Repo,
+config :web_gib, WebGib.Data.Repo,
   adapter: Ecto.Adapters.Postgres,
   username: "postgres",
   password: "postgres",

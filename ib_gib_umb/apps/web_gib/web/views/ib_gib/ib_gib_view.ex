@@ -21,9 +21,6 @@ defmodule WebGib.IbGibView do
           "visibility": "hidden"
         ]
       end
-      # div [class: "ib-info-border"] do
-
-      # end
     end
   end
 
