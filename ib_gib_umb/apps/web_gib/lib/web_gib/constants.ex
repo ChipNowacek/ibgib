@@ -23,7 +23,7 @@ defmodule WebGib.Constants do
 
       @ident_email_email_addr_key "ident_email_email_addr"
       @ident_email_timestamp_key "ident_email_timestamp"
-      @ident_email_timestamp_key "ident_email_timestamp"
+      # @ident_email_token_key "ident_email_token"
       @ident_email_src_ib_gib_key "ident_email_src_ib_gib"
       @ident_email_pin_provided_key "ident_email_pin_provided"
     end
@@ -64,6 +64,7 @@ defmodule WebGib.Constants do
       @emsg_ident_email_token_expired "The token has expired."
       @emsg_email_send_failed "There were problems sending the login email."
       @emsg_ident_email_failed "There was a problem with the login process."
+      @emsg_ident_email_token_mismatch "The token does not match."
     end
   end
 

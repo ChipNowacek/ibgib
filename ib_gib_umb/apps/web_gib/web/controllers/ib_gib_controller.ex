@@ -854,6 +854,9 @@ defmodule WebGib.IbGibController do
       token <- hash(new_id()),
       pin_provided <- (String.length(ident_pin) > 0) |> to_string,
       ident_pin_hash <- hash(ident_pin),
+      _ <- Logger.warn("ident_pin_hash: #{ident_pin_hash}"),
+      _ <- Logger.warn("ident_pin_hash: #{ident_pin_hash}"),
+      _ <- Logger.warn("ident_pin_hash: #{ident_pin_hash}"),
 
       # Save data in appropriate places
       {:ok, :ok} <-
@@ -891,10 +894,11 @@ defmodule WebGib.IbGibController do
     with(
       {:ok, :ok} <- check_timestamp_expiration(conn),
       # At this point, the token is in the URL, so no biggie putting in session.
-      conn <- put_session(conn, @ident_email_timestamp_key, token),
+      # conn <- put_session(conn, @ident_email_token_key, token),
       pin_provided <- get_session(conn, @ident_email_pin_provided_key),
       pin_action <- (if pin_provided == "true", do: :enter_pin, else: :skip_pin)
     ) do
+      _ = Logger.debug("pin_action: #{pin_action}" |> ExChalk.bg_yellow)
       {:ok, {conn, pin_action}}
     else
       {:error, reason} when is_bitstring(reason) -> {:error, reason}
@@ -918,31 +922,43 @@ defmodule WebGib.IbGibController do
   # If this fails at any point, the whole process must be restarted.
   # This is acceptable, since it's a (relatively) fast workflow and the
   # pin is optional. The pin is not supposed to be complicated, since it is a
-  # one-time pin and is only adding a secondary layer of defense.
+  # one-time pin and is only adding a secondary layer of defense, so pin typos
+  # should be rare.
   defp complete_email_impl(conn, token, ident_pin) do
     _ = Logger.debug "token: #{token}\nident_pin: #{ident_pin}"
     with(
-      # Gather our previous info, cleaning up as we go.
-      email_addr <- get_session(conn, @ident_email_login_addr_key),
-      _ <- Logger.debug("1 email_addr: #{email_addr}"),
-      conn <- put_session(conn, @ident_email_login_addr_key, nil),
-      _ <- Logger.debug("2"),
-      src_ib_gib <- get_session(conn, @ident_email_src_ib_gib_key),
-      _ <- Logger.debug("3 src_ib_gib: #{src_ib_gib}"),
-      conn <- put_session(conn, @ident_email_src_ib_gib_key, nil),
-      _ <- Logger.debug("4"),
-      ident_pin_hash <- hash(ident_pin),
-      _ <- Logger.debug("5 ident_pin_hash: #{ident_pin_hash}"),
+      # Double-check our timestamp expiration, clean up if passes.
+      {:ok, :ok} <- check_timestamp_expiration(conn),
 
-      # Check ident_pin and token
-      {:ok, token} <-
-        WebGib.Data.get_ident_email_token(email_addr, ident_pin_hash)
+      # Gather our previous info
+      email_addr <- get_session(conn, @ident_email_email_addr_key),
+      src_ib_gib <- get_session(conn, @ident_email_src_ib_gib_key),
+      ident_pin_hash <- hash(ident_pin),
+
+      # Cleanup
+      conn <- put_session(conn, @ident_email_timestamp_key, nil),
+      conn <- put_session(conn, @ident_email_email_addr_key, nil),
+      conn <- put_session(conn, @ident_email_src_ib_gib_key, nil),
+      conn <- put_session(conn, @ident_email_pin_provided_key, nil),
+
+      # Get token for email_addr and ident_pin_hash and compare.
+      {:ok, got_token} <-
+        WebGib.Data.get_ident_email_token(email_addr, ident_pin_hash),
+      {:ok, :ok} <- check_token_match(token, got_token)
     ) do
-      {:ok, conn, email_addr, src_ib_gib}
+      {:ok, {conn, email_addr, src_ib_gib}}
     else
       {:error, reason} when is_bitstring(reason) -> {:error, reason}
       {:error, reason} -> {:error, inspect reason}
       error -> {:error, inspect error}
+    end
+  end
+
+  defp check_token_match(token, got_token) do
+    if token == got_token do
+      {:ok, :ok}
+    else
+      {:error, @emsg_ident_email_token_mismatch}
     end
   end
 

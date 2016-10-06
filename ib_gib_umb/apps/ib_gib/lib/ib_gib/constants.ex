@@ -165,6 +165,13 @@ defmodule IbGib.Constants do
         "The item was not found. :-/"
       end
 
+      def emsg_not_found(what) when is_bitstring(what) do
+        "The item (#{what}) was not found. :-/"
+      end
+      def emsg_not_found(what) do
+        "The item (#{inspect what}) was not found. :-/"
+      end
+
       def emsg_hash_mismatch do
         "The hashes do not match."
       end
