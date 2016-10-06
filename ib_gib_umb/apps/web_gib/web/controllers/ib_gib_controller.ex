@@ -55,6 +55,9 @@ defmodule WebGib.IbGibController do
   should show what? The most "recent" `gib` hash?
   """
   def show(conn, %{"ib_or_ib_gib" => ib_or_ib_gib} = params) do
+    ib_or_ib_gib =
+      if valid_ib_gib?(ib_or_ib_gib), do: ib_or_ib_gib, else: @root_ib_gib
+
     as_list = ib_or_ib_gib |> String.split(@delim)
     ib = as_list |> Enum.at(0)
     gib = as_list |> Enum.at(1, "0")
@@ -91,7 +94,7 @@ defmodule WebGib.IbGibController do
       _ = Logger.error "#{error_msg}. (#{inspect result_term})"
       conn
       |> put_flash(:error, error_msg)
-      |> redirect(to: "/ibgib")
+      |> redirect(to: "/ibgib/#{@root_ib_gib}")
     end
   end
 
@@ -311,9 +314,11 @@ defmodule WebGib.IbGibController do
         # put flash error
         error_msg = dgettext "error", "Mut8 failed."
         _ = Logger.error "#{error_msg}. (#{inspect other})"
+        redirect_ib_gib =
+          if valid_ib_gib?(src_ib_gib), do: src_ib_gib, else: @root_ib_gib
         conn
         |> put_flash(:error, error_msg)
-        |> redirect(to: "/ibgib/#{src_ib_gib}")
+        |> redirect(to: "/ibgib/#{redirect_ib_gib}")
     end
   end
   defp do_mut8(conn, src_ib_gib, {:remove_key, key}) do
@@ -330,12 +335,14 @@ defmodule WebGib.IbGibController do
         conn
         |> redirect(to: "/ibgib/#{ib_gib}")
       other ->
+        redirect_ib_gib =
+          if valid_ib_gib?(src_ib_gib), do: src_ib_gib, else: @root_ib_gib
         # put flash error
         error_msg = dgettext "error", "Mut8 failed."
         _ = Logger.error "#{error_msg}. (#{inspect other})"
         conn
         |> put_flash(:error, error_msg)
-        |> redirect(to: "/ibgib/#{src_ib_gib}")
+        |> redirect(to: "/ibgib/#{redirect_ib_gib}")
     end
   end
 
@@ -371,9 +378,11 @@ defmodule WebGib.IbGibController do
     if validate(:dest_ib, dest_ib) and validate(:ib_gib, src_ib_gib) do
       do_fork(conn, %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib})
     else
+      redirect_ib_gib =
+        if valid_ib_gib?(src_ib_gib), do: src_ib_gib, else: @root_ib_gib
       conn
       |> put_flash(:error, @emsg_invalid_dest_ib)
-      |> redirect(to: "/ibgib/#{src_ib_gib}")
+      |> redirect(to: "/ibgib/#{redirect_ib_gib}")
     end
   end
   def fork(conn, %{"dest_ib" => dest_ib, "src_ib_gib" => src_ib_gib} = params) do
@@ -385,9 +394,12 @@ defmodule WebGib.IbGibController do
     if validate(:dest_ib, dest_ib) and validate(:ib_gib, src_ib_gib) do
       do_fork(conn, %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib})
     else
+      redirect_ib_gib =
+        if valid_ib_gib?(src_ib_gib), do: src_ib_gib, else: @root_ib_gib
+
       conn
       |> put_flash(:error, @emsg_invalid_dest_ib)
-      |> redirect(to: "/ibgib/#{src_ib_gib}")
+      |> redirect(to: "/ibgib/#{redirect_ib_gib}")
     end
   end
 
@@ -406,12 +418,14 @@ defmodule WebGib.IbGibController do
         conn
         |> redirect(to: "/ibgib/#{ib_gib}")
       other ->
+        redirect_ib_gib =
+          if valid_ib_gib?(src_ib_gib), do: src_ib_gib, else: @root_ib_gib
         # put flash error
         error_msg = dgettext "error", "Fork failed."
         _ = Logger.error "#{error_msg}. (#{inspect other})"
         conn
         |> put_flash(:error, error_msg)
-        |> redirect(to: "/ibgib")
+        |> redirect(to: "/ibgib/#{redirect_ib_gib}")
     end
   end
 
@@ -467,18 +481,22 @@ defmodule WebGib.IbGibController do
           |> redirect(to: "/ibgib/#{new_src_ib_gib}")
 
         {:error, reason} ->
+          redirect_ib_gib =
+            if valid_ib_gib?(src_ib_gib), do: src_ib_gib, else: @root_ib_gib
           _ = Logger.error reason
           friendly_emsg = dgettext "error", @emsg_invalid_comment
           conn
           |> put_flash(:error, friendly_emsg)
-          |> redirect(to: "/ibgib")
+          |> redirect(to: "/ibgib/#{redirect_ib_gib}")
       end
     else
+      redirect_ib_gib =
+        if valid_ib_gib?(src_ib_gib), do: src_ib_gib, else: @root_ib_gib
       _ = Logger.debug "comment is INVALID. comment_text: #{comment_text}"
       friendly_emsg = dgettext "error", @emsg_invalid_comment
       conn
       |> put_flash(:error, friendly_emsg)
-      |> redirect(to: "/ibgib/#{src_ib_gib}")
+      |> redirect(to: "/ibgib/#{redirect_ib_gib}")
     end
   end
 
@@ -544,21 +562,23 @@ defmodule WebGib.IbGibController do
           |> redirect(to: "/ibgib/#{new_src_ib_gib}")
 
         {:error, reason} ->
-          _ = Logger.error reason
+          redirect_ib_gib =
+            if valid_ib_gib?(src_ib_gib), do: src_ib_gib, else: @root_ib_gib
           # friendly_emsg = dgettext "error", @emsg_invalid_pic
           friendly_emsg = gettext "The pic is Invalid. :-/"
           conn
           |> put_flash(:error, friendly_emsg)
-          |> redirect(to: "/ibgib")
+          |> redirect(to: "/ibgib/#{redirect_ib_gib}")
       end
     else
-
+      redirect_ib_gib =
+        if valid_ib_gib?(src_ib_gib), do: src_ib_gib, else: @root_ib_gib
       _ = Logger.debug "pic is INVALID. pic_data: #{pic_data}"
       # friendly_emsg = dgettext("error", @emsg_invalid_pic)
       friendly_emsg = gettext "The pic is Invalid. :-/"
       conn
       |> put_flash(:error, friendly_emsg)
-      |> redirect(to: "/ibgib/#{src_ib_gib}")
+      |> redirect(to: "/ibgib/#{redirect_ib_gib}")
     end
   end
 
@@ -679,18 +699,22 @@ defmodule WebGib.IbGibController do
           |> redirect(to: "/ibgib/#{new_src_ib_gib}")
 
         {:error, reason} ->
+          redirect_ib_gib =
+            if valid_ib_gib?(src_ib_gib), do: src_ib_gib, else: @root_ib_gib
           _ = Logger.error reason
           friendly_emsg = dgettext "error", @emsg_invalid_link
           conn
           |> put_flash(:error, friendly_emsg)
-          |> redirect(to: "/ibgib")
+          |> redirect(to: "/ibgib/#{redirect_ib_gib}")
       end
     else
+      redirect_ib_gib =
+        if valid_ib_gib?(src_ib_gib), do: src_ib_gib, else: @root_ib_gib
       _ = Logger.debug "link is INVALID. link_text: #{link_text}"
       friendly_emsg = dgettext "error", @emsg_invalid_link
       conn
       |> put_flash(:error, friendly_emsg)
-      |> redirect(to: "/ibgib/#{src_ib_gib}")
+      |> redirect(to: "/ibgib/#{redirect_ib_gib}")
     end
   end
 
@@ -757,7 +781,6 @@ defmodule WebGib.IbGibController do
             "ident_pin" => ident_pin,
             "src_ib_gib" => src_ib_gib})
   end
-  # Email identity clause
   def ident(conn,
             %{"ident_type" => "email",
               "ident_text" => email_addr,
@@ -772,27 +795,36 @@ defmodule WebGib.IbGibController do
 
       case start_email_impl(conn, src_ib_gib, email_addr, ident_pin) do
         {:ok, conn} ->
+          redirect_ib_gib =
+            if valid_ib_gib?(src_ib_gib), do: src_ib_gib, else: @root_ib_gib
           conn
           |> put_flash(:info, gettext "Email sent. Open the link provided in this browser.")
-          |> redirect(to: "/ibgib/#{src_ib_gib}")
+          |> redirect(to: "/ibgib/#{redirect_ib_gib}")
 
         {:error, reason} ->
+          redirect_ib_gib =
+            if valid_ib_gib?(src_ib_gib), do: src_ib_gib, else: @root_ib_gib
           _ = Logger.error reason
           friendly_emsg = dgettext "error", @emsg_email_send_failed
           conn
           |> put_flash(:error, friendly_emsg)
-          |> redirect(to: "/ibgib/#{src_ib_gib}")
+          |> redirect(to: "/ibgib/#{redirect_ib_gib}")
       end
     else
+      redirect_ib_gib =
+        if valid_ib_gib?(src_ib_gib), do: src_ib_gib, else: @root_ib_gib
       _ = Logger.debug "ident is INVALID. email_addr: #{email_addr}"
       friendly_emsg = dgettext "error", @emsg_invalid_email
       conn
       |> put_flash(:error, friendly_emsg)
-      |> redirect(to: "/ibgib/#{src_ib_gib}")
+      |> redirect(to: "/ibgib/#{redirect_ib_gib}")
     end
   end
   # At this point, the user has clicked on the link and entered the pin.
-  def ident(conn, %{"token" => token, "ident_pin" => ident_pin} = params)
+  def ident(conn,
+            %{"enterpin_form_data" =>
+              %{"token" => token,
+                "ident_pin" => ident_pin}} = params)
     when is_bitstring(token) and is_bitstring(ident_pin) do
     Logger.metadata(x: :ident_email_login_token)
     Logger.warn "Hey, we have a token and an ident_pin.\ntoken: #{token}\nident_pin: #{ident_pin}"
@@ -800,9 +832,11 @@ defmodule WebGib.IbGibController do
 
     case complete_email_impl(conn, token, ident_pin) do
       {:ok, {conn, email_addr, src_ib_gib}} ->
+        redirect_ib_gib =
+          if valid_ib_gib?(src_ib_gib), do: src_ib_gib, else: @root_ib_gib
         conn
         |> put_flash(:info, gettext("Success! You have now added an email to your current identity. See https://github.com/ibgib/ibgib/wiki/identity for more info.") <> "\n#{email_addr}")
-        |> redirect(to: "/ibgib/#{src_ib_gib}")
+        |> redirect(to: "/ibgib/#{redirect_ib_gib}")
 
       {:error, reason} ->
         _ = Logger.error reason
@@ -825,6 +859,7 @@ defmodule WebGib.IbGibController do
         _ = Logger.debug "enter_pin"
         conn
         |> put_flash(:info, gettext("Excellent! You're almost there. Now just enter the same pin you entered when first logging in. See https://github.com/ibgib/ibgib/wiki/identity for more info."))
+        |> assign(:ident_email_token_key, token)
         |> render("enterpin.html")
 
       # No pin is used so skip it and go directly to logging in.
