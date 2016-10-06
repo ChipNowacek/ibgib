@@ -864,7 +864,9 @@ defmodule WebGib.IbGibController do
 
       # No pin is used so skip it and go directly to logging in.
       {:ok, {conn, :skip_pin}} ->
-        ident(conn, %{"token" => token, "ident_pin" => ""})
+        ident(conn, %{"enterpin_form_data" =>
+                      %{"token" => token,
+                        "ident_pin" => ""}})
 
       # Oops
       {:error, reason} ->
