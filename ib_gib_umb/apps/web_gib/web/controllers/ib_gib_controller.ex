@@ -750,7 +750,7 @@ defmodule WebGib.IbGibController do
   # ----------------------------------------------------------------------------
   # Identity
   # ----------------------------------------------------------------------------
-  # The user can add multiple levels of identity. The user starts off with an
+  # The user can add multiple layers of identity. The user starts off with an
   # identity from the session. This is the analog to an "anonymous" identity.
   # The user can also add identity by logging in with a valid email. We will
   # allow for an optional small challenge, kind of like a one-time pin. We will
@@ -1017,7 +1017,7 @@ defmodule WebGib.IbGibController do
 
   defp add_identity_to_session(conn, email_addr) do
     with(
-      priv_data <- %{},
+      priv_data <- %{"email_addr" => email_addr},
       pub_data <- %{"email_addr" => email_addr},
       {:ok, identity_ib_gib} <- Identity.get_identity(priv_data, pub_data),
       identity_ib_gibs <- conn |> get_session(@ib_identity_ib_gibs_key),
