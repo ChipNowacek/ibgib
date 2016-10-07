@@ -12,10 +12,9 @@ defmodule WebGib.IbGibController do
   use IbGib.Constants, :validation
   use WebGib.Constants, :config
 
-
-
   alias IbGib.TransformFactory.Mut8Factory
   alias IbGib.Expression
+  alias IbGib.Auth.Identity
 
   # ----------------------------------------------------------------------------
   # Controller Commands
@@ -86,6 +85,7 @@ defmodule WebGib.IbGibController do
     end
 
     if result == :ok do
+      _ = Logger.debug("conn:\n#{inspect conn}" |> ExChalk.black |> ExChalk.bg_yellow |> ExChalk.bold)
       conn = result_term
       conn
       |> render("show.html")
@@ -981,7 +981,10 @@ defmodule WebGib.IbGibController do
       # Get token for email_addr and ident_pin_hash and compare.
       {:ok, got_token} <-
         WebGib.Data.get_ident_email_token(email_addr, ident_pin_hash),
-      {:ok, :ok} <- check_token_match(token, got_token)
+      {:ok, :ok} <- check_token_match(token, got_token),
+
+      # Token is valid, pin is valid, so add the identity if not already added.
+      {:ok, conn} <- add_identity_to_session(conn, email_addr)
     ) do
       {:ok, {conn, email_addr, src_ib_gib}}
     else
@@ -996,6 +999,29 @@ defmodule WebGib.IbGibController do
       {:ok, :ok}
     else
       {:error, @emsg_ident_email_token_mismatch}
+    end
+  end
+
+  defp add_identity_to_session(conn, email_addr) do
+    with(
+      priv_data <- %{},
+      pub_data <- %{"email_addr" => email_addr},
+      {:ok, identity_ib_gib} <- Identity.get_identity(priv_data, pub_data),
+      identity_ib_gibs <- conn |> get_session(@ib_identity_ib_gibs_key),
+      conn <-
+        (if Enum.member?(identity_ib_gibs, identity_ib_gib) do
+           conn
+         else
+           conn
+           |> put_session(@ib_identity_ib_gibs_key,
+                          identity_ib_gibs ++ [identity_ib_gib])
+         end)
+    ) do
+      {:ok, conn}
+    else
+      {:error, reason} when is_bitstring(reason) -> {:error, reason}
+      {:error, reason} -> {:error, inspect reason}
+      error -> {:error, inspect error}
     end
   end
 
