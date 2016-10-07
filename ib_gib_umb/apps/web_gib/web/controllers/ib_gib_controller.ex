@@ -10,6 +10,7 @@ defmodule WebGib.IbGibController do
   use WebGib.Web, :controller
 
   use IbGib.Constants, :validation
+  use WebGib.Constants, :validation
   use WebGib.Constants, :config
 
   alias IbGib.TransformFactory.Mut8Factory
@@ -820,15 +821,17 @@ defmodule WebGib.IbGibController do
       |> redirect(to: "/ibgib/#{redirect_ib_gib}")
     end
   end
-  # At this point, the user has clicked on the link and entered the pin.
+  # Last step: At this point, the user has clicked on the link and entered the
+  # pin. We will check the token again, the pin, and log in the user if valid,
+  # i.e. add email identity ib^gib to identity_ib_gibs in session.
   def ident(conn,
             %{"enterpin_form_data" =>
               %{"token" => token,
                 "ident_pin" => ident_pin}} = params)
     when is_bitstring(token) and is_bitstring(ident_pin) do
     Logger.metadata(x: :ident_email_login_token)
-    Logger.warn "Hey, we have a token and an ident_pin.\ntoken: #{token}\nident_pin: #{ident_pin}"
-    Logger.info "conn: #{inspect conn}"
+    # _ = Logger.warn "Hey, we have a token and an ident_pin.\ntoken: #{token}\nident_pin: #{ident_pin}"
+    _ = Logger.debug "conn: #{inspect conn}"
 
     case complete_email_impl(conn, token, ident_pin) do
       {:ok, {conn, email_addr, src_ib_gib}} ->
@@ -850,8 +853,7 @@ defmodule WebGib.IbGibController do
   # At this point, the user has clicked on the link but not yet entered the pin.
   def ident(conn, %{"token" => token} = params) do
     Logger.metadata(x: :ident_email_login_token)
-    Logger.warn "Hey, we have a token"
-    Logger.info "conn: #{inspect conn}"
+    _ = Logger.debug "conn: #{inspect conn}"
 
     case continue_email_impl(conn, token) do
       # A pin was provided, so we must first confirm the pin before logging in.
@@ -864,6 +866,7 @@ defmodule WebGib.IbGibController do
 
       # No pin is used so skip it and go directly to logging in.
       {:ok, {conn, :skip_pin}} ->
+        _ = Logger.debug "skip_pin"
         ident(conn, %{"enterpin_form_data" =>
                       %{"token" => token,
                         "ident_pin" => ""}})
@@ -879,6 +882,10 @@ defmodule WebGib.IbGibController do
   end
   def ident(conn, params) do
     Logger.error "Unknown ident params.\nconn:\n#{inspect conn}"
+    friendly_emsg = dgettext("error", @emsg_ident_email_failed)
+    conn
+    |> put_flash(:error, friendly_emsg)
+    |> redirect(to: "/ibgib/#{@root_ib_gib}")
   end
 
   # This is the first step in the workflow of logging in with email. This
@@ -923,15 +930,18 @@ defmodule WebGib.IbGibController do
       WebGib.Mailer.send_login_token(email_addr, token)
       {:ok, :ok}
     rescue
-      e in RuntimeError -> {:error, inspect e}
+      e in RuntimeError ->
+        Logger.error "WebGib.Mailer failed to send email. e:\n#{inspect e}"
+        {:error, inspect e}
     end
   end
 
+  # Login ident step 2 (ugh, this is an ugly controller.)
+  # At this point, the user has clicked on the link but not yet entered the pin.
   defp continue_email_impl(conn, token) do
     with(
       {:ok, :ok} <- check_timestamp_expiration(conn),
       # At this point, the token is in the URL, so no biggie putting in session.
-      # conn <- put_session(conn, @ident_email_token_key, token),
       pin_provided <- get_session(conn, @ident_email_pin_provided_key),
       pin_action <- (if pin_provided == "true", do: :enter_pin, else: :skip_pin)
     ) do
@@ -947,8 +957,8 @@ defmodule WebGib.IbGibController do
   defp check_timestamp_expiration(conn) do
     timestamp = get_session(conn, @ident_email_timestamp_key) || 0
     elapsed_ms =
-      # :erlang.system_time(:milli_seconds) - String.to_integer(timestamp)
       :erlang.system_time(:milli_seconds) - timestamp
+    # Logger.debug("timestamp: #{timestamp}.\nelapsed_ms: #{elapsed_ms}" |> ExChalk.bg_blue |> ExChalk.magenta)
     if elapsed_ms <= @max_ident_elapsed_ms do
       {:ok, :ok}
     else
@@ -984,6 +994,8 @@ defmodule WebGib.IbGibController do
       {:ok, :ok} <- check_token_match(token, got_token),
 
       # Token is valid, pin is valid, so add the identity if not already added.
+      # If the `email_addr` is new to ibgib, this will **create** the identity
+      # ib_gib first and then add the ib^gib to the session identity_ib_gibs.
       {:ok, conn} <- add_identity_to_session(conn, email_addr)
     ) do
       {:ok, {conn, email_addr, src_ib_gib}}
@@ -1001,6 +1013,7 @@ defmodule WebGib.IbGibController do
       {:error, @emsg_ident_email_token_mismatch}
     end
   end
+
 
   defp add_identity_to_session(conn, email_addr) do
     with(
