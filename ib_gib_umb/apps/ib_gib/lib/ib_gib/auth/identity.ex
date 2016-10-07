@@ -255,6 +255,7 @@ defmodule IbGib.Auth.Identity do
   defp update_data(identity_info, identity_data, identity, identity_ib_gib)
     when is_map(identity_info) and is_map(identity_data) and
          is_pid(identity) and is_bitstring(identity_ib_gib) do
+           _ = Logger.debug("updating data...maybe. identity_info:\n#{inspect identity_info, pretty: true}\nidentity_ib_gib: #{identity_ib_gib}" |> ExChalk.bg_green |> ExChalk.black)
     if Map.equal?(identity_info[:data], identity_data) do
       _ = Logger.debug "identity_info up-to-date"
       {:ok, identity_ib_gib}

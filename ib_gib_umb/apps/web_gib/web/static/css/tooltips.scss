@@ -38,6 +38,15 @@
   @extend %ibph-tooltip-hover;
 }
 
+.ib-tooltip .ib-tooltiptext-smallfont {
+  @include ibmx-tooltiptext(150px);
+  font-size: 8px;
+  cursor: default;
+}
+.ib-tooltip:hover .ib-tooltiptext-smallfont {
+  @extend %ibph-tooltip-hover;
+}
+
 .ib-tooltip-big {
   @extend %ibph-tooltip;
 }

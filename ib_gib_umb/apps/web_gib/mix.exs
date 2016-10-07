@@ -25,8 +25,8 @@ defmodule WebGib.Mixfile do
   # Type `mix help compile.app` for more information.
   def application do
     [mod: {WebGib, []},
-     applications: [:phoenix, :phoenix_pubsub, :phoenix_html, :cowboy, :logger, :gettext,
-                    :phoenix_ecto, :postgrex, :random_gib, :ib_gib]]
+     applications: [:phoenix, :phoenix_pubsub, :phoenix_html, :cowboy, :logger,
+      :gettext, :phoenix_ecto, :postgrex, :random_gib, :ib_gib, :mailgun]]
   end
 
   # Specifies which paths to compile per environment.
@@ -47,7 +47,9 @@ defmodule WebGib.Mixfile do
      {:cowboy, "~> 1.0"},
      {:random_gib, in_umbrella: true},
      {:ib_gib, in_umbrella: true},
-     {:marker, "~> 2.0"}
+     {:marker, "~> 2.0"},
+     {:mailgun, github: "bill-mybiz/mailgun", branch: "master", override: true},
+     {:exchalk, "~> 1.0.1"}
     ]
   end
 

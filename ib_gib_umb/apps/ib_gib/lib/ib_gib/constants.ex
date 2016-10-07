@@ -79,9 +79,13 @@ defmodule IbGib.Constants do
 
   def validation do
     quote do
+      @min_email_addr_size 5
+      @max_email_addr_size 63
+      @regex_valid_email_addr ~r/^[\w][\w+\.]*(?<=[\w])[]@[\w][\w\.]*\.[\w]+$/
+
       @max_comment_text_size 127
       @min_link_text_size 10 # http://a.b
-      @max_link_text_size 1024
+      @max_link_text_size 255
     end
   end
 
@@ -159,6 +163,13 @@ defmodule IbGib.Constants do
 
       def emsg_not_found do
         "The item was not found. :-/"
+      end
+
+      def emsg_not_found(what) when is_bitstring(what) do
+        "The item (#{what}) was not found. :-/"
+      end
+      def emsg_not_found(what) do
+        "The item (#{inspect what}) was not found. :-/"
       end
 
       def emsg_hash_mismatch do

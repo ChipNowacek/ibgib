@@ -25,14 +25,6 @@ defmodule WebGib.Router do
     pipe_through :browser # Use the default browser stack
 
     get "/", PageController, :index
-    # post "/", PageController, :index
-
-    # get "/ibgib", IbGibController, :index
-    # post "/ibgib/login", IbGibController, :login
-    # get "/ibgib/:ib_or_ib_gib", IbGibController, :show
-    #
-    # get "/ibgib/api/fork", IbGibController, :fork
-    # get "/ibgib/api/mut8", IbGibController, :mut8
   end
 
   scope "/ibgib", WebGib do
@@ -41,14 +33,13 @@ defmodule WebGib.Router do
     get "/", IbGibController, :index
     post "/", IbGibController, :index
     get "/:ib_or_ib_gib", IbGibController, :show
+    get "/ident/:token", IbGibController, :ident
 
     post "/fork", IbGibController, :fork
     post "/comment", IbGibController, :comment
     post "/pic", IbGibController, :pic
     post "/link", IbGibController, :link
-
-    # get "/login", IbGibController, :login
-    # post "/login", IbGibController, :login
+    post "/ident", IbGibController, :ident
   end
 
   scope "/api", WebGib do
@@ -59,11 +50,6 @@ defmodule WebGib.Router do
     get "/ibgib/:ib_gib", IbGibController, :get
     get "/ibgib/d3/:ib_gib", IbGibController, :getd3
   end
-
-  # Other scopes may use custom stacks.
-  # scope "/api", WebGib do
-  #   pipe_through :api
-  # end
 
   # socket "/ws", WebGib do
   #   channel "rooms:*", RoomChannel

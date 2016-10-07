@@ -7,7 +7,7 @@ use Mix.Config
 
 # General application configuration
 config :web_gib,
-  ecto_repos: [WebGib.Repo]
+  ecto_repos: [WebGib.Data.Repo]
 
 # Configures the endpoint
 config :web_gib, WebGib.Endpoint,

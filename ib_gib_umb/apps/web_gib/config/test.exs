@@ -10,7 +10,7 @@ config :web_gib, WebGib.Endpoint,
 config :logger, level: :debug
 
 # Configure your database
-config :web_gib, WebGib.Repo,
+config :web_gib, WebGib.Data.Repo,
   adapter: Ecto.Adapters.Postgres,
   username: "postgres",
   password: "postgres",

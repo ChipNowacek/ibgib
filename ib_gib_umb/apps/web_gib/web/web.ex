@@ -32,7 +32,7 @@ defmodule WebGib.Web do
 
       require Logger
 
-      alias WebGib.Repo
+      alias WebGib.Data.Repo
       import Ecto
       import Ecto.Query
 
@@ -74,7 +74,7 @@ defmodule WebGib.Web do
     quote do
       use Phoenix.Channel
 
-      alias WebGib.Repo
+      alias WebGib.Data.Repo
       import Ecto
       import Ecto.Query
       import WebGib.Gettext
