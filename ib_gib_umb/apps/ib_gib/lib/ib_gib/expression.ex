@@ -1,4 +1,8 @@
 defmodule IbGib.Expression do
+  # Style warning: This module is waaay too big right now. It has been
+  # a journey to simply produce the behavior as concisely as I can. Now that
+  # the large bulk of it is complete, I am slowly refactoring. (just did authz)
+
   @moduledoc """
   This is the primary module right now for the IbGib engine. Basically an
   `IbGib.Expression` encapsulates functionality for "expressing" ib_gib.
@@ -180,7 +184,7 @@ defmodule IbGib.Expression do
   alias IbGib.{TransformFactory, Helper, TransformFactory.Mut8Factory}
   alias IbGib.UnauthorizedError
   alias IbGib.TransformBuilder, as: TB
-  alias IbGib.Auth.Authorizer
+  alias IbGib.Auth.Authz
 
   import IbGib.Macros
 
@@ -316,7 +320,7 @@ defmodule IbGib.Expression do
     _ = Logger.debug "a[:rel8ns]: #{inspect a[:rel8ns]}"
 
     # First authorize
-    b_identities = Authorizer.authorize_apply_b(:fork, a[:rel8ns], b[:rel8ns])
+    b_identities = Authz.authorize_apply_b(:fork, a[:rel8ns], b[:rel8ns])
 
     fork_data = b[:data]
 
@@ -377,7 +381,7 @@ defmodule IbGib.Expression do
     _ = Logger.debug "a[:rel8ns]: #{inspect a[:rel8ns]}"
 
     # First authorize
-    b_identities = Authorizer.authorize_apply_b(:mut8, a[:rel8ns], b[:rel8ns])
+    b_identities = Authz.authorize_apply_b(:mut8, a[:rel8ns], b[:rel8ns])
 
     # We're going to borrow `a` as our own info for the new thing. We're just
     # going to change its `gib`, and `relations`, and its `data` since it's
@@ -506,7 +510,7 @@ defmodule IbGib.Expression do
     _ = Logger.debug "a[:rel8ns]: #{inspect a[:rel8ns]}"
 
     # First authorize
-    b_identities = Authorizer.authorize_apply_b(:rel8, a[:rel8ns], b[:rel8ns])
+    b_identities = Authz.authorize_apply_b(:rel8, a[:rel8ns], b[:rel8ns])
 
     # Make sure that we are the correct src_ib_gib. Fail fast if we aren't,
     # since we're within a new process attempting to init.
@@ -608,7 +612,7 @@ defmodule IbGib.Expression do
 
   defp apply_query(a, b) do
     _ = Logger.debug "a: #{inspect a}\nb: #{inspect b}"
-    b_identities = Authorizer.authorize_apply_b(:query, a[:rel8ns], b[:rel8ns])
+    b_identities = Authz.authorize_apply_b(:query, a[:rel8ns], b[:rel8ns])
 
     query_options = b[:data]["options"]
     result = IbGib.Data.query(query_options)
@@ -756,9 +760,8 @@ defmodule IbGib.Expression do
   # being precise.
 
 
-
   # ----------------------------------------------------------------------------
-  # Client API - Meta
+  # Express Implementation
   # ----------------------------------------------------------------------------
 
   defp express_impl(identity_ib_gibs, a_ib_gib, a_info, b_ib_gib, _state) do
@@ -1793,17 +1796,6 @@ defmodule IbGib.Expression do
     end
   end
 
-  # defp log_yo(:debug, msg) do
-  #   _ = Logger.warn "This log msg is for dev purposes only!!! Should not be run in prod!!!"
-  #   _ = Logger.debug msg, [pretty: true]
-  #   {:ok, :ok}
-  # end
-  # defp log_yo(:warn, msg) do
-  #   _ = Logger.warn "This log msg is for dev purposes only!!! Should not be run in prod!!!"
-  #   _ = Logger.warn msg, [pretty: true]
-  #   {:ok, :ok}
-  # end
-
   defp query_impl(identity_ib_gibs, query_options, state)
     when is_map(query_options) do
     _ = Logger.debug "_state_: #{inspect state}"
@@ -1846,8 +1838,4 @@ defmodule IbGib.Expression do
       error -> {:error, "#{inspect error}"}
     end
   end
-
-  # ----------------------------------------------------------------------------
-  # Express Implementation
-  # ----------------------------------------------------------------------------
 end
