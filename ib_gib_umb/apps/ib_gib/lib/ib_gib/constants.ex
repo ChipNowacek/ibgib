@@ -74,6 +74,7 @@ defmodule IbGib.Constants do
       # I certainly don't know if it's definitely the right thing to do!
       @bootstrap_identity_ib_gib @root_ib_gib
       @identity_ib_gib "identity#{@delim}gib"
+      @identity_type_delim "_"
     end
   end
 
@@ -94,12 +95,12 @@ defmodule IbGib.Constants do
     quote do
       @test_identities_1 [
         @bootstrap_identity_ib_gib,
-        "test identity1#{@delim}ibGib_gib_ibGib"
+        "session_test identity1#{@delim}ibGib_gib_ibGib"
       ]
       @test_identities_2 [
         @bootstrap_identity_ib_gib,
-        "test identity1#{@delim}ibGib_gib_ibGib",
-        "test identity2222222222#{@delim}ibGib_gib_ibGib"
+        "session_test identity1#{@delim}ibGib_gib_ibGib",
+        "session_test identity2222222222#{@delim}ibGib_gib_ibGib"
       ]
     end
   end

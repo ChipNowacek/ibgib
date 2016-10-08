@@ -817,7 +817,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     {:ok, root} = IbGib.Expression.Supervisor.start_expression()
 
     priv_data = %{"yo" => "this is some private data hrmm"}
-    pub_data = %{"public" => "public data hizzah"}
+    pub_data = %{"type" => "session", "public" => "public data hizzah"}
     {:ok, identity_ib_gib} = Identity.get_identity(priv_data, pub_data)
 
     {:ok, identity} =
@@ -873,7 +873,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     {:ok, root} = IbGib.Expression.Supervisor.start_expression()
 
     priv_data = %{"yo" => "this is some private data hrmm"}
-    pub_data = %{"public" => "public data hizzah"}
+    pub_data = %{"type" => "session", "public" => "public data hizzah"}
     {:ok, identity_ib_gib} = Identity.get_identity(priv_data, pub_data)
     {:ok, identity} = IbGib.Expression.Supervisor.start_expression(identity_ib_gib)
     identity_info = identity |> get_info!
@@ -882,7 +882,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     test_identity_ibgibs = identity_identities ++ [identity_ib_gib]
 
     priv_data2 = %{"yo2" => "this is some private data hrmm2"}
-    pub_data2 = %{"public2" => "public data hizzah2"}
+    pub_data2 = %{"type" => "session", "public2" => "public data hizzah2"}
     {:ok, identity_ib_gib2} = Identity.get_identity(priv_data2, pub_data2)
     {:ok, identity2} = IbGib.Expression.Supervisor.start_expression(identity_ib_gib2)
 
@@ -943,7 +943,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     {:ok, root} = IbGib.Expression.Supervisor.start_expression()
 
     priv_data = %{"yo" => "this is some private data hrmm"}
-    pub_data = %{"public" => "public data hizzah"}
+    pub_data = %{"type" => "session", "public" => "public data hizzah"}
     {:ok, identity_ib_gib} = Identity.get_identity(priv_data, pub_data)
     {:ok, identity} = IbGib.Expression.Supervisor.start_expression(identity_ib_gib)
     identity_info = identity |> get_info!
@@ -952,7 +952,7 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     test_identity_ibgibs = identity_identities ++ [identity_ib_gib]
 
     priv_data2 = %{"yo2" => "this is some private data hrmm2"}
-    pub_data2 = %{"public2" => "public data hizzah2"}
+    pub_data2 = %{"type" => "session", "public2" => "public data hizzah2"}
     {:ok, identity_ib_gib2} = Identity.get_identity(priv_data2, pub_data2)
     {:ok, identity2} = IbGib.Expression.Supervisor.start_expression(identity_ib_gib2)
 

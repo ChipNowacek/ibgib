@@ -42,6 +42,7 @@ defmodule IbGib.Auth.AuthTest do
 
     ip = "1.2.3.4"
     pub_data = %{
+      "type" => "session",
       "ip" => ip
     }
 
@@ -62,16 +63,17 @@ defmodule IbGib.Auth.AuthTest do
     # This is the token that we would generate in the email sent to the user.
     # token = RandomGib.Get.some_characters(30)
     # This is the email address we send the login link to
-    email = "example@emailaddr.essyoo"
+    email_addr = "example@emailaddr.essyoo"
 
     priv_data = %{
-      "email" => email
+      "email_addr" => email_addr
     }
 
     ip = "1.2.3.4"
     pub_data = %{
+      "type" => "email",
       "ip" => ip,
-      "email" => email
+      "email_addr" => email_addr
     }
 
     {:ok, identity_ib_gib} = Identity.get_identity(priv_data, pub_data)
@@ -225,6 +227,7 @@ defmodule IbGib.Auth.AuthTest do
     }
     ip = "1.2.3.4"
     pub_data = %{
+      "type" => "session",
       "ip" => ip
     }
     {:ok, new_identity_ib_gib} = Identity.get_identity(priv_data, pub_data)

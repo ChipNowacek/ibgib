@@ -455,4 +455,12 @@ defmodule IbGib.Helper do
     {:error, emsg_invalid_args(identity_ib_gibs)}
   end
 
+  def default_handle_error(error) do
+    case error do
+      {:error, reason} when is_bitstring(reason) -> {:error, reason}
+      {:error, reason} -> {:error, inspect reason}
+      err -> {:error, inspect err}
+    end
+  end
+
 end

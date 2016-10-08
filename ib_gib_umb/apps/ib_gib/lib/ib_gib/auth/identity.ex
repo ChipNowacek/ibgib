@@ -101,17 +101,9 @@ defmodule IbGib.Auth.Identity do
   @spec get_identity(map, map) :: {:ok, String.t} | {:error, any}
   def get_identity(priv_data, pub_data)
     when is_map(priv_data) and is_map(pub_data) do
-      _ = Logger.warn "get_identity yooooooooooooooooooooo"
-      _ = Logger.warn "get_identity yooooooooooooooooooooo"
-      _ = Logger.warn "get_identity yooooooooooooooooooooo"
-      _ = Logger.warn "get_identity yooooooooooooooooooooo"
-      _ = Logger.warn "get_identity yooooooooooooooooooooo"
-      _ = Logger.warn "get_identity yooooooooooooooooooooo"
-      _ = Logger.warn "get_identity yooooooooooooooooooooo"
-      _ = Logger.warn "get_identity yoooooooooooooooooooooabcasdf"
-      _ = Logger.warn "get_identity yooooooooooooooooooooo"
+      _ = Logger.debug "get_identity yooooooooooooooooooooo"
     with {:ok, root_identity} <- IbGib.Expression.Supervisor.start_expression({"identity", "gib"}),
-      {:ok, identity_ib} <- generate_identity_ib(priv_data),
+      {:ok, identity_ib} <- generate_identity_ib(priv_data, pub_data),
       {:ok, latest} <- get_latest_identity_ib_gib(identity_ib, root_identity),
       {:ok, {identity_ib_gib, identity_info, identity}} <-
         create_identity_if_needed(latest, root_identity, identity_ib),
@@ -126,41 +118,51 @@ defmodule IbGib.Auth.Identity do
     {:error, emsg_invalid_args(unknown_arg)}
   end
 
-
   @doc """
   Gets the identity ib based on the given `identity_id`.
 
   ## Examples
-      iex> identity_info = %{"some_key" => "some-id_here234987SD(^&@{%})"}
-      iex> IbGib.Auth.Identity.generate_identity_ib(identity_info)
-      {:ok, "93B8AA0EE0495D24CEBE1322AC705B0143945CA14B92D6B1B840630AC3251F3F"}
+      iex> priv_data = %{"session_id" => "some-id_here234987SD(^&@{%})"}
+      ...> pub_data = %{"type" => "session"}
+      ...> IbGib.Auth.Identity.generate_identity_ib(priv_data, pub_data)
+      {:ok, "session_B5A62720F3D23B9140BC53581115215A6B647B30D0644A4D975DC5D66DE75696"}
+
+      iex> priv_data = %{"email_addr" => "ib@gib.yo"}
+      ...> pub_data = %{"type" => "email", "email_addr" => "ib@gib.yo"}
+      ...> IbGib.Auth.Identity.generate_identity_ib(priv_data, pub_data)
+      {:ok, "email_DA740C768F924F0C7F7695CFEF89A73A0936420FF7C9D16E2F3CDC7E6A3A0060"}
 
   Returns {:ok, identity_ib} if ok, else {:error, reason}
   """
-  @spec generate_identity_ib(map) :: {:ok, String.t} | {:error, String.t}
-  def generate_identity_ib(identity_details)
-    when is_map(identity_details) do
-    identity_ib = hash(identity_details)
-    if identity_ib != :error do
+  @spec generate_identity_ib(map, map) :: {:ok, String.t} | {:error, String.t}
+  def generate_identity_ib(priv_data, pub_data)
+    when is_map(priv_data) and is_map(pub_data) do
+    with(
+      # Get the identity type, e.g. "session", "email"
+      {:ok, identity_type} <- get_identity_type(pub_data),
+
+      # Get the identity hash from `priv_data`
+      priv_data_hash when priv_data_hash != :error <- hash(priv_data),
+
+      # Squash together to form the `ib`, e.g. "email_ABC123", "session_DEF456"
+      identity_ib <- identity_type <> @identity_type_delim <> priv_data_hash
+    ) do
       {:ok, identity_ib}
     else
-      {:error, emsg_hash_problem}
+      error -> default_handle_error(error)
     end
   end
-  def generate_identity_ib(unknown_arg) do
-    {:error, emsg_invalid_args(unknown_arg)}
+  def generate_identity_ib(priv_data, pub_data) do
+    {:error, emsg_invalid_args([priv_data, pub_data])}
   end
 
-  @doc """
-  Bang version of `generate_identity_ib/1`.
-
-  ## Examples
-      iex> identity_info = %{"some_key" => "some-id_here234987SD(^&@{%})"}
-      iex> IbGib.Auth.Identity.generate_identity_ib!(identity_info)
-      "93B8AA0EE0495D24CEBE1322AC705B0143945CA14B92D6B1B840630AC3251F3F"
-  """
-  def generate_identity_ib!(identity_id) do
-    bang(generate_identity_ib(identity_id))
+  defp get_identity_type(pub_data) do
+    type = Map.get(pub_data, "type")
+    if is_bitstring(type) and String.length(type) > 0 do
+      {:ok, type}
+    else
+      {:error, "No type specified"}
+    end
   end
 
   @doc """

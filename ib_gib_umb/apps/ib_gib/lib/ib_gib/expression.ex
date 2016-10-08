@@ -1,4 +1,8 @@
 defmodule IbGib.Expression do
+  # Style warning: This module is waaay too big right now. It has been
+  # a journey to simply produce the behavior as concisely as I can. Now that
+  # the large bulk of it is complete, I am slowly refactoring. (just did authz)
+
   @moduledoc """
   This is the primary module right now for the IbGib engine. Basically an
   `IbGib.Expression` encapsulates functionality for "expressing" ib_gib.
@@ -169,16 +173,23 @@ defmodule IbGib.Expression do
     Git content addressing/hashing + tons more.
   """
 
-  use GenServer
-  require Logger
-  import Enum
+  # ----------------------------------------------------------------------------
+  # alias, import, require, use
+  # ----------------------------------------------------------------------------
 
-  use IbGib.Constants, :ib_gib
-  use IbGib.Constants, :error_msgs
-  import IbGib.Macros
+  import Enum
+  require Logger
+  use GenServer
+
   alias IbGib.{TransformFactory, Helper, TransformFactory.Mut8Factory}
   alias IbGib.UnauthorizedError
   alias IbGib.TransformBuilder, as: TB
+  alias IbGib.Auth.Authz
+
+  import IbGib.Macros
+
+  use IbGib.Constants, :ib_gib
+  use IbGib.Constants, :error_msgs
 
   # ----------------------------------------------------------------------------
   # Constructors
@@ -309,7 +320,7 @@ defmodule IbGib.Expression do
     _ = Logger.debug "a[:rel8ns]: #{inspect a[:rel8ns]}"
 
     # First authorize
-    b_identities = authorize_apply_b(:fork, a[:rel8ns], b[:rel8ns])
+    b_identities = Authz.authorize_apply_b(:fork, a[:rel8ns], b[:rel8ns])
 
     fork_data = b[:data]
 
@@ -370,7 +381,7 @@ defmodule IbGib.Expression do
     _ = Logger.debug "a[:rel8ns]: #{inspect a[:rel8ns]}"
 
     # First authorize
-    b_identities = authorize_apply_b(:mut8, a[:rel8ns], b[:rel8ns])
+    b_identities = Authz.authorize_apply_b(:mut8, a[:rel8ns], b[:rel8ns])
 
     # We're going to borrow `a` as our own info for the new thing. We're just
     # going to change its `gib`, and `relations`, and its `data` since it's
@@ -499,7 +510,7 @@ defmodule IbGib.Expression do
     _ = Logger.debug "a[:rel8ns]: #{inspect a[:rel8ns]}"
 
     # First authorize
-    b_identities = authorize_apply_b(:rel8, a[:rel8ns], b[:rel8ns])
+    b_identities = Authz.authorize_apply_b(:rel8, a[:rel8ns], b[:rel8ns])
 
     # Make sure that we are the correct src_ib_gib. Fail fast if we aren't,
     # since we're within a new process attempting to init.
@@ -601,7 +612,7 @@ defmodule IbGib.Expression do
 
   defp apply_query(a, b) do
     _ = Logger.debug "a: #{inspect a}\nb: #{inspect b}"
-    b_identities = authorize_apply_b(:query, a[:rel8ns], b[:rel8ns])
+    b_identities = Authz.authorize_apply_b(:query, a[:rel8ns], b[:rel8ns])
 
     query_options = b[:data]["options"]
     result = IbGib.Data.query(query_options)
@@ -744,122 +755,13 @@ defmodule IbGib.Expression do
   # not self-tyranny. Then you will be working *for* others who are working
   # *for* you. If you reject Jesus' teachings, then you are condemning yourself
   # to subjugation to others in Egypt, in the land of slavery.
-
-  # Check to make sure that our identities are valid (authorization)
-  # The passed in identities must contain **all** of the existing identities.
-  # Otherwise, the caller does not have the proper authorization, and should
-  # fork their own version before trying to mut8.
-  # Note also that this will **ADD** any other identities that are passed in,
-  # thus raising the level of authorization required for future mut8ns.
-  # If this is invalid, then we are going to fail fast and crash, which is
-  # what we want, since this is in the new process that was created (somehow)
-  # by an unauthorized caller.
-  # Returns b_identities if authorized.
-  # Raises exception if unauthorized (fail fast is proper).
-  # b must always have at least one identity
-  @spec authorize_apply_b(atom, map, map) :: list(String.t)
-  defp authorize_apply_b(which, a_rel8ns, b_rel8ns)
-  defp authorize_apply_b(which, a_rel8ns, b_rel8ns)
-    when which == :fork or which == :query do
-    # When authorizing a fork or query, we only care that both a and b _have_
-    # valid identities, because anyone can fork/read anything else.
-    # Authorization here is really just checking for error in code or more
-    # nefarious monkey business and ensuring that whoever could be doing said
-    # monkey business at least has some identity.
-    Logger.metadata([x: which])
-    _ = Logger.debug "which: #{which}"
-    _ = Logger.warn "a_rel8ns: #{inspect a_rel8ns}"
-    _ = Logger.warn "b_rel8ns: #{inspect b_rel8ns}"
-
-    a_has_identity =
-      Map.has_key?(a_rel8ns, "identity") and
-      length(a_rel8ns["identity"]) > 0 and
-      Enum.all?(a_rel8ns["identity"], &Helper.valid_identity?/1)
-      # Enum.all?(a_rel8ns["identity"], &(Helper.valid_identity?(&1)))
-    b_has_identity =
-      Map.has_key?(b_rel8ns, "identity") and
-      length(b_rel8ns["identity"]) > 0 and
-      Enum.all?(b_rel8ns["identity"], &Helper.valid_identity?/1)
-      # Enum.all?(b_rel8ns["identity"], &(Helper.valid_identity?(&1)))
-
-    if a_has_identity and b_has_identity do
-      b_identity = b_rel8ns["identity"]
-    else
-      _ = Logger.error "DOH! Unidentified #{which} apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
-      expected = "a_has_identity: true, b_has_identity: true"
-      actual = "a_has_identity: #{a_has_identity},
-                b_has_identity: #{b_has_identity}"
-      raise UnauthorizedError, message:
-        emsg_invalid_authorization(expected, actual)
-    end
-  end
-  defp authorize_apply_b(which, a_rel8ns, b_rel8ns) when is_atom(which) do
-    Logger.metadata([x: which])
-    _ = Logger.debug "which: #{inspect which}"
-    _ = Logger.warn "a_rel8ns: #{inspect a_rel8ns}"
-    _ = Logger.warn "b_rel8ns: #{inspect b_rel8ns}"
-    a_has_identity =
-      Map.has_key?(a_rel8ns, "identity") and
-      # Every identity rel8ns should have ib^gib
-      length(a_rel8ns["identity"]) > 0 and
-      Enum.all?(a_rel8ns["identity"], &Helper.valid_identity?/1)
-    b_has_identity =
-      Map.has_key?(b_rel8ns, "identity") and
-      # Every identity rel8ns should have ib^gib
-      length(b_rel8ns["identity"]) > 0
-      Enum.all?(b_rel8ns["identity"], &Helper.valid_identity?/1)
-
-    case {a_has_identity, b_has_identity} do
-      {true, true} ->
-        # both have identities, so the a must be a subset or equal to b
-        b_contains_all_of_a =
-          Enum.reduce(a_rel8ns["identity"], true, fn(a_ib_gib, acc) ->
-            acc and Enum.any?(b_rel8ns["identity"], &(&1 == a_ib_gib))
-          end)
-        if b_contains_all_of_a do
-          # return the b identities, as they may be more restrictive
-          b_identity = b_rel8ns["identity"]
-        else
-          # unauthorized: a requires auth, b does not have any/all
-          expected = a_rel8ns["identity"]
-          actual = b_rel8ns["identity"]
-          _ = Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
-          raise UnauthorizedError, message:
-            emsg_invalid_authorization(expected, actual)
-        end
-
-      {false, true} ->
-        # unauthorized: b is required to have authorization and doesn't
-        # expected: [something], actual: nil
-        expected = "a_has_identity: true, b_has_identity: true"
-        actual = "a_has_identity: false, b_has_identity: true"
-        _ = Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
-        raise UnauthorizedError, message:
-          emsg_invalid_authorization(expected, actual)
-
-      {true, false} ->
-        # unauthorized: a requires auth, b has none
-        # expected: a_identity, actual: nil
-        expected = a_rel8ns["identity"]
-        actual = nil
-        _ = Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
-        raise UnauthorizedError, message:
-          emsg_invalid_authorization(expected, actual)
-
-      {false, false} ->
-        # unauthorized: b is required to have authorization and doesn't
-        # expected: [something], actual: nil
-        expected = "a_has_identity: true, b_has_identity: true"
-        actual = "a_has_identity: false, b_has_identity: false"
-        _ = Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
-        raise UnauthorizedError, message:
-          emsg_invalid_authorization(expected, actual)
-    end
-  end
+  # Christianity is NOT about dogma. It's about logic. Christ literally embodies
+  # the living code of existence. I'm not being melodramatic here. I'm only
+  # being precise.
 
 
   # ----------------------------------------------------------------------------
-  # Client API - Meta
+  # Express Implementation
   # ----------------------------------------------------------------------------
 
   defp express_impl(identity_ib_gibs, a_ib_gib, a_info, b_ib_gib, _state) do
@@ -1894,17 +1796,6 @@ defmodule IbGib.Expression do
     end
   end
 
-  # defp log_yo(:debug, msg) do
-  #   _ = Logger.warn "This log msg is for dev purposes only!!! Should not be run in prod!!!"
-  #   _ = Logger.debug msg, [pretty: true]
-  #   {:ok, :ok}
-  # end
-  # defp log_yo(:warn, msg) do
-  #   _ = Logger.warn "This log msg is for dev purposes only!!! Should not be run in prod!!!"
-  #   _ = Logger.warn msg, [pretty: true]
-  #   {:ok, :ok}
-  # end
-
   defp query_impl(identity_ib_gibs, query_options, state)
     when is_map(query_options) do
     _ = Logger.debug "_state_: #{inspect state}"
@@ -1947,8 +1838,4 @@ defmodule IbGib.Expression do
       error -> {:error, "#{inspect error}"}
     end
   end
-
-  # ----------------------------------------------------------------------------
-  # Express Implementation
-  # ----------------------------------------------------------------------------
 end
