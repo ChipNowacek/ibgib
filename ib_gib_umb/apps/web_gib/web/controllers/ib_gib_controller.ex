@@ -1017,8 +1017,14 @@ defmodule WebGib.IbGibController do
 
   defp add_identity_to_session(conn, email_addr) do
     with(
+      # Thanks http://blog.danielberkompas.com/elixir/2015/06/16/rate-limiting-a-phoenix-api.html
+      ip <- conn.remote_ip |> Tuple.to_list |> Enum.join("."),
       priv_data <- %{"email_addr" => email_addr},
-      pub_data <- %{"email_addr" => email_addr},
+      pub_data <- %{
+                    "type" => "email",
+                    "email_addr" => email_addr,
+                    "ip" => ip
+                  },
       {:ok, identity_ib_gib} <- Identity.get_identity(priv_data, pub_data),
       identity_ib_gibs <- conn |> get_session(@ib_identity_ib_gibs_key),
       conn <-

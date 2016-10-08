@@ -63,6 +63,7 @@ defmodule WebGib.Plugs.IbGibIdentity do
     # Thanks http://blog.danielberkompas.com/elixir/2015/06/16/rate-limiting-a-phoenix-api.html
     ip = conn.remote_ip |> Tuple.to_list |> Enum.join(".")
     pub_data = %{
+      "type" => "session",
       "ip" => ip
     }
 
