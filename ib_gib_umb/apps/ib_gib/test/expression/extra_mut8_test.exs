@@ -1,19 +1,20 @@
 defmodule IbGib.Expression.ExtraMut8Test do
   @moduledoc """
   I'm putting additional mut8 tests here. This includes
-  `Mut8Factory.add_or_update_key/3`, `Mut8Factory.remove_key/2`, etc.
+  `IbGib.Transform.Mut8.Factory.add_or_update_key/3`, `IbGib.Transform.Mut8.Factory.remove_key/2`, etc.
 
   The default mut8 transform adds/overwrites existing keys only.
   """
 
 
-  use ExUnit.Case
   require Logger
+  use ExUnit.Case
 
+  alias IbGib.Helper
+  alias IbGib.Transform.Mut8.Factory, as: Mut8Factory
+  import IbGib.Expression
   use IbGib.Constants, :ib_gib
   use IbGib.Constants, :test
-  alias IbGib.{Helper, TransformFactory.Mut8Factory}
-  import IbGib.Expression
 
   setup context do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(IbGib.Data.Repo)

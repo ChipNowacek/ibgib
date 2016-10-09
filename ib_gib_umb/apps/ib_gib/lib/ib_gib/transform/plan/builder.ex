@@ -1,4 +1,4 @@
-defmodule IbGib.TransformBuilder do
+defmodule IbGib.Transform.Plan.Builder do
   @moduledoc """
   This factory module generates ib_gib transform info maps for the fundamental
   transforms, composite transforms, and queries:
@@ -85,6 +85,7 @@ defmodule IbGib.TransformBuilder do
 
   require Logger
 
+  import IbGib.Transform.Plan.Helper
   import IbGib.Helper
   import IbGib.Macros
 
@@ -240,46 +241,6 @@ defmodule IbGib.TransformBuilder do
   def add_rel8(plan, name, other_ib_gib, rel8ns) do
     invalid_args([plan, name, other_ib_gib, rel8ns])
   end
-
-
-  @doc """
-  Counts the number of step infos in the given steps list.
-
-  ## Examples
-  (The counting only relies on the "i" entry in the map, so other data is not
-  provided here.)
-
-      iex> steps = [%{"i" => "1"}]
-      ...> IbGib.TransformBuilder.count_steps(steps)
-      1
-
-      iex> steps = [%{"i" => "1"}, %{"i" => "2"}]
-      ...> IbGib.TransformBuilder.count_steps(steps)
-      2
-  """
-  def count_steps(steps)
-  def count_steps(steps) when is_nil(steps) do
-    0
-  end
-  def count_steps(steps) when is_map(steps) do
-    # 1-item lists get morphed into the item for some reason in elixir. :-/
-    count_steps([steps])
-  end
-  def count_steps(steps) when is_list(steps) and length(steps) == 0 do
-    0
-  end
-  def count_steps(steps) when is_list(steps) do
-    steps
-    |> Enum.reduce(0, fn(step, acc) ->
-          i = String.to_integer(step["i"])
-          if i > acc, do: i, else: acc
-       end)
-  end
-  def count_steps(steps) do
-    emsg = emsg_invalid_args(steps)
-    _ = Logger.error emsg
-    raise(emsg)
-  end
   # NOT DRY>>>>NOOOOOOOOOOO
   # THIS IS DUPLICATED IN TRANSFORM_FACTORY/BUILDER
   # Stamping a gib means that it is "official", since a user doesn't (shouldn't)
@@ -298,64 +259,5 @@ defmodule IbGib.TransformBuilder do
     _ = Logger.warn "Invalid args: #{inspect [gib, is_needed]}"
     gib
   end
-
-  # @doc """
-  # """
-  # def with_data(transform_type, data)
-  # def with_data(:fork, %{"dest_ib" => dest_ib, "src" => src} = data) do
-  #
-  # end
-  # def with_data(:fork, %{"src" => src} = data) do
-  #
-  # end
-  # def with_data(:fork, %{"dest_ib" => dest_ib} = data) do
-  #
-  # end
-  # def with_data(:fork, data) do
-  #   emsg = emsg_invalid_args([:fork, data])
-  #   _ = Logger.error emsg
-  #   {:error, emsg}
-  # end
-  # def with_data(:mut8, %{"src" => src, "new_data" => new_data} = data) do
-  #
-  # end
-  # def with_data(:mut8, %{"src" => src} = data) do
-  #
-  # end
-  # def with_data(:rel8,
-  #               %{
-  #                 "src" => src,
-  #                 "other" => other,
-  #                 "rel8ns" => rel8ns
-  #                 } = data) do
-  #
-  # end
-  # def with_data(:rel8,
-  #               %{
-  #                 "src" => src,
-  #                 "other" => other,
-  #                 } = data) do
-  #
-  # end
-  # def with_data(:rel8,
-  #               %{
-  #                 "other" => other,
-  #                 "rel8ns" => rel8ns
-  #                 } = data) do
-  #
-  # end
-  # def with_data(transform_type, data) do
-  #   emsg = emsg_invalid_args([transform_type, data])
-  #   _ = Logger.error emsg
-  #   {:error, emsg}
-  # end
-  #
-  # @doc """
-  # Right now, I'm just wrapping the given `var_name` with square brackets.
-  # I might change this, so I'm putting it in its own function.
-  # """
-  # def get_var_string(var_name) do
-  #   "[#{var_name}]"
-  # end
 
 end

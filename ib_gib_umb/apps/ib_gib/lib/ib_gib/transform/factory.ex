@@ -1,4 +1,4 @@
-defmodule IbGib.TransformFactory do
+defmodule IbGib.Transform.Factory do
   @moduledoc """
   This factory module generates ib_gib info maps for the fundamental transforms:
   fork, mut8, rel8, and query.
