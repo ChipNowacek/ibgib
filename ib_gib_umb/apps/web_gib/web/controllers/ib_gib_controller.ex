@@ -13,7 +13,7 @@ defmodule WebGib.IbGibController do
   use WebGib.Constants, :validation
   use WebGib.Constants, :config
 
-  alias IbGib.TransformFactory.Mut8Factory
+  alias IbGib.Transform.Mut8.Factory, as: Mut8Factory
   alias IbGib.Expression
   alias IbGib.Auth.Identity
 
