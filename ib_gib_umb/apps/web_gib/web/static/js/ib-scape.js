@@ -1,7 +1,6 @@
 import * as d3 from 'd3';
 import * as d3text from 'd3-textwrap';
 import { d3CircleRadius, d3Scales, d3Colors, d3DefaultCollapsed, d3MenuCommands } from './d3params';
-// import { nerdAlert } from './text-helpers';
 import * as ibHelper from './services/ibgib-helper';
 
 
@@ -679,6 +678,8 @@ export class IbScape {
       this.execExternalLink(dIbGib);
     } else if (dCommand.name == "identemail") {
       this.execIdentEmail(dIbGib);
+    } else if (dCommand.name == "info") {
+      this.execInfo(dIbGib);
     }
   }
 
@@ -794,6 +795,15 @@ export class IbScape {
     };
     this.showDetails("ident", init);
     $("#ident_form_data_text").focus();
+  }
+
+  execInfo(dIbGib) {
+    let init = () => {
+      d3.select("#info_form_data_src_ib_gib")
+        .attr("value", dIbGib.ibgib);
+    };
+    this.showDetails("info", init);
+    $("#info_form_data_dest_ib").focus();
   }
 
   /**
