@@ -181,10 +181,11 @@ defmodule IbGib.Expression do
   require Logger
   use GenServer
 
-  alias IbGib.{TransformFactory, Helper, TransformFactory.Mut8Factory}
-  alias IbGib.UnauthorizedError
-  alias IbGib.TransformBuilder, as: TB
-  alias IbGib.Auth.Authz
+  alias IbGib.{Helper, UnauthorizedError, Auth.Authz}
+  alias IbGib.Transform.Factory, as: TransformFactory
+  alias IbGib.Transform.Mut8.Factory, as: Mut8Factory
+  alias IbGib.Transform.Plan.Helper, as: PlanHelper
+  alias IbGib.Transform.Plan.Factory, as: PlanFactory
 
   import IbGib.Macros
 
@@ -904,7 +905,7 @@ defmodule IbGib.Expression do
   defp plan_complete?(plan_info) do
     _ = Logger.debug "plan_info:\n#{inspect plan_info, pretty: true}"
     next_step_index = String.to_integer(plan_info[:data]["i"])
-    step_count = TB.count_steps(plan_info[:data]["steps"])
+    step_count = PlanHelper.count_steps(plan_info[:data]["steps"])
     _ = Logger.debug "next_step_index: #{next_step_index}\nstep_count: #{step_count}"
     # 1-based index
     cond do
@@ -1026,7 +1027,7 @@ defmodule IbGib.Expression do
       new_plan_steps <-
         List.replace_at(new_plan_steps, next_step_index - 1, next_step),
       # :ok <- (
-      #   if TB.count_steps(new_plan_info[:data]["steps"]) == 1, do: :ok, else: :error
+      #   if PlanHelper.count_steps(new_plan_info[:data]["steps"]) == 1, do: :ok, else: :error
       # ), #debugg
       new_plan_data <- Map.put(new_plan_info[:data], "steps", new_plan_steps),
       new_plan_info <- Map.put(new_plan_info, :data, new_plan_data),
@@ -1067,7 +1068,7 @@ defmodule IbGib.Expression do
   defp increment_plan_step_index(new_plan_info) do
     _ = Logger.warn "new_plan_info:\n#{inspect new_plan_info, pretty: true}"
     data = new_plan_info[:data]
-    steps_count = TB.count_steps(data["steps"])
+    steps_count = PlanHelper.count_steps(data["steps"])
     current_i = String.to_integer(data["i"])
     if current_i < steps_count do
       _ = Logger.debug "bumping i. current_i: #{current_i}. steps_count: #{steps_count}"
@@ -1415,7 +1416,7 @@ defmodule IbGib.Expression do
   it. By default, any keys in `new_data` will override any existing keys in
   `data`, but there are options for removing/renaming existing keys.
 
-  See `IbGib.TransformFactory.Mut8Factory` for more details.
+  See `IbGib.Transform.Mut8.Factory` for more details.
   """
   @spec mut8(pid, list(String.t), map, map) :: {:ok, pid} | {:error, any}
   def mut8(expr_pid, identity_ib_gibs, new_data,
@@ -1650,14 +1651,13 @@ defmodule IbGib.Expression do
     _ = Logger.debug "state: #{inspect state}"
 
     with(
+      # Gather info
       info <- state[:info],
       {ib, gib} <- {info[:ib], info[:gib]},
       {:ok, ib_gib} <- Helper.get_ib_gib(ib, gib),
 
-      # Build the plan (_simple_ happy pipe would be awesome)
-      {:ok, plan} <- TB.plan(identity_ib_gibs, "[src]", opts),
-      {:ok, plan} <- TB.add_fork(plan, "fork1", dest_ib),
-      {:ok, plan} <- TB.yo(plan),
+      # Build the plan
+      {:ok, plan} <- PlanFactory.fork(identity_ib_gibs, dest_ib, opts),
 
       # Save the plan
       {:ok, :ok} <- IbGib.Data.save(plan),
@@ -1687,14 +1687,13 @@ defmodule IbGib.Expression do
     _ = Logger.debug "state: #{inspect state}"
 
     with(
+      # Gather info
       info <- state[:info],
       {ib, gib} <- {info[:ib], info[:gib]},
       {:ok, ib_gib} <- Helper.get_ib_gib(ib, gib),
 
       # Build the plan (_simple_ happy pipe would be awesome)
-      {:ok, plan} <- TB.plan(identity_ib_gibs, "[src]", opts),
-      {:ok, plan} <- TB.add_mut8(plan, "mut81", new_data),
-      {:ok, plan} <- TB.yo(plan),
+      {:ok, plan} <- PlanFactory.mut8(identity_ib_gibs, new_data, opts),
 
       # Save the plan
       {:ok, :ok} <- IbGib.Data.save(plan),
@@ -1727,10 +1726,9 @@ defmodule IbGib.Expression do
       {:ok, other_ib_gib} <-
         Helper.get_ib_gib(other_info[:ib], other_info[:gib]),
 
-      # Build the plan (_simple_ happy pipe would be awesome)
-      {:ok, plan} <- TB.plan(identity_ib_gibs, "[src]", opts),
-      {:ok, plan} <- TB.add_rel8(plan, "rel81", other_ib_gib, rel8ns),
-      {:ok, plan} <- TB.yo(plan),
+      # Build the plan
+      {:ok, plan} <-
+        PlanFactory.rel8(identity_ib_gibs, other_ib_gib, rel8ns, opts),
 
       # Save the plan
       {:ok, :ok} <- IbGib.Data.save(plan),
@@ -1771,10 +1769,7 @@ defmodule IbGib.Expression do
       {:ok, ib_gib} <- Helper.get_ib_gib(ib, gib),
 
       # Build the plan (_simple_ happy pipe would be awesome)
-      {:ok, plan} <- TB.plan(identity_ib_gibs, "[src]", opts),
-      {:ok, plan} <- TB.add_fork(plan, "fork1", dest_ib),
-      {:ok, plan} <- TB.add_rel8(plan, "rel8_2_src", "[plan.src]", ["instance_of"]),
-      {:ok, plan} <- TB.yo(plan),
+      {:ok, plan} <- PlanFactory.instance(identity_ib_gibs, dest_ib, opts),
 
       # Save the plan
       {:ok, :ok} <- IbGib.Data.save(plan),

@@ -1,4 +1,4 @@
-defmodule IbGib.TransformFactory.Mut8Factory do
+defmodule IbGib.Transform.Mut8.Factory do
   @moduledoc """
   This factory module creates `new_data` maps to be used when mut8ng ib_gib with
   `IbGib.Expression.mut8/2`.

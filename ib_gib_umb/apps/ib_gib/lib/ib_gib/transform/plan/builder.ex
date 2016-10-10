@@ -1,4 +1,4 @@
-defmodule IbGib.TransformBuilder do
+defmodule IbGib.Transform.Plan.Builder do
   @moduledoc """
   This factory module generates ib_gib transform info maps for the fundamental
   transforms, composite transforms, and queries:
@@ -50,11 +50,13 @@ defmodule IbGib.TransformBuilder do
   Each step looks like this:
 
   ## Examples
+  These examples use the raw `add_step` function, and I used them to know what
+  is going on internally. See `IbGib.Transform.Plan.Factory` for actual usage.
 
   ### Plain Fork (duplicates existing behavior)
 
-  TransformBuilder.plan(identity_ib_gibs)
-  ~>> add_step(%{
+  with {:ok, plan} <- TransformBuilder.plan(identity_ib_gibs),
+  {:ok, plan} <- add_step(%{
         "name" => "fork1",
         "f_data" => %{
           "type" => "fork",
@@ -64,36 +66,42 @@ defmodule IbGib.TransformBuilder do
 
   ### Instance
 
-  TransformBuilder.plan(identity_ib_gibs)
-  ~>> add_step(%{
-       "name" => "fork1",
-       "f_data" => %{
-         "type" => "fork",
-         "dest_ib" => "[plan.src.ib]"
-       }
-     })
-  ~>> add_step(%{
-       "name" => "rel8_instance",
-       "f_data" => %{
-         "type" => "rel8",
-         "other" => "[plan.src]",
-         "rel8ns" => ["instance_of"]
-       }
-     })
+  with {:ok, plan} <- TransformBuilder.plan(identity_ib_gibs)
+    {:ok, plan} <- add_step(%{
+      "name" => "fork1",
+      "f_data" => %{
+        "type" => "fork",
+        "dest_ib" => "[plan.src.ib]"
+      }
+    })
+    {:ok, plan} <- add_step(%{
+      "name" => "rel8_instance",
+      "f_data" => %{
+        "type" => "rel8",
+        "other" => "[plan.src]",
+        "rel8ns" => ["instance_of"]
+      }
+    })
   """
 
+  # ----------------------------------------------------------------------------
+  # alias, import, require, use
+  # ----------------------------------------------------------------------------
 
   require Logger
 
+  import IbGib.Transform.Plan.Helper
   import IbGib.Helper
   import IbGib.Macros
-
   use IbGib.Constants, :ib_gib
   use IbGib.Constants, :error_msgs
 
+  # ----------------------------------------------------------------------------
+  # Plan Begin/End Functions
+  # ----------------------------------------------------------------------------
 
   @doc """
-  Starts a compiler plan builder (info map).
+  Starts a plan info statement.
   """
   def plan(identity_ib_gibs, src, opts)
     when is_list(identity_ib_gibs) and length(identity_ib_gibs) >= 1 do
@@ -113,6 +121,12 @@ defmodule IbGib.TransformBuilder do
       end
   end
 
+  @doc """
+  Completes a plan building statement.
+
+  This generates an actual ib_gib info map, setting the plan as its `data`.
+  """
+  @spec yo(map) :: {:ok, map}
   def yo(plan) do
     ib = "plan"
 
@@ -135,13 +149,23 @@ defmodule IbGib.TransformBuilder do
     {:ok, result}
   end
 
+  # ----------------------------------------------------------------------------
+  # Plan Add Functions
+  # ----------------------------------------------------------------------------
+
   @doc """
-  Each step is in the form of:
+  Adds a step to the plan.
+  This is really more of a fundamental function. Use the `add_fork`, `add_mut8`,
+  or `add_rel8` variations that build on top of this function.
+
+  Each step executes is in the form of:
     arg -> f -> out
 
   `arg` is the thing we will transform with "function" created from `f_data`.
   `f_data` is the information to create a "transform function" ib_gib.
   """
+  @spec add_step(map, map) :: {:ok, map} | {:error, String.t}
+  def add_step(plan, step)
   def add_step(plan,
                %{"name" => _name,
                  "f_data" => %{
@@ -188,6 +212,13 @@ defmodule IbGib.TransformBuilder do
     invalid_args([plan, step])
   end
 
+  @doc """
+  Adds a `fork` step to the plan.
+
+  Returns {:ok, plan} | {:error, reason}
+  """
+  @spec add_fork(map, String.t, String.t) :: {:ok, map} | {:error, String.t}
+  def add_fork(plan, name, dest_ib)
   def add_fork(plan, name, dest_ib)
     when is_bitstring(dest_ib) do
     add_step(
@@ -205,6 +236,13 @@ defmodule IbGib.TransformBuilder do
     invalid_args([plan, name, dest_ib])
   end
 
+  @doc """
+  Adds a `mut8` step to the plan.
+
+  Returns {:ok, plan} | {:error, reason}
+  """
+  @spec add_mut8(map, String.t, map) :: {:ok, map} | {:error, String.t}
+  def add_mut8(plan, name, new_data)
   def add_mut8(plan, name, new_data)
     when is_map(new_data) do
     add_step(
@@ -222,6 +260,13 @@ defmodule IbGib.TransformBuilder do
     invalid_args([plan, name, new_data])
   end
 
+  @doc """
+  Adds a `rel8` step to the plan.
+
+  Returns {:ok, plan} | {:error, reason}
+  """
+  @spec add_rel8(map, String.t, String.t, list(String.t)) :: {:ok, map} | {:error, String.t}
+  def add_rel8(plan, name, other_ib_gib, rel8ns)
   def add_rel8(plan, name, other_ib_gib, rel8ns)
     when is_bitstring(other_ib_gib) and other_ib_gib !== @root_ib_gib and
          is_list(rel8ns) do
@@ -241,45 +286,10 @@ defmodule IbGib.TransformBuilder do
     invalid_args([plan, name, other_ib_gib, rel8ns])
   end
 
+  # ----------------------------------------------------------------------------
+  # Helper
+  # ----------------------------------------------------------------------------
 
-  @doc """
-  Counts the number of step infos in the given steps list.
-
-  ## Examples
-  (The counting only relies on the "i" entry in the map, so other data is not
-  provided here.)
-
-      iex> steps = [%{"i" => "1"}]
-      ...> IbGib.TransformBuilder.count_steps(steps)
-      1
-
-      iex> steps = [%{"i" => "1"}, %{"i" => "2"}]
-      ...> IbGib.TransformBuilder.count_steps(steps)
-      2
-  """
-  def count_steps(steps)
-  def count_steps(steps) when is_nil(steps) do
-    0
-  end
-  def count_steps(steps) when is_map(steps) do
-    # 1-item lists get morphed into the item for some reason in elixir. :-/
-    count_steps([steps])
-  end
-  def count_steps(steps) when is_list(steps) and length(steps) == 0 do
-    0
-  end
-  def count_steps(steps) when is_list(steps) do
-    steps
-    |> Enum.reduce(0, fn(step, acc) ->
-          i = String.to_integer(step["i"])
-          if i > acc, do: i, else: acc
-       end)
-  end
-  def count_steps(steps) do
-    emsg = emsg_invalid_args(steps)
-    _ = Logger.error emsg
-    raise(emsg)
-  end
   # NOT DRY>>>>NOOOOOOOOOOO
   # THIS IS DUPLICATED IN TRANSFORM_FACTORY/BUILDER
   # Stamping a gib means that it is "official", since a user doesn't (shouldn't)
@@ -298,64 +308,5 @@ defmodule IbGib.TransformBuilder do
     _ = Logger.warn "Invalid args: #{inspect [gib, is_needed]}"
     gib
   end
-
-  # @doc """
-  # """
-  # def with_data(transform_type, data)
-  # def with_data(:fork, %{"dest_ib" => dest_ib, "src" => src} = data) do
-  #
-  # end
-  # def with_data(:fork, %{"src" => src} = data) do
-  #
-  # end
-  # def with_data(:fork, %{"dest_ib" => dest_ib} = data) do
-  #
-  # end
-  # def with_data(:fork, data) do
-  #   emsg = emsg_invalid_args([:fork, data])
-  #   _ = Logger.error emsg
-  #   {:error, emsg}
-  # end
-  # def with_data(:mut8, %{"src" => src, "new_data" => new_data} = data) do
-  #
-  # end
-  # def with_data(:mut8, %{"src" => src} = data) do
-  #
-  # end
-  # def with_data(:rel8,
-  #               %{
-  #                 "src" => src,
-  #                 "other" => other,
-  #                 "rel8ns" => rel8ns
-  #                 } = data) do
-  #
-  # end
-  # def with_data(:rel8,
-  #               %{
-  #                 "src" => src,
-  #                 "other" => other,
-  #                 } = data) do
-  #
-  # end
-  # def with_data(:rel8,
-  #               %{
-  #                 "other" => other,
-  #                 "rel8ns" => rel8ns
-  #                 } = data) do
-  #
-  # end
-  # def with_data(transform_type, data) do
-  #   emsg = emsg_invalid_args([transform_type, data])
-  #   _ = Logger.error emsg
-  #   {:error, emsg}
-  # end
-  #
-  # @doc """
-  # Right now, I'm just wrapping the given `var_name` with square brackets.
-  # I might change this, so I'm putting it in its own function.
-  # """
-  # def get_var_string(var_name) do
-  #   "[#{var_name}]"
-  # end
 
 end

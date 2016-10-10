@@ -10,7 +10,8 @@ defmodule IbGib.Builder.TransformBuilderTest do
   require Logger
 
   # import IbGib.{Expression, Helper}
-  alias IbGib.TransformBuilder, as: TB
+  # alias IbGib.TransformBuilder, as: TB
+  alias IbGib.Transform.Plan.Builder, as: TB
 
   use IbGib.Constants, :ib_gib
   use IbGib.Constants, :test
