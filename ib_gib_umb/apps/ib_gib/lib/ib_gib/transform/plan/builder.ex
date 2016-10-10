@@ -53,8 +53,8 @@ defmodule IbGib.Transform.Plan.Builder do
 
   ### Plain Fork (duplicates existing behavior)
 
-  TransformBuilder.plan(identity_ib_gibs)
-  ~>> add_step(%{
+  with {:ok, plan} <- TransformBuilder.plan(identity_ib_gibs),
+  {:ok, plan} <- add_step(%{
         "name" => "fork1",
         "f_data" => %{
           "type" => "fork",
@@ -64,22 +64,22 @@ defmodule IbGib.Transform.Plan.Builder do
 
   ### Instance
 
-  TransformBuilder.plan(identity_ib_gibs)
-  ~>> add_step(%{
-       "name" => "fork1",
-       "f_data" => %{
-         "type" => "fork",
-         "dest_ib" => "[plan.src.ib]"
-       }
-     })
-  ~>> add_step(%{
-       "name" => "rel8_instance",
-       "f_data" => %{
-         "type" => "rel8",
-         "other" => "[plan.src]",
-         "rel8ns" => ["instance_of"]
-       }
-     })
+  with {:ok, plan} <- TransformBuilder.plan(identity_ib_gibs)
+    {:ok, plan} <- add_step(%{
+      "name" => "fork1",
+      "f_data" => %{
+        "type" => "fork",
+        "dest_ib" => "[plan.src.ib]"
+      }
+    })
+    {:ok, plan} <- add_step(%{
+      "name" => "rel8_instance",
+      "f_data" => %{
+        "type" => "rel8",
+        "other" => "[plan.src]",
+        "rel8ns" => ["instance_of"]
+      }
+    })
   """
 
 

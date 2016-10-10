@@ -181,8 +181,6 @@ defmodule IbGib.Expression do
   require Logger
   use GenServer
 
-  import OK, only: :macros
-
   alias IbGib.{Helper, UnauthorizedError, Auth.Authz}
   alias IbGib.Transform.Factory, as: TransformFactory
   alias IbGib.Transform.Mut8.Factory, as: Mut8Factory
