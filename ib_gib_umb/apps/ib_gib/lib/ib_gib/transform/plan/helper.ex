@@ -9,6 +9,7 @@ defmodule IbGib.Transform.Plan.Helper do
 
   require Logger
 
+  use IbGib.Constants, :ib_gib
   use IbGib.Constants, :error_msgs
 
   # ----------------------------------------------------------------------------
