@@ -50,6 +50,8 @@ defmodule IbGib.Transform.Plan.Builder do
   Each step looks like this:
 
   ## Examples
+  These examples use the raw `add_step` function, and I used them to know what
+  is going on internally. See `IbGib.Transform.Plan.Factory` for actual usage.
 
   ### Plain Fork (duplicates existing behavior)
 
@@ -82,19 +84,24 @@ defmodule IbGib.Transform.Plan.Builder do
     })
   """
 
+  # ----------------------------------------------------------------------------
+  # alias, import, require, use
+  # ----------------------------------------------------------------------------
 
   require Logger
 
   import IbGib.Transform.Plan.Helper
   import IbGib.Helper
   import IbGib.Macros
-
   use IbGib.Constants, :ib_gib
   use IbGib.Constants, :error_msgs
 
+  # ----------------------------------------------------------------------------
+  # Plan Begin/End Functions
+  # ----------------------------------------------------------------------------
 
   @doc """
-  Starts a compiler plan builder (info map).
+  Starts a plan info statement.
   """
   def plan(identity_ib_gibs, src, opts)
     when is_list(identity_ib_gibs) and length(identity_ib_gibs) >= 1 do
@@ -114,6 +121,12 @@ defmodule IbGib.Transform.Plan.Builder do
       end
   end
 
+  @doc """
+  Completes a plan building statement.
+
+  This generates an actual ib_gib info map, setting the plan as its `data`.
+  """
+  @spec yo(map) :: {:ok, map}
   def yo(plan) do
     ib = "plan"
 
@@ -136,13 +149,23 @@ defmodule IbGib.Transform.Plan.Builder do
     {:ok, result}
   end
 
+  # ----------------------------------------------------------------------------
+  # Plan Add Functions
+  # ----------------------------------------------------------------------------
+
   @doc """
-  Each step is in the form of:
+  Adds a step to the plan.
+  This is really more of a fundamental function. Use the `add_fork`, `add_mut8`,
+  or `add_rel8` variations that build on top of this function.
+
+  Each step executes is in the form of:
     arg -> f -> out
 
   `arg` is the thing we will transform with "function" created from `f_data`.
   `f_data` is the information to create a "transform function" ib_gib.
   """
+  @spec add_step(map, map) :: {:ok, map} | {:error, String.t}
+  def add_step(plan, step)
   def add_step(plan,
                %{"name" => _name,
                  "f_data" => %{
@@ -189,6 +212,13 @@ defmodule IbGib.Transform.Plan.Builder do
     invalid_args([plan, step])
   end
 
+  @doc """
+  Adds a `fork` step to the plan.
+
+  Returns {:ok, plan} | {:error, reason}
+  """
+  @spec add_fork(map, String.t, String.t) :: {:ok, map} | {:error, String.t}
+  def add_fork(plan, name, dest_ib)
   def add_fork(plan, name, dest_ib)
     when is_bitstring(dest_ib) do
     add_step(
@@ -206,6 +236,13 @@ defmodule IbGib.Transform.Plan.Builder do
     invalid_args([plan, name, dest_ib])
   end
 
+  @doc """
+  Adds a `mut8` step to the plan.
+
+  Returns {:ok, plan} | {:error, reason}
+  """
+  @spec add_mut8(map, String.t, map) :: {:ok, map} | {:error, String.t}
+  def add_mut8(plan, name, new_data)
   def add_mut8(plan, name, new_data)
     when is_map(new_data) do
     add_step(
@@ -223,6 +260,13 @@ defmodule IbGib.Transform.Plan.Builder do
     invalid_args([plan, name, new_data])
   end
 
+  @doc """
+  Adds a `rel8` step to the plan.
+
+  Returns {:ok, plan} | {:error, reason}
+  """
+  @spec add_rel8(map, String.t, String.t, list(String.t)) :: {:ok, map} | {:error, String.t}
+  def add_rel8(plan, name, other_ib_gib, rel8ns)
   def add_rel8(plan, name, other_ib_gib, rel8ns)
     when is_bitstring(other_ib_gib) and other_ib_gib !== @root_ib_gib and
          is_list(rel8ns) do
@@ -241,6 +285,11 @@ defmodule IbGib.Transform.Plan.Builder do
   def add_rel8(plan, name, other_ib_gib, rel8ns) do
     invalid_args([plan, name, other_ib_gib, rel8ns])
   end
+
+  # ----------------------------------------------------------------------------
+  # Helper
+  # ----------------------------------------------------------------------------
+
   # NOT DRY>>>>NOOOOOOOOOOO
   # THIS IS DUPLICATED IN TRANSFORM_FACTORY/BUILDER
   # Stamping a gib means that it is "official", since a user doesn't (shouldn't)
