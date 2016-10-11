@@ -8,27 +8,28 @@ defmodule WebGib.Web.Components.IbScape do
 
   use WebGib.MarkerElements
   import WebGib.Gettext
-  import WebGib.Web.Components.Details.{Fork, Help, Comment, UploadPic, Link, IdentEmail}
+  import WebGib.Web.Components.Details.{Fork, Help, Comment, UploadPic, Link, IdentEmail, Info}
 
   component :ib_scape do
+
     div [name: @canvas_div_name,
          id: "ib-d3-graph-div",
          class: "ib-height-100"] do
 
-      # Because I can't figure out how to do this (or any of the UI) nicely,
-      # I've created these hidden divs that I show when I need them.
-      # The positioning, showing/hiding is all done of course in the js.
+      # These are hidden divs that I show when I need them.
+      # The positioning, showing/hiding is all done in the js.
       div [id: "ib-scape-details", class: "ib-details-off ib-pos-abs"] do
-
         fork_details
         help_details
         comment_details
         upload_pic_details
         link_details
         ident_email_details
-
+        info_details
       end
+      
     end
+
   end
 
 end

@@ -1,4 +1,5 @@
 var d3CircleRadius = 10;
+var d3LongPressMs = 700;
 
 let d3Scales = {
   "rel8n": 1,
@@ -18,7 +19,7 @@ let d3Colors = {
   "dna": "#C5DADE",
   "ancestor": "lightgray",
   "past": "#A9CBD6",
-  "comment": "#FCA430",
+  "comment": "#CFF097",
   "ib": "#F2EC41",
   "ibGib": "#76963e",
   "result": "#3088FC",
@@ -196,4 +197,4 @@ var d3MenuCommands = [
   }
 ];
 
-export { d3CircleRadius, d3Scales, d3Colors, d3DefaultCollapsed, d3MenuCommands };
+export { d3CircleRadius, d3LongPressMs, d3Scales, d3Colors, d3DefaultCollapsed, d3MenuCommands };

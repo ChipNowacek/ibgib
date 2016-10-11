@@ -1023,7 +1023,7 @@ defmodule WebGib.IbGibController do
       pub_data <- %{
                     "type" => "email",
                     "email_addr" => email_addr,
-                    "ip" => ip
+                    # "ip" => ip # causes problems with mut8 identity
                   },
       {:ok, identity_ib_gib} <- Identity.get_identity(priv_data, pub_data),
       identity_ib_gibs <- conn |> get_session(@ib_identity_ib_gibs_key),

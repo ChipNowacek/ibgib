@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 import * as d3text from 'd3-textwrap';
-import { d3CircleRadius, d3Scales, d3Colors, d3DefaultCollapsed, d3MenuCommands } from './d3params';
+import { d3CircleRadius, d3LongPressMs, d3Scales, d3Colors, d3DefaultCollapsed, d3MenuCommands } from './d3params';
 import * as ibHelper from './services/ibgib-helper';
 
 
@@ -142,6 +142,7 @@ export class IbScape {
           .enter().append("line")
           .attr("stroke-width", function(d) { return Math.sqrt(d.value); });
 
+      let pressTimer;
 
       let graphNodes = svgGroup
           .selectAll("g.gnode")
@@ -153,7 +154,6 @@ export class IbScape {
               .on("start", dragstarted)
               .on("drag", dragged)
               .on("end", dragended));
-
 
       let graphNodeHyperlinks = graphNodes
           .append("foreignObject")
@@ -167,7 +167,7 @@ export class IbScape {
 
       d3.selectAll("[name=graphNodeLink]")
           .select("a")
-          .on("click", nodeClicked);
+          .on("click", nodeHyperlinkClicked);
 
       let graphImageDefs = graphNodes
           .append("defs")
@@ -182,7 +182,9 @@ export class IbScape {
           .attr("r", getRadius)
           .attr("fill", getColor)
           .on("click", nodeClicked)
-          .on("dblclick", nodeDblClicked);
+          .on("mousedown", nodeMouseDown)
+          .on("dblclick", nodeDblClicked)
+          .on("contextmenu", (d, i)  => { d3.event.preventDefault(); });
 
       graphNodeCircles.append("title")
           .text(getNodeLabel);
@@ -283,6 +285,25 @@ export class IbScape {
       d3.event.preventDefault();
     }
 
+    function nodeMouseDown(d, dIndex, dList) {
+      if (d3.event.button == 0) {
+        t.lastMouseDown = new Date();
+        setTimeout(() => {
+          if (t.lastMouseDown) {
+            console.log("long click handler here");
+          }
+        }, d3LongPressMs);
+      }
+    }
+
+    function nodeHyperlinkClicked(d) {
+      // This is a hack so that the long-click doesn't get triggered when
+      // using vimperator.
+      // The intent is just "Hey, this is a fake mousedown so don't long-click."
+      t.lastMouseDown = new Date();
+      nodeClicked(d);
+    }
+
     function nodeClicked(d) {
       console.log(`nodeClicked: ${JSON.stringify(d)}`);
 
@@ -299,18 +320,30 @@ export class IbScape {
 
         setTimeout(() => {
           if (t.maybeDoubleClicking) {
-            if (t.selectedDatum && t.selectedDatum.js_id == d.js_id) {
-              t.clearSelectedNode();
+            // Not double-clicking, so handle click
+
+            let now = new Date();
+            let elapsedMs = now - t.lastMouseDown;
+            delete t.lastMouseDown;
+            if (elapsedMs < d3LongPressMs) {
+              // normal click
+              if (t.selectedDatum && t.selectedDatum.js_id == d.js_id) {
+                t.clearSelectedNode();
+              } else {
+                t.clearSelectedNode();
+                t.selectNode(d);
+              }
             } else {
-              t.clearSelectedNode();
-              t.selectNode(d);
+              // long click, handled already in mousedown handler.
+              console.log("long click, already handled. no click handler.");
             }
+
             delete t.maybeDoubleClicking;
           }
         }, 300);
       }
 
-      d3.event.preventDefault();
+      // d3.event.preventDefault();
     }
 
     function nodeDblClicked(d) {
@@ -332,6 +365,8 @@ export class IbScape {
     }
 
     function dragged(d) {
+      if (t.lastMouseDown) { delete t.lastMouseDown; }
+
       d.fx = d3.event.x;
       d.fy = d3.event.y;
     }
@@ -801,9 +836,12 @@ export class IbScape {
     let init = () => {
       d3.select("#info_form_data_src_ib_gib")
         .attr("value", dIbGib.ibgib);
+
+      d3.select("#ib-info-details-container")
+        .append("p")
+        .text("Yo this is some detail yo");
     };
     this.showDetails("info", init);
-    $("#info_form_data_dest_ib").focus();
   }
 
   /**
@@ -998,10 +1036,10 @@ export class IbScape {
       commands = ["help", "fork", "goto", "identemail"];
     } else if (d.cat === "ib") {
       // commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link"];
-      commands = ["help", "fork", "comment", "pic", "link", "identemail"];
+      commands = ["help", "fork", "comment", "pic", "link", "identemail", "info"];
     } else {
       // commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link", "goto"];
-      commands = ["help", "fork", "goto", "comment", "pic", "link", "identemail"];
+      commands = ["help", "fork", "goto", "comment", "pic", "link", "identemail", "info"];
     }
 
     if (d.render && d.render == "image") {
