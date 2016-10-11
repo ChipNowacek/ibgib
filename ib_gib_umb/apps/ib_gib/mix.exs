@@ -55,10 +55,12 @@ defmodule IbGib.Mixfile do
   end
 
   defp aliases do
-    ["ecto.setup": ["ecto.create", "ecto.migrate"],
-    # ["ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
-    "ecto.reset": ["ecto.drop", "ecto.setup"],
-    "test":       ["ecto.reset", "test"]]
+    [
+      "ecto.setup": ["ecto.create", "ecto.migrate"],
+      "ecto.seed":  ["run priv/repo/seeds.exs"],
+      "ecto.reset": ["ecto.drop", "ecto.setup", "ecto.seed"],
+      "test":       ["ecto.reset", "test"]
+    ]
   end
 
 end

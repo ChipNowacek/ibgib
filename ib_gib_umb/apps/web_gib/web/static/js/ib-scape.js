@@ -1,7 +1,6 @@
 import * as d3 from 'd3';
 import * as d3text from 'd3-textwrap';
-import { d3CircleRadius, d3Scales, d3Colors, d3DefaultCollapsed, d3MenuCommands } from './d3params';
-// import { nerdAlert } from './text-helpers';
+import { d3CircleRadius, d3LongPressMs, d3LinkDistances, d3Scales, d3Colors, d3DefaultCollapsed, d3MenuCommands } from './d3params';
 import * as ibHelper from './services/ibgib-helper';
 
 
@@ -11,17 +10,29 @@ export class IbScape {
     this.baseJsonPath = baseJsonPath;
     this.ibGibCache = ibGibCache;
     this.ibGibImageProvider = ibGibImageProvider;
-
     this.circleRadius = 10;
 
+    this.initWindowResize();
+  }
+
+  initWindowResize() {
+    let t = this;
     window.onresize = () => {
       const debounceMs = 250;
 
-      if (this.resizeTimer) { clearTimeout(this.resizeTimer); }
+      if (t.resizeTimer) { clearTimeout(t.resizeTimer); }
 
-      this.resizeTimer = setTimeout(() => {
-        this.destroyStuff();
-        this.update(null);
+      t.resizeTimer = setTimeout(() => {
+        // For some reason, when resizing vertically, it doesn't always trigger
+        // the graph itself to change sizes. So we're checking the parent.
+        let nowWidth = t.graphDiv.parentNode.scrollWidth;
+        let nowHeight = t.graphDiv.parentNode.scrollHeight;
+        // console.log(`nowWidth, nowHeight: ${nowWidth}, ${nowHeight}`);
+        if (nowWidth !== t.parentWidth || nowHeight !== t.parentHeight) {
+          t.destroyStuff();
+          t.update(null);
+        }
+
       }, debounceMs);
     };
   }
@@ -37,6 +48,13 @@ export class IbScape {
     t.width = t.graphDiv.scrollWidth;
     t.height = t.graphDiv.scrollHeight;
     t.center = {x: t.width / 2, y: t.height / 2};
+    // console.log(`width, height: ${t.width}, ${t.height}`);
+
+    // For some reason, when resizing vertically, it doesn't always trigger
+    // the graph itself to change sizes. So we're checking the parent.
+    t.parentWidth = t.graphDiv.parentNode.scrollWidth;
+    t.parentHeight = t.graphDiv.parentNode.scrollHeight;
+    // console.log(`parent width, parent height: ${t.parentWidth}, ${t.parentHeight}`);
 
     // graph area
     let svg = d3.select("#ib-d3-graph-div")
@@ -143,6 +161,7 @@ export class IbScape {
           .enter().append("line")
           .attr("stroke-width", function(d) { return Math.sqrt(d.value); });
 
+      let pressTimer;
 
       let graphNodes = svgGroup
           .selectAll("g.gnode")
@@ -154,7 +173,6 @@ export class IbScape {
               .on("start", dragstarted)
               .on("drag", dragged)
               .on("end", dragended));
-
 
       let graphNodeHyperlinks = graphNodes
           .append("foreignObject")
@@ -168,7 +186,7 @@ export class IbScape {
 
       d3.selectAll("[name=graphNodeLink]")
           .select("a")
-          .on("click", nodeClicked);
+          .on("click", nodeHyperlinkClicked);
 
       let graphImageDefs = graphNodes
           .append("defs")
@@ -183,7 +201,9 @@ export class IbScape {
           .attr("r", getRadius)
           .attr("fill", getColor)
           .on("click", nodeClicked)
-          .on("dblclick", nodeDblClicked);
+          .on("mousedown", nodeMouseDown)
+          .on("dblclick", nodeDblClicked)
+          .on("contextmenu", (d, i)  => { d3.event.preventDefault(); });
 
       graphNodeCircles.append("title")
           .text(getNodeLabel);
@@ -193,6 +213,7 @@ export class IbScape {
           .attr("id", d => "label_" + d.js_id)
           .attr("font-size", "3px")
           .attr("text-anchor", "middle")
+          .on("mousedown", nodeMouseDown)
           .text(getNodeLabel)
 
       graphNodeLabels.append("title")
@@ -219,6 +240,7 @@ export class IbScape {
           .attr("width", 16)
           .attr("height", 16)
           .on("dblclick", nodeDblClicked)
+          .on("mousedown", nodeMouseDown)
           .call(d3.drag()
               .on("start", dragstarted)
               .on("drag", dragged)
@@ -284,6 +306,25 @@ export class IbScape {
       d3.event.preventDefault();
     }
 
+    function nodeMouseDown(d, dIndex, dList) {
+      if (d3.event.button == 0) {
+        t.lastMouseDown = new Date();
+        setTimeout(() => {
+          if (t.lastMouseDown) {
+            console.log("long click handler here");
+          }
+        }, d3LongPressMs);
+      }
+    }
+
+    function nodeHyperlinkClicked(d) {
+      // This is a hack so that the long-click doesn't get triggered when
+      // using vimperator.
+      // The intent is just "Hey, this is a fake mousedown so don't long-click."
+      t.lastMouseDown = new Date();
+      nodeClicked(d);
+    }
+
     function nodeClicked(d) {
       console.log(`nodeClicked: ${JSON.stringify(d)}`);
 
@@ -300,18 +341,30 @@ export class IbScape {
 
         setTimeout(() => {
           if (t.maybeDoubleClicking) {
-            if (t.selectedDatum && t.selectedDatum.js_id == d.js_id) {
-              t.clearSelectedNode();
+            // Not double-clicking, so handle click
+
+            let now = new Date();
+            let elapsedMs = now - t.lastMouseDown;
+            delete t.lastMouseDown;
+            if (elapsedMs < d3LongPressMs) {
+              // normal click
+              if (t.selectedDatum && t.selectedDatum.js_id == d.js_id) {
+                t.clearSelectedNode();
+              } else {
+                t.clearSelectedNode();
+                t.selectNode(d);
+              }
             } else {
-              t.clearSelectedNode();
-              t.selectNode(d);
+              // long click, handled already in mousedown handler.
+              console.log("long click, already handled. no click handler.");
             }
+
             delete t.maybeDoubleClicking;
           }
         }, 300);
       }
 
-      d3.event.preventDefault();
+      // d3.event.preventDefault();
     }
 
     function nodeDblClicked(d) {
@@ -333,6 +386,8 @@ export class IbScape {
     }
 
     function dragged(d) {
+      if (t.lastMouseDown) { delete t.lastMouseDown; }
+
       d.fx = d3.event.x;
       d.fy = d3.event.y;
     }
@@ -345,22 +400,26 @@ export class IbScape {
 
     function getNodeLabel(d) {
       if (d.render === "text" || d.render == "link") {
-        let ibGibJson = t.ibGibCache.get(d.ibgib);
-        if (ibGibJson) {
-          // hack because it's double-adding the label texts when
-          // expand/collapase and I don't know why.
-          setTimeout(() => updateLabelText(d, ibGibJson), 700);
-          return "loading...";
-        } else {
-          // We don't yet have the json for this particular data
-          // So we need to load the json, and when it returns we will
-          // set the label then.
-          d3.json(t.baseJsonPath + d.ibgib, ibGibJson => {
-            t.ibGibCache.add(ibGibJson);
-            updateLabelText(d, ibGibJson);
-          });
-          return "loading...";
-        }
+        t.getIbGibJson(d.ibgib, (ibGibJson) => {
+          setTimeout(() => updateLabelText(d, ibGibJson), 500);
+        });
+        return "...";
+        // let ibGibJson = t.ibGibCache.get(d.ibgib);
+        // if (ibGibJson) {
+        //   // hack because it's double-adding the label texts when
+        //   // expand/collapase and I don't know why.
+        //   setTimeout(() => updateLabelText(d, ibGibJson), 700);
+        //   return "loading...";
+        // } else {
+        //   // We don't yet have the json for this particular data
+        //   // So we need to load the json, and when it returns we will
+        //   // set the label then.
+        //   d3.json(t.baseJsonPath + d.ibgib, ibGibJson => {
+        //     t.ibGibCache.add(ibGibJson);
+        //     updateLabelText(d, ibGibJson);
+        //   });
+        //   return "loading...";
+        // }
       } else {
         // Label gets no text because it's not rendered as text.
         return "";
@@ -455,13 +514,13 @@ export class IbScape {
 
     function getLinkDistance(l) {
       if (["comment", "pic", "link"].some(x => x == l.target.id)) {
-        return 150;
+        return d3LinkDistances["special"];
       } else if (["comment", "pic", "link"].some(x => x == l.target.cat)) {
-        return 30;
+        return d3LinkDistances["specialMember"];
       } else if (l.target.cat === "rel8n") {
-        return 50;
+        return d3LinkDistances["rel8n"];
       } else {
-        return 80;
+        return d3LinkDistances["default"];
       }
     }
 
@@ -679,6 +738,8 @@ export class IbScape {
       this.execExternalLink(dIbGib);
     } else if (dCommand.name == "identemail") {
       this.execIdentEmail(dIbGib);
+    } else if (dCommand.name == "info") {
+      this.execInfo(dIbGib);
     }
   }
 
@@ -753,12 +814,12 @@ export class IbScape {
     $("#pic_form_data_file").focus();
   }
 
-  execFullscreen(dIbGib) {
-    let imageUrl =
-      this.ibGibImageProvider.getFullImageUrl(dIbGib.ibgib);
-
-    location.href = imageUrl;
-  }
+  // execFullscreen(dIbGib) {
+  //   let imageUrl =
+  //     this.ibGibImageProvider.getFullImageUrl(dIbGib.ibgib);
+  //
+  //   location.href = imageUrl;
+  // }
 
   execLink(dIbGib) {
     let init = () => {
@@ -770,11 +831,16 @@ export class IbScape {
   }
 
   execFullscreen(dIbGib) {
-    let imageUrl =
-      this.ibGibImageProvider.getFullImageUrl(dIbGib.ibgib);
+    if (dIbGib.ibgib === "ib^gib") {
+      let id = this.graphDiv.id;
+      this.toggleFullScreen(`#${id}`);
+    } else {
+      let imageUrl =
+        this.ibGibImageProvider.getFullImageUrl(dIbGib.ibgib);
 
-    window.open(imageUrl,'_blank');
-    // location.href = imageUrl;
+      window.open(imageUrl,'_blank');
+      // location.href = imageUrl;
+    }
   }
 
   execExternalLink(dIbGib) {
@@ -796,6 +862,67 @@ export class IbScape {
     $("#ident_form_data_text").focus();
   }
 
+  execInfo(dIbGib) {
+    let t = this;
+    let init = () => {
+      d3.select("#info_form_data_src_ib_gib")
+        .attr("value", dIbGib.ibgib);
+
+      let container = d3.select("#ib-info-details-container");
+      container.each(function() {
+        while (this.firstChild) {
+          this.removeChild(this.firstChild);
+        }
+      });
+
+      t.getIbGibJson(dIbGib.ibgib, ibGibJson => {
+
+        let text = JSON.stringify(ibGibJson.data, null, 2);
+        console.log(text);
+        container
+          .append("pre")
+          .text(text);
+
+
+        setTimeout(() => {
+          t.repositionDetails();
+        }, 50);
+      });
+    };
+    this.showDetails("info", init);
+  }
+
+  toggleFullScreen(elementJquerySelector) {
+    // if already full screen; exit
+    // else go fullscreen
+    if (
+      document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      document.mozFullScreenElement ||
+      document.msFullscreenElement
+    ) {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.mozCancelFullScreen) {
+        document.mozCancelFullScreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+      }
+    } else {
+      let element = $(elementJquerySelector).get(0);
+      if (element.requestFullscreen) {
+        element.requestFullscreen();
+      } else if (element.mozRequestFullScreen) {
+        element.mozRequestFullScreen();
+      } else if (element.webkitRequestFullscreen) {
+        element.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+      } else if (element.msRequestFullscreen) {
+        element.msRequestFullscreen();
+      }
+    }
+  }
   /**
    * This uses a convention that each details div is named
    * `#ib-${cmdName}-details`. It shows the details div, initializes the
@@ -812,15 +939,8 @@ export class IbScape {
       d3.select(`#ib-${cmdName}-details`)
         .attr("class", "ib-details-on");
 
-    // Position the details based on its size.
-    let ibScapeDetailsDiv = this.ibScapeDetails.node();
-    let detailsRect = ibScapeDetailsDiv.getBoundingClientRect();
-    ibScapeDetailsDiv.style.position = "absolute";
 
-    // Relative to top left corner of the graph, move up and left half
-    // of the details height/width.
-    ibScapeDetailsDiv.style.left = (this.rect.left + this.center.x - (detailsRect.width / 2)) + "px";
-    ibScapeDetailsDiv.style.top = (this.rect.top + this.center.y - (detailsRect.height / 2)) + "px";
+    this.repositionDetails();
 
     // Initialize details specific to given cmd
     initFunction();
@@ -831,6 +951,19 @@ export class IbScape {
     //   .on("click", this.cancelDetails);
 
     this.tearDownMenu(/*cancelDetails*/ false);
+  }
+
+  repositionDetails() {
+    // Position the details based on its size.
+    let ibScapeDetailsDiv = this.ibScapeDetails.node();
+    let detailsRect = ibScapeDetailsDiv.getBoundingClientRect();
+    ibScapeDetailsDiv.style.position = "absolute";
+
+    // Relative to top left corner of the graph, move up and left half
+    // of the details height/width.
+    ibScapeDetailsDiv.style.left = (this.rect.left + this.center.x - (detailsRect.width / 2)) + "px";
+    ibScapeDetailsDiv.style.top = (this.rect.top + this.center.y - (detailsRect.height / 2)) + "px";
+
   }
 
   cancelDetails() {
@@ -985,13 +1118,13 @@ export class IbScape {
       commands = ["help", "view"];
     } else if (d.ibgib && d.ibgib === "ib^gib") {
       // commands = ["help", "fork", "meta", "query"];
-      commands = ["help", "fork", "goto", "identemail"];
+      commands = ["help", "fork", "goto", "identemail", "fullscreen"];
     } else if (d.cat === "ib") {
       // commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link"];
-      commands = ["help", "fork", "comment", "pic", "link", "identemail"];
+      commands = ["help", "fork", "comment", "pic", "link", "identemail", "info"];
     } else {
       // commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link", "goto"];
-      commands = ["help", "fork", "goto", "comment", "pic", "link", "identemail"];
+      commands = ["help", "fork", "goto", "comment", "pic", "link", "identemail", "info"];
     }
 
     if (d.render && d.render == "image") {
@@ -1005,5 +1138,20 @@ export class IbScape {
     return {
       "nodes": nodes
     };
+  }
+
+  getIbGibJson(ibgib, callback) {
+    let ibGibJson = this.ibGibCache.get(ibgib);
+    if (ibGibJson) {
+      if (callback) { callback(ibGibJson); }
+    } else {
+      // We don't yet have the json for this particular data.
+      // So we need to load the json, and when it returns we will exec callback.
+      d3.json(this.baseJsonPath + ibgib, ibGibJson => {
+        this.ibGibCache.add(ibGibJson);
+
+        if (callback) { callback(ibGibJson); }
+      });
+    }
   }
 }
