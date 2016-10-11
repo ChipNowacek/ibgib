@@ -1,5 +1,6 @@
 import * as d3 from 'd3';
 import * as d3text from 'd3-textwrap';
+
 import { d3CircleRadius, d3LongPressMs, d3LinkDistances, d3Scales, d3Colors, d3DefaultCollapsed, d3MenuCommands } from './d3params';
 import * as ibHelper from './services/ibgib-helper';
 
@@ -209,25 +210,12 @@ export class IbScape {
           .text(getNodeLabel);
 
       let graphNodeLabels = graphNodes
-          .append("text")
+          .append("g")
           .attr("id", d => "label_" + d.js_id)
-          .attr("font-size", "3px")
-          .attr("text-anchor", "middle")
           .on("mousedown", nodeMouseDown)
+          .on("click", nodeClicked)
+          .attr("cursor", "pointer")
           .text(getNodeLabel)
-
-      graphNodeLabels.append("title")
-          .text(getNodeLabel);
-
-      // create a text wrapping function
-      var wrap = d3text.textwrap()
-          .bounds({height: 75, width: 25})
-          .method('tspans');
-      t.wrap = wrap;
-
-      graphNodeLabels
-          .call(wrap)
-          .attr("text-anchor", "middle");
 
       let graphNodeImages = graphNodes
           .append("image")
@@ -401,25 +389,9 @@ export class IbScape {
     function getNodeLabel(d) {
       if (d.render === "text" || d.render == "link") {
         t.getIbGibJson(d.ibgib, (ibGibJson) => {
-          setTimeout(() => updateLabelText(d, ibGibJson), 500);
+          setTimeout(() => updateLabelText(d, ibGibJson), 100);
         });
         return "...";
-        // let ibGibJson = t.ibGibCache.get(d.ibgib);
-        // if (ibGibJson) {
-        //   // hack because it's double-adding the label texts when
-        //   // expand/collapase and I don't know why.
-        //   setTimeout(() => updateLabelText(d, ibGibJson), 700);
-        //   return "loading...";
-        // } else {
-        //   // We don't yet have the json for this particular data
-        //   // So we need to load the json, and when it returns we will
-        //   // set the label then.
-        //   d3.json(t.baseJsonPath + d.ibgib, ibGibJson => {
-        //     t.ibGibCache.add(ibGibJson);
-        //     updateLabelText(d, ibGibJson);
-        //   });
-        //   return "loading...";
-        // }
       } else {
         // Label gets no text because it's not rendered as text.
         return "";
@@ -432,11 +404,42 @@ export class IbScape {
           ibGibJson.data.text :
           "?";
 
-      d3.select("#label_" + d.js_id)
-        .text(labelText)
-        .call(t.wrap)
-        .select('title')
-        .text(labelText);
+      let label = d3.select("#label_" + d.js_id)
+
+      let fontSize = 0;
+      let lines = [];
+      if (labelText.length < 10) {
+        lines = labelText.match(/.{1,10}/g);
+        fontSize = 10;
+      } else if (labelText.length < 20) {
+        lines = labelText.match(/.{1,12}/g);
+        fontSize = 8;
+      } else if (labelText.length < 40) {
+        lines = labelText.match(/.{1,15}/g);
+        fontSize = 7;
+      } else if (labelText.length < 90) {
+        lines = labelText.match(/.{1,18}/g);
+        fontSize = 6;
+      } else {
+        lines = labelText.match(/.{1,24}/g);
+        fontSize = 5;
+      }
+
+      for (let i = 0; i < lines.length; i++) {
+        let offset = fontSize * Math.trunc(lines.length / 2);
+        let lineText = lines[i];
+        let y = (i * fontSize) - offset;
+        label
+          .append("text")
+          .attr("font-size", `${fontSize}px`)
+          .attr("text-anchor", "middle")
+          .text(lineText)
+          .attr("y", y)
+          .select('title')
+          .text(labelText)
+          .attr("text-anchor", "middle");
+      }
+
 
       d3.select("#" + d.js_id)
         .select('title')
@@ -501,7 +504,7 @@ export class IbScape {
 
       d3.select("#label_" + d.js_id)
         .text("")
-        .call(t.wrap)
+        // .call(t.wrap)
         .select('title')
         .text(label);
 
@@ -862,6 +865,10 @@ export class IbScape {
     $("#ident_form_data_text").focus();
   }
 
+  jsonEscape(str)  {
+      return str
+  }
+
   execInfo(dIbGib) {
     let t = this;
     let init = () => {
@@ -878,15 +885,17 @@ export class IbScape {
       t.getIbGibJson(dIbGib.ibgib, ibGibJson => {
 
         let text = JSON.stringify(ibGibJson.data, null, 2);
-        console.log(text);
+        // Formats new lines in json.data values. It's still a hack just
+        // showing the JSON but it's an improvement.
+        // Thanks SO (for the implementation sort of) http://stackoverflow.com/questions/42068/how-do-i-handle-newlines-in-json
+        text = text.replace(/\\n/g, "\n").replace(/\\r/g, "").replace(/\\t/g, "\t");
         container
           .append("pre")
           .text(text);
 
-
-        setTimeout(() => {
+        // setTimeout(() => {
           t.repositionDetails();
-        }, 50);
+        // }, 50);
       });
     };
     this.showDetails("info", init);

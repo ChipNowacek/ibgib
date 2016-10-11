@@ -18,6 +18,7 @@ let d3Scales = {
   "result": 2,
   "rel8d": 2,
   "pic": 3,
+  "comment": 3,
   "default": 2
 };
 
