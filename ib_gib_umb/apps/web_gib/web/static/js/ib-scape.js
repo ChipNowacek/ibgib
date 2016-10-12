@@ -28,7 +28,6 @@ export class IbScape {
         // the graph itself to change sizes. So we're checking the parent.
         let nowWidth = t.graphDiv.parentNode.scrollWidth;
         let nowHeight = t.graphDiv.parentNode.scrollHeight;
-        // console.log(`nowWidth, nowHeight: ${nowWidth}, ${nowHeight}`);
         if (nowWidth !== t.parentWidth || nowHeight !== t.parentHeight) {
           t.destroyStuff();
           t.update(null);
@@ -56,6 +55,8 @@ export class IbScape {
     t.parentWidth = t.graphDiv.parentNode.scrollWidth;
     t.parentHeight = t.graphDiv.parentNode.scrollHeight;
     // console.log(`parent width, parent height: ${t.parentWidth}, ${t.parentHeight}`);
+
+    t.repositionDetails();
 
     // graph area
     let svg = d3.select("#ib-d3-graph-div")
@@ -937,49 +938,58 @@ export class IbScape {
       }
     }
   }
+
   /**
    * This uses a convention that each details div is named
    * `#ib-${cmdName}-details`. It shows the details div, initializes the
    * specifics to the given cmdName and pops it up. This also takes care of
    * cancelling, which is effected when the user just clicks somewhere else.
    */
-  showDetails(cmdName, initFunction) {
+  showDetails(cmdName, detailsInitFunction) {
     this.ibScapeDetails =
       d3.select("#ib-scape-details")
-        // .attr("class", null)
         .attr("class", "ib-pos-abs ib-info-border");
 
     this.details =
       d3.select(`#ib-${cmdName}-details`)
         .attr("class", "ib-details-on");
 
-
     this.repositionDetails();
 
-    // Initialize details specific to given cmd
-    initFunction();
-
-    // console.log(`src_ib_gib: ${dIbGib.ibgib}`);
-
-    // d3.select("#ib-scape-details-close-btn")
-    //   .on("click", this.cancelDetails);
+    if (detailsInitFunction) {
+      detailsInitFunction();
+    }
 
     this.tearDownMenu(/*cancelDetails*/ false);
   }
 
-  repositionDetails() {
-    // Position the details based on its size.
-    let ibScapeDetailsDiv = this.ibScapeDetails.node();
-    let detailsRect = ibScapeDetailsDiv.getBoundingClientRect();
-    ibScapeDetailsDiv.style.position = "absolute";
-
-    // Relative to top left corner of the graph, move up and left half
-    // of the details height/width.
-    ibScapeDetailsDiv.style.left = (this.rect.left + this.center.x - (detailsRect.width / 2)) + "px";
-    ibScapeDetailsDiv.style.top = (this.rect.top + this.center.y - (detailsRect.height / 2)) + "px";
-
+  /** Manually checks to see if height > width. */
+  getIsPortrait() {
+    return this.rect.height > this.rect.width;
   }
 
+  /** Positions the details modal view, e.g. comment text, info details, etc. */
+  repositionDetails() {
+    if (this.details && this.ibScapeDetails) {
+      // Position the details based on its size.
+      let ibScapeDetailsDiv = this.ibScapeDetails.node();
+      let detailsRect = ibScapeDetailsDiv.getBoundingClientRect();
+      ibScapeDetailsDiv.style.position = "absolute";
+
+
+      // Relative to top left corner of the graph, move up and left half
+      // of the details height/width.
+      ibScapeDetailsDiv.style.left = (this.rect.left + this.center.x - (detailsRect.width / 2)) + "px";
+
+      // Special handling for the top, because virtual keyboards on mobile
+      // devices take up real estate and it's not worth it to check for
+      // keyboard manually. Just have the top of the details higher than center.
+      let topOffset = this.getIsPortrait() ? this.rect.height / 5 : 20;
+      ibScapeDetailsDiv.style.top = (this.rect.top + topOffset) + "px";
+    }
+  }
+
+  /** Closes the details modal view. */
   cancelDetails() {
     if (this.details) {
       console.log("cancelled.");
@@ -1092,7 +1102,7 @@ export class IbScape {
     this.menuDiam = 2 * this.menuRadius;
     this.menuDivSize = this.menuDiam;
     this.menuBackgroundColor = "#2B572E";
-    this.menuOpacity = 0.7;
+    this.menuOpacity = 0.9;
 
     d3.select("#ib-d3-graph-div")
       .append('div')
