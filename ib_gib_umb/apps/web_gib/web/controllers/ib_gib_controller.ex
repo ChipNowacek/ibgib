@@ -587,16 +587,18 @@ defmodule WebGib.IbGibController do
     _ = Logger.debug "src_ib_gib: #{src_ib_gib}\ncontent_type, filename, path: #{content_type}, #{filename}, #{path}"
 
     with(
+      # Prepare
       identity_ib_gibs <- conn |> get_session(@ib_identity_ib_gibs_key),
       {:ok, src} <- IbGib.Expression.Supervisor.start_expression(src_ib_gib),
       {:ok, pic_gib} <-
         IbGib.Expression.Supervisor.start_expression("pic#{@delim}gib"),
-      {:ok, pic} <-
-        pic_gib
-        |> Expression.fork(identity_ib_gibs,
-                           "pic"),
-      # Generates a bin_id to use in image data.
-      {:ok, {bin_id, ext}} <- save_to_bin_store(conn, content_type, path, filename),
+
+      # Creates thumbnail, generates bin_ids to reference in pic_gib data.
+      {:ok, {bin_id, thumb_bin_id, thumb_filename, ext}} <- save_pic_to_bin_store(conn, content_type, path, filename),
+
+      # Generate pic ibGib
+      # Need to convert this to a plan^gib
+      {:ok, pic} <- pic_gib |> Expression.fork(identity_ib_gibs, "pic"),
       {:ok, pic} <-
         pic
         |> Expression.mut8(identity_ib_gibs,
@@ -604,11 +606,12 @@ defmodule WebGib.IbGibController do
                              "content_type" => content_type,
                              "filename" => filename,
                              "bin_id" => bin_id,
-                             "ext" => ext
+                             "ext" => ext,
+                             "thumb_bin_id" => thumb_bin_id,
+                             "thumb_filename" => thumb_filename,
+                             "thumb_size" => "#{@pic_thumb_size}"
                             }),
-      {:ok, new_src} <-
-        src
-        |> Expression.rel8(pic, identity_ib_gibs, ["pic"]),
+      {:ok, new_src} <- src |> Expression.rel8(pic, identity_ib_gibs, ["pic"]),
       {:ok, new_src_info} <- new_src |> Expression.get_info,
       {:ok, new_src_ib_gib} <- get_ib_gib(new_src_info)
     ) do
@@ -620,32 +623,43 @@ defmodule WebGib.IbGibController do
     end
   end
 
-  defp save_to_bin_store(conn, content_type, path, filename) do
-    _ = Logger.debug "yo"
+  defp save_pic_to_bin_store(conn, content_type, path, filename) do
+    _ = Logger.debug "saving..."
     with(
+      # Get Binary id (hash of binary data)
       {:ok, body} <- File.read(path),
-      :ok <- Logger.debug("1"),
       binary_data <- IO.iodata_to_binary(body),
-      :ok <- Logger.debug("2"),
       binary_id <- hash(binary_data),
-      # stp <- static_path(conn, "/files/yo.png"),
-      # :ok <- Logger.debug("3. path: #{path}\nstatic_path: #{stp}"),
-      :ok <- Logger.debug("3. path: #{path}"),
+
+      # Create the target path full path+name+ext
       {:ok, :ok} <- ensure_path_exists(@upload_files_path),
       ext <- Path.extname(filename),
       target_full_path <-
         Path.join(@upload_files_path, binary_id <> ext),
-      :ok <- Logger.debug("4. target_full_path: #{target_full_path}"),
-      # {:ok, _bytes_copied} <- File.copy(path, target_full_path)
-      :ok <- File.cp(path, target_full_path)
-      # the binary_id is a hash of the binary data.
-      # {:ok, binary_id} <- IbGib.Data.save_binary(binary_data)
+
+      # Copy the file
+      :ok <- File.cp(path, target_full_path),
+
+      # Generate and save associated thumbnail
+      tmp_thumb_full_path <- Path.join(@upload_files_path, new_id() <> ext),
+      {"", 0} <- System.cmd("convert", [path, "-resize", @pic_thumb_size, tmp_thumb_full_path]),
+      {:ok, thumb_body} <- File.read(tmp_thumb_full_path),
+      thumb_binary_data <- IO.iodata_to_binary(thumb_body),
+      thumb_binary_id <- hash(thumb_binary_data),
+      thumb_filename <- @pic_thumb_filename_prefix <> thumb_binary_id ,
+      thumb_target_full_path <-
+        Path.join(@upload_files_path, thumb_filename <> ext),
+      :ok <- File.rename(tmp_thumb_full_path, thumb_target_full_path)
     ) do
-      {:ok, {binary_id, ext}}
+      _ = Logger.debug "saved."
+      {:ok, {binary_id, thumb_binary_id, thumb_filename, ext}}
     else
-      {:error, reason} when is_bitstring(reason) -> {:error, reason}
-      {:error, reason} -> {:error, inspect reason}
-      error -> {:error, inspect error}
+      {"", thumb_error} ->
+        emsg = @emsg_could_not_create_thumbnail
+        _ = Logger.error emsg
+        default_handle_error({:error, emsg})
+
+      error -> default_handle_error(error)
     end
   end
 
@@ -666,6 +680,20 @@ defmodule WebGib.IbGibController do
     end
   end
 
+
+  def create_thumbnail(conn, content_type, path, filename) do
+    Logger.debug "creating thumbnail. path: #{path}\nfilename: #{filename}"
+    with(
+      {:ok, blah} <- :error
+        # System.cmd("convert", ["/home/mobi/Pictures/kroker.jpg", "-resize", "225x225", "/home/mobi/Pictures/kroker225x225iex.jpg"])
+    ) do
+      :ok
+      # {:ok, {thumb_filename, thumb_path}}
+    else
+      error -> default_handle_error(error)
+    end
+
+  end
   # ----------------------------------------------------------------------------
   # Link
   # ----------------------------------------------------------------------------
