@@ -34,7 +34,7 @@ let d3Colors = {
   "rel8d": "#FFDFAB",
   "text": "#FFDFAB",
   "name": "#FFDFAB",
-  "pic": "#ABCBFF",
+  "pic": "#ADEBFF",
   "image": "#ABCBFF",
   "img": "#ABCBFF",
   "identity": "#404040",

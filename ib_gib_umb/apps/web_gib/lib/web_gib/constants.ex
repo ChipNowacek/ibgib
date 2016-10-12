@@ -42,6 +42,8 @@ defmodule WebGib.Constants do
     quote do
       # @upload_files_path "/var/www/web_gib/files/"
       @upload_files_path "./files/"
+      @pic_thumb_filename_prefix "thumb_"
+      @pic_thumb_size "300x300"
       # @upload_files_path "/var/www/app/files/"
     end
   end
@@ -65,6 +67,8 @@ defmodule WebGib.Constants do
       @emsg_email_send_failed "There were problems sending the login email."
       @emsg_ident_email_failed "There was a problem with the login process."
       @emsg_ident_email_token_mismatch "The token does not match."
+
+      @emsg_could_not_create_thumbnail "There was a problem creating the thumbnail."
     end
   end
 

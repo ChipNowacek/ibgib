@@ -24,7 +24,7 @@ defmodule IbGib.Constants do
       @hash_length 64
       @min_ib_gib_length 3 # min + delim + min
       @max_ib_gib_length 153 # max + delim + max
-      @max_data_size 8_192_000 # 8 MB max internal data
+      @max_data_size 10_240_000 # max internal data size in MB
       # defp max_data_size, do: @max_data_size
       # one or more word chars, underscore, dash
       @regex_valid_ib ~r/^[\w\d_-\s]+$/

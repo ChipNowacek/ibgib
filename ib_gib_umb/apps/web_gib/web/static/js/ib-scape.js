@@ -457,13 +457,13 @@ export class IbScape {
         let ibGibJson = t.ibGibCache.get(d.ibgib);
         if (ibGibJson) {
           let imageUrl =
-            t.ibGibImageProvider.getFullImageUrl(d.ibgib, ibGibJson);
+            t.ibGibImageProvider.getThumbnailImageUrl(d.ibgib, ibGibJson);
           makeImageNode(d, ibGibJson, imageUrl);
         } else {
           d3.json(t.baseJsonPath + d.ibgib, ibGibJson => {
             t.ibGibCache.add(ibGibJson);
 
-            let imageUrl = t.ibGibImageProvider.getFullImageUrl(d.ibgib, ibGibJson);
+            let imageUrl = t.ibGibImageProvider.getThumbnailImageUrl(d.ibgib, ibGibJson);
 
             makeImageNode(d, ibGibJson, imageUrl);
           });
@@ -477,25 +477,38 @@ export class IbScape {
 
     function makeImageNode(d, ibGibJson, imageUrl) {
       let patternId = "imgDef_" + d.js_id;
-      // Magic numbers here...I don't really know what they do. :-X
       let imagePattern = t.graphImageDefs
         .append("pattern")
         .attr("id", patternId)
-        // I really have no idea about these 1s.
+        // height/width seems to have a tiling effect if set to a fraction
         .attr("height", 1)
         .attr("width", 1)
         .attr("x", 0)
         .attr("y", 0);
 
-        // Magic numbers here...I don't really know what they do. :-X
+      // This has to do with how to size the image.
+      // I have the images thumbnails to 300x300 ATOW (2016/10/16), so
+      // this is actually scaling down a bit, but we can zoom in svgs.
+      // I'm not sure what the magic offset is, but it works.
+      let magicSize = 75;
+      let magicOffset = -7.5;
+
+      // background fill color
+      imagePattern
+        .append("circle")
+        .attr("r", getRadius)
+        .attr("fill", d3Colors.pic)
+        // .attr("fill-opacity", 0.6)
+        .attr("cx", d => { return getRadius(d) + magicOffset; })
+        .attr("cy", d => { return getRadius(d) + magicOffset; });
+
+      // pic
       imagePattern
         .append("image")
-        // Some kind of offset
-        .attr("x", -75)
-        .attr("y", -75)
-        // Some kind of sizing. I have it set to fill the whole circle
-        .attr("height", 300)
-        .attr("width", 300)
+        .attr("height", magicSize)
+        .attr("width", magicSize)
+        .attr("x", magicOffset)
+        .attr("y", magicOffset)
         .attr("xlink:href", imageUrl);
 
       let label = ibGibJson.data.filename;
@@ -817,13 +830,6 @@ export class IbScape {
     $("#pic_form_data_file").focus();
   }
 
-  // execFullscreen(dIbGib) {
-  //   let imageUrl =
-  //     this.ibGibImageProvider.getFullImageUrl(dIbGib.ibgib);
-  //
-  //   location.href = imageUrl;
-  // }
-
   execLink(dIbGib) {
     let init = () => {
       d3.select("#link_form_data_src_ib_gib")
@@ -842,7 +848,6 @@ export class IbScape {
         this.ibGibImageProvider.getFullImageUrl(dIbGib.ibgib);
 
       window.open(imageUrl,'_blank');
-      // location.href = imageUrl;
     }
   }
 
