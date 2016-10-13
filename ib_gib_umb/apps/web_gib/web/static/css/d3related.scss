@@ -98,3 +98,28 @@ pre {
   border-color: $ibgib_green;
   padding: 2px;
 }
+
+.ib-details-label {
+  margin-left: 5px;
+  margin-right: 5px;
+  margin-bottom: 5px;
+  vertical-align: middle;
+}
+
+#query_form_data_search_ib {
+  margin-left: 0px;
+  margin-right: 0px;
+  margin-bottom: 5px;
+  width: 100%;
+}
+
+#query_form_data_search_data {
+  margin-left: 5px;
+  margin-right: 10px;
+  margin-bottom: 10px;
+}
+
+#query_form_data_latest {
+  margin-top: 5px;
+  margin-left: 5px;
+}

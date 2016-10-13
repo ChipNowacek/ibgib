@@ -1077,34 +1077,33 @@ defmodule WebGib.IbGibController do
   # ----------------------------------------------------------------------------
 
 
-  def query(conn, %{"query_form_data" =>
-                    %{"search_ib" => search_ib,
-                      "ib_query_type" => ib_query_type,
-                      "src_ib_gib" => src_ib_gib}} = params) do
-    Logger.metadata(x: :query_1)
+  def query(conn, %{
+                     "query_form_data" => %{
+                      "src_ib_gib" => src_ib_gib} = query_params
+                    } = params) do
+    Logger.metadata(x: :query)
     _ = Logger.debug "conn: #{inspect conn}"
 
-
-
-    query(conn,
-          %{"search_ib" => search_ib,
-            "ib_query_type" => ib_query_type,
-            "latest" => params["query_form_data"]["latest"] == "latest",
-            "src_ib_gib" => src_ib_gib})
-  end
-  def query(conn, %{"search_ib" => search_ib,
-                    "ib_query_type" => ib_query_type,
-                    "latest" => latest,
-                    "src_ib_gib" => src_ib_gib} = params) do
-    Logger.metadata(x: :query_2)
-    _ = Logger.debug "conn: #{inspect conn}"
-
-    if validate(:search_ib, search_ib) and
-       validate(:ib_query_type, ib_query_type) and
+  #   query(conn,
+  #         %{"search_ib" => search_ib,
+  #           "ib_query_type" => ib_query_type,
+  #           "latest" => params["query_form_data"]["latest"] == "latest",
+  #           "search_data" => search_data,
+  #           "src_ib_gib" => src_ib_gib})
+  # end
+  # def query(conn, %{"search_ib" => search_ib,
+  #                   "ib_query_type" => ib_query_type,
+  #                   "latest" => latest,
+  #                   "search_data" => search_data,
+  #                   "src_ib_gib" => src_ib_gib} = params) do
+  #   Logger.metadata(x: :query_2)
+  #   _ = Logger.debug "conn: #{inspect conn}"
+  #
+    if validate(:query_params, query_params) and
        validate(:ib_gib, src_ib_gib) do
-      _ = Logger.debug "query is valid. search_ib: #{search_ib}"
+      _ = Logger.debug "query is valid. query_params: #{inspect query_params}"
 
-      case query_impl(conn, src_ib_gib, search_ib, ib_query_type, latest) do
+      case query_impl(conn, src_ib_gib, query_params) do
         {:ok, query_result_ib_gib} ->
           conn
           |> redirect(to: "/ibgib/#{query_result_ib_gib}")
@@ -1121,7 +1120,7 @@ defmodule WebGib.IbGibController do
     else
       redirect_ib_gib =
         if valid_ib_gib?(src_ib_gib), do: src_ib_gib, else: @root_ib_gib
-      _ = Logger.warn "query is INVALID.\nsearch_ib: #{search_ib}\nib_query_type: #{ib_query_type}"
+      _ = Logger.warn "query is INVALID.\nquery_params: #{inspect query_params}"
       friendly_emsg = dgettext "error", @emsg_invalid_query
       conn
       |> put_flash(:error, friendly_emsg)
@@ -1129,8 +1128,14 @@ defmodule WebGib.IbGibController do
     end
   end
 
-  defp query_impl(conn, src_ib_gib, search_ib, ib_query_type, latest) do
-    _ = Logger.debug "src_ib_gib: #{src_ib_gib}\nsearch_ib: #{search_ib}"
+  # I don't want to see the lint message for this right now. I'm aware that
+  # the signature is just growing. But it's more concise than destructuring
+  # the incoming params map.
+  # @lint false
+  # defp query_impl(conn, src_ib_gib, search_ib, ib_query_type, latest, search_data) do
+  defp query_impl(conn, src_ib_gib, query_params) do
+
+    _ = Logger.debug "src_ib_gib: #{src_ib_gib}\nquery_params: #{inspect query_params}"
 
     with(
       # Identities (need plug)
@@ -1141,7 +1146,7 @@ defmodule WebGib.IbGibController do
 
       # Build the query options
       {:ok, query_opts} <-
-        build_query_opts(identity_ib_gibs, search_ib, ib_query_type, latest),
+        build_query_opts(identity_ib_gibs, query_params),
 
       # Execute the query itself, which creates the query_result ib_gib
       {:ok, query_result} <-
@@ -1157,33 +1162,78 @@ defmodule WebGib.IbGibController do
     end
   end
 
-  defp build_query_opts(identity_ib_gibs, search_ib, ib_query_type, latest)
-    when ib_query_type in ["is", "has"] and
-         is_list(identity_ib_gibs) and
+  defp build_query_opts(identity_ib_gibs, query_params)
+    when is_list(identity_ib_gibs) and
          length(identity_ib_gibs) > 1 do
-    ib_search_method =
-      case ib_query_type do
-        "is" -> "is"
-        "has" -> "like"
-      end
 
     # We're searching only for the user's ibgib, and we're going to do a
     # "withany" query. If we kept in the root, then it would return everything
     # since everybody has the root in its identity_ib_gibs.
     non_root_identities = Enum.filter(identity_ib_gibs, &(&1 != @root_ib_gib))
 
+    # All queries (currently) look only within the current user's identities.
     query_opts =
       do_query
-      |> where_ib(ib_search_method, search_ib)
       |> where_rel8ns("identity", "withany", "ibgib", non_root_identities)
 
-    _ = Logger.debug "latest hmmmm"
+    # Add ib_search if given
+    search_ib = query_params["search_ib"]
+    query_opts =
+      if search_ib != nil and String.length(search_ib) > 0 do
+        ib_search_method =
+          case query_params["ib_query_type"] do
+            "is" -> "is"
+            "has" -> "like"
+          end
+
+        do_query |> where_ib(ib_search_method, search_ib)
+      else
+        do_query
+      end
+
+    # Add search_data if given
+    search_data = query_params["search_data"]
+    query_opts =
+      if search_data != nil and String.length(search_data) > 0 do
+        query_opts |> where_data("value", "like", search_data)
+      else
+        query_opts
+      end
+
+    # Add latest if given
+    latest = query_params["latest"] != nil
     query_opts =
       if latest do
-        _ = Logger.debug "latest yaaah"
         query_opts |> most_recent_only
       else
-        _ = Logger.debug "latest nope"
+        query_opts
+      end
+
+    # include rel8ns
+    # We're going to check if the types are any of these by checking for the
+    # relevant ancestors.
+    include_pic = query_params["include_pic"] != nil
+    include_comment = query_params["include_comment"] != nil
+    include_query = query_params["include_query"] != nil
+    include_dna = query_params["include_dna"] != nil
+
+    include_rel8n_ibgibs =
+      []
+      |> add_rel8n_ibgibs(include_pic, ["pic#{@delim}gib"])
+      |> add_rel8n_ibgibs(include_comment, ["comment#{@delim}gib"])
+      |> add_rel8n_ibgibs(include_query, ["query#{@delim}gib"])
+      |> add_rel8n_ibgibs(include_dna,
+                          ["plan#{@delim}gib",
+                           "fork#{@delim}gib",
+                           "mut8#{@delim}gib",
+                           "rel8#{@delim}gib"])
+
+    _ = Logger.debug("include_rel8n_ibgibs: #{inspect include_rel8n_ibgibs}" |> ExChalk.bg_green)
+    query_opts =
+      if length(include_rel8n_ibgibs) > 0 do
+        query_opts
+        |> where_rel8ns("ancestor", "withany", "ibgib", include_rel8n_ibgibs)
+      else
         query_opts
       end
 
@@ -1193,8 +1243,15 @@ defmodule WebGib.IbGibController do
     invalid_args([identity_ib_gibs, search_ib, ib_query_type])
   end
 
+  defp add_rel8n_ibgibs(agg_list, true, ibgibs) do
+    agg_list ++ ibgibs
+  end
+  defp add_rel8n_ibgibs(agg_list, false, _ibgibs) do
+    agg_list
+  end
+
   # ----------------------------------------------------------------------------
-  # Helper
+  # Helper (refactor this into a module!)
   # ----------------------------------------------------------------------------
 
   defp validate(type, instance)
@@ -1256,22 +1313,49 @@ defmodule WebGib.IbGibController do
     _ = Logger.warn "Invalid ib_gib: #{inspect ib_gib}"
     false
   end
-  defp validate(:search_ib, search_ib) when is_bitstring(search_ib) do
+  defp validate(:query_params, query_params) do
+    _ = Logger.debug "validating query_params: #{inspect query_params}"
+    valid? =
+      validate(:search_ib, query_params) and
+      validate(:ib_query_type, query_params) and
+      validate(:search_data, query_params)
+
+    valid?
+  end
+  defp validate(:search_ib, %{"search_ib" => search_ib})
+    when is_bitstring(search_ib) do
     _ = Logger.debug "validating search_ib: #{search_ib}"
     String.length(search_ib) < @max_id_length
   end
-  defp validate(:search_ib, search_ib) do
+  defp validate(:search_ib, %{"search_ib" => search_ib}) do
     _ = Logger.warn "Invalid search_ib: #{inspect search_ib}"
     false
   end
-  defp validate(:ib_query_type, ib_query_type)
+  defp validate(:search_ib, _query_params) do
+    # none given is fine
+    true
+  end
+  defp validate(:ib_query_type, %{"ib_query_type" => ib_query_type})
     when is_bitstring(ib_query_type) do
     _ = Logger.debug "validating ib_query_type: #{ib_query_type}"
     ib_query_type in ["is", "has"]
   end
-  defp validate(:ib_query_type, ib_query_type) do
-    _ = Logger.warn "Invalid ib_query_type: #{inspect ib_query_type}"
+  defp validate(:ib_query_type, query_params) do
+    _ = Logger.warn "Invalid ib_query_type: #{inspect query_params}"
     false
+  end
+  defp validate(:search_data, %{"search_data" => search_data})
+    when is_bitstring(search_data) do
+    _ = Logger.debug "validating search_data: #{search_data}"
+    String.length(search_data) < @max_id_length
+  end
+  defp validate(:search_data, %{"search_data" => search_data}) do
+    _ = Logger.warn "Invalid search_data: #{inspect search_data}"
+    false
+  end
+  defp validate(:search_data, _query_params) do
+    # none given is fine
+    true
   end
 
 end
