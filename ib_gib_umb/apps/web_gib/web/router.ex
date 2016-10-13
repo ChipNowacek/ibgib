@@ -40,6 +40,7 @@ defmodule WebGib.Router do
     post "/pic", IbGibController, :pic
     post "/link", IbGibController, :link
     post "/ident", IbGibController, :ident
+    post "/query", IbGibController, :query
   end
 
   scope "/api", WebGib do

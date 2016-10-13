@@ -14,8 +14,8 @@ defmodule WebGib.IbGibController do
   use WebGib.Constants, :config
 
   alias IbGib.Transform.Mut8.Factory, as: Mut8Factory
-  alias IbGib.Expression
-  alias IbGib.Auth.Identity
+  alias IbGib.{Expression, Auth.Identity}
+  import IbGib.QueryOptionsFactory
 
   # ----------------------------------------------------------------------------
   # Controller Commands
@@ -1073,6 +1073,127 @@ defmodule WebGib.IbGibController do
   end
 
   # ----------------------------------------------------------------------------
+  # Query
+  # ----------------------------------------------------------------------------
+
+
+  def query(conn, %{"query_form_data" =>
+                    %{"search_ib" => search_ib,
+                      "ib_query_type" => ib_query_type,
+                      "src_ib_gib" => src_ib_gib}} = params) do
+    Logger.metadata(x: :query_1)
+    _ = Logger.debug "conn: #{inspect conn}"
+
+
+
+    query(conn,
+          %{"search_ib" => search_ib,
+            "ib_query_type" => ib_query_type,
+            "latest" => params["query_form_data"]["latest"] == "latest",
+            "src_ib_gib" => src_ib_gib})
+  end
+  def query(conn, %{"search_ib" => search_ib,
+                    "ib_query_type" => ib_query_type,
+                    "latest" => latest,
+                    "src_ib_gib" => src_ib_gib} = params) do
+    Logger.metadata(x: :query_2)
+    _ = Logger.debug "conn: #{inspect conn}"
+
+    if validate(:search_ib, search_ib) and
+       validate(:ib_query_type, ib_query_type) and
+       validate(:ib_gib, src_ib_gib) do
+      _ = Logger.debug "query is valid. search_ib: #{search_ib}"
+
+      case query_impl(conn, src_ib_gib, search_ib, ib_query_type, latest) do
+        {:ok, query_result_ib_gib} ->
+          conn
+          |> redirect(to: "/ibgib/#{query_result_ib_gib}")
+
+        {:error, reason} ->
+          redirect_ib_gib =
+            if valid_ib_gib?(src_ib_gib), do: src_ib_gib, else: @root_ib_gib
+          _ = Logger.error reason
+          friendly_emsg = dgettext "error", @emsg_invalid_query
+          conn
+          |> put_flash(:error, friendly_emsg)
+          |> redirect(to: "/ibgib/#{redirect_ib_gib}")
+      end
+    else
+      redirect_ib_gib =
+        if valid_ib_gib?(src_ib_gib), do: src_ib_gib, else: @root_ib_gib
+      _ = Logger.warn "query is INVALID.\nsearch_ib: #{search_ib}\nib_query_type: #{ib_query_type}"
+      friendly_emsg = dgettext "error", @emsg_invalid_query
+      conn
+      |> put_flash(:error, friendly_emsg)
+      |> redirect(to: "/ibgib/#{redirect_ib_gib}")
+    end
+  end
+
+  defp query_impl(conn, src_ib_gib, search_ib, ib_query_type, latest) do
+    _ = Logger.debug "src_ib_gib: #{src_ib_gib}\nsearch_ib: #{search_ib}"
+
+    with(
+      # Identities (need plug)
+      identity_ib_gibs <- conn |> get_session(@ib_identity_ib_gibs_key),
+
+      # We will query off of the given src
+      {:ok, src} <- IbGib.Expression.Supervisor.start_expression(src_ib_gib),
+
+      # Build the query options
+      {:ok, query_opts} <-
+        build_query_opts(identity_ib_gibs, search_ib, ib_query_type, latest),
+
+      # Execute the query itself, which creates the query_result ib_gib
+      {:ok, query_result} <-
+        src |> Expression.query(identity_ib_gibs, query_opts),
+
+      # Return the query's ib^gib
+      {:ok, query_result_info} <- query_result |> Expression.get_info,
+      {:ok, query_result_ib_gib} <- get_ib_gib(query_result_info)
+    ) do
+      {:ok, query_result_ib_gib}
+    else
+      error -> default_handle_error(error)
+    end
+  end
+
+  defp build_query_opts(identity_ib_gibs, search_ib, ib_query_type, latest)
+    when ib_query_type in ["is", "has"] and
+         is_list(identity_ib_gibs) and
+         length(identity_ib_gibs) > 1 do
+    ib_search_method =
+      case ib_query_type do
+        "is" -> "is"
+        "has" -> "like"
+      end
+
+    # We're searching only for the user's ibgib, and we're going to do a
+    # "withany" query. If we kept in the root, then it would return everything
+    # since everybody has the root in its identity_ib_gibs.
+    non_root_identities = Enum.filter(identity_ib_gibs, &(&1 != @root_ib_gib))
+
+    query_opts =
+      do_query
+      |> where_ib(ib_search_method, search_ib)
+      |> where_rel8ns("identity", "withany", "ibgib", non_root_identities)
+
+    _ = Logger.debug "latest hmmmm"
+    query_opts =
+      if latest do
+        _ = Logger.debug "latest yaaah"
+        query_opts |> most_recent_only
+      else
+        _ = Logger.debug "latest nope"
+        query_opts
+      end
+
+    {:ok, query_opts}
+  end
+  defp build_query_opts(identity_ib_gibs, search_ib, ib_query_type) do
+    invalid_args([identity_ib_gibs, search_ib, ib_query_type])
+  end
+
+  # ----------------------------------------------------------------------------
   # Helper
   # ----------------------------------------------------------------------------
 
@@ -1128,11 +1249,28 @@ defmodule WebGib.IbGibController do
     false
   end
   defp validate(:ib_gib, ib_gib) when is_bitstring(ib_gib) do
-    Logger.info "valid_ib_gib?: #{valid_ib_gib?(ib_gib)}"
+    _ = Logger.debug "valid_ib_gib?: #{valid_ib_gib?(ib_gib)}"
     valid_ib_gib?(ib_gib)
   end
   defp validate(:ib_gib, ib_gib) do
-    Logger.info "Invalid ib_gib: #{inspect ib_gib}"
+    _ = Logger.warn "Invalid ib_gib: #{inspect ib_gib}"
+    false
+  end
+  defp validate(:search_ib, search_ib) when is_bitstring(search_ib) do
+    _ = Logger.debug "validating search_ib: #{search_ib}"
+    String.length(search_ib) < @max_id_length
+  end
+  defp validate(:search_ib, search_ib) do
+    _ = Logger.warn "Invalid search_ib: #{inspect search_ib}"
+    false
+  end
+  defp validate(:ib_query_type, ib_query_type)
+    when is_bitstring(ib_query_type) do
+    _ = Logger.debug "validating ib_query_type: #{ib_query_type}"
+    ib_query_type in ["is", "has"]
+  end
+  defp validate(:ib_query_type, ib_query_type) do
+    _ = Logger.warn "Invalid ib_query_type: #{inspect ib_query_type}"
     false
   end
 
