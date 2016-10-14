@@ -52,6 +52,17 @@ will need to do a few things:
    * The address can be changed in `ib_gib_umb/apps/web_gib/config/config.exs`
    * The port can be changed in `ib_gib_umb/apps/web_gib/config/dev.exs`
 
+### commit messages
+
+I have a [`git-commit-template.txt`](https://github.com/ibgib/ibgib/blob/master/git-commit-template.txt) that I use when doing commits. 
+
+I would be very grateful :pray: if you would utilize this. If you are unfamiliar with
+git commit templates...they're awesome! :fireworks: Just start a question issue
+and I would be happy to explain what they are, how to use them (how I use
+them anyway), etc.
+
+That file is also where you can get the meaning of the commit emojis that I use.
+
 ### troubleshooting
 
 * If you are getting a bunch of `Postgrex.Protocol` errors when starting the
