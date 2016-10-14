@@ -9,13 +9,13 @@ circle.node {
 line.link {
   fill: none;
   stroke: #9ecae1;
-  stroke-width: 0.2px;
+  stroke-width: 0.1px;
 }
 
 
 .links line {
   stroke: $ibgib_green;
-  stroke-width: 0.5px;
+  stroke-width: 0.03px;
   stroke-opacity: 1.5;
 }
 
@@ -80,3 +80,50 @@ pre {
     white-space: -o-pre-wrap;    /* Opera 7 */
     word-wrap: break-word;       /* Internet Explorer 5.5+ */
 }
+
+.ib-details-legend {
+    display: block;
+    padding-left: 2px;
+    padding-right: 2px;
+    padding-bottom: 0px;
+    margin: 0px;
+    border: none;
+    font-size: 16px;
+    font-family: fantasy;
+    width: auto;
+}
+
+.ib-details-fieldset {
+  border-width: 0.5px;
+  border-style: solid;
+  border-color: $ibgib_green;
+  padding: 2px;
+}
+
+.ib-details-label {
+  margin-left: 5px;
+  margin-right: 5px;
+  margin-bottom: 5px;
+  vertical-align: middle;
+  font-size: 14px;
+  font-family: fantasy;
+}
+
+#query_form_data_search_ib {
+  margin-left: 0px;
+  margin-right: 0px;
+  margin-bottom: 5px;
+  width: 100%;
+}
+
+#query_form_data_search_data {
+  // margin-left: 10px;
+  // margin-right: 25px;
+  margin-bottom: 5px;
+  width: 100%;
+}
+
+// #query_form_data_latest {
+//   margin-top: 5px;
+//   margin-left: 5px;
+// }

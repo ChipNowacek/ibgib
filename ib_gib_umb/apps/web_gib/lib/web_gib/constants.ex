@@ -61,6 +61,7 @@ defmodule WebGib.Constants do
       @emsg_invalid_comment "The comment is invalid."
 
       @emsg_invalid_link "The link is invalid."
+      @emsg_invalid_query "The query is invalid."
 
       @emsg_invalid_email "The email is invalid."
       @emsg_ident_email_token_expired "The token has expired."

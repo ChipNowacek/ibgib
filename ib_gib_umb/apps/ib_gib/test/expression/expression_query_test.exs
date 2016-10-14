@@ -3,7 +3,14 @@ defmodule IbGib.Expression.ExpressionQueryTest do
   This is for testing the query ib_gib, not the repo query. Since all this
   vocab is still new, I'll spell this out: This is for when you create a query
   ib_gib, just like you would create a fork, mut8, or rel8 transform ib_gib.
+
+  These tests use the bang (`!`) versions of the functions, because this covers
+  both bang and non-bang versions of the functions. But when actually using
+  these functions it's probably better to use the non-bang versions,
+  e.g. `root |> fork` instead of `root |> fork!`, `src |> mut8` instead of `src |> mut8!`
+
   See `IbGib.Expression.query/6` and `IbGib.Data.Schemas.IbGib.QueryTest`.
+  Also look at the `WebGib.IbGibController` for actual (non-test) usage.
   """
 
 
@@ -1013,4 +1020,68 @@ defmodule IbGib.Expression.ExpressionQueryTest do
     _ = Logger.debug "expected_result_list: #{inspect expected_result_list}"
     assert result_ib_gib_list == expected_result_list
   end
+
+  @tag :capture_log
+  test "Multiple identities, multiple forks, return only forks with ancestor rel8n and identity rel8ns" do
+    # -------------------------------------------------------------------------
+    Logger.disable(self)
+    {:ok, root} = IbGib.Expression.Supervisor.start_expression()
+
+    a = root |> fork!([@root_ib_gib], "a")
+    a_info = a |> get_info!
+    a_ib_gib = a_info |> Helper.get_ib_gib!
+
+    test_count = 10
+    1..test_count
+    |> Enum.map(fn(i) ->
+        priv_data = %{"yo" => "#{i}"}
+        pub_data = %{"type" => "session", "public" => "#{i}"}
+        {:ok, tmp_ib_gib} = Identity.get_identity(priv_data, pub_data)
+        # {:ok, identity} = IbGib.Expression.Supervisor.start_expression(tmp_ib_gib)
+
+        root |> fork!([@root_ib_gib, tmp_ib_gib], "#{i}")
+        a |> fork!([@root_ib_gib, tmp_ib_gib], "#{i}")
+       end)
+
+    # So now we have multiple identities, with forks stemming from both the
+    # root and from "a".
+
+    priv_data = %{"yo" => "tester priv"}
+    pub_data = %{"type" => "session", "public" => "tester pub"}
+    {:ok, identity_ib_gib} = Identity.get_identity(priv_data, pub_data)
+    {:ok, identity} = IbGib.Expression.Supervisor.start_expression(identity_ib_gib)
+
+    test_ib_root = "test ib here for root whaa"
+    test_ib_a = "test ib here for a yaaa"
+
+    root |> fork!([@root_ib_gib, identity_ib_gib], test_ib_root)
+    a |> fork!([@root_ib_gib, identity_ib_gib], test_ib_a)
+
+    # -------------------------------------------------------------------------
+    Logger.enable(self)
+    Logger.warn "weee hah"
+
+    query_opts =
+      do_query
+      |> where_rel8ns("identity", "withany", "ibgib", [identity_ib_gib])
+      |> where_rel8ns("ancestor", "withany", "ibgib", [a_ib_gib])
+
+    query_result_info = identity |> query!([@root_ib_gib, identity_ib_gib], query_opts) |> get_info!
+    _ = Logger.debug "query_result_info: #{inspect query_result_info}"
+
+    result_ib_gib_list =
+      query_result_info[:rel8ns]["result"]
+      |> Enum.map(fn(res_ib_gib) ->
+           {res_ib, _res_ib_gib} = Helper.separate_ib_gib!(res_ib_gib)
+           res_ib
+         end)
+      |> Enum.sort
+
+    _ = Logger.debug "result_ib_gib_list: #{inspect result_ib_gib_list}"
+
+    expected_result_list = ["ib", test_ib_a] |> Enum.sort
+    _ = Logger.debug "expected_result_list: #{inspect expected_result_list}"
+    assert result_ib_gib_list == expected_result_list
+  end
+
 end

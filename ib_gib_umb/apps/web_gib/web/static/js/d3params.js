@@ -2,7 +2,7 @@ var d3CircleRadius = 10;
 var d3LongPressMs = 700;
 
 let d3LinkDistances = {
-  "special": 120,
+  "special": 90,
   "specialMember": 30,
   "rel8n": 50,
   "default": 80
@@ -16,8 +16,9 @@ let d3Scales = {
   "ib": 5,
   "ibGib": 4,
   "result": 2,
-  "rel8d": 2,
+  "rel8d": 3,
   "pic": 3,
+  "result": 3,
   "comment": 3,
   "default": 2
 };
@@ -29,7 +30,7 @@ let d3Colors = {
   "past": "#A9CBD6",
   "ib": "#F2EC41",
   "ibGib": "#76963e",
-  "result": "#3088FC",
+  "result": "#BEDEF7",
   "rel8d": "#FFDFAB",
   "comment": "#CCF26B",
   "text": "#CCF26B",

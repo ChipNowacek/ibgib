@@ -208,7 +208,7 @@ export class IbScape {
           .on("contextmenu", (d, i)  => { d3.event.preventDefault(); });
 
       graphNodeCircles.append("title")
-          .text(getNodeLabel);
+          .text(getNodeTitle);
 
       let graphNodeLabels = graphNodes
           .append("g")
@@ -387,6 +387,22 @@ export class IbScape {
       d.fy = null;
     }
 
+    function getNodeTitle(d) {
+      if (d.render === "text" || d.render == "link") {
+        t.getIbGibJson(d.ibgib, (ibGibJson) => {
+          setTimeout(() => updateLabelText(d, ibGibJson), 100);
+        });
+        return "...";
+      } else {
+        // Label gets no text because it's not rendered as text.
+        if (d.ibgib === "ib^gib") {
+          return "root ib^gib";
+        } else {
+          return d.id;
+        }
+      }
+    }
+
     function getNodeLabel(d) {
       if (d.render === "text" || d.render == "link") {
         t.getIbGibJson(d.ibgib, (ibGibJson) => {
@@ -526,7 +542,6 @@ export class IbScape {
         .attr("fill", `url(#${patternId})`)
         .select('title')
         .text(label);
-
     }
 
     function getLinkDistance(l) {
@@ -757,6 +772,8 @@ export class IbScape {
       this.execIdentEmail(dIbGib);
     } else if (dCommand.name == "info") {
       this.execInfo(dIbGib);
+    } else if (dCommand.name == "query") {
+      this.execQuery(dIbGib);
     }
   }
 
@@ -871,10 +888,6 @@ export class IbScape {
     $("#ident_form_data_text").focus();
   }
 
-  jsonEscape(str)  {
-      return str
-  }
-
   execInfo(dIbGib) {
     let t = this;
     let init = () => {
@@ -899,12 +912,19 @@ export class IbScape {
           .append("pre")
           .text(text);
 
-        // setTimeout(() => {
-          t.repositionDetails();
-        // }, 50);
+        t.repositionDetails();
       });
     };
     this.showDetails("info", init);
+  }
+
+  execQuery(dIbGib) {
+    let init = () => {
+      d3.select("#query_form_data_src_ib_gib")
+        .attr("value", dIbGib.ibgib);
+    };
+    this.showDetails("query", init);
+    $("#query_form_data_search_ib").focus();
   }
 
   toggleFullScreen(elementJquerySelector) {
@@ -1142,13 +1162,13 @@ export class IbScape {
       commands = ["help", "view"];
     } else if (d.ibgib && d.ibgib === "ib^gib") {
       // commands = ["help", "fork", "meta", "query"];
-      commands = ["help", "fork", "goto", "identemail", "fullscreen"];
+      commands = ["help", "fork", "goto", "identemail", "fullscreen", "query"];
     } else if (d.cat === "ib") {
       // commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link"];
-      commands = ["help", "fork", "comment", "pic", "link", "identemail", "info"];
+      commands = ["help", "fork", "comment", "pic", "link", "info"];
     } else {
       // commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link", "goto"];
-      commands = ["help", "fork", "goto", "comment", "pic", "link", "identemail", "info"];
+      commands = ["help", "fork", "goto", "comment", "pic", "link", "info"];
     }
 
     if (d.render && d.render == "image") {
