@@ -25,7 +25,7 @@ defmodule IbGib.Mixfile do
   # Type "mix help compile.app" for more information
   def application do
     # [applications: [:postgrex, :ecto, :logger, :random_gib],
-    [applications: [:postgrex, :ecto, :logger, :random_gib, :poison],
+    [applications: [:postgrex, :ecto, :logger, :random_gib, :poison, :ok],
      mod: {IbGib, []}]
   end
 
@@ -48,6 +48,7 @@ defmodule IbGib.Mixfile do
       {:ecto, ">= 2.0.2"}, # frozen at this point because ecto migrate fails at 2.0.4
       {:poison, "~> 2.1"},
       {:random_gib, in_umbrella: true},
+      {:ok, "~> 0.2.0"},
       {:exchalk, "~> 1.0.1"},
       {:credo, "~> 0.4", only: [:dev, :test]},
       {:dialyxir, "~> 0.3.5", only: [:dev]}
