@@ -41,7 +41,8 @@ defmodule IbGib.Constants do
 
       # The following is misnamed. It's the default_rel8ns when performing
       # a rel8 transform. Will refactor.
-      @default_rel8ns ["rel8d"]
+      # @default_rel8ns ["rel8d"]
+      @default_rel8ns [@root_ib_gib]
 
       # This "stamp" added to gib means that we have generated the ib_gib,
       # and not a user.

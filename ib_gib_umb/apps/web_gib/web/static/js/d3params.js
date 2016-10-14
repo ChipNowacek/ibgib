@@ -16,7 +16,8 @@ let d3Scales = {
   "ib": 5,
   "ibGib": 4,
   "result": 2,
-  "rel8d": 3,
+  // "rel8d": 3,
+  "ib^gib": 3,
   "pic": 3,
   "link": 3,
   "result": 3,
@@ -31,14 +32,15 @@ let d3Colors = {
   "past": "#A9CBD6",
   "ib": "#F2EC41",
   "ibGib": "#76963e",
-  "result": "#BEDEF7",
-  "rel8d": "#FFDFAB",
+  "result": "#86CC6C",
+  // "rel8d": "#FFDFAB",
+  "ib^gib": "#73BFAE",
   "comment": "#CCF26B",
   "text": "#CCF26B",
   "name": "#FFDFAB",
-  "pic": "#C2FFAD",
-  "image": "#C2FFAD",
-  "img": "#C2FFAD",
+  "pic": "#AABF73",
+  "image": "#AABF73",
+  "img": "#AABF73",
   "identity": "#404040",
   "default": "#AEA6E3"
 };
@@ -48,7 +50,8 @@ var d3DefaultCollapsed = [
   "past",
   "dna",
   "query",
-  "rel8d",
+  // "rel8d",
+  "ib^gib",
   "identity"
 ];
 
