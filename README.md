@@ -54,7 +54,7 @@ will need to do a few things:
 
 ### commit messages
 
-I have a [`git-commit-template.txt`](https://github.com/ibgib/ibgib/blob/master/git-commit-template.txt) that I use when doing commits. 
+I have a [`git-commit-template.txt`](https://github.com/ibgib/ibgib/blob/master/git-commit-template.txt) that I use when doing commits.
 
 I would be very grateful :pray: if you would utilize this. If you are unfamiliar with
 git commit templates...they're awesome! :fireworks: Just start a question issue
@@ -78,10 +78,13 @@ Umbrella application for all Elixir-related ibGib apps.
 Heart of the ibGib engine. Most of the meat right now is in
 `lib/ib_gib/expression.ex`.
 
-You can see how this is used in the tests in the `test/expression` directory.
-Keep in mind that these tests are starting the db from scratch. The "end" goal
+You can see how this is used in the tests in the `test/expression` directory
+or in [`ib_gib_controller.ex`](https://github.com/ibgib/ibgib/blob/master/ib_gib_umb/apps/web_gib/web/controllers/ib_gib_controller.ex).
+
+Keep in mind that the tests are starting the db from scratch. The "end" goal
 (for this phase) is to bootstrap the "primitive types" such as numbers, strings,
-arrays, etc., once the initial framework is up and running. More on this later.
+arrays, etc., once the initial framework is up and running, although I do
+[seed some primitives](https://github.com/ibgib/ibgib/blob/master/ib_gib_umb/apps/ib_gib/priv/repo/seeds.exs) for convenience. More on this later.
 
 Here is my recommended order of perusing the test files, as well as a brief
 description of each:
