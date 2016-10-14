@@ -221,6 +221,7 @@ export class IbScape {
       let graphNodeImages = graphNodes
           .append("image")
           .attr("id", d => "img_" + d.js_id)
+          .attr("opacity", 0.1)
           .attr("xlink:href", getNodeImage)
           .attr("cursor", "pointer")
           .on("click", nodeClicked)
@@ -300,7 +301,7 @@ export class IbScape {
     }
 
     function nodeMouseDown(d, dIndex, dList) {
-      if (d3.event.button == 0) {
+      if (d3.event.button === 0) {
         t.lastMouseDown = new Date();
         setTimeout(() => {
           if (t.lastMouseDown) {
@@ -341,7 +342,7 @@ export class IbScape {
             delete t.lastMouseDown;
             if (elapsedMs < d3LongPressMs) {
               // normal click
-              if (t.selectedDatum && t.selectedDatum.js_id == d.js_id) {
+              if (t.selectedDatum && t.selectedDatum.js_id === d.js_id) {
                 t.clearSelectedNode();
               } else {
                 t.clearSelectedNode();
@@ -392,7 +393,7 @@ export class IbScape {
     }
 
     function getNodeTitle(d) {
-      if (d.render === "text" || d.render == "link") {
+      if (d.render === "text" || d.render === "link") {
         t.getIbGibJson(d.ibgib, (ibGibJson) => {
           setTimeout(() => updateLabelText(d, ibGibJson), 100);
         });
@@ -408,22 +409,36 @@ export class IbScape {
     }
 
     function getNodeLabel(d) {
-      if (d.render === "text" || d.render == "link") {
+      if (d.render === "text" || d.render === "link") {
         t.getIbGibJson(d.ibgib, (ibGibJson) => {
           setTimeout(() => updateLabelText(d, ibGibJson), 100);
         });
         return "...";
-      } else {
-        // Label gets no text because it's not rendered as text.
+      } else if (d.render === "image") {
         return "";
+      } else if (d.ibgib === "ib^gib") {
+        return "";
+      } else if (d.cat === "rel8n") {
+        return "";
+      } else {
+        t.getIbGibJson(d.ibgib, (ibGibJson) => {
+          setTimeout(() => updateLabelText(d, ibGibJson), 100);
+        });
       }
     }
 
     function updateLabelText(d, ibGibJson) {
-      let labelText =
-          ibGibJson && ibGibJson.data && ibGibJson.data.text ?
-          ibGibJson.data.text :
-          "?";
+
+      let labelText = "?";
+      if (ibGibJson && ibGibJson.data && ibGibJson.data.text) {
+        labelText = ibGibJson.data.text;
+      } else if (ibGibJson && ibGibJson.data && ibGibJson.data.label) {
+        labelText = ibGibJson.data.label;
+      } else if (ibGibJson && ibGibJson.data && ibGibJson.data.title) {
+        labelText = ibGibJson.data.title;
+      } else if (ibGibJson && ibGibJson.ib) {
+        labelText = ibGibJson.ib;
+      }
 
       let label = d3.select("#label_" + d.js_id)
 
@@ -519,7 +534,6 @@ export class IbScape {
         .append("circle")
         .attr("r", getRadius)
         .attr("fill", d3Colors.pic)
-        // .attr("fill-opacity", 0.6)
         .attr("cx", d => { return getRadius(d) + magicOffset; })
         .attr("cy", d => { return getRadius(d) + magicOffset; });
 
@@ -549,9 +563,9 @@ export class IbScape {
     }
 
     function getLinkDistance(l) {
-      if (["comment", "pic", "link"].some(x => x == l.target.id)) {
+      if (["comment", "pic", "link"].some(x => x === l.target.id)) {
         return d3LinkDistances["special"];
-      } else if (["comment", "pic", "link"].some(x => x == l.target.cat)) {
+      } else if (["comment", "pic", "link"].some(x => x === l.target.cat)) {
         return d3LinkDistances["specialMember"];
       } else if (l.target.cat === "rel8n") {
         return d3LinkDistances["rel8n"];
@@ -756,27 +770,27 @@ export class IbScape {
       this.toggleExpandNode(dIbGib);
       this.destroyStuff();
       this.update(null);
-    } else if (dCommand.name == "fork") {
+    } else if (dCommand.name === "fork") {
       this.execFork(dIbGib)
-    } else if (dCommand.name == "goto") {
+    } else if (dCommand.name === "goto") {
       this.execGoto(dIbGib);
-    } else if (dCommand.name == "help") {
+    } else if (dCommand.name === "help") {
       this.execHelp(dIbGib);
-    } else if (dCommand.name == "comment") {
+    } else if (dCommand.name === "comment") {
       this.execComment(dIbGib);
-    } else if (dCommand.name == "pic") {
+    } else if (dCommand.name === "pic") {
       this.execPic(dIbGib);
-    } else if (dCommand.name == "fullscreen") {
+    } else if (dCommand.name === "fullscreen") {
       this.execFullscreen(dIbGib);
-    } else if (dCommand.name == "link") {
+    } else if (dCommand.name === "link") {
       this.execLink(dIbGib);
-    } else if (dCommand.name == "externallink") {
+    } else if (dCommand.name === "externallink") {
       this.execExternalLink(dIbGib);
-    } else if (dCommand.name == "identemail") {
+    } else if (dCommand.name === "identemail") {
       this.execIdentEmail(dIbGib);
-    } else if (dCommand.name == "info") {
+    } else if (dCommand.name === "info") {
       this.execInfo(dIbGib);
-    } else if (dCommand.name == "query") {
+    } else if (dCommand.name === "query") {
       this.execQuery(dIbGib);
     }
   }
@@ -1175,14 +1189,14 @@ export class IbScape {
       commands = ["help", "fork", "goto", "comment", "pic", "link", "info"];
     }
 
-    if (d.render && d.render == "image") {
+    if (d.render && d.render === "image") {
       commands.push("fullscreen");
     }
     if (d.cat === "link") {
       commands.push("externallink");
     }
 
-    let nodes = commands.map(cmdName => d3MenuCommands.filter(cmd => cmd.name == cmdName)[0]);
+    let nodes = commands.map(cmdName => d3MenuCommands.filter(cmd => cmd.name === cmdName)[0]);
     return {
       "nodes": nodes
     };
