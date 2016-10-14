@@ -22,3 +22,16 @@
 # Issue tracking
 # issue: relates to #
 # issue: closes #
+
+# Emoji
+# Here is what I have used for meaning of emoji
+# :construction:      ~ wip, often doesn't build
+# :wrench:            ~ implemented
+# :mouse:             ~ tweak
+# :art:               ~ web side/front end
+# :bug:               ~ uhh...bug
+# :high_heel:         ~ squash, used before :bug:
+# :fire:              ~ playing with fire ~ commit on master (not a huge deal)
+# :camera:            ~ images/screenshots
+# :notes:             ~ documentation
+# :white_check_mark:  ~ tests passing

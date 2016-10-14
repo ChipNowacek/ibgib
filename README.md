@@ -6,9 +6,19 @@ Don't Panic.
 
 ## contributing, or just checking ib out
 
+### issues and discussion
+
+The best :fireworks: way to start contributing is just to start or join a
+discussion. Start an issue, give it a question :question: or discussion :coffee:
+label. Just **communicating** is a great contribution.
+
 ### up and running
 
-Once you fork (if contributing), clone and download the source, you will need to do a few things:  
+If you want to dive into the code, here are some steps to get you up and
+running.
+
+Start off by forking the repo, clone and download the source. After this, you
+will need to do a few things:  
 
 1. Download and compile the dependencies.  
    * In the `ib_gib_umb` directory, run:
@@ -34,7 +44,7 @@ Once you fork (if contributing), clone and download the source, you will need to
    the phoenix web server, which once running, you should be able to point your browser to http://localhost/4000.
    * You may need to get a previous tag that is known to be compiling and
      working if you want to just check it out. I've just created
-     [one right now](https://github.com/ibgib/ibgib/tree/tag-abstract-baby-gib)
+     [one right now](https://github.com/ibgib/ibgib/tree/tag-abstract-02-teething)
    * In the `web_gib` directory, run `mix phoenix.server` if you just want to
      run the server, or `iex -S mix phoenix.server` if you want to use observer
      to check out the processes while running the server with
@@ -87,7 +97,7 @@ ibGib-specific.
 
 #### `web_gib`
 Phoenix application. Right now, this includes both "client" and "server".
-This is very much a simple POC app to give an interface to the `ib_gib` app.
+This is very much a "simple" POC app to give an interface to the `ib_gib` app.
 
 #### `random_gib`
 Helper application that I created first when learning the basics of Elixir.
