@@ -10,8 +10,10 @@ defmodule IbGib.Transform.Plan.Factory do
 
   require Logger
 
-  import IbGib.Helper
+  import OK, only: :macros
+
   alias IbGib.Transform.Plan.Builder, as: PB
+  import IbGib.Helper
 
   # ----------------------------------------------------------------------------
   # Basic Transform Plans
@@ -24,15 +26,10 @@ defmodule IbGib.Transform.Plan.Factory do
   """
   @spec fork(list(String.t), String.t, map) :: {:ok, map} | {:error, String.t}
   def fork(identity_ib_gibs, dest_ib, opts) do
-    with(
-      {:ok, plan} <- PB.plan(identity_ib_gibs, "[src]", opts),
-      {:ok, plan} <- PB.add_fork(plan, "fork1", dest_ib),
-      {:ok, plan} <- PB.yo(plan)
-    ) do
-      {:ok, plan}
-    else
-      error -> default_handle_error(error)
-    end
+    {:ok, identity_ib_gibs}
+    ~>> PB.plan("[src]", opts)
+    ~>> PB.add_fork("fork1", dest_ib)
+    ~>> PB.yo
   end
 
   @doc """
@@ -42,15 +39,10 @@ defmodule IbGib.Transform.Plan.Factory do
   """
   @spec mut8(list(String.t), map, map) :: {:ok, map} | {:error, String.t}
   def mut8(identity_ib_gibs, new_data, opts) do
-    with(
-      {:ok, plan} <- PB.plan(identity_ib_gibs, "[src]", opts),
-      {:ok, plan} <- PB.add_mut8(plan, "mut81", new_data),
-      {:ok, plan} <- PB.yo(plan)
-    ) do
-      {:ok, plan}
-    else
-      error -> default_handle_error(error)
-    end
+    {:ok, identity_ib_gibs}
+    ~>> PB.plan("[src]", opts)
+    ~>> PB.add_mut8("mut81", new_data)
+    ~>> PB.yo
   end
 
   @doc """
@@ -60,15 +52,10 @@ defmodule IbGib.Transform.Plan.Factory do
   """
   @spec rel8(list(String.t), String.t, list(String.t), map) :: {:ok, map} | {:error, String.t}
   def rel8(identity_ib_gibs, other_ib_gib, rel8ns, opts) do
-    with(
-      {:ok, plan} <- PB.plan(identity_ib_gibs, "[src]", opts),
-      {:ok, plan} <- PB.add_rel8(plan, "rel81", other_ib_gib, rel8ns),
-      {:ok, plan} <- PB.yo(plan)
-    ) do
-      {:ok, plan}
-    else
-      error -> default_handle_error(error)
-    end
+    {:ok, identity_ib_gibs}
+    ~>> PB.plan("[src]", opts)
+    ~>> PB.add_rel8("rel81", other_ib_gib, rel8ns)
+    ~>> PB.yo
   end
 
   # ----------------------------------------------------------------------------
@@ -83,15 +70,10 @@ defmodule IbGib.Transform.Plan.Factory do
   """
   @spec instance(list(String.t), String.t, map) :: {:ok, map} | {:error, String.t}
   def instance(identity_ib_gibs, dest_ib, opts) do
-    with(
-      {:ok, plan} <- PB.plan(identity_ib_gibs, "[src]", opts),
-      {:ok, plan} <- PB.add_fork(plan, "fork1", dest_ib),
-      {:ok, plan} <- PB.add_rel8(plan, "rel8_2_src", "[plan.src]", ["instance_of"]),
-      {:ok, plan} <- PB.yo(plan)
-    ) do
-      {:ok, plan}
-    else
-      error -> default_handle_error(error)
-    end
+    {:ok, identity_ib_gibs}
+    ~>> PB.plan("[src]", opts)
+    ~>> PB.add_fork("fork1", dest_ib)
+    ~>> PB.add_rel8("rel8_2_src", "[plan.src]", ["instance_of"])
+    ~>> PB.yo
   end
 end
