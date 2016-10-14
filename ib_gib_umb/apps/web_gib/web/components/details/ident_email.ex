@@ -24,7 +24,7 @@ defmodule WebGib.Web.Components.Details.IdentEmail do
         p [class: "ib-tooltip"] do
           "1-time Security Pin (optional): "
           span [class: "ib-center-glyph glyphicon glyphicon-question-sign ib-green"]
-          span [class: "ib-tooltiptext-smallfont"], do: gettext("If provided, you will enter this pin in a proceeding screen for an additional layer of optional security. Choose a random, short pin just for this login.")
+          span [class: "ib-tooltiptext-smallfont"], do: gettext("For additional security, you can enter a short pin here. If you enter this, you will be re-prompted for it after opening the link in your email. This is just a 1-time 'throwaway' pin! Make it random and short for this login.")
         end
         div do
           input [id: "ident_form_data_pin", name: "ident_form_data[ident_pin]",type: "password", value: ""]
