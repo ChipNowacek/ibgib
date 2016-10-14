@@ -275,6 +275,10 @@ export class IbScape {
       let index = d.cat;
       if (d.ibgib === "ib^gib") {
         index = "ibGib";
+      } else if (d.render && d.render === "text") {
+        index = "text";
+      } else if (d.render && d.render === "image") {
+        index = "image";
       } else if (d.cat === "rel8n") {
         index = d.id;
       }

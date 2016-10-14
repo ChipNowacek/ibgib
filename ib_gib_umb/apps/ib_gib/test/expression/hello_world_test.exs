@@ -80,8 +80,8 @@ defmodule IbGib.Expression.HelloWorldTest do
     _text_instance_rel8d_ib_gib = Helper.get_ib_gib!(text_instance_rel8d_info[:ib], text_instance_rel8d_info[:gib])
     _ = Logger.debug "text_instance_rel8d_info: #{inspect text_instance_rel8d_info}"
 
-    assert hw_instance_rel8d_info[:rel8ns]["rel8d"] === [text_instance_ib_gib]
-    assert text_instance_rel8d_info[:rel8ns]["rel8d"] === [hw_instance_rel8d_ib_gib]
+    assert hw_instance_rel8d_info[:rel8ns][@root_ib_gib] === [text_instance_ib_gib]
+    assert text_instance_rel8d_info[:rel8ns][@root_ib_gib] === [hw_instance_rel8d_ib_gib]
   end
 
   @tag :capture_log
@@ -136,8 +136,8 @@ defmodule IbGib.Expression.HelloWorldTest do
     # text_instance_rel8d_ib_gib = Helper.get_ib_gib!(text_instance_rel8d_info[:ib], text_instance_rel8d_info[:gib])
     _ = Logger.debug "text_instance_rel8d_info: #{inspect text_instance_rel8d_info}"
 
-    assert hw_instance_rel8d_info[:rel8ns]["rel8d"] === [text_instance_ib_gib]
-    assert text_instance_rel8d_info[:rel8ns]["rel8d"] === [hw_instance_rel8d_ib_gib]
+    assert hw_instance_rel8d_info[:rel8ns][@root_ib_gib] === [text_instance_ib_gib]
+    assert text_instance_rel8d_info[:rel8ns][@root_ib_gib] === [hw_instance_rel8d_ib_gib]
     assert hw_instance_rel8d_info[:rel8ns]["prop"] === [text_instance_ib_gib]
     assert hw_instance_rel8d_info[:rel8ns]["text"] === [text_instance_ib_gib]
     assert text_instance_rel8d_info[:rel8ns]["prop_of"] === [hw_instance_rel8d_ib_gib]
