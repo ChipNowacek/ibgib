@@ -1171,10 +1171,14 @@ defmodule WebGib.IbGibController do
     # since everybody has the root in its identity_ib_gibs.
     non_root_identities = Enum.filter(identity_ib_gibs, &(&1 != @root_ib_gib))
 
+    _ = Logger.debug("non_root_identities: #{inspect non_root_identities}" |> ExChalk.bg_green |> ExChalk.black)
+
     # All queries (currently) look only within the current user's identities.
     query_opts =
       do_query
       |> where_rel8ns("identity", "withany", "ibgib", non_root_identities)
+
+    _ = Logger.debug("query_opts: #{inspect query_opts}" |> ExChalk.bg_green |> ExChalk.black)
 
     # Add ib_search if given
     search_ib = query_params["search_ib"]
@@ -1186,9 +1190,9 @@ defmodule WebGib.IbGibController do
             "has" -> "like"
           end
 
-        do_query |> where_ib(ib_search_method, search_ib)
+        query_opts |> where_ib(ib_search_method, search_ib)
       else
-        do_query
+        query_opts
       end
 
     # Add search_data if given
@@ -1217,6 +1221,7 @@ defmodule WebGib.IbGibController do
     include_query = query_params["include_query"] != nil
     include_dna = query_params["include_dna"] != nil
 
+    # Build up list of what we're including
     include_rel8n_ibgibs =
       []
       |> add_rel8n_ibgibs(include_pic, ["pic#{@delim}gib"])
@@ -1228,7 +1233,7 @@ defmodule WebGib.IbGibController do
                            "mut8#{@delim}gib",
                            "rel8#{@delim}gib"])
 
-    _ = Logger.debug("include_rel8n_ibgibs: #{inspect include_rel8n_ibgibs}" |> ExChalk.bg_green)
+    _ = Logger.debug("include_rel8n_ibgibs: #{inspect include_rel8n_ibgibs}" |> ExChalk.bg_green |> ExChalk.black)
     query_opts =
       if length(include_rel8n_ibgibs) > 0 do
         query_opts
@@ -1236,6 +1241,8 @@ defmodule WebGib.IbGibController do
       else
         query_opts
       end
+
+    _ = Logger.debug("query_opts: #{inspect query_opts}" |> ExChalk.bg_green |> ExChalk.black)
 
     {:ok, query_opts}
   end

@@ -1516,20 +1516,6 @@ defmodule IbGib.Expression do
   def query(expr_pid, identity_ib_gibs, query_options)
     when is_pid(expr_pid) and is_list(identity_ib_gibs) and
          is_map(query_options) do
-    _ = Logger.debug "hellooooooooooooooooooooooooooooooooo"
-    _ = Logger.warn "hellooooooooooooooooooooooooooooooooo"
-    _ = Logger.warn "hellooooooooooooooooooooooooooooooooo"
-    _ = Logger.warn "hellooooooooooooooooooooooooooooooooo"
-    _ = Logger.warn "hellooooooooooooooooooooooooooooooooo"
-    _ = Logger.warn "hellooooooooooooooooooooooooooooooooo"
-    _ = Logger.warn "hellooooooooooooooooooooooooooooooooo"
-    _ = Logger.warn "hellooooooooooooooooooooooooooooooooo"
-    _ = Logger.warn "hellooooooooooooooooooooooooooooooooo"
-    _ = Logger.debug "hellooooooooooooooooooooooooooooooooo"
-    _ = Logger.debug "hellooooooooooooooooooooooooooooooooo"
-    _ = Logger.debug "hellooooooooooooooooooooooooooooooooo"
-    _ = Logger.debug "hellooooooooooooooooooooooooooooooooo"
-    _ = Logger.debug "hellooooooooooooooooooooooooooooooooo"
     GenServer.call(expr_pid, {:query, identity_ib_gibs, query_options}, 30_000) # hardcoded query timeout 30s
   end
   def query(expr_pid, identity_ib_gibs, query_options) do

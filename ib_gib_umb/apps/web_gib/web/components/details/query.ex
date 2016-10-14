@@ -16,7 +16,7 @@ defmodule WebGib.Web.Components.Details.Query do
       div class: "container" do
         # is/has row
         div class: "row" do
-          div class: "col-sm-1" do
+          div class: "col-sm-2" do
             span do
               input [id: "query_form_data_ib_query_type_is",
                      name: "query_form_data[ib_query_type]",
@@ -25,7 +25,7 @@ defmodule WebGib.Web.Components.Details.Query do
               label "is", for: "query_form_data_ib_query_type_is"
             end
           end
-          div class: "col-sm-1" do
+          div class: "col-sm-2" do
             span do
               input [id: "query_form_data_ib_query_type_has",
                      name: "query_form_data[ib_query_type]",
@@ -53,13 +53,20 @@ defmodule WebGib.Web.Components.Details.Query do
   component :data_options do
     fieldset [class: "ib-details-fieldset"] do
       legend [class: "ib-details-legend"], do: "data"
-      label [class: "ib-details-label", for: "query_form_data_search_data"] do
-        "has"
+      div class: "container" do
+        # is/has row
+        div class: "row" do
+          div class: "col-sm-12" do
+            label [class: "ib-details-label", for: "query_form_data_search_data"] do
+              "has"
+            end
+            input [id: "query_form_data_search_data",
+                   name: "query_form_data[search_data]",
+                   type: "text",
+                   value: ""]
+          end
+        end
       end
-      input [id: "query_form_data_search_data",
-             name: "query_form_data[search_data]",
-             type: "text",
-             value: ""]
     end
   end
 
@@ -68,40 +75,46 @@ defmodule WebGib.Web.Components.Details.Query do
     fieldset [class: "ib-details-fieldset"] do
       legend [class: "ib-details-legend"], do: "include"
 
-      # pic
-      input [id: "query_form_data_include_pic",
-             name: "query_form_data[include_pic]",
-             type: "checkbox",
-             value: "include_pic"]
-      label [class: "ib-details-label", for: "query_form_data_include_pic"] do
-        "pic"
-      end
+      div class: "container" do
+        div class: "row" do
+          div class: "col-sm-12" do
+            # pic
+            input [id: "query_form_data_include_pic",
+                   name: "query_form_data[include_pic]",
+                   type: "checkbox",
+                   value: "include_pic"]
+            label [class: "ib-details-label", for: "query_form_data_include_pic"] do
+              "pic"
+            end
 
-      # comment
-      input [id: "query_form_data_include_comment",
-             name: "query_form_data[include_comment]",
-             type: "checkbox",
-             value: "include_comment"]
-      label [class: "ib-details-label", for: "query_form_data_include_comment"] do
-        "comment"
-      end
+            # comment
+            input [id: "query_form_data_include_comment",
+                   name: "query_form_data[include_comment]",
+                   type: "checkbox",
+                   value: "include_comment"]
+            label [class: "ib-details-label", for: "query_form_data_include_comment"] do
+              "comment"
+            end
 
-      # dna
-      input [id: "query_form_data_include_dna",
-             name: "query_form_data[include_dna]",
-             type: "checkbox",
-             value: "include_dna"]
-      label [class: "ib-details-label", for: "query_form_data_include_dna"] do
-        "dna"
-      end
+            # dna
+            input [id: "query_form_data_include_dna",
+                   name: "query_form_data[include_dna]",
+                   type: "checkbox",
+                   value: "include_dna"]
+            label [class: "ib-details-label", for: "query_form_data_include_dna"] do
+              "dna"
+            end
 
-      # query
-      input [id: "query_form_data_include_query",
-             name: "query_form_data[include_query]",
-             type: "checkbox",
-             value: "include_query"]
-      label [class: "ib-details-label", for: "query_form_data_include_query"] do
-        "query"
+            # query
+            input [id: "query_form_data_include_query",
+                   name: "query_form_data[include_query]",
+                   type: "checkbox",
+                   value: "include_query"]
+            label [class: "ib-details-label", for: "query_form_data_include_query"] do
+              "query"
+            end
+          end
+        end
       end
 
     end
@@ -110,14 +123,23 @@ defmodule WebGib.Web.Components.Details.Query do
   component :global_options do
     fieldset [class: "ib-details-fieldset"] do
       legend [class: "ib-details-legend"], do: "other options"
-      input [id: "query_form_data_latest",
-             name: "query_form_data[latest]",
-             type: "checkbox",
-             value: "latest",
-             checked: ""]
-      label [class: "ib-details-label", for: "query_form_data_latest"] do
-        "Latest Only"
+
+      div class: "container" do
+        div class: "row" do
+          div class: "col-sm-12" do
+            # Latest
+            input [id: "query_form_data_latest",
+                   name: "query_form_data[latest]",
+                   type: "checkbox",
+                   value: "latest",
+                   checked: ""]
+            label [class: "ib-details-label", for: "query_form_data_latest"] do
+              "latest only"
+            end
+          end
+        end
       end
+
     end
   end
 

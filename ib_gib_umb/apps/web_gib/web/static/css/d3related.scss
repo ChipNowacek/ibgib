@@ -88,7 +88,8 @@ pre {
     padding-bottom: 0px;
     margin: 0px;
     border: none;
-    font-size: 18px;
+    font-size: 16px;
+    font-family: fantasy;
     width: auto;
 }
 
@@ -104,6 +105,8 @@ pre {
   margin-right: 5px;
   margin-bottom: 5px;
   vertical-align: middle;
+  font-size: 14px;
+  font-family: fantasy;
 }
 
 #query_form_data_search_ib {
@@ -114,12 +117,13 @@ pre {
 }
 
 #query_form_data_search_data {
-  margin-left: 5px;
-  margin-right: 10px;
-  margin-bottom: 10px;
+  // margin-left: 10px;
+  // margin-right: 25px;
+  margin-bottom: 5px;
+  width: 100%;
 }
 
-#query_form_data_latest {
-  margin-top: 5px;
-  margin-left: 5px;
-}
+// #query_form_data_latest {
+//   margin-top: 5px;
+//   margin-left: 5px;
+// }
