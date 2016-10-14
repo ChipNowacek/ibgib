@@ -18,6 +18,12 @@ defmodule WebGib.IbGibController do
   import IbGib.QueryOptionsFactory
 
   # ----------------------------------------------------------------------------
+  # Function Plugs
+  # ----------------------------------------------------------------------------
+
+  plug :authorize_upload when action in [:pic]
+
+  # ----------------------------------------------------------------------------
   # Controller Commands
   # ----------------------------------------------------------------------------
 
@@ -553,8 +559,8 @@ defmodule WebGib.IbGibController do
     _ = Logger.warn "pic_data: #{inspect pic_data}"
 
     if validate(:pic_data, {content_type, filename, path}) and
-                validate(:ib_gib, src_ib_gib) and
-                src_ib_gib != @root_ib_gib do
+       validate(:ib_gib, src_ib_gib) and
+       src_ib_gib != @root_ib_gib do
       _ = Logger.debug "pic is valid. content_type, filename, path: #{content_type}, #{filename}, #{path}"
 
       case pic_impl(conn, src_ib_gib, content_type, filename, path) do
@@ -1364,5 +1370,27 @@ defmodule WebGib.IbGibController do
     # none given is fine
     true
   end
+
+  # User must be signed in with an email identity to upload pics.
+  defp authorize_upload(conn, _params) do
+    identity_ib_gibs = get_session(conn, @ib_identity_ib_gibs_key)
+    if has_email_identity?(identity_ib_gibs) do
+      conn
+    else
+      conn
+      |> put_flash(:error, "You must be identified by at least one email account to upload. Just hit the back button, log in with an email account and try again. See https://github.com/ibgib/ibgib/wiki/Identify-with-Email---Step-By-Step-Walkthru and https://github.com/ibgib/ibgib/wiki/Identity for more info.")
+      |> redirect(to: "/ibgib/#{@root_ib_gib}")
+      |> halt
+    end
+  end
+
+  defp has_email_identity?(identity_ib_gibs) when is_list(identity_ib_gibs) do
+    identity_ib_gibs
+    |> Enum.any?(&(String.starts_with?(&1, "email_")))
+  end
+  defp has_email_identity?(identity_ib_gibs) do
+    false
+  end
+
 
 end
