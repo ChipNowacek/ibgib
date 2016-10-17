@@ -56,6 +56,16 @@ var d3DefaultCollapsed = [
   "identity"
 ];
 
+var d3RequireExpandLevel2 = [
+  "ancestor",
+  "past",
+  "dna",
+  "query",
+  // "rel8d",
+  "ib^gib",
+  "identity"
+];
+
 var d3MenuCommands = [
   {
     "id": "menu-pic",
@@ -211,4 +221,4 @@ var d3MenuCommands = [
   }
 ];
 
-export { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3DefaultCollapsed, d3MenuCommands };
+export { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3DefaultCollapsed, d3RequireExpandLevel2, d3MenuCommands };

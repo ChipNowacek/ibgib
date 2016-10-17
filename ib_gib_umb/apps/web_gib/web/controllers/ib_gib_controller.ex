@@ -376,10 +376,23 @@ defmodule WebGib.IbGibController do
   # Fork
   # ----------------------------------------------------------------------------
 
+  def fork(conn, %{"fork_form_data" => %{"dest_ib" => dest_ib, "src_ib_gib" => src_ib_gib} = form_data} = params) when is_nil(dest_ib) or dest_ib == "" do
+    Logger.debug "whaaaaat. fork new something"
+    dest_ib =
+      if valid_ib_gib?(src_ib_gib) do
+        {src_ib, _gib} = separate_ib_gib!(src_ib_gib)
+        src_ib
+      else
+        new_id
+      end
+    new_form_data = Map.put(form_data, "dest_ib", dest_ib)
+    new_params = Map.put(params, "fork_form_data", new_form_data)
+    fork(conn, new_params)
+  end
   def fork(conn, %{"fork_form_data" => %{"dest_ib" => dest_ib, "src_ib_gib" => src_ib_gib}} = params) do
     _ = Logger.debug "conn: #{inspect conn}"
     _ = Logger.debug "conn.params: #{inspect conn.params}"
-    _ = Logger.debug "params: #{inspect params}"
+    _ = Logger.debug "abxparams: #{inspect params}"
     msg = "dest_ib: #{dest_ib}"
 
     if validate(:dest_ib, dest_ib) and validate(:ib_gib, src_ib_gib) do

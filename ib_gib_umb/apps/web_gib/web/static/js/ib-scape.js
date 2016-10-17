@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import * as d3text from 'd3-textwrap';
 
-import { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3DefaultCollapsed, d3MenuCommands } from './d3params';
+import { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3DefaultCollapsed, d3RequireExpandLevel2, d3MenuCommands } from './d3params';
 import * as ibHelper from './services/ibgib-helper';
 
 
@@ -116,11 +116,14 @@ export class IbScape {
       // `d3.json` is superfluous if this is already set. Anyway, I'm doing
       // initialize stuff to enable collapsing of categories.
       // Obviously, this is horrifically non-optimized.
+      t.ibNode = null;
       t.rawData = graph;
       if (!t.workingData) {
         let hiddenNodeIds = [];
         graph.nodes.forEach(n => {
           if (n.cat === "ib") {
+            t.ibNode = n;
+            n.expandLevel = 1;
             n.collapsed = true;
             n.visible = true;
           } else if (n.cat === "ibGib") {
@@ -130,33 +133,43 @@ export class IbScape {
             n.collapsed = true;
             n.visible = false;
           }
-          // if (d3DefaultCollapsed.some(rel8n => rel8n === n.cat)) {
-          //   // If a node's rel8n is in the collapsed cats list, hide it.
-          //   n.visible = false;
-          //   n.collapsed = false;
-          //   hiddenNodeIds.push(n.id);
-          // } else if (d3DefaultCollapsed.some(cat => cat === n.id)) {
-          //   // If the node's id itself is the rel8n, then keep it visible but
-          //   // mark it as collapsed.
-          //   n.visible = true;
-          //   n.collapsed = true;
-          // } else {
-          //   // The node is not a collapsed rel8n, and it's not in a collapsed
-          //   // rel8n.
-          //   n.visible = true;
-          //   n.collapsed = false;
-          // }
-        });
-        graph.links.forEach(l => {
-          l.active = false;
-          // if (hiddenNodeIds.some(nid => l.source === nid || l.target === nid)) {
-          //   l.active = false;
-          // } else {
-          //   l.active = true;
-          // }
         });
 
+        graph.links.forEach(l => {
+          l.active = false;
+        });
+
+        graph.links.
+          filter(l => l.source === t.ibNode.id &&
+                      !d3RequireExpandLevel2.some(r => r === l.target)).
+          forEach(l => {
+            let node = graph.nodes.filter(n => n.id === l.target)[0];
+            if (node) {
+              node.visible = true;
+              node.collapsed = false;
+              l.active = true;
+
+              // debugger;
+              let subLinks = graph.links.filter(sl => {
+                // debugger;
+                return sl.source === l.target;
+              });
+              subLinks.forEach(sl => {
+                let subnode = graph.nodes.filter(n => n.id === sl.target)[0];
+                subnode.visible = true;
+                subnode.collapsed = true;
+                sl.active = true;
+              });
+            }
+        });
+
+        t.ibNode.collapsed = false;
+
         t.workingData = graph;
+
+        // At this point, these graph nodes and links do not have the same
+        // structure as later.
+        // t.expandNode(ibNode);
       }
 
       graph = t.workingData;
@@ -166,6 +179,7 @@ export class IbScape {
       let modifiedNodes = graph.nodes.filter(n => n.visible);
       // inactive means one of the link's endpoints is hidden.
       let modifiedLinks = graph.links.filter(l => l.active);
+
 
       let graphLinks = svgGroup.append("g")
           .attr("class", "links")
@@ -217,7 +231,6 @@ export class IbScape {
           .on("mousedown", nodeMouseDown)
           .on("touchstart", nodeTouchStart)
           .on("touchend", nodeTouchEnd)
-          // .on("dblclick", nodeDblClicked)
           .on("contextmenu", (d, i)  => { d3.event.preventDefault(); });
 
       graphNodeCircles.append("title")
@@ -226,12 +239,13 @@ export class IbScape {
       let graphNodeLabels = graphNodes
           .append("g")
           .attr("id", d => "label_" + d.js_id)
+          .on("click", nodeClicked)
           .on("mousedown", nodeMouseDown)
           .on("touchstart", nodeTouchStart)
           .on("touchend", nodeTouchEnd)
-          .on("click", nodeClicked)
           .attr("cursor", "pointer")
-          .text(getNodeLabel)
+          .on("contextmenu", (d, i)  => { d3.event.preventDefault(); })
+          .text(getNodeLabel);
 
       let graphNodeImages = graphNodes
           .append("image")
@@ -245,13 +259,10 @@ export class IbScape {
           .attr("width", 16)
           .attr("height", 16)
           // .on("dblclick", nodeDblClicked)
+          .on("click", nodeClicked)
           .on("mousedown", nodeMouseDown)
           .on("touchstart", nodeTouchStart)
-          .on("touchend", nodeTouchEnd)
-          .call(d3.drag()
-              .on("start", dragstarted)
-              .on("drag", dragged)
-              .on("end", dragended));
+          .on("touchend", nodeTouchEnd);
 
       graphNodeImages.append("title")
           .text(d => d.id);
@@ -830,8 +841,7 @@ export class IbScape {
   }
 
   executeMenuCommand(dIbGib, dCommand) {
-    if ((dCommand.name === "view" || dCommand.name === "hide") &&
-         dIbGib.cat === "rel8n") {
+    if ((dCommand.name === "view" || dCommand.name === "hide")) {
       this.toggleExpandNode(dIbGib);
       this.destroyStuff();
       this.update(null);
@@ -880,9 +890,9 @@ export class IbScape {
         "haven't included help for this yet. Let me know please :-O";
 
       if (dIbGib.ibgib === "ib^gib") {
-        text = `The green ibGib is a special ibGib called the 'root'. It is the Alpha and the Omega. It is always the first ancestor, the first dna, the first query result. It is its own ancestor and past.`;
+        text = `Double-click to expand an ibGib, single-click to view its menu. Click the Spock Hand to fork into a "new" ibGib. Click login to identify yourself with your (public) email address. Click search to search your existing ibGib. Click the pointer finger to navigate to an ibGib.`;
       } else if (dIbGib.cat === "ib") {
-        text = `The yellow ibGib is your current ibGib. Click the information button to get more details about it. You can expand / collapse any children, fork it, merge it, add comments, pictures, links, and more.`;
+        text = `This is your current ibGib. Click the information button to get more details about it. You can expand / collapse any children, fork it, merge it, add comments, pictures, links, and more.`;
       } else if (dIbGib.cat === "ancestor") {
         text = `This is an 'ancestor' ibGib. Each 'new' ibGib is created by forking an existing one. Ancestors are how we keep track of which ibGib we've forked to produce the current incarnation.`
       } else if (dIbGib.cat === "past") {
@@ -1119,6 +1129,8 @@ export class IbScape {
 
     // activate links
     this.workingData.links.forEach(l => {
+      // debugger;
+
       l.active = l.source.visible && l.target.visible;
     });
   }
@@ -1128,15 +1140,47 @@ export class IbScape {
     let recursive = false; // Expand **only direct** children
     let nodeChildren = this.getNodeChildren(d, recursive, runningList);
     nodeChildren.forEach(nodeChild => {
-      nodeChild.visible = true;
-      nodeChild.collapsed = true;
+      let shouldShowChild = this.getShouldShowChild(d, nodeChild);
+      nodeChild.visible = shouldShowChild;
+
+      let shouldExpandChild = nodeChild.cat === "rel8n" ?
+        d3DefaultCollapsed.some(r => r === nodeChild.id) :
+        d3DefaultCollapsed.some(r => r === nodeChild.cat);
+      if (shouldExpandChild) {
+        nodeChild.collapsed = true;
+      } else {
+        this.expandNode(nodeChild);
+      }
     });
     d.collapsed = false;
 
     // activate links
     this.workingData.links.forEach(l => {
+      // debugger;
+
       l.active = l.source.visible && l.target.visible;
     });
+  }
+
+  getShouldShowChild(d, nodeChild) {
+    if (d.cat !== "ib") {
+      return true;
+    } else if (d.expandLevel === 2) {
+      return true;
+    } else if (d.expandLevel === 1) {
+      // Determine if the nodeChild should be collapsed or not.
+      // This whole thing is hacky!
+      // The gist is that if it's in the require expand level 2, then
+      // dont show it unless we're at level 2. Right now, we're at level 1.
+      if (nodeChild.cat === "rel8n") {
+        return !d3RequireExpandLevel2.some(r => r === nodeChild.id);
+      } else {
+        return !d3RequireExpandLevel2.some(r => r === nodeChild.cat);
+      }
+    } else {
+      console.warn("unknown expand level");
+      return true;
+    }
   }
 
   getNodeChildren(d, recursive, runningList) {
@@ -1168,79 +1212,20 @@ export class IbScape {
   }
 
   toggleExpandNode(d) {
-    if (d.collapsed || d.collapsed === undefined) {
+    // debugger;
+    let recursive = false;
+    let nodeChildren = this.getNodeChildren(d, recursive, []);
+
+    if ((d.collapsed || d.collapsed === undefined) && nodeChildren.length > 0) {
+      d.expandLevel = 1;
+      this.expandNode(d);
+    } else if (d.expandLevel === 1 && d.cat === "ib") {
+      d.expandLevel = 2;
       this.expandNode(d);
     } else {
+      d.expandLevel = 0;
       this.collapseNode(d);
     }
-
-    // if (d.cat === "rel8n") {
-    //   let dRel8n = d;
-    //   if (dRel8n.collapsed) {
-    //     // expand
-    //     dRel8n.collapsed = false;
-    //
-    //     // show hidden nodes
-    //     this.workingData.nodes.forEach(n => {
-    //       if (n.cat === dRel8n.id) {
-    //         n.visible = true;
-    //       }
-    //     });
-    //
-    //     // activate links
-    //     this.workingData.links.forEach(l => {
-    //       l.active = l.source.visible && l.target.visible;
-    //     });
-    //   } else {
-    //     // collapse
-    //     dRel8n.collapsed = true;
-    //
-    //     // show hidden nodes
-    //     this.workingData.nodes.forEach(n => {
-    //       if (n.cat === dRel8n.id) {
-    //         n.visible = false;
-    //       }
-    //     });
-    //
-    //     // activate links
-    //     this.workingData.links.forEach(l => {
-    //       l.active = l.source.visible && l.target.visible;
-    //     });
-    //   }
-    // } else if (d.cat === "ib") {
-    //   console.log("toggggggggggggggggggle");
-    //   if (d.collapsed) {
-    //     // expand
-    //     d.collapsed = false;
-    //
-    //     // show hidden nodes
-    //     this.workingData.nodes.forEach(n => {
-    //       if (n.cat === "rel8n") {
-    //         n.visible = true;
-    //       }
-    //     });
-    //
-    //     // activate links
-    //     this.workingData.links.forEach(l => {
-    //       l.active = l.source.visible && l.target.visible;
-    //     });
-    //   } else {
-    //     // collapse
-    //     d.collapsed = true;
-    //
-    //     // show hidden nodes
-    //     this.workingData.nodes.forEach(n => {
-    //       if (n.cat === "rel8n") {
-    //         n.visible = false;
-    //       }
-    //     });
-    //
-    //     // activate links
-    //     this.workingData.links.forEach(l => {
-    //       l.active = l.source.visible && l.target.visible;
-    //     });
-    //   }
-    // }
   }
 
   tearDownMenu(cancelDetails) {
@@ -1351,10 +1336,10 @@ export class IbScape {
       commands = ["help", "fork", "goto", "identemail", "fullscreen", "query"];
     } else if (d.cat === "ib") {
       // commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link"];
-      commands = ["help", "fork", "comment", "pic", "link", "info"];
+      commands = ["help", "view", "fork", "comment", "pic", "link", "info"];
     } else {
       // commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link", "goto"];
-      commands = ["help", "fork", "goto", "comment", "pic", "link", "info"];
+      commands = ["help", "view", "fork", "goto", "comment", "pic", "link", "info"];
     }
 
     if (d.render && d.render === "image") {
