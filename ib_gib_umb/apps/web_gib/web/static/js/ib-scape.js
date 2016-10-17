@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import * as d3text from 'd3-textwrap';
 
-import { d3CircleRadius, d3LongPressMs, d3LinkDistances, d3Scales, d3Colors, d3DefaultCollapsed, d3MenuCommands } from './d3params';
+import { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3DefaultCollapsed, d3MenuCommands } from './d3params';
 import * as ibHelper from './services/ibgib-helper';
 
 
@@ -120,29 +120,40 @@ export class IbScape {
       if (!t.workingData) {
         let hiddenNodeIds = [];
         graph.nodes.forEach(n => {
-          if (d3DefaultCollapsed.some(rel8n => rel8n === n.cat)) {
-            // If a node's rel8n is in the collapsed cats list, hide it.
-            n.visible = false;
-            n.collapsed = false;
-            hiddenNodeIds.push(n.id);
-          } else if (d3DefaultCollapsed.some(cat => cat === n.id)) {
-            // If the node's id itself is the rel8n, then keep it visible but
-            // mark it as collapsed.
-            n.visible = true;
+          if (n.cat === "ib") {
             n.collapsed = true;
-          } else {
-            // The node is not a collapsed rel8n, and it's not in a collapsed
-            // rel8n.
             n.visible = true;
-            n.collapsed = false;
+          } else if (n.cat === "ibGib") {
+            n.collapsed = true;
+            n.visible = true;
+          } else {
+            n.collapsed = true;
+            n.visible = false;
           }
+          // if (d3DefaultCollapsed.some(rel8n => rel8n === n.cat)) {
+          //   // If a node's rel8n is in the collapsed cats list, hide it.
+          //   n.visible = false;
+          //   n.collapsed = false;
+          //   hiddenNodeIds.push(n.id);
+          // } else if (d3DefaultCollapsed.some(cat => cat === n.id)) {
+          //   // If the node's id itself is the rel8n, then keep it visible but
+          //   // mark it as collapsed.
+          //   n.visible = true;
+          //   n.collapsed = true;
+          // } else {
+          //   // The node is not a collapsed rel8n, and it's not in a collapsed
+          //   // rel8n.
+          //   n.visible = true;
+          //   n.collapsed = false;
+          // }
         });
         graph.links.forEach(l => {
-          if (hiddenNodeIds.some(nid => l.source === nid || l.target === nid)) {
-            l.active = false;
-          } else {
-            l.active = true;
-          }
+          l.active = false;
+          // if (hiddenNodeIds.some(nid => l.source === nid || l.target === nid)) {
+          //   l.active = false;
+          // } else {
+          //   l.active = true;
+          // }
         });
 
         t.workingData = graph;
@@ -204,7 +215,9 @@ export class IbScape {
           .attr("fill", getColor)
           .on("click", nodeClicked)
           .on("mousedown", nodeMouseDown)
-          .on("dblclick", nodeDblClicked)
+          .on("touchstart", nodeTouchStart)
+          .on("touchend", nodeTouchEnd)
+          // .on("dblclick", nodeDblClicked)
           .on("contextmenu", (d, i)  => { d3.event.preventDefault(); });
 
       graphNodeCircles.append("title")
@@ -214,6 +227,8 @@ export class IbScape {
           .append("g")
           .attr("id", d => "label_" + d.js_id)
           .on("mousedown", nodeMouseDown)
+          .on("touchstart", nodeTouchStart)
+          .on("touchend", nodeTouchEnd)
           .on("click", nodeClicked)
           .attr("cursor", "pointer")
           .text(getNodeLabel)
@@ -229,8 +244,10 @@ export class IbScape {
           .attr("y", -8)
           .attr("width", 16)
           .attr("height", 16)
-          .on("dblclick", nodeDblClicked)
+          // .on("dblclick", nodeDblClicked)
           .on("mousedown", nodeMouseDown)
+          .on("touchstart", nodeTouchStart)
+          .on("touchend", nodeTouchEnd)
           .call(d3.drag()
               .on("start", dragstarted)
               .on("drag", dragged)
@@ -288,6 +305,7 @@ export class IbScape {
 
     function backgroundClicked(d) {
       console.log("background clicked");
+      // alert("background clicked")
 
       t.clearSelectedNode();
 
@@ -300,15 +318,61 @@ export class IbScape {
       d3.event.preventDefault();
     }
 
-    function nodeMouseDown(d, dIndex, dList) {
-      if (d3.event.button === 0) {
-        t.lastMouseDown = new Date();
-        setTimeout(() => {
-          if (t.lastMouseDown) {
-            console.log("long click handler here");
+    function handleTouchstartOrMouseDown(d, dIndex, dList) {
+      t.beforeLastMouseDownTime = t.lastMouseDownTime || 0;
+      t.lastMouseDownTime = new Date();
+
+      setTimeout(() => {
+        if (t.lastMouseDownTime && ((t.lastMouseDownTime - t.beforeLastMouseDownTime) < d3DblClickMs)) {
+          delete t.lastMouseDownTime;
+          delete t.beforeLastMouseDownTime;
+
+          // We toggle expanding if the node is double clicked.
+          if (d.ibgib !== "ib^gib") {
+            t.clearSelectedNode();
+
+            t.toggleExpandNode(d);
+            t.destroyStuff();
+            t.update(null);
           }
-        }, d3LongPressMs);
+        } else if (t.lastMouseDownTime) {
+          console.log("long click handler here");
+        } else {
+          // alert("else handletouchor")
+        }
+      }, d3LongPressMs);
+    }
+
+    function nodeTouchStart(d, dIndex, dList) {
+      // alert("touchstart");
+      t.isTouch = true;
+      t.lastTouchStart = d3.event;
+      t.targetNode = d3.event.target;
+      let touch = t.lastTouchStart.touches[0];
+      // debugger;
+      t.mouseOrTouchPosition = [touch.clientX, touch.clientY];
+      // alert(`pos: ${t.mouseOrTouchPosition}`)
+      handleTouchstartOrMouseDown(d, dIndex, dList);
+      d3.event.preventDefault();
+    }
+
+    function nodeTouchEnd(d, dIndex, dList) {
+      // debugger;
+      t.lastTouchEnd = d3.event;
+      let elapsedMs = new Date() - t.lastMouseDownTime;
+      if (elapsedMs < d3LongPressMs) { nodeClicked(d); }
+    }
+
+    function nodeMouseDown(d, dIndex, dList) {
+      t.isTouch = false;
+      t.mouseOrTouchPosition = d3.mouse(t.view.node());
+      t.lastMouseDownEvent = d3.event;
+      t.targetNode = t.lastMouseDownEvent.target;
+      // console.log("nodeMouseDown")
+      if (d3.event.button === 0) {
+        handleTouchstartOrMouseDown(d, dIndex, dList);
       }
+      d3.event.preventDefault();
     }
 
     function nodeHyperlinkClicked(d) {
@@ -320,26 +384,26 @@ export class IbScape {
     }
 
     function nodeClicked(d) {
-      console.log(`nodeClicked: ${JSON.stringify(d)}`);
+      // console.log(`nodeClicked: ${JSON.stringify(d)}`);
+      // alert("nodeClicked");
 
       // Only handle the click if it's not a double-click.
+      // on refactor, I should seriously consider doing rx or hammer handlers.
       if (t.maybeDoubleClicking) {
         // we're double-clicking
         delete t.maybeDoubleClicking;
-        delete t.mousePosition;
+        delete t.mouseOrTouchPosition;
         delete t.targetNode;
       } else {
         t.maybeDoubleClicking = true;
-        t.mousePosition = d3.mouse(t.view.node());
-        t.targetNode = d3.event.target;
 
         setTimeout(() => {
           if (t.maybeDoubleClicking) {
             // Not double-clicking, so handle click
-
             let now = new Date();
-            let elapsedMs = now - t.lastMouseDown;
-            delete t.lastMouseDown;
+            let elapsedMs = now - t.lastMouseDownTime;
+            // alert("nodeclicked maybe")
+            delete t.lastMouseDownTime;
             if (elapsedMs < d3LongPressMs) {
               // normal click
               if (t.selectedDatum && t.selectedDatum.js_id === d.js_id) {
@@ -355,21 +419,7 @@ export class IbScape {
 
             delete t.maybeDoubleClicking;
           }
-        }, 300);
-      }
-
-      // d3.event.preventDefault();
-    }
-
-    function nodeDblClicked(d) {
-      // We toggle expanding if the node is double clicked.
-      if (d.cat === "rel8n") {
-        // HACK: ib-scape nodeDblClicked Hide the menu that pops up on node clicked.
-        t.clearSelectedNode();
-
-        t.toggleExpandNode(d);
-        t.destroyStuff();
-        t.update(null);
+        }, d3DblClickMs);
       }
     }
 
@@ -377,19 +427,38 @@ export class IbScape {
       if (!d3.event.active) simulation.alphaTarget(0.3).restart();
       d.fx = d.x;
       d.fy = d.y;
+
+      t.x0 = d3.event.x;
+      t.y0 = d3.event.y;
     }
 
     function dragged(d) {
-      if (t.lastMouseDown) { delete t.lastMouseDown; }
-
       d.fx = d3.event.x;
       d.fy = d3.event.y;
+
+      let dist = Math.sqrt(Math.pow(t.x0 - d.fx, 2) + Math.pow(t.y0 - d.fy, 2));
+      if (dist > 2.5) {
+        // alert(`dist: ${dist}`)
+        delete t.lastMouseDownTime;
+        t.x0 = null;
+        t.y0 = null;
+      }
     }
 
     function dragended(d) {
+      // console.log("dragended")
       if (!d3.event.active) simulation.alphaTarget(0);
+
+      let dist = Math.sqrt(Math.pow(t.x0 - d.fx, 2) + Math.pow(t.y0 - d.fy, 2));
+
+      d.fx = d3.event.x;
+      d.fy = d3.event.y;
+
       d.fx = null;
       d.fy = null;
+      // alert("deleting fx0")
+      t.x0 = null;
+      t.y0 = null;
     }
 
     function getNodeTitle(d) {
@@ -605,21 +674,17 @@ export class IbScape {
 
     this.selectedDatum = d;
     this.selectedNode = d3.select("#" + d.js_id);
-    let top =
-      d3.select("#" + d.js_id)
-          .style("opacity", 1)
-          .attr("stroke", "yellow")
-          .attr("stroke-width", "10px")
-          ;
+    d3.select("#" + d.js_id)
+        .style("opacity", 1)
+        .attr("stroke", "yellow")
+        .attr("stroke-width", "10px");
 
     let transition =
       d3.transition()
         .duration(150)
         .ease(d3.easeLinear);
 
-    // let mousePosition = d3.mouse(this.view.node());
-    // let targetNode = d3.event.target;
-    let position = this.getMenuPosition(this.mousePosition, this.targetNode);
+    let position = this.getMenuPosition(this.mouseOrTouchPosition, this.targetNode);
     d3.select("#ib-d3-graph-menu-div")
       .transition(transition)
         .style("left", position.x + "px")
@@ -1041,38 +1106,141 @@ export class IbScape {
     }
   }
 
-  toggleExpandNode(dRel8n) {
-    if (dRel8n.collapsed) {
-      // expand
-      dRel8n.collapsed = false;
+  collapseNode(d) {
+    let runningList = [];
+    let recursive = true; // Collapse **all** children
+    let nodeChildren = this.getNodeChildren(d, recursive, runningList);
+    nodeChildren.forEach(nodeChild => {
+      nodeChild.collapsed = true;
+      nodeChild.visible = false;
+    });
 
-      // show hidden nodes
-      this.workingData.nodes.forEach(n => {
-        if (n.cat === dRel8n.id) {
-          n.visible = true;
+    d.collapsed = true;
+
+    // activate links
+    this.workingData.links.forEach(l => {
+      l.active = l.source.visible && l.target.visible;
+    });
+  }
+
+  expandNode(d) {
+    let runningList = [];
+    let recursive = false; // Expand **only direct** children
+    let nodeChildren = this.getNodeChildren(d, recursive, runningList);
+    nodeChildren.forEach(nodeChild => {
+      nodeChild.visible = true;
+      nodeChild.collapsed = true;
+    });
+    d.collapsed = false;
+
+    // activate links
+    this.workingData.links.forEach(l => {
+      l.active = l.source.visible && l.target.visible;
+    });
+  }
+
+  getNodeChildren(d, recursive, runningList) {
+    let t = this;
+    let directChildren =
+      t.workingData.links.
+        filter(l => l.source.js_id === d.js_id).
+        map(l => l.target);
+
+    if (recursive && directChildren.length > 0) {
+      let allChildren = [].concat(directChildren);
+      runningList.push(d.js_id);
+
+      allChildren = directChildren.reduce((agg, item) => {
+        if (runningList.some(x => item.js_id === x)) {
+          // Don't call recursively because this item has already be processed.
+          return agg;
+        } else {
+          // Item has not been processed yet, so call recursively.
+          runningList.push(item.js_id);
+          return agg.concat(t.getNodeChildren(item, recursive, runningList));
         }
-      });
+      }, allChildren);
 
-      // activate links
-      this.workingData.links.forEach(l => {
-        l.active = l.source.visible && l.target.visible;
-      });
+      return allChildren;
     } else {
-      // collapse
-      dRel8n.collapsed = true;
-
-      // show hidden nodes
-      this.workingData.nodes.forEach(n => {
-        if (n.cat === dRel8n.id) {
-          n.visible = false;
-        }
-      });
-
-      // activate links
-      this.workingData.links.forEach(l => {
-        l.active = l.source.visible && l.target.visible;
-      });
+      return directChildren;
     }
+  }
+
+  toggleExpandNode(d) {
+    if (d.collapsed || d.collapsed === undefined) {
+      this.expandNode(d);
+    } else {
+      this.collapseNode(d);
+    }
+
+    // if (d.cat === "rel8n") {
+    //   let dRel8n = d;
+    //   if (dRel8n.collapsed) {
+    //     // expand
+    //     dRel8n.collapsed = false;
+    //
+    //     // show hidden nodes
+    //     this.workingData.nodes.forEach(n => {
+    //       if (n.cat === dRel8n.id) {
+    //         n.visible = true;
+    //       }
+    //     });
+    //
+    //     // activate links
+    //     this.workingData.links.forEach(l => {
+    //       l.active = l.source.visible && l.target.visible;
+    //     });
+    //   } else {
+    //     // collapse
+    //     dRel8n.collapsed = true;
+    //
+    //     // show hidden nodes
+    //     this.workingData.nodes.forEach(n => {
+    //       if (n.cat === dRel8n.id) {
+    //         n.visible = false;
+    //       }
+    //     });
+    //
+    //     // activate links
+    //     this.workingData.links.forEach(l => {
+    //       l.active = l.source.visible && l.target.visible;
+    //     });
+    //   }
+    // } else if (d.cat === "ib") {
+    //   console.log("toggggggggggggggggggle");
+    //   if (d.collapsed) {
+    //     // expand
+    //     d.collapsed = false;
+    //
+    //     // show hidden nodes
+    //     this.workingData.nodes.forEach(n => {
+    //       if (n.cat === "rel8n") {
+    //         n.visible = true;
+    //       }
+    //     });
+    //
+    //     // activate links
+    //     this.workingData.links.forEach(l => {
+    //       l.active = l.source.visible && l.target.visible;
+    //     });
+    //   } else {
+    //     // collapse
+    //     d.collapsed = true;
+    //
+    //     // show hidden nodes
+    //     this.workingData.nodes.forEach(n => {
+    //       if (n.cat === "rel8n") {
+    //         n.visible = false;
+    //       }
+    //     });
+    //
+    //     // activate links
+    //     this.workingData.links.forEach(l => {
+    //       l.active = l.source.visible && l.target.visible;
+    //     });
+    //   }
+    // }
   }
 
   tearDownMenu(cancelDetails) {
@@ -1091,26 +1259,26 @@ export class IbScape {
       .style("visibility", "hidden");
   }
 
-  getMenuPosition(mousePosition, targetNode) {
+  getMenuPosition(mouseOrTouchPosition, targetNode) {
     // Start our position away from right where we click.
 
     // let bufferAwayFromClickPoint = this.menuRadius;
     let bufferAwayFromClickPoint = 30; //magic number :-/
     let $graphDivPos = $(`#${this.graphDiv.id}`).position();
 
-    let mousePosIsOnLeftSide = mousePosition[0] < this.width/2;
+    let mousePosIsOnLeftSide = mouseOrTouchPosition[0] < this.width/2;
     let x = mousePosIsOnLeftSide ?
-            $graphDivPos.left + mousePosition[0] + bufferAwayFromClickPoint :
-            $graphDivPos.left + mousePosition[0] - this.menuDiam;
+            $graphDivPos.left + mouseOrTouchPosition[0] + bufferAwayFromClickPoint :
+            $graphDivPos.left + mouseOrTouchPosition[0] - this.menuDiam;
     if (x < $graphDivPos.left) { x = $graphDivPos.left; }
     if (x > $graphDivPos.left + this.width - this.menuDiam) {
       x = $graphDivPos.left + this.width - this.menuDiam;
     }
 
-    let mousePosIsInTopHalf = mousePosition[1] < (this.height/2);
+    let mousePosIsInTopHalf = mouseOrTouchPosition[1] < (this.height/2);
     let y = mousePosIsInTopHalf ?
-            $graphDivPos.top + mousePosition[1] + bufferAwayFromClickPoint :
-            $graphDivPos.top + mousePosition[1] - this.menuDiam;
+            $graphDivPos.top + mouseOrTouchPosition[1] + bufferAwayFromClickPoint :
+            $graphDivPos.top + mouseOrTouchPosition[1] - this.menuDiam;
     if (y < $graphDivPos.top) { y = $graphDivPos.top; }
     if (y > $graphDivPos.top + this.height - this.menuDiam) {
       y = $graphDivPos.top + this.height - this.menuDiam;

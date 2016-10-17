@@ -1,5 +1,6 @@
 var d3CircleRadius = 10;
-var d3LongPressMs = 700;
+var d3LongPressMs = 500;
+var d3DblClickMs = 300;
 
 let d3LinkDistances = {
   "special": 90,
@@ -9,7 +10,7 @@ let d3LinkDistances = {
 }
 
 let d3Scales = {
-  "rel8n": 1,
+  "rel8n": 1.5,
   "dna": 1,
   "ancestor": 1,
   "past": 2,
@@ -210,4 +211,4 @@ var d3MenuCommands = [
   }
 ];
 
-export { d3CircleRadius, d3LongPressMs, d3LinkDistances, d3Scales, d3Colors, d3DefaultCollapsed, d3MenuCommands };
+export { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3DefaultCollapsed, d3MenuCommands };
