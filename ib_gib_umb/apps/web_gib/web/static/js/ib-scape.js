@@ -327,7 +327,15 @@ export class IbScape {
           delete t.beforeLastMouseDownTime;
 
           // We toggle expanding if the node is double clicked.
-          if (d.ibgib !== "ib^gib") {
+          if (d.render && d.render === "image") {
+            t.execFullscreen(d);
+          } else if (d.render && d.render === "text") {
+            t.getIbGibJson(d.ibgib, (ibGibJson) => {
+              if (ibGibJson.data && ibGibJson.data.text) {
+                alert(ibGibJson.data.text);
+              }
+            });
+          } else if (d.ibgib !== "ib^gib") {
             t.clearSelectedNode();
 
             t.toggleExpandNode(d);
@@ -943,11 +951,19 @@ export class IbScape {
       let id = this.graphDiv.id;
       this.toggleFullScreen(`#${id}`);
     } else {
-      let imageUrl =
-        this.ibGibImageProvider.getFullImageUrl(dIbGib.ibgib);
-
-      window.open(imageUrl,'_blank');
+      this.openImage(dIbGib.ibgib);
+      // let imageUrl =
+      //   this.ibGibImageProvider.getFullImageUrl(dIbGib.ibgib);
+      //
+      // window.open(imageUrl,'_blank');
     }
+  }
+
+  openImage(ibGib) {
+    let imageUrl =
+      this.ibGibImageProvider.getFullImageUrl(ibGib);
+
+    window.open(imageUrl,'_blank');
   }
 
   execExternalLink(dIbGib) {
@@ -984,7 +1000,7 @@ export class IbScape {
 
       t.getIbGibJson(dIbGib.ibgib, ibGibJson => {
 
-        let text = JSON.stringify(ibGibJson.data, null, 2);
+        let text = JSON.stringify(ibGibJson, null, 2);
         // Formats new lines in json.data values. It's still a hack just
         // showing the JSON but it's an improvement.
         // Thanks SO (for the implementation sort of) http://stackoverflow.com/questions/42068/how-do-i-handle-newlines-in-json
@@ -1009,35 +1025,28 @@ export class IbScape {
   }
 
   toggleFullScreen(elementJquerySelector) {
-    // if already full screen; exit
-    // else go fullscreen
-    if (
-      document.fullscreenElement ||
-      document.webkitFullscreenElement ||
-      document.mozFullScreenElement ||
-      document.msFullscreenElement
-    ) {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      } else if (document.mozCancelFullScreen) {
-        document.mozCancelFullScreen();
-      } else if (document.webkitExitFullscreen) {
-        document.webkitExitFullscreen();
-      } else if (document.msExitFullscreen) {
-        document.msExitFullscreen();
-      }
+    let selection = d3.select(elementJquerySelector);
+    let node = selection.node();
+    let isFullscreen = selection.classed("ib-fullscreen");
+    let body = d3.select("body").node();
+
+    if (isFullscreen) {
+      // return from fullscreen
+      body.removeChild(node);
+      this.currentParent.appendChild(node);
+      selection
+        .classed("ib-fullscreen", false);
     } else {
-      let element = $(elementJquerySelector).get(0);
-      if (element.requestFullscreen) {
-        element.requestFullscreen();
-      } else if (element.mozRequestFullScreen) {
-        element.mozRequestFullScreen();
-      } else if (element.webkitRequestFullscreen) {
-        element.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
-      } else if (element.msRequestFullscreen) {
-        element.msRequestFullscreen();
-      }
+      // go fullscreen
+      this.currentParent = node.parentNode;
+      this.currentParent.removeChild(node)
+      body.appendChild(node);
+      selection
+        .classed("ib-fullscreen", true);
     }
+
+    this.destroyStuff();
+    this.update(null);
   }
 
   /**
