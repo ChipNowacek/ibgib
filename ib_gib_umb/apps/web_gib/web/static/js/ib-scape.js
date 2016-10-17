@@ -196,6 +196,12 @@ export class IbScape {
           .enter()
           .append("g")
           .classed('gnode', true)
+          .on("click", nodeClicked)
+          .on("mousedown", nodeMouseDown)
+          .on("touchstart", nodeTouchStart)
+          .on("touchend", nodeTouchEnd)
+          .attr("cursor", "pointer")
+          .on("contextmenu", (d, i)  => { d3.event.preventDefault(); })
           .call(d3.drag()
               .on("start", dragstarted)
               .on("drag", dragged)
@@ -226,12 +232,7 @@ export class IbScape {
           .attr("id", d => d.js_id || null)
           .attr("cursor", "pointer")
           .attr("r", getRadius)
-          .attr("fill", getColor)
-          .on("click", nodeClicked)
-          .on("mousedown", nodeMouseDown)
-          .on("touchstart", nodeTouchStart)
-          .on("touchend", nodeTouchEnd)
-          .on("contextmenu", (d, i)  => { d3.event.preventDefault(); });
+          .attr("fill", getColor);
 
       graphNodeCircles.append("title")
           .text(getNodeTitle);
@@ -239,12 +240,6 @@ export class IbScape {
       let graphNodeLabels = graphNodes
           .append("g")
           .attr("id", d => "label_" + d.js_id)
-          .on("click", nodeClicked)
-          .on("mousedown", nodeMouseDown)
-          .on("touchstart", nodeTouchStart)
-          .on("touchend", nodeTouchEnd)
-          .attr("cursor", "pointer")
-          .on("contextmenu", (d, i)  => { d3.event.preventDefault(); })
           .text(getNodeLabel);
 
       let graphNodeImages = graphNodes
@@ -252,17 +247,10 @@ export class IbScape {
           .attr("id", d => "img_" + d.js_id)
           .attr("opacity", 0.1)
           .attr("xlink:href", getNodeImage)
-          .attr("cursor", "pointer")
-          .on("click", nodeClicked)
           .attr("x", -8)
           .attr("y", -8)
           .attr("width", 16)
-          .attr("height", 16)
-          // .on("dblclick", nodeDblClicked)
-          .on("click", nodeClicked)
-          .on("mousedown", nodeMouseDown)
-          .on("touchstart", nodeTouchStart)
-          .on("touchend", nodeTouchEnd);
+          .attr("height", 16);
 
       graphNodeImages.append("title")
           .text(d => d.id);
