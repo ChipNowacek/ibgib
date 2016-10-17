@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import * as d3text from 'd3-textwrap';
 
-import { d3CircleRadius, d3LongPressMs, d3LinkDistances, d3Scales, d3Colors, d3DefaultCollapsed, d3MenuCommands } from './d3params';
+import { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3DefaultCollapsed, d3RequireExpandLevel2, d3MenuCommands } from './d3params';
 import * as ibHelper from './services/ibgib-helper';
 
 
@@ -116,36 +116,60 @@ export class IbScape {
       // `d3.json` is superfluous if this is already set. Anyway, I'm doing
       // initialize stuff to enable collapsing of categories.
       // Obviously, this is horrifically non-optimized.
+      t.ibNode = null;
       t.rawData = graph;
       if (!t.workingData) {
         let hiddenNodeIds = [];
         graph.nodes.forEach(n => {
-          if (d3DefaultCollapsed.some(rel8n => rel8n === n.cat)) {
-            // If a node's rel8n is in the collapsed cats list, hide it.
-            n.visible = false;
-            n.collapsed = false;
-            hiddenNodeIds.push(n.id);
-          } else if (d3DefaultCollapsed.some(cat => cat === n.id)) {
-            // If the node's id itself is the rel8n, then keep it visible but
-            // mark it as collapsed.
-            n.visible = true;
+          if (n.cat === "ib") {
+            t.ibNode = n;
+            n.expandLevel = 1;
             n.collapsed = true;
-          } else {
-            // The node is not a collapsed rel8n, and it's not in a collapsed
-            // rel8n.
             n.visible = true;
-            n.collapsed = false;
-          }
-        });
-        graph.links.forEach(l => {
-          if (hiddenNodeIds.some(nid => l.source === nid || l.target === nid)) {
-            l.active = false;
+          } else if (n.cat === "ibGib") {
+            n.collapsed = true;
+            n.visible = true;
           } else {
-            l.active = true;
+            n.collapsed = true;
+            n.visible = false;
           }
         });
 
+        graph.links.forEach(l => {
+          l.active = false;
+        });
+
+        graph.links.
+          filter(l => l.source === t.ibNode.id &&
+                      !d3RequireExpandLevel2.some(r => r === l.target)).
+          forEach(l => {
+            let node = graph.nodes.filter(n => n.id === l.target)[0];
+            if (node) {
+              node.visible = true;
+              node.collapsed = false;
+              l.active = true;
+
+              // debugger;
+              let subLinks = graph.links.filter(sl => {
+                // debugger;
+                return sl.source === l.target;
+              });
+              subLinks.forEach(sl => {
+                let subnode = graph.nodes.filter(n => n.id === sl.target)[0];
+                subnode.visible = true;
+                subnode.collapsed = true;
+                sl.active = true;
+              });
+            }
+        });
+
+        t.ibNode.collapsed = false;
+
         t.workingData = graph;
+
+        // At this point, these graph nodes and links do not have the same
+        // structure as later.
+        // t.expandNode(ibNode);
       }
 
       graph = t.workingData;
@@ -155,6 +179,7 @@ export class IbScape {
       let modifiedNodes = graph.nodes.filter(n => n.visible);
       // inactive means one of the link's endpoints is hidden.
       let modifiedLinks = graph.links.filter(l => l.active);
+
 
       let graphLinks = svgGroup.append("g")
           .attr("class", "links")
@@ -171,6 +196,12 @@ export class IbScape {
           .enter()
           .append("g")
           .classed('gnode', true)
+          .on("click", nodeClicked)
+          .on("mousedown", nodeMouseDown)
+          .on("touchstart", nodeTouchStart)
+          .on("touchend", nodeTouchEnd)
+          .attr("cursor", "pointer")
+          .on("contextmenu", (d, i)  => { d3.event.preventDefault(); })
           .call(d3.drag()
               .on("start", dragstarted)
               .on("drag", dragged)
@@ -201,11 +232,7 @@ export class IbScape {
           .attr("id", d => d.js_id || null)
           .attr("cursor", "pointer")
           .attr("r", getRadius)
-          .attr("fill", getColor)
-          .on("click", nodeClicked)
-          .on("mousedown", nodeMouseDown)
-          .on("dblclick", nodeDblClicked)
-          .on("contextmenu", (d, i)  => { d3.event.preventDefault(); });
+          .attr("fill", getColor);
 
       graphNodeCircles.append("title")
           .text(getNodeTitle);
@@ -213,27 +240,17 @@ export class IbScape {
       let graphNodeLabels = graphNodes
           .append("g")
           .attr("id", d => "label_" + d.js_id)
-          .on("mousedown", nodeMouseDown)
-          .on("click", nodeClicked)
-          .attr("cursor", "pointer")
-          .text(getNodeLabel)
+          .text(getNodeLabel);
 
       let graphNodeImages = graphNodes
           .append("image")
           .attr("id", d => "img_" + d.js_id)
+          .attr("opacity", 0.1)
           .attr("xlink:href", getNodeImage)
-          .attr("cursor", "pointer")
-          .on("click", nodeClicked)
           .attr("x", -8)
           .attr("y", -8)
           .attr("width", 16)
-          .attr("height", 16)
-          .on("dblclick", nodeDblClicked)
-          .on("mousedown", nodeMouseDown)
-          .call(d3.drag()
-              .on("start", dragstarted)
-              .on("drag", dragged)
-              .on("end", dragended));
+          .attr("height", 16);
 
       graphNodeImages.append("title")
           .text(d => d.id);
@@ -287,6 +304,7 @@ export class IbScape {
 
     function backgroundClicked(d) {
       console.log("background clicked");
+      // alert("background clicked")
 
       t.clearSelectedNode();
 
@@ -299,15 +317,69 @@ export class IbScape {
       d3.event.preventDefault();
     }
 
-    function nodeMouseDown(d, dIndex, dList) {
-      if (d3.event.button == 0) {
-        t.lastMouseDown = new Date();
-        setTimeout(() => {
-          if (t.lastMouseDown) {
-            console.log("long click handler here");
+    function handleTouchstartOrMouseDown(d, dIndex, dList) {
+      t.beforeLastMouseDownTime = t.lastMouseDownTime || 0;
+      t.lastMouseDownTime = new Date();
+
+      setTimeout(() => {
+        if (t.lastMouseDownTime && ((t.lastMouseDownTime - t.beforeLastMouseDownTime) < d3DblClickMs)) {
+          delete t.lastMouseDownTime;
+          delete t.beforeLastMouseDownTime;
+
+          // We toggle expanding if the node is double clicked.
+          if (d.render && d.render === "image") {
+            t.execFullscreen(d);
+          } else if (d.render && d.render === "text") {
+            t.getIbGibJson(d.ibgib, (ibGibJson) => {
+              if (ibGibJson.data && ibGibJson.data.text) {
+                alert(ibGibJson.data.text);
+              }
+            });
+          } else if (d.ibgib !== "ib^gib") {
+            t.clearSelectedNode();
+
+            t.toggleExpandNode(d);
+            t.destroyStuff();
+            t.update(null);
           }
-        }, d3LongPressMs);
+        } else if (t.lastMouseDownTime) {
+          console.log("long click handler here");
+        } else {
+          // alert("else handletouchor")
+        }
+      }, d3LongPressMs);
+    }
+
+    function nodeTouchStart(d, dIndex, dList) {
+      // alert("touchstart");
+      t.isTouch = true;
+      t.lastTouchStart = d3.event;
+      t.targetNode = d3.event.target;
+      let touch = t.lastTouchStart.touches[0];
+      // debugger;
+      t.mouseOrTouchPosition = [touch.clientX, touch.clientY];
+      // alert(`pos: ${t.mouseOrTouchPosition}`)
+      handleTouchstartOrMouseDown(d, dIndex, dList);
+      d3.event.preventDefault();
+    }
+
+    function nodeTouchEnd(d, dIndex, dList) {
+      // debugger;
+      t.lastTouchEnd = d3.event;
+      let elapsedMs = new Date() - t.lastMouseDownTime;
+      if (elapsedMs < d3LongPressMs) { nodeClicked(d); }
+    }
+
+    function nodeMouseDown(d, dIndex, dList) {
+      t.isTouch = false;
+      t.mouseOrTouchPosition = d3.mouse(t.view.node());
+      t.lastMouseDownEvent = d3.event;
+      t.targetNode = t.lastMouseDownEvent.target;
+      // console.log("nodeMouseDown")
+      if (d3.event.button === 0) {
+        handleTouchstartOrMouseDown(d, dIndex, dList);
       }
+      d3.event.preventDefault();
     }
 
     function nodeHyperlinkClicked(d) {
@@ -319,29 +391,29 @@ export class IbScape {
     }
 
     function nodeClicked(d) {
-      console.log(`nodeClicked: ${JSON.stringify(d)}`);
+      // console.log(`nodeClicked: ${JSON.stringify(d)}`);
+      // alert("nodeClicked");
 
       // Only handle the click if it's not a double-click.
+      // on refactor, I should seriously consider doing rx or hammer handlers.
       if (t.maybeDoubleClicking) {
         // we're double-clicking
         delete t.maybeDoubleClicking;
-        delete t.mousePosition;
+        delete t.mouseOrTouchPosition;
         delete t.targetNode;
       } else {
         t.maybeDoubleClicking = true;
-        t.mousePosition = d3.mouse(t.view.node());
-        t.targetNode = d3.event.target;
 
         setTimeout(() => {
           if (t.maybeDoubleClicking) {
             // Not double-clicking, so handle click
-
             let now = new Date();
-            let elapsedMs = now - t.lastMouseDown;
-            delete t.lastMouseDown;
+            let elapsedMs = now - t.lastMouseDownTime;
+            // alert("nodeclicked maybe")
+            delete t.lastMouseDownTime;
             if (elapsedMs < d3LongPressMs) {
               // normal click
-              if (t.selectedDatum && t.selectedDatum.js_id == d.js_id) {
+              if (t.selectedDatum && t.selectedDatum.js_id === d.js_id) {
                 t.clearSelectedNode();
               } else {
                 t.clearSelectedNode();
@@ -354,21 +426,7 @@ export class IbScape {
 
             delete t.maybeDoubleClicking;
           }
-        }, 300);
-      }
-
-      // d3.event.preventDefault();
-    }
-
-    function nodeDblClicked(d) {
-      // We toggle expanding if the node is double clicked.
-      if (d.cat === "rel8n") {
-        // HACK: ib-scape nodeDblClicked Hide the menu that pops up on node clicked.
-        t.clearSelectedNode();
-
-        t.toggleExpandNode(d);
-        t.destroyStuff();
-        t.update(null);
+        }, d3DblClickMs);
       }
     }
 
@@ -376,23 +434,42 @@ export class IbScape {
       if (!d3.event.active) simulation.alphaTarget(0.3).restart();
       d.fx = d.x;
       d.fy = d.y;
+
+      t.x0 = d3.event.x;
+      t.y0 = d3.event.y;
     }
 
     function dragged(d) {
-      if (t.lastMouseDown) { delete t.lastMouseDown; }
-
       d.fx = d3.event.x;
       d.fy = d3.event.y;
+
+      let dist = Math.sqrt(Math.pow(t.x0 - d.fx, 2) + Math.pow(t.y0 - d.fy, 2));
+      if (dist > 2.5) {
+        // alert(`dist: ${dist}`)
+        delete t.lastMouseDownTime;
+        t.x0 = null;
+        t.y0 = null;
+      }
     }
 
     function dragended(d) {
+      // console.log("dragended")
       if (!d3.event.active) simulation.alphaTarget(0);
+
+      let dist = Math.sqrt(Math.pow(t.x0 - d.fx, 2) + Math.pow(t.y0 - d.fy, 2));
+
+      d.fx = d3.event.x;
+      d.fy = d3.event.y;
+
       d.fx = null;
       d.fy = null;
+      // alert("deleting fx0")
+      t.x0 = null;
+      t.y0 = null;
     }
 
     function getNodeTitle(d) {
-      if (d.render === "text" || d.render == "link") {
+      if (d.render === "text" || d.render === "link") {
         t.getIbGibJson(d.ibgib, (ibGibJson) => {
           setTimeout(() => updateLabelText(d, ibGibJson), 100);
         });
@@ -408,22 +485,36 @@ export class IbScape {
     }
 
     function getNodeLabel(d) {
-      if (d.render === "text" || d.render == "link") {
+      if (d.render === "text" || d.render === "link") {
         t.getIbGibJson(d.ibgib, (ibGibJson) => {
           setTimeout(() => updateLabelText(d, ibGibJson), 100);
         });
         return "...";
-      } else {
-        // Label gets no text because it's not rendered as text.
+      } else if (d.render === "image") {
         return "";
+      } else if (d.ibgib === "ib^gib") {
+        return "";
+      } else if (d.cat === "rel8n") {
+        return "";
+      } else {
+        t.getIbGibJson(d.ibgib, (ibGibJson) => {
+          setTimeout(() => updateLabelText(d, ibGibJson), 100);
+        });
       }
     }
 
     function updateLabelText(d, ibGibJson) {
-      let labelText =
-          ibGibJson && ibGibJson.data && ibGibJson.data.text ?
-          ibGibJson.data.text :
-          "?";
+
+      let labelText = "?";
+      if (ibGibJson && ibGibJson.data && ibGibJson.data.text) {
+        labelText = ibGibJson.data.text;
+      } else if (ibGibJson && ibGibJson.data && ibGibJson.data.label) {
+        labelText = ibGibJson.data.label;
+      } else if (ibGibJson && ibGibJson.data && ibGibJson.data.title) {
+        labelText = ibGibJson.data.title;
+      } else if (ibGibJson && ibGibJson.ib) {
+        labelText = ibGibJson.ib;
+      }
 
       let label = d3.select("#label_" + d.js_id)
 
@@ -519,7 +610,6 @@ export class IbScape {
         .append("circle")
         .attr("r", getRadius)
         .attr("fill", d3Colors.pic)
-        // .attr("fill-opacity", 0.6)
         .attr("cx", d => { return getRadius(d) + magicOffset; })
         .attr("cy", d => { return getRadius(d) + magicOffset; });
 
@@ -549,9 +639,9 @@ export class IbScape {
     }
 
     function getLinkDistance(l) {
-      if (["comment", "pic", "link"].some(x => x == l.target.id)) {
+      if (["comment", "pic", "link"].some(x => x === l.target.id)) {
         return d3LinkDistances["special"];
-      } else if (["comment", "pic", "link"].some(x => x == l.target.cat)) {
+      } else if (["comment", "pic", "link"].some(x => x === l.target.cat)) {
         return d3LinkDistances["specialMember"];
       } else if (l.target.cat === "rel8n") {
         return d3LinkDistances["rel8n"];
@@ -591,21 +681,17 @@ export class IbScape {
 
     this.selectedDatum = d;
     this.selectedNode = d3.select("#" + d.js_id);
-    let top =
-      d3.select("#" + d.js_id)
-          .style("opacity", 1)
-          .attr("stroke", "yellow")
-          .attr("stroke-width", "10px")
-          ;
+    d3.select("#" + d.js_id)
+        .style("opacity", 1)
+        .attr("stroke", "yellow")
+        .attr("stroke-width", "10px");
 
     let transition =
       d3.transition()
         .duration(150)
         .ease(d3.easeLinear);
 
-    // let mousePosition = d3.mouse(this.view.node());
-    // let targetNode = d3.event.target;
-    let position = this.getMenuPosition(this.mousePosition, this.targetNode);
+    let position = this.getMenuPosition(this.mouseOrTouchPosition, this.targetNode);
     d3.select("#ib-d3-graph-menu-div")
       .transition(transition)
         .style("left", position.x + "px")
@@ -751,32 +837,31 @@ export class IbScape {
   }
 
   executeMenuCommand(dIbGib, dCommand) {
-    if ((dCommand.name === "view" || dCommand.name === "hide") &&
-         dIbGib.cat === "rel8n") {
+    if ((dCommand.name === "view" || dCommand.name === "hide")) {
       this.toggleExpandNode(dIbGib);
       this.destroyStuff();
       this.update(null);
-    } else if (dCommand.name == "fork") {
+    } else if (dCommand.name === "fork") {
       this.execFork(dIbGib)
-    } else if (dCommand.name == "goto") {
+    } else if (dCommand.name === "goto") {
       this.execGoto(dIbGib);
-    } else if (dCommand.name == "help") {
+    } else if (dCommand.name === "help") {
       this.execHelp(dIbGib);
-    } else if (dCommand.name == "comment") {
+    } else if (dCommand.name === "comment") {
       this.execComment(dIbGib);
-    } else if (dCommand.name == "pic") {
+    } else if (dCommand.name === "pic") {
       this.execPic(dIbGib);
-    } else if (dCommand.name == "fullscreen") {
+    } else if (dCommand.name === "fullscreen") {
       this.execFullscreen(dIbGib);
-    } else if (dCommand.name == "link") {
+    } else if (dCommand.name === "link") {
       this.execLink(dIbGib);
-    } else if (dCommand.name == "externallink") {
+    } else if (dCommand.name === "externallink") {
       this.execExternalLink(dIbGib);
-    } else if (dCommand.name == "identemail") {
+    } else if (dCommand.name === "identemail") {
       this.execIdentEmail(dIbGib);
-    } else if (dCommand.name == "info") {
+    } else if (dCommand.name === "info") {
       this.execInfo(dIbGib);
-    } else if (dCommand.name == "query") {
+    } else if (dCommand.name === "query") {
       this.execQuery(dIbGib);
     }
   }
@@ -801,9 +886,9 @@ export class IbScape {
         "haven't included help for this yet. Let me know please :-O";
 
       if (dIbGib.ibgib === "ib^gib") {
-        text = `The green ibGib is a special ibGib called the 'root'. It is the Alpha and the Omega. It is always the first ancestor, the first dna, the first query result. It is its own ancestor and past.`;
+        text = `Double-click to expand an ibGib, single-click to view its menu. Click the Spock Hand to fork into a "new" ibGib. Click login to identify yourself with your (public) email address. Click search to search your existing ibGib. Click the pointer finger to navigate to an ibGib.`;
       } else if (dIbGib.cat === "ib") {
-        text = `The yellow ibGib is your current ibGib. Click the information button to get more details about it. You can expand / collapse any children, fork it, merge it, add comments, pictures, links, and more.`;
+        text = `This is your current ibGib. Click the information button to get more details about it. You can expand / collapse any children, fork it, merge it, add comments, pictures, links, and more.`;
       } else if (dIbGib.cat === "ancestor") {
         text = `This is an 'ancestor' ibGib. Each 'new' ibGib is created by forking an existing one. Ancestors are how we keep track of which ibGib we've forked to produce the current incarnation.`
       } else if (dIbGib.cat === "past") {
@@ -866,11 +951,19 @@ export class IbScape {
       let id = this.graphDiv.id;
       this.toggleFullScreen(`#${id}`);
     } else {
-      let imageUrl =
-        this.ibGibImageProvider.getFullImageUrl(dIbGib.ibgib);
-
-      window.open(imageUrl,'_blank');
+      this.openImage(dIbGib.ibgib);
+      // let imageUrl =
+      //   this.ibGibImageProvider.getFullImageUrl(dIbGib.ibgib);
+      //
+      // window.open(imageUrl,'_blank');
     }
+  }
+
+  openImage(ibGib) {
+    let imageUrl =
+      this.ibGibImageProvider.getFullImageUrl(ibGib);
+
+    window.open(imageUrl,'_blank');
   }
 
   execExternalLink(dIbGib) {
@@ -907,7 +1000,7 @@ export class IbScape {
 
       t.getIbGibJson(dIbGib.ibgib, ibGibJson => {
 
-        let text = JSON.stringify(ibGibJson.data, null, 2);
+        let text = JSON.stringify(ibGibJson, null, 2);
         // Formats new lines in json.data values. It's still a hack just
         // showing the JSON but it's an improvement.
         // Thanks SO (for the implementation sort of) http://stackoverflow.com/questions/42068/how-do-i-handle-newlines-in-json
@@ -932,35 +1025,28 @@ export class IbScape {
   }
 
   toggleFullScreen(elementJquerySelector) {
-    // if already full screen; exit
-    // else go fullscreen
-    if (
-      document.fullscreenElement ||
-      document.webkitFullscreenElement ||
-      document.mozFullScreenElement ||
-      document.msFullscreenElement
-    ) {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      } else if (document.mozCancelFullScreen) {
-        document.mozCancelFullScreen();
-      } else if (document.webkitExitFullscreen) {
-        document.webkitExitFullscreen();
-      } else if (document.msExitFullscreen) {
-        document.msExitFullscreen();
-      }
+    let selection = d3.select(elementJquerySelector);
+    let node = selection.node();
+    let isFullscreen = selection.classed("ib-fullscreen");
+    let body = d3.select("body").node();
+
+    if (isFullscreen) {
+      // return from fullscreen
+      body.removeChild(node);
+      this.currentParent.appendChild(node);
+      selection
+        .classed("ib-fullscreen", false);
     } else {
-      let element = $(elementJquerySelector).get(0);
-      if (element.requestFullscreen) {
-        element.requestFullscreen();
-      } else if (element.mozRequestFullScreen) {
-        element.mozRequestFullScreen();
-      } else if (element.webkitRequestFullscreen) {
-        element.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
-      } else if (element.msRequestFullscreen) {
-        element.msRequestFullscreen();
-      }
+      // go fullscreen
+      this.currentParent = node.parentNode;
+      this.currentParent.removeChild(node)
+      body.appendChild(node);
+      selection
+        .classed("ib-fullscreen", true);
     }
+
+    this.destroyStuff();
+    this.update(null);
   }
 
   /**
@@ -1027,37 +1113,115 @@ export class IbScape {
     }
   }
 
-  toggleExpandNode(dRel8n) {
-    if (dRel8n.collapsed) {
-      // expand
-      dRel8n.collapsed = false;
+  collapseNode(d) {
+    let runningList = [];
+    let recursive = true; // Collapse **all** children
+    let nodeChildren = this.getNodeChildren(d, recursive, runningList);
+    nodeChildren.forEach(nodeChild => {
+      nodeChild.collapsed = true;
+      nodeChild.visible = false;
+    });
 
-      // show hidden nodes
-      this.workingData.nodes.forEach(n => {
-        if (n.cat === dRel8n.id) {
-          n.visible = true;
-        }
-      });
+    d.collapsed = true;
 
-      // activate links
-      this.workingData.links.forEach(l => {
-        l.active = l.source.visible && l.target.visible;
-      });
+    // activate links
+    this.workingData.links.forEach(l => {
+      // debugger;
+
+      l.active = l.source.visible && l.target.visible;
+    });
+  }
+
+  expandNode(d) {
+    let runningList = [];
+    let recursive = false; // Expand **only direct** children
+    let nodeChildren = this.getNodeChildren(d, recursive, runningList);
+    nodeChildren.forEach(nodeChild => {
+      let shouldShowChild = this.getShouldShowChild(d, nodeChild);
+      nodeChild.visible = shouldShowChild;
+
+      let shouldExpandChild = nodeChild.cat === "rel8n" ?
+        d3DefaultCollapsed.some(r => r === nodeChild.id) :
+        d3DefaultCollapsed.some(r => r === nodeChild.cat);
+      if (shouldExpandChild) {
+        nodeChild.collapsed = true;
+      } else {
+        this.expandNode(nodeChild);
+      }
+    });
+    d.collapsed = false;
+
+    // activate links
+    this.workingData.links.forEach(l => {
+      // debugger;
+
+      l.active = l.source.visible && l.target.visible;
+    });
+  }
+
+  getShouldShowChild(d, nodeChild) {
+    if (d.cat !== "ib") {
+      return true;
+    } else if (d.expandLevel === 2) {
+      return true;
+    } else if (d.expandLevel === 1) {
+      // Determine if the nodeChild should be collapsed or not.
+      // This whole thing is hacky!
+      // The gist is that if it's in the require expand level 2, then
+      // dont show it unless we're at level 2. Right now, we're at level 1.
+      if (nodeChild.cat === "rel8n") {
+        return !d3RequireExpandLevel2.some(r => r === nodeChild.id);
+      } else {
+        return !d3RequireExpandLevel2.some(r => r === nodeChild.cat);
+      }
     } else {
-      // collapse
-      dRel8n.collapsed = true;
+      console.warn("unknown expand level");
+      return true;
+    }
+  }
 
-      // show hidden nodes
-      this.workingData.nodes.forEach(n => {
-        if (n.cat === dRel8n.id) {
-          n.visible = false;
+  getNodeChildren(d, recursive, runningList) {
+    let t = this;
+    let directChildren =
+      t.workingData.links.
+        filter(l => l.source.js_id === d.js_id).
+        map(l => l.target);
+
+    if (recursive && directChildren.length > 0) {
+      let allChildren = [].concat(directChildren);
+      runningList.push(d.js_id);
+
+      allChildren = directChildren.reduce((agg, item) => {
+        if (runningList.some(x => item.js_id === x)) {
+          // Don't call recursively because this item has already be processed.
+          return agg;
+        } else {
+          // Item has not been processed yet, so call recursively.
+          runningList.push(item.js_id);
+          return agg.concat(t.getNodeChildren(item, recursive, runningList));
         }
-      });
+      }, allChildren);
 
-      // activate links
-      this.workingData.links.forEach(l => {
-        l.active = l.source.visible && l.target.visible;
-      });
+      return allChildren;
+    } else {
+      return directChildren;
+    }
+  }
+
+  toggleExpandNode(d) {
+    // debugger;
+    let recursive = false;
+    let nodeChildren = this.getNodeChildren(d, recursive, []);
+
+    if ((d.collapsed || d.collapsed === undefined) && nodeChildren.length > 0) {
+      d.expandLevel = 1;
+      this.expandNode(d);
+    } else if (d.expandLevel === 1 && d.cat === "ib") {
+      d.expandLevel = 2;
+      this.expandNode(d);
+    } else {
+      d.expandLevel = 0;
+      this.collapseNode(d);
     }
   }
 
@@ -1077,26 +1241,26 @@ export class IbScape {
       .style("visibility", "hidden");
   }
 
-  getMenuPosition(mousePosition, targetNode) {
+  getMenuPosition(mouseOrTouchPosition, targetNode) {
     // Start our position away from right where we click.
 
     // let bufferAwayFromClickPoint = this.menuRadius;
     let bufferAwayFromClickPoint = 30; //magic number :-/
     let $graphDivPos = $(`#${this.graphDiv.id}`).position();
 
-    let mousePosIsOnLeftSide = mousePosition[0] < this.width/2;
+    let mousePosIsOnLeftSide = mouseOrTouchPosition[0] < this.width/2;
     let x = mousePosIsOnLeftSide ?
-            $graphDivPos.left + mousePosition[0] + bufferAwayFromClickPoint :
-            $graphDivPos.left + mousePosition[0] - this.menuDiam;
+            $graphDivPos.left + mouseOrTouchPosition[0] + bufferAwayFromClickPoint :
+            $graphDivPos.left + mouseOrTouchPosition[0] - this.menuDiam;
     if (x < $graphDivPos.left) { x = $graphDivPos.left; }
     if (x > $graphDivPos.left + this.width - this.menuDiam) {
       x = $graphDivPos.left + this.width - this.menuDiam;
     }
 
-    let mousePosIsInTopHalf = mousePosition[1] < (this.height/2);
+    let mousePosIsInTopHalf = mouseOrTouchPosition[1] < (this.height/2);
     let y = mousePosIsInTopHalf ?
-            $graphDivPos.top + mousePosition[1] + bufferAwayFromClickPoint :
-            $graphDivPos.top + mousePosition[1] - this.menuDiam;
+            $graphDivPos.top + mouseOrTouchPosition[1] + bufferAwayFromClickPoint :
+            $graphDivPos.top + mouseOrTouchPosition[1] - this.menuDiam;
     if (y < $graphDivPos.top) { y = $graphDivPos.top; }
     if (y > $graphDivPos.top + this.height - this.menuDiam) {
       y = $graphDivPos.top + this.height - this.menuDiam;
@@ -1169,20 +1333,20 @@ export class IbScape {
       commands = ["help", "fork", "goto", "identemail", "fullscreen", "query"];
     } else if (d.cat === "ib") {
       // commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link"];
-      commands = ["help", "fork", "comment", "pic", "link", "info"];
+      commands = ["help", "view", "fork", "comment", "pic", "link", "info"];
     } else {
       // commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link", "goto"];
-      commands = ["help", "fork", "goto", "comment", "pic", "link", "info"];
+      commands = ["help", "view", "fork", "goto", "comment", "pic", "link", "info"];
     }
 
-    if (d.render && d.render == "image") {
+    if (d.render && d.render === "image") {
       commands.push("fullscreen");
     }
     if (d.cat === "link") {
       commands.push("externallink");
     }
 
-    let nodes = commands.map(cmdName => d3MenuCommands.filter(cmd => cmd.name == cmdName)[0]);
+    let nodes = commands.map(cmdName => d3MenuCommands.filter(cmd => cmd.name === cmdName)[0]);
     return {
       "nodes": nodes
     };
