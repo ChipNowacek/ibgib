@@ -346,13 +346,6 @@ defmodule IbGib.QueryOptionsFactory do
     current_key = "#{map_size(acc_options)}"
     current_options = acc_options[current_key]
     current_details = current_options[category]
-    if map_size(current_details) > 0 do
-      _ = Logger.warn "Tried to do more than one where data statement"
-    end
-
-    # _ = Logger.debug "current_key: #{current_key}"
-    # _ = Logger.debug "current_options: #{inspect current_options}"
-    # _ = Logger.debug "current_details: #{inspect current_details}"
 
     {current_key, current_options, current_details}
   end

@@ -60,6 +60,27 @@ defmodule WebGib.IbGibController do
   This should show the given `ib^gib`. If only the `ib` is given, then this
   should show what? The most "recent" `gib` hash?
   """
+  def show(conn, %{"ib_or_ib_gib" => ib_or_ib_gib, "latest" => "true"} = params) do
+    ib_or_ib_gib =
+      if valid_ib_gib?(ib_or_ib_gib), do: ib_or_ib_gib, else: @root_ib_gib
+
+    if ib_or_ib_gib == @root_ib_gib do
+      {conn, @root_ib_gib}
+    else
+      case get_latest_ib_gib(conn, ib_or_ib_gib) do
+        {:ok, latest_ib_gib} ->
+          conn
+          |> redirect(to: "/ibgib/#{latest_ib_gib}")
+
+        {:error, reason} ->
+          _ = Logger.error "Could not get latest ib_gib. ib_or_ib_gib: #{ib_or_ib_gib}"
+          conn =
+            conn
+            |> put_flash(:error, gettext("Could not get the latest ibGib"))
+            |> redirect(to: "/ibgib/#{@root_ib_gib}")
+      end
+    end
+  end
   def show(conn, %{"ib_or_ib_gib" => ib_or_ib_gib} = params) do
     ib_or_ib_gib =
       if valid_ib_gib?(ib_or_ib_gib), do: ib_or_ib_gib, else: @root_ib_gib
@@ -104,6 +125,64 @@ defmodule WebGib.IbGibController do
       |> redirect(to: "/ibgib/#{@root_ib_gib}")
     end
   end
+
+  defp get_latest_ib_gib(conn, ib_gib) do
+    _ = Logger.debug "ib_gib: #{ib_gib}"
+
+    with(
+      # Identities (need plug)
+      identity_ib_gibs <- conn |> get_session(@ib_identity_ib_gibs_key),
+
+      # We will query off of the current identity
+      {:ok, src} <- IbGib.Expression.Supervisor.start_expression(Enum.at(identity_ib_gibs, 0)),
+
+      # Build the query options
+      query_opts <- build_query_opts_latest(identity_ib_gibs, ib_gib),
+
+      :ok <- Logger.debug("stayin home"),
+
+      # Execute the query itself, which creates the query_result ib_gib
+      {:ok, query_result} <-
+        src |> Expression.query(identity_ib_gibs, query_opts),
+
+        # Return the query_result result ib^gib
+      {:ok, query_result_info} <- query_result |> Expression.get_info,
+      {:ok, result_ib_gib} <- extract_result_ib_gib(ib_gib, query_result_info)
+    ) do
+      {:ok, result_ib_gib}
+    else
+      error -> default_handle_error(error)
+    end
+  end
+
+  defp build_query_opts_latest(identity_ib_gibs, ib_gib) do
+    non_root_identities = Enum.filter(identity_ib_gibs, &(&1 != @root_ib_gib))
+
+    do_query
+    |> where_rel8ns("identity", "withany", "ibgib", non_root_identities)
+    |> where_rel8ns("past", "withany", "ibgib", [ib_gib])
+    |> most_recent_only
+  end
+
+  defp extract_result_ib_gib(src_ib_gib, query_result_info) do
+    result_data = query_result_info[:rel8ns]["result"]
+    result_count = Enum.count(result_data)
+    case result_count do
+      1 ->
+        # Not found (1 result is root), so the "latest" is the one that we're
+        # search off of (has no past)
+        {:ok, src_ib_gib}
+
+      2 ->
+        # First is always root, so get second
+        {:ok, Enum.at(result_data, 1)}
+
+      _ ->
+        _ = Logger.error "unknown result count: #{result_count}"
+        {:ok, @root_ib_gib}
+    end
+  end
+
 
   # ----------------------------------------------------------------------------
   # JSON Api
