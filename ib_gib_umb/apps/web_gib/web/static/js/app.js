@@ -109,9 +109,6 @@ class App {
     // })
   }
 
-  getJsonPath(ibGib) {
-
-  }
   // static sanitize(html){ return $("<div/>").text(html).html() }
   //
   // static messageTemplate(msg){
@@ -120,8 +117,38 @@ class App {
   //
   //   return(`<p><a href='#'>[${username}]</a>&nbsp; ${body}</p>`)
   // }
-
 }
+
+// Init slider
+$(document).ready(function(){
+  let counter = 0,
+  $items = $('.diy-slideshow figure'),
+  numItems = $items.length;
+
+  var showCurrent = function(){
+    var itemToShow = Math.abs(counter%numItems);
+    $items.removeClass('show');
+    $items.eq(itemToShow).addClass('show');
+  };
+
+  const intervalMs = 10000;
+  setInterval(() => {
+    counter++;
+    showCurrent();
+  }, intervalMs);
+
+  $('.next').on('click', function(){
+    counter++;
+    showCurrent();
+  });
+
+  $('.prev').on('click', function(){
+    counter--;
+    showCurrent();
+  });
+
+  showCurrent();
+});
 
 $( () => App.init() )
 

@@ -39,7 +39,8 @@ defmodule WebGib.IbGibController do
     |> assign(:gib, "gib")
     |> assign(:ib_gib, @root_ib_gib)
     |> add_meta_query
-    |> redirect(to: ib_gib_path(WebGib.Endpoint, :show, get_session(conn, @meta_query_result_ib_gib_key)))
+    # |> redirect(to: ib_gib_path(WebGib.Endpoint, :show, get_session(conn, @meta_query_result_ib_gib_key)))
+    |> redirect(to: ib_gib_path(WebGib.Endpoint, :show, @root_ib_gib))
   end
 
   defp add_meta_query(conn) do

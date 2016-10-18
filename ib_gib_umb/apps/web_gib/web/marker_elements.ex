@@ -6,6 +6,7 @@ defmodule WebGib.MarkerElements do
     :svg,
     :circle,
     :line,
-    :text
+    :text,
+    :strong
   ]
 end
