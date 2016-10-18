@@ -863,6 +863,8 @@ export class IbScape {
       this.execInfo(dIbGib);
     } else if (dCommand.name === "query") {
       this.execQuery(dIbGib);
+    } else if (dCommand.name === "refresh") {
+      this.execRefresh(dIbGib);
     }
   }
 
@@ -888,29 +890,29 @@ export class IbScape {
       if (dIbGib.ibgib === "ib^gib") {
         text = `Double-click to expand an ibGib, single-click to view its menu. Click the Spock Hand to fork into a "new" ibGib. Click login to identify yourself with your (public) email address. Click search to search your existing ibGib. Click the pointer finger to navigate to an ibGib.`;
       } else if (dIbGib.cat === "ib") {
-        text = `This is your current ibGib. Click the information button to get more details about it. You can expand / collapse any children, fork it, merge it, add comments, pictures, links, and more.`;
+        text = `This is your current ibGib. Click the information (i) button to get more details about it. Double-click to expand/collapse any children. Spock hand to fork it, or add comments, pictures, links, and more.`;
       } else if (dIbGib.cat === "ancestor") {
-        text = `This is an 'ancestor' ibGib. Each 'new' ibGib is created by forking an existing one. Ancestors are how we keep track of which ibGib we've forked to produce the current incarnation.`
+        text = `This is an "ancestor" ibGib, like a parent or grandparent. Each time you "fork" a new ibGib, the src ibGib becomes its ancestor. For example, if you fork a RecipeGib -> WaffleGib, then the WaffleGib becomes a child of the RecipeGib.`
       } else if (dIbGib.cat === "past") {
-        text = `This is a 'past' version of your current ibGib. You can think of past ibGib kinda like when you 'undo' a text document. Each time you mut8 an ibGib, either by adding/removing a comment or image, changing a comment, etc., you create a 'new' version in time. ibGib retains all histories of all changes of all ibGib!`
+        text = `This is a "past" version of your current ibGib. A past ibGib kinda like previous versions of a text document, whither you can 'undo'. Each time you mut8 an ibGib, either by adding/removing a comment or image, changing a comment, etc., you create a "new" version in time. ibGib retains all histories of all changes of all ibGib!`
       } else if (dIbGib.cat === "dna") {
-        text = `Just like a living organism, each ibGib is produced by an internal "dna" code. Each building block is itself an ibGib that you can look at.`;
+        text = `Each ibGib is produced by an internal "dna" code, precisely as living organisms are. Each building block is itself an ibGib that you can navigate to, fork, etc. We can't dynamically build dna yet though (in the future of ibGib!)`;
       } else if (dIbGib.cat === "identity") {
-        text = `This is an identity ibGib. It lets you know who someone is, and you can add layers of identities to be "more secure". If the ib is a long number, then that is an "anonymous" user. Anyone can have their ib be the same, so be sure to check the gib! (It's that long number after the ^ character in the form of 'ibGib_LETTERSandNUMBERS_ibGib')`;
+        text = `This is an identity ibGib. It gives you information about who produced what ibGib. You can add layers of identities to "provide more identification", like showing someone your driver's license, your voter's card, club membership, etc. Each identity's ib should start with either "session" or "email". Session is an anonymous id and should be attached to each and every ibGib. Email ids show the email that was used to "log in" (but you can log in with multiple emails!). All authenticated identities should be "stamped" (the "gib" starts and ends with "ibGib", e.g. "ibGib_LETTERSandNUMBERS_ibGib").`;
       } else if (dIbGib.cat === "rel8n") {
-        text = `This is the '${dIbGib.name}' rel8n node. All of its children are rel8ed to the current ibGib by this rel8n. One ibGib can have multiple rel8ns to any other ibGib. You can expand / collapse the rel8n to show / hide its children by either double-clicking or clicking and selecting the "view" button.`;
+        text = `This is a '${dIbGib.name}' rel8n node. All of its children are rel8ed to the current ibGib by this rel8n. One ibGib can have multiple rel8ns to any other ibGib. You can expand / collapse the rel8n to show / hide its children by either double-clicking or clicking and selecting the "view" button. Click help on the children to learn more about that rel8n.`;
       } else if (dIbGib.cat === "pic") {
-        text = `This is a picture that you have uploaded! Viewing it in fullscreen will open the image in a new window or tab, depending on your browser preferences. Navigating to it will take you to the pic's ibGib itself.`;
+        text = `This is a picture that you have uploaded! Viewing it in fullscreen will open the image in a new window or tab, depending on your browser preferences. Navigating to it will take you to the pic's ibGib itself. (We're working on an improved experience with adding comments, pictures, etc.)`;
       } else if (dIbGib.cat === "comment") {
         let ibGibJson = this.ibGibCache.get(dIbGib.ibgib);
         let commentText = ibHelper.getDataText(ibGibJson);
-        text = `This is a comment. It contains text...umm..you can comment on just about anything. This particular comment's text is: "${commentText}"`;
+        text = `This is a comment. It contains text...umm...you can comment on just about anything. (We're working on an improved experience with adding comments, pictures, etc.) This particular comment's text is: "${commentText}"`;
       } else if (dIbGib.cat === "link") {
         let ibGibJson = this.ibGibCache.get(dIbGib.ibgib);
         let linkText = ibHelper.getDataText(ibGibJson);
-        text = `This is a hyperlink to somewhere outside of ibGib. If you want to navigate to the external link, then choose the open external link command. If you want to goto the link's ibGib, then click the goto navigation.\n\nLink: "${linkText}"`;
+        text = `This is a hyperlink to somewhere outside of ibGib. If you want to navigate to the external link, then choose the open external link command. If you want to goto the link's ibGib, then click the goto navigation. (We're working on an improved experience with adding comments, pictures, etc.) \n\nLink: "${linkText}"`;
       } else {
-        text = `This is one of the related ibGib. Click the information button to get more details about it. You can also navigate to it, expand / collapse any children, fork it, merge it, add comments, pictures, links, and more.`;
+        text = `This ibGib is rel8d to the current ibGib via ${dIbGib.cat}. Click the information button to get more details about it. You can also navigate to it, expand / collapse any children, fork it, add comments, pictures, links, and more.`;
       }
 
       $("#ib-help-details-text").text(text);
@@ -1022,6 +1024,10 @@ export class IbScape {
     };
     this.showDetails("query", init);
     $("#query_form_data_search_ib").focus();
+  }
+
+  execRefresh(dIbGib) {
+    location.href = `/ibgib/${dIbGib.ibgib}?latest=true`
   }
 
   toggleFullScreen(elementJquerySelector) {
@@ -1333,10 +1339,10 @@ export class IbScape {
       commands = ["help", "fork", "goto", "identemail", "fullscreen", "query"];
     } else if (d.cat === "ib") {
       // commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link"];
-      commands = ["help", "view", "fork", "comment", "pic", "link", "info"];
+      commands = ["help", "view", "fork", "comment", "pic", "link", "info", "refresh"];
     } else {
       // commands = ["pic", "info", "merge", "help", "share", "comment", "star", "fork", "flag", "thumbs up", "query", "meta", "mut8", "link", "goto"];
-      commands = ["help", "view", "fork", "goto", "comment", "pic", "link", "info"];
+      commands = ["help", "view", "fork", "goto", "comment", "pic", "link", "info", "refresh"];
     }
 
     if (d.render && d.render === "image") {

@@ -73,7 +73,7 @@ var d3MenuCommands = [
     "text": "Pic",
     "icon": "\uf03e",
     "description": "This will let you upload an image or link to an existing one online",
-    "color": "#1DA8A8"
+    "color": "#61B9FF"
   },
   {
     "id": "menu-info",
@@ -97,7 +97,7 @@ var d3MenuCommands = [
     "text": "Help",
     "icon": "\uf29c",
     "description": "This shows general help information for the available commands",
-    "color": "#E8AC4A"
+    "color": "#EBFF0F"
   },
   {
     "id": "menu-share",
@@ -113,7 +113,7 @@ var d3MenuCommands = [
     "text": "Comment",
     "icon": "\uf075",
     "description": "Add a comment (or any text really) to this ibGib",
-    "color": "#1DA8A8"
+    "color": "#61B9FF"
   },
   {
     "id": "menu-star",
@@ -129,7 +129,7 @@ var d3MenuCommands = [
     "text": "Fork",
     "icon": "\uf259",
     "description": "Ah, forking...this is how you create a 'new' ibGib or copy from an existing one. You will be using this a lot",
-    "color": "lightblue"
+    "color": "#61B9FF"
   },
   {
     "id": "menu-flag",
@@ -153,7 +153,7 @@ var d3MenuCommands = [
     "text": "Link",
     "icon": "\uf0c1",
     "description": "Add a hyperlink from the world wide interweb",
-    "color": "#1DA8A8"
+    "color": "#61B9FF"
   },
   {
     "id": "menu-meta",
@@ -177,7 +177,7 @@ var d3MenuCommands = [
     "text": "View",
     "icon": "\uf06e",
     "description": "Expand/collapse an ibGib's visible children",
-    "color": "pink"
+    "color": "#CFA1C8"
   },
   {
     "id": "menu-query",
@@ -201,7 +201,7 @@ var d3MenuCommands = [
     "text": "View Fullscreen",
     "icon": "\uf0b2",
     "description": "View fullscreen",
-    "color": "pink"
+    "color": "#CFA1C8"
   },
   {
     "id": "menu-externallink",
@@ -218,6 +218,14 @@ var d3MenuCommands = [
     "icon": "\uf090",
     "description": "Sends an email containing a link to login",
     "color": "#FFFFFF"
+  },
+  {
+    "id": "menu-refresh",
+    "name": "refresh",
+    "text": "Refresh ibGib",
+    "icon": "\uf021",
+    "description": "Refreshes the current ibGib to the most recent version (of any timeline)",
+    "color": "#C7FF4F"
   }
 ];
 
