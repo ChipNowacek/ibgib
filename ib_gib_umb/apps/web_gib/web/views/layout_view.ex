@@ -21,9 +21,9 @@ defmodule WebGib.LayoutView do
         meta name: "theme-color", content: "#f0fcda"
       end
       body [class: "ib-height-100"] do
-        div class: "container-fluid ib-width-100 ib-height-100" do
-          header class: "header" do
-            a [href: "/"], do: span class: "logo"
+        div [class: "container-fluid ib-width-100 ib-height-100"] do
+          header [id: "ib-main-header"] do
+            a [class: "logo", href: "/"]
           end
 
           p get_flash(@conn, :info), class: "alert alert-info", role: "alert"

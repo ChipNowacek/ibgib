@@ -1,0 +1,76 @@
+@import 'colors';
+
+// Thanks http://themarklee.com/2013/12/26/simple-diy-responsive-slideshow-made-html5-css3-javascript/
+.diy-slideshow{
+  position: relative;
+  display: block;
+  overflow: hidden;
+  background-color: $ibgib_green_very_light;
+  border-radius: 20px;
+  max-height: 300px;
+  // height: 100px;
+  align-content: center;
+  vertical-align: center;
+}
+
+.diy-slideshow-image {
+  align-self: center;
+  max-width: 300px;
+  max-height: 300px;
+  margin: auto;
+  display: block;
+}
+
+figure{
+  position: absolute;
+  opacity: 0;
+  transition: 3s opacity;
+}
+figcaption{
+  position: absolute;
+  font-family: sans-serif;
+  font-size: .8em;
+  bottom: .75em;
+  right: .35em;
+  padding: .25em;
+  color: #fff;
+  background-color: $ibgib_green;
+  border-radius: 2px;
+  transition: 3s background-color;
+}
+figcaption a{
+  color: #fff;
+}
+figure.show{
+  opacity: 1;
+  position: static;
+  transition: 2s opacity;
+}
+.next, .prev{
+  color: #fff;
+  position: absolute;
+  background-color: $ibgib_green_light;
+  // background: rgba(0,0,0, .6);
+  top: 50%;
+  z-index: 1;
+  font-size: 2em;
+  margin-top: -.75em;
+  opacity: .3;
+  user-select: none;
+}
+.next:hover, .prev:hover{
+  cursor: pointer;
+  opacity: 1;
+}
+.next{
+  right: 0;
+  padding: 10px 5px 15px 10px;
+  border-top-left-radius: 3px;
+  border-bottom-left-radius: 3px;
+}
+.prev{
+  left: 0;
+  padding: 10px 10px 15px 5px;
+  border-top-right-radius: 3px;
+  border-bottom-right-radius: 3px;
+}

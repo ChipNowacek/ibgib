@@ -14,12 +14,19 @@ export class IbScape {
     this.circleRadius = 10;
 
     this.initWindowResize();
-  }
+
+    d3.select("#ib-main-header")
+      .classed("ib-hidden", true);
+    d3.select("main")
+      .style("height", "100% !important")
+      .style("width", "100% !important");
+    }
 
   initWindowResize() {
     let t = this;
     window.onresize = () => {
       const debounceMs = 250;
+
 
       if (t.resizeTimer) { clearTimeout(t.resizeTimer); }
 
@@ -888,7 +895,7 @@ export class IbScape {
         "haven't included help for this yet. Let me know please :-O";
 
       if (dIbGib.ibgib === "ib^gib") {
-        text = `Double-click to expand an ibGib, single-click to view its menu. Click the Spock Hand to fork into a "new" ibGib. Click login to identify yourself with your (public) email address. Click search to search your existing ibGib. Click the pointer finger to navigate to an ibGib.`;
+        text = `ibGib are like ideas. Click an ibGib to view its menu, double-click to expand/collapse it. Click the "Spock Hand" to create a forked ("new") ibGib. Click "login" to identify yourself with your (public) email address. Click "search" to search your existing ibGib. Click the pointer finger to navigate to an ibGib. For more info on ibGib and what you can do with them, see https://github.com/ibgib/ibgib/wiki/Just-What-Exactly-**IS**-an-ibGib?-(or-at-least,-how-can-i-use-them?)`;
       } else if (dIbGib.cat === "ib") {
         text = `This is your current ibGib. Click the information (i) button to get more details about it. Double-click to expand/collapse any children. Spock hand to fork it, or add comments, pictures, links, and more.`;
       } else if (dIbGib.cat === "ancestor") {
