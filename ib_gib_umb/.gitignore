@@ -4,3 +4,5 @@
 erl_crash.dump
 *.ez
 npm-debug.log
+
+rel/ib_gib_umb
