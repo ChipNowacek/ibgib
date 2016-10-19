@@ -13,9 +13,9 @@ use Mix.Config
 # which you typically run after static files are built.
 config :web_gib, WebGib.Endpoint,
   http: [port: {:system, "PORT"}],
-  # url: [host: "ibgib.com", port: 80],
+  url: [host: "ibgib.com", port: 80],
   # url: [host: "192.168.0.11", port: 16816],
-  url: [host: "localhost", port: 16816],
+  # url: [host: "localhost", port: 80],
   cache_static_manifest: "priv/static/manifest.json",
   server: true
   # root: "."

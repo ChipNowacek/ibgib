@@ -17,19 +17,12 @@ environment :dev do
   set dev_mode: true
   set include_erts: false
   set cookie: :":ALx<_H|[~3W,LmaHKd/BE0^vn!GoW.ZaP6&mGo0tz3&BzaeQp;s<N+:_n_q6*bd"
-
-  # This hook runs the ecto migrate
-  set post_start_hook: "rel/hooks/post_start"
 end
 
 environment :prod do
   set include_erts: true
   set include_src: false
   set cookie: :":ALx<_H|[~3W,LmaHKd/BE0^vn!GoW.ZaP6&mGo0tz3&BzaeQp;s<N+:_n_q6*bd"
-
-  # This hook runs the ecto migrate
-  set pre_start_hook: "rel/hooks/pre_start"
-  set post_start_hook: "rel/hooks/post_start"
 end
 
 # You may define one or more releases in this file.
