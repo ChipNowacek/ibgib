@@ -17,8 +17,8 @@ config :web_gib, WebGib.Endpoint,
   # url: [host: "192.168.0.11", port: 16816],
   # url: [host: "localhost", port: 80],
   cache_static_manifest: "priv/static/manifest.json",
+  root: ".",
   server: true
-  # root: "."
 
 # Do not print debug messages in production
 config :logger, level: :info

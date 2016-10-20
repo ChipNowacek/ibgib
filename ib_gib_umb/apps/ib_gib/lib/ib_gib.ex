@@ -21,5 +21,4 @@ defmodule IbGib do
     result
   end
 
-
 end
