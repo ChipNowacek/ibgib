@@ -7,6 +7,8 @@ I run all of these commands inside the root of the umbrella app.
     * Builds the release.
     * `PORT` is used in WebGib's `prod.exs` config file:
       * `http: [port: {:system, "PORT"}]`
+    * `PORT=80 MIX_ENV=prod mix release --env=prod`
+      * deprecated for SSL-only
 
 * Using `docker-compose`
   * `VERSION=0.1.0 docker-compose build`

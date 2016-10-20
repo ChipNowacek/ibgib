@@ -26,7 +26,7 @@ defmodule WebGib.Mixfile do
   def application do
     [mod: {WebGib, []},
      applications: [:phoenix, :phoenix_pubsub, :phoenix_html, :cowboy, :logger,
-      :gettext, :phoenix_ecto, :postgrex, :random_gib, :ib_gib, :mailgun, :exchalk, :marker]]
+      :gettext, :phoenix_ecto, :postgrex, :random_gib, :ib_gib, :mailgun, :exchalk, :marker, :ssl]]
   end
 
   # Specifies which paths to compile per environment.

@@ -10,6 +10,7 @@ defmodule IbGib.Data do
   require Logger
   import Ecto.Query
 
+  use IbGib.Constants, :ib_gib
   use IbGib.Constants, :error_msgs
 
   alias IbGib.Data.Schemas.{IbGibModel, BinaryModel}
@@ -55,7 +56,7 @@ defmodule IbGib.Data do
   Bang version of `save/1`.
   """
   def save!(info) when is_map(info) do
-    _ = Logger.warn "info: #{inspect info}"
+    _ = Logger.debug "info: #{inspect info}"
     case save(info) do
       {:ok, :ok} -> :ok
       {:error, reason} -> raise reason
@@ -102,12 +103,12 @@ defmodule IbGib.Data do
   """
   @spec query(map) :: any
   def query(info) do
-    _ = Logger.warn "query yo. info: #{inspect info}"
+    _ = Logger.debug "query yo. info: #{inspect info}"
 
     models_array =
       info
       |> Enum.reduce([], fn({i, query_opts}, acc) ->
-        _ = Logger.warn "iteration number: #{i}"
+        _ = Logger.debug "iteration number: #{i}"
         iter_result = query_iteration(query_opts)
         acc ++ iter_result
       end)
@@ -165,7 +166,7 @@ defmodule IbGib.Data do
   # ----------------------------------------------------------------------------
 
   defp query_iteration(%{"ib" => ib_options, "gib" => gib_options, "data" => data_options, "rel8ns" => rel8ns_options, "time" => time_options, "meta" => meta_options}) do
-    _ = Logger.warn "query iteration yo"
+    _ = Logger.debug "query iteration yo"
 
     model =
       IbGibModel
@@ -191,7 +192,7 @@ defmodule IbGib.Data do
     ib_options)
     when is_map(ib_options) and map_size(ib_options) > 0 and
          is_bitstring(search_term) and is_bitstring(method) do
-    _ = Logger.warn "adding ib_options: #{inspect ib_options}"
+    _ = Logger.debug "adding ib_options: #{inspect ib_options}"
 
     case method do
       "is" ->
@@ -249,30 +250,30 @@ defmodule IbGib.Data do
     when is_map(data_options) and map_size(data_options) > 0 and
          is_bitstring(search_term) and is_bitstring(method) and
          is_bitstring(where) do
-    _ = Logger.warn "yoooooooooooooooo"
+    _ = Logger.debug "yoooooooooooooooo"
 
     case {where, method} do
       {"key", "is"} ->
-        _ = Logger.warn "key is"
+        _ = Logger.debug "key is"
         query =
           query
           |> where([x], fragment("? \\? ?", x.data, ^search_term))
         query
       {"key", "like"} ->
-        _ = Logger.warn "key like"
+        _ = Logger.debug "key like"
         wrapped_search_term = wrap_if_needed(search_term)
         query =
           query
           |> where(fragment("(SELECT count(*) FROM jsonb_each_text(data) WHERE key ILIKE ?) > 0", ^wrapped_search_term))
         query
       {"value", "is"} ->
-        _ = Logger.warn "value is"
+        _ = Logger.debug "value is"
         query =
           query
           |> where(fragment("(SELECT count(*) FROM jsonb_each_text(data) WHERE value = ?) > 0", ^search_term))
         query
       {"value", "like"} ->
-        _ = Logger.warn "key like"
+        _ = Logger.debug "key like"
         wrapped_search_term = wrap_if_needed(search_term)
         query =
           query
@@ -309,17 +310,17 @@ defmodule IbGib.Data do
       case {with_or_without, method} do
 
         {"with", "ibgib"} ->
-          _ = Logger.warn "with ib_gib. where: #{where}. search_term: #{search_term}"
+          _ = Logger.debug "with ib_gib. where: #{where}. search_term: #{search_term}"
           query
           |> where(fragment("? IN (SELECT jsonb_array_elements_text(rel8ns -> ?))", ^search_term, ^where))
 
         {"without", "ibgib"} ->
-          _ = Logger.warn "with ib_gib. where: #{where}. search_term: #{search_term}"
+          _ = Logger.debug "with ib_gib. where: #{where}. search_term: #{search_term}"
           query
           |> where(fragment("? NOT IN (SELECT jsonb_array_elements_text(rel8ns -> ?))", ^search_term, ^where))
 
         {"with", "ib"} ->
-          _ = Logger.warn "with ib. where: #{where}. search_term: #{search_term}"
+          _ = Logger.debug "with ib. where: #{where}. search_term: #{search_term}"
           regex = ""
           query
           |> where(fragment("? IN (SELECT substring( jsonb_array_elements_text(rel8ns -> ?) FROM '^[^^]+'))", ^search_term, ^where))
@@ -327,7 +328,7 @@ defmodule IbGib.Data do
         # not going to worry about implementing this right now since low
         # priority
         # {"without", "ib"} ->
-        #   _ = Logger.warn "with ib. where: #{where}. search_term: #{search_term}"
+        #   _ = Logger.debug "with ib. where: #{where}. search_term: #{search_term}"
         #   regex = ""
         #   query
         #   |> where(fragment("? NOT IN (SELECT substring( jsonb_array_elements_text(rel8ns -> ?) FROM '^[^^]+'))", ^search_term, ^where))
@@ -344,12 +345,12 @@ defmodule IbGib.Data do
          is_list(search_term) and is_bitstring(method) and
          is_bitstring(where) and is_bitstring(with_or_without)do
 
-      _ = Logger.warn "add_rel8ns_options_iteration with search_term as list"
+      _ = Logger.debug "add_rel8ns_options_iteration with search_term as list"
 
       case {with_or_without, method} do
 
         {"withany", "ibgib"} ->
-          _ = Logger.warn "with ib_gib. where: #{where}. search_term: #{search_term}"
+          _ = Logger.debug "with ib_gib. where: #{where}. search_term: #{search_term}"
           query
           |> where(
                fragment(

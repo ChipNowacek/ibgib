@@ -7,7 +7,8 @@ services:
       args:
         VERSION: "${VERSION}"
     ports:
-      - "80:80"
+      # - "80:80"
+      - "443:443"
     depends_on:
      - postgres
     entrypoint: ./wait-for-postgres.sh postgres /app/bin/ib_gib_umb foreground

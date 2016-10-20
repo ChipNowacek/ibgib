@@ -22,7 +22,9 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
 
-ENV PORT 80
+# ENV PORT 80
+ENV PORT 443
 # EXPOSE 80
+EXPOSE 443
 
 CMD ["/app/bin/ib_gib_umb", "foreground"]
