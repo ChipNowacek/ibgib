@@ -7,19 +7,26 @@ services:
       args:
         VERSION: "${VERSION}"
     ports:
-      # - "80:80"
       - "443:443"
     depends_on:
      - postgres
-    entrypoint: ./wait-for-postgres.sh postgres /app/bin/ib_gib_umb foreground
+    entrypoint: ./entrypoint.sh postgres "${PORT}" "${PG_PORT}" "${POSTGRES_USER}" "${POSTGRES_PASSWORD}" /app/bin/ib_gib_umb foreground
     volumes:
       - "uploadedfiles:/app/files"
+    restart: always
 
   postgres:
     image: postgres:9.5
     container_name: postgres
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+    # This mounts the volume on the local machine's file system and not in the
+    # container image itself. (The "local machine" may be a vm if using
+    # `docker-machine`.)
     volumes:
-      - "./data:/var/lib/postgresql/data"
+      - "./postgresqldata:/var/lib/postgresql/data"
+    restart: always
 
 volumes:
   uploadedfiles:

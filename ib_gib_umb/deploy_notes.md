@@ -3,18 +3,18 @@
 I run all of these commands inside the root of the umbrella app.
 
 * Distillery
-  * `PORT=80 MIX_ENV=prod mix release --env=prod`
+  * `REPLACE_OS_VARS=true PORT=443 MIX_ENV=prod POSTGRES_USER= POSTGRES_PASSWORD= PG_WEBGIB_DB= PG_IBGIB_DB= PG_PORT=5432 WEBGIB_SECRET_KEY_BASE= MG_DOMAIN= MG_KEY= mix release --env=prod`
     * Builds the release.
-    * `PORT` is used in WebGib's `prod.exs` config file:
-      * `http: [port: {:system, "PORT"}]`
-    * `PORT=80 MIX_ENV=prod mix release --env=prod`
-      * deprecated for SSL-only
+    * Be sure to add in the actual values for the PG env vars.
 
 * Using `docker-compose`
-  * `VERSION=0.1.0 docker-compose build`
-  * `VERSION=0.1.0 docker-compose up`
-  * `VERSION=0.1.0 docker-compose down`
-    * Not sure if `VERSION` is necessary here, but I get a warning.
+  * `VERSION=0.1.0 PORT=443 MIX_ENV=prod POSTGRES_USER= POSTGRES_PASSWORD= PG_WEBGIB_DB= PG_IBGIB_DB= PG_PORT=5432 WEBGIB_SECRET_KEY_BASE= MG_DOMAIN= MG_KEY= docker-compose build`
+  * I just use the same commandlines for `docker-compose up/down`
+  * Fill in ENV variables
+
+* To remove dangling images
+  * `docker rmi $(docker images -f "dangling=true" -q)`
+  * Thanks http://www.projectatomic.io/blog/2015/07/what-are-docker-none-none-images/
 
 * Individual `docker` container
   * `sudo docker build -t ib_gib_umb .`
@@ -24,4 +24,3 @@ I run all of these commands inside the root of the umbrella app.
   * `docker run -d -p 80:80 ib_gib_umb`
     * OLD: Using docker compose now
     * runs ib_gib_umb docker container
-    * Not sure if `sudo` is required.

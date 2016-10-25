@@ -7,4 +7,3 @@ npm-debug.log
 
 rel/ib_gib_umb
 /postgresqldata
-scripts/env-wait-for-postgres.sh

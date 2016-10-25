@@ -6,7 +6,6 @@ config :web_gib, WebGib.Endpoint,
   http: [port: 4001],
   server: false
 
-# Print only warnings and errors during test
 config :logger, level: :debug
 
 # Configure your database
