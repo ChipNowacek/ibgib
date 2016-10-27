@@ -5,10 +5,14 @@ defmodule WebGib do
 
   use Application
 
+  import WebGib.Startup.Tasks
+
   # See http://elixir-lang.org/docs/stable/elixir/Application.html
   # for more information on OTP Applications
   def start(_type, _args) do
     import Supervisor.Spec
+
+    _ = create_db()
 
     # Define workers and child supervisors to be supervised
     children = [
@@ -23,7 +27,11 @@ defmodule WebGib do
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: WebGib.Supervisor]
-    Supervisor.start_link(children, opts)
+    result = Supervisor.start_link(children, opts)
+
+    _ = migrate_db()
+
+    result
   end
 
   # Tell Phoenix to update the endpoint configuration

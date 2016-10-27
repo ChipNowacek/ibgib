@@ -65,8 +65,8 @@ defmodule IbGib.Auth.Authz do
     # monkey business at least has some identity.
     Logger.metadata([x: which])
     _ = Logger.debug "which: #{which}"
-    _ = Logger.warn "a_rel8ns: #{inspect a_rel8ns}"
-    _ = Logger.warn "b_rel8ns: #{inspect b_rel8ns}"
+    _ = Logger.debug "a_rel8ns: #{inspect a_rel8ns}"
+    _ = Logger.debug "b_rel8ns: #{inspect b_rel8ns}"
 
     # if a_has_identity and b_has_identity do
     if has_identity(a_rel8ns) and has_identity(b_rel8ns) do
@@ -83,8 +83,8 @@ defmodule IbGib.Auth.Authz do
   def authorize_apply_b(which, a_rel8ns, b_rel8ns) when is_atom(which) do
     Logger.metadata([x: which])
     _ = Logger.debug "which: #{inspect which}"
-    _ = Logger.warn "a_rel8ns: #{inspect a_rel8ns}"
-    _ = Logger.warn "b_rel8ns: #{inspect b_rel8ns}"
+    _ = Logger.debug "a_rel8ns: #{inspect a_rel8ns}"
+    _ = Logger.debug "b_rel8ns: #{inspect b_rel8ns}"
 
     with(
       {:ok, :ok} <- ensure_a_and_b_have_identity(a_rel8ns, b_rel8ns),

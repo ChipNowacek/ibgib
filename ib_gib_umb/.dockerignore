@@ -1,0 +1,7 @@
+_build/*
+apps/*
+config/*
+data/*
+deps/*
+
+**/*.secret.exs

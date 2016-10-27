@@ -15,11 +15,11 @@ defmodule WebGib.PageController do
   end
 
   defp add_ib_session_if_needed(conn) do
-    _ = Logger.warn "session id key: #{@ib_session_id_key}"
+    _ = Logger.debug "session id key: #{@ib_session_id_key}"
     ib_session_id = conn |> get_session(@ib_session_id_key)
     conn =
       if ib_session_id == nil do
-        ib_session_id = IbGib.Helper.new_id
+        ib_session_id = new_id()
         _ = Logger.debug "Session did not exist. Putting new session id: #{ib_session_id}"
         conn = put_session(conn, @ib_session_id_key, ib_session_id)
 
@@ -28,7 +28,7 @@ defmodule WebGib.PageController do
         _ = Logger.debug "Session existed. session id: #{ib_session_id}"
         conn
       end
-    _ = Logger.warn "conn: #{inspect conn}"
+    _ = Logger.debug "conn: #{inspect conn}"
     conn
   end
 

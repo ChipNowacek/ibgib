@@ -766,8 +766,7 @@ defmodule IbGib.Expression do
   # ----------------------------------------------------------------------------
 
   defp express_impl(identity_ib_gibs, a_ib_gib, a_info, b_ib_gib, _state) do
-    _ = Logger.warn "express_impl reachhed"
-    _ = Logger.warn "express_impl reachhed"
+    _ = Logger.debug "express_impl reached"
 
     with(
       # -----------------------
@@ -934,7 +933,7 @@ defmodule IbGib.Expression do
   end
 
   defp apply_next_impl(a_info, %{:ib => "fork"} = next_info) do
-    _ = Logger.warn "next_info:\n#{inspect next_info, pretty: true}"
+    _ = Logger.debug "next_info:\n#{inspect next_info, pretty: true}"
     apply_fork(a_info, next_info)
   end
   defp apply_next_impl(a_info, %{:ib => "mut8"} = next_info) do
@@ -1066,7 +1065,7 @@ defmodule IbGib.Expression do
   end
 
   defp increment_plan_step_index(new_plan_info) do
-    _ = Logger.warn "new_plan_info:\n#{inspect new_plan_info, pretty: true}"
+    _ = Logger.debug "new_plan_info:\n#{inspect new_plan_info, pretty: true}"
     data = new_plan_info[:data]
     steps_count = PlanHelper.count_steps(data["steps"])
     current_i = String.to_integer(data["i"])
@@ -1092,7 +1091,7 @@ defmodule IbGib.Expression do
   defp build_and_save_next_transform("fork", identity_ib_gibs, src_ib_gib,
     f_data, plan_info) do
 
-    _ = Logger.warn "fork\nplan_info: #{inspect plan_info, pretty: true}"
+    _ = Logger.debug "fork\nplan_info: #{inspect plan_info, pretty: true}"
     # Probably need to actually get this from somewhere, but for now I'm
     # going with the default until I see the reason otherwise.
     # opts = @default_transform_options
