@@ -30,6 +30,7 @@ ENV LC_ALL en_US.UTF-8
 
 # App only runs on https
 ENV PORT 443
+# EXPOSE 80
 EXPOSE 443
 
 # Start the app in the foreground. This prevents it from immediately exiting.

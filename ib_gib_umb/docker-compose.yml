@@ -28,5 +28,10 @@ services:
       - "./postgresqldata:/var/lib/postgresql/data"
     restart: always
 
+  nginx-redirect:
+    image: ibgib/ibgib-nginx:latest
+    ports:
+      - "80:80"
+
 volumes:
   uploadedfiles:
