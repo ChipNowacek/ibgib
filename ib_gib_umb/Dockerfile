@@ -28,10 +28,11 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
 
-# App only runs on https
-ENV PORT 443
-# EXPOSE 80
-EXPOSE 443
+# App only runs on https, but 443 is already taken by nginx-redirect
+# EXPOSE 443 80
+# Runs on ibgib port
+ENV PORT 16816
+EXPOSE 16816
 
 # Start the app in the foreground. This prevents it from immediately exiting.
 CMD ["/app/bin/ib_gib_umb", "foreground"]

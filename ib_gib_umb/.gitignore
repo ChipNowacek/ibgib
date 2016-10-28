@@ -7,3 +7,9 @@ npm-debug.log
 
 rel/ib_gib_umb
 /postgresqldata
+
+*.crt
+*.key
+
+!localhost.cert
+!localhost.key

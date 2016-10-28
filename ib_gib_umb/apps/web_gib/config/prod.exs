@@ -5,7 +5,7 @@ config :web_gib, WebGib.Endpoint,
           otp_app: :web_gib,
           keyfile: System.get_env("SSL_KEY_PATH") || "${SSL_KEY_PATH}",
           certfile: System.get_env("SSL_CERT_PATH") || "${SSL_CERT_PATH}"],
-  force_ssl: [hsts: true],
+  force_ssl: [hsts: false],
   debug_errors: false,
   code_reloader: false,
 
