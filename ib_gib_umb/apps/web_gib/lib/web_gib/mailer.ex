@@ -18,7 +18,8 @@ defmodule WebGib.Mailer do
   end
 
   defp token_url(token) do
-    Router.Helpers.ib_gib_url(Endpoint, :ident, token)
+    url_with_port = Router.Helpers.ib_gib_url(Endpoint, :ident, token)
+    String.replace(url_with_port, ":#{System.get_env("PORT") || "${PORT}"}", "")
   end
 
   def login_email_from, do: "noreply-login@ibgib.com"
