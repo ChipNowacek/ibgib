@@ -7,13 +7,18 @@ services:
       args:
         VERSION: "${VERSION}"
     ports:
-      - "443:443"
+      - "16816:16816"
+    expose:
+      - 16816
     depends_on:
      - postgres
     entrypoint: ./entrypoint.sh postgres "${PORT}" "${PG_PORT}" "${POSTGRES_USER}" "${POSTGRES_PASSWORD}" /app/bin/ib_gib_umb foreground
     volumes:
       - "uploadedfiles:/app/files"
     restart: always
+    networks:
+      - front
+      - back
 
   postgres:
     image: postgres:9.5
@@ -27,11 +32,24 @@ services:
     volumes:
       - "./postgresqldata:/var/lib/postgresql/data"
     restart: always
+    networks:
+      - back
 
   nginx-redirect:
-    image: ibgib/ibgib-nginx:latest
+    build:
+      context: ./nginx
     ports:
       - "80:80"
+      - "443:443"
+    depends_on:
+     - web
+    restart: always
+    networks:
+      - front
 
 volumes:
   uploadedfiles:
+
+networks:
+  front:
+  back:
