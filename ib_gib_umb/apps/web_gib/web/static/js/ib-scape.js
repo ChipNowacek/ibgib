@@ -895,7 +895,7 @@ export class IbScape {
         "haven't included help for this yet. Let me know please :-O";
 
       if (dIbGib.ibgib === "ib^gib") {
-        text = `ibGib are like ideas. Click an ibGib to view its menu, double-click to expand/collapse it. Click the "Spock Hand" to create a forked ("new") ibGib. Click "login" to identify yourself with your (public) email address. Click "search" to search your existing ibGib. Click the pointer finger to navigate to an ibGib. For more info on ibGib and what you can do with them, see https://github.com/ibgib/ibgib/wiki/Just-What-Exactly-**IS**-an-ibGib?-(or-at-least,-how-can-i-use-them?)`;
+        text = `ibGib are like ideas. Click an ibGib to view its menu, double-click to expand/collapse it. Click the "Spock Hand" to create a forked ("new") ibGib. Click "login" to identify yourself with your (public) email address. Click "search" to search your existing ibGib. Click the pointer finger to navigate to an ibGib. For more info on ibGib and what you can do with them, see https://github.com/ibgib/ibgib/wiki/Just-What-Exactly-**IS**-an-ibGib-(or-at-least,-how-can-i-use-them)`;
       } else if (dIbGib.cat === "ib") {
         text = `This is your current ibGib. Click the information (i) button to get more details about it. Double-click to expand/collapse any children. Spock hand to fork it, or add comments, pictures, links, and more.`;
       } else if (dIbGib.cat === "ancestor") {

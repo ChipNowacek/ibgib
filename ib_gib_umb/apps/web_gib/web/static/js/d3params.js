@@ -42,7 +42,7 @@ let d3Colors = {
   "pic": "#AABF73",
   "image": "#AABF73",
   "img": "#AABF73",
-  "identity": "#404040",
+  "identity": "#FFFFFF",
   "default": "#AEA6E3"
 };
 
