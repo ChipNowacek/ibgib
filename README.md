@@ -2,7 +2,7 @@
 
 Don't Panic.
 
-![Current Screenshot of ibGib](/images/animated/2016-09-27-animated.gif)
+![Querying Waffles](/images/animated/2016-10-31-query-waffle.gif)
 
 ## contributing, or just checking ib out
 
