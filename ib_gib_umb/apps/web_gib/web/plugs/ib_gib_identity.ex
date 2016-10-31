@@ -61,7 +61,13 @@ defmodule WebGib.Plugs.IbGibIdentity do
     }
 
     # Thanks http://blog.danielberkompas.com/elixir/2015/06/16/rate-limiting-a-phoenix-api.html
-    ip = conn.remote_ip |> Tuple.to_list |> Enum.join(".")
+    # ip = conn.remote_ip |> Tuple.to_list |> Enum.join(".")
+    {_, ip} =
+      conn.req_headers
+      |> Enum.filter(fn({header_key, header_value}) ->
+           header_key == "x-real-ip"
+         end)
+      |> Enum.at(0)
     pub_data = %{
       "type" => "session",
       "ip" => ip
