@@ -34,7 +34,8 @@ defmodule WebGib.Plugs.EnsureIbGibSession do
     if current_ib_session == nil do
       _ = Logger.debug "current ib session is nil"
       conn
-      |> put_flash(:error, gettext "Please read ibGib's vision before using our application!")
+      |> put_flash(:error, gettext "Please read ibGib's Vision and Privacy Caution before continuing. Thanks :-)")
+      |> put_session(@path_before_redirect_key, conn.request_path)
       |> redirect(to: "/")
       |> halt
     else
