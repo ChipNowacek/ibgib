@@ -34,13 +34,25 @@ defmodule WebGib.IbGibController do
     _ = Logger.debug "conn: #{inspect conn}"
     _ = Logger.debug "index. params: #{inspect params}"
 
+    path_before_redirect = conn |> get_session(@path_before_redirect_key) |> URI.decode()
+    prefix = "/ibgib/"
+    {conn, target} =
+      if path_before_redirect == nil or !String.starts_with?(path_before_redirect, prefix) do
+        {conn, @root_ib_gib}
+      else
+        target_ibgib = String.replace(path_before_redirect, prefix, "")
+        Logger.debug("new target_ibgib: #{target_ibgib}" |> ExChalk.bg_blue)
+        conn = conn |> put_session(@path_before_redirect_key, nil)
+        {conn, target_ibgib}
+      end
+
     conn
     |> assign(:ib, "ib")
     |> assign(:gib, "gib")
-    |> assign(:ib_gib, @root_ib_gib)
+    |> assign(:ib_gib, target)
     |> add_meta_query
     # |> redirect(to: ib_gib_path(WebGib.Endpoint, :show, get_session(conn, @meta_query_result_ib_gib_key)))
-    |> redirect(to: ib_gib_path(WebGib.Endpoint, :show, @root_ib_gib))
+    |> redirect(to: ib_gib_path(WebGib.Endpoint, :show, target))
   end
 
   defp add_meta_query(conn) do

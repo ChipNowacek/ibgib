@@ -13,6 +13,8 @@ defmodule WebGib.Constants do
       @ib_session_id_key "ib_session_id"
       @ib_session_ib_gib_key "ib_session_ib_gib"
 
+      @path_before_redirect_key "path_before_redirect"
+
       # key to array of identities associated with current ib_gib session,
       # stored in session.
       # See `WebGib.Plugs.IbGibIdentity`
