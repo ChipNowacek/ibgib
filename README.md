@@ -1,8 +1,31 @@
-# ib_gib
-
-Don't Panic.
+# Don't Panic.
 
 ![Querying Waffles](/images/animated/2016-10-31-query-waffle.gif)
+
+## :point_up: Thank You :+1:
+
+* [Elixir](http://elixir-lang.org/) & [Erlang](https://www.erlang.org/)
+  * [Phoenix](http://www.phoenixframework.org/), [Ecto](https://github.com/elixir-ecto/ecto), [Postgrex](https://github.com/elixir-ecto/postgrex), [Distillery](https://github.com/bitwalker/distillery), [Poison](https://github.com/devinus/poison), [OK](https://github.com/CrowdHailer/OK), [ExDoc](https://github.com/elixir-lang/ex_doc), [Credo](https://github.com/rrrene/credo), [ExChalk](https://github.com/sotojuan/exchalk), [Dialyxir](https://github.com/jeremyjh/dialyxir), [Marker](https://github.com/zambal/marker), [Mailgun](https://github.com/chrismccord/mailgun), [Cowboy](https://github.com/ninenines/cowboy)
+  * [Elixir on Slack](https://elixir-slackin.herokuapp.com/)
+  * [ElixirForum](https://elixirforum.com/)
+* JavaScript
+  * [D3](https://d3js.org/)
+  * [JQuery](https://jquery.com/)
+* Data
+  * [PostgreSQL](https://www.postgresql.org/)
+* [Atom Code Editor](https://atom.io/)
+  * [atom-elixir](https://github.com/msaraiva/atom-elixir), [autocomplete-elixir](https://github.com/wende/autocomplete-elixir), [language-elixir](https://github.com/elixir-lang/language-elixir), [linter-elixir-credo](https://github.com/smeevil/linter-elixir-credo)
+* Deployment
+  * [Docker](https://www.docker.com/)
+    * [Engine](https://www.docker.com/products/docker-engine), [Compose](https://docs.docker.com/compose/), [Machine](https://docs.docker.com/machine/)
+  * [AWS](https://aws.amazon.com/)
+  * [NginX](https://www.nginx.com/)
+* [GitHub](https://github.com/)
+* [StackOverflow](https://stackoverflow.com/)
+* [Atom]()
+* (and more of course...)
+* [ibGib](https://www.ibgib.com)
+
 
 ## contributing, or just checking ib out
 
@@ -17,40 +40,41 @@ label. Just **communicating** is a great contribution.
 If you want to dive into the code, here are some steps to get you up and
 running.
 
-Start off by forking the repo, clone and download the source. After this, you
-will need to do a few things:  
-
-1. Download and compile the dependencies.  
+1. Fork this repo and clone it to your machine.
+2. Download and compile the dependencies.  
    * In the `ib_gib_umb` directory, run:
      * `mix deps.gets`
      * `mix deps.compile`  
    * In the `ib_gib_umb/apps/web_gib` directory, run:
      * `npm install`
-2. Setup and run a PostgreSQL docker container for the repo(s).
+3. Setup and run a PostgreSQL docker container for the repo(s).
    * [Docker must be installed.](https://docs.docker.com/engine/installation/)
    * Download the official `postgres` image.
      * `docker run --name postgres-ctr -e [POSTGRES_USER=postgres,POSTGRES_PASSWORD=postgres,POSTGRES_DB=ib_gib_db_dev] -d postgres`
    * You must be sure that this container is running whenever using the phoenix
      web server or tests.
-3. Initialize Ecto for `ib_gib`.
+4. Initialize Ecto for `ib_gib`.
    * Run the following commands in the `ib_gib_umb/apps/ib_gib/` folder:
      * `mix ecto.create`
      * `mix ecto.migrate`
    * Run the same commands in the `ib_gib_umb/apps/web_gib/` folder:
      * `mix ecto.create`
      * `mix ecto.migrate`
-
-4. If you want to check out the POC web app, `web_gib`, you will need to run
-   the phoenix web server, which once running, you should be able to point your browser to http://localhost/4000.
-   * You may need to get a previous tag that is known to be compiling and
-     working if you want to just check it out. I've just created
-     [one right now](https://github.com/ibgib/ibgib/tree/tag-abstract-02-teething)
-   * In the `web_gib` directory, run `mix phoenix.server` if you just want to
-     run the server, or `iex -S mix phoenix.server` if you want to use observer
-     to check out the processes while running the server with
-     `iex> :observer.start`.
+5. To run `web_gib`, you will need to run the phoenix web server.
+   * In `ib_gib_umb/apps/web_gib` folder...
+     * Run `mix phoenix.server` to just run the server itself, which blocks and provides logging to the terminal. Or...
+     * Run `iex -S mix phoenix.server` to run the server within iex.
+       * This allows you to run `:observer.start()` which is pretty awesome.
+       * Also, you can run other iex commands for your convenience.
+   * Once running, point your browser to https://localhost:4443
+   * You may need to get a previous tag that is known to be compiling.
+     * [v0.1.0](https://github.com/ibgib/ibgib/tree/v0.1.0)
+     * May be a newer version at [releases](https://github.com/ibgib/ibgib/releases).
    * The address can be changed in `ib_gib_umb/apps/web_gib/config/config.exs`
    * The port can be changed in `ib_gib_umb/apps/web_gib/config/dev.exs`
+   * To get have email working, you will need to set up your own mailgun account
+     and configure it in your own `dev.secret.exs`. (ping me @bill-mybiz if you
+     want help with this).
 
 ### commit messages
 
