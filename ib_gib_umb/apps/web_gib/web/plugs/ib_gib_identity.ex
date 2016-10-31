@@ -61,13 +61,20 @@ defmodule WebGib.Plugs.IbGibIdentity do
     }
 
     # Thanks http://blog.danielberkompas.com/elixir/2015/06/16/rate-limiting-a-phoenix-api.html
-    # ip = conn.remote_ip |> Tuple.to_list |> Enum.join(".")
-    {_, ip} =
-      conn.req_headers
-      |> Enum.filter(fn({header_key, header_value}) ->
-           header_key == "x-real-ip"
-         end)
-      |> Enum.at(0)
+    mix_env = System.get_env("MIX_ENV")
+
+    ip =
+      if mix_env == "dev" or mix_env == nil do
+        conn.remote_ip |> Tuple.to_list |> Enum.join(".")
+      else
+        {_, ip} =
+          conn.req_headers
+          |> Enum.filter(fn({header_key, header_value}) ->
+               header_key == "x-real-ip"
+             end)
+          |> Enum.at(0)
+        ip
+      end
     pub_data = %{
       "type" => "session",
       "ip" => ip
