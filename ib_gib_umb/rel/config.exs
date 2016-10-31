@@ -19,6 +19,12 @@ environment :dev do
   set cookie: :":ALx<_H|[~3W,LmaHKd/BE0^vn!GoW.ZaP6&mGo0tz3&BzaeQp;s<N+:_n_q6*bd"
 end
 
+environment :staging do
+  set dev_mode: false
+  set include_erts: true
+  set cookie: :":ALx<_H|[~3W,LmaHKd/BE0^vn!GoW.ZaP6&mGo0tz3&BzaeQp;s<N+:_n_q6*bd"
+end
+
 environment :prod do
   set include_erts: true
   set include_src: false
@@ -31,7 +37,7 @@ end
 # will be used by default
 
 release :ib_gib_umb do
-  set version: "0.1.0"
+  set version: "0.1.1"
   set applications: [
     ib_gib: :permanent,
     random_gib: :permanent,
