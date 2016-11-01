@@ -58,18 +58,6 @@ defmodule IbGib.Expression.Supervisor do
       args = [{:ib_gib, {Enum.at(ib_gib, 0), Enum.at(ib_gib, 1)}}]
 
       start(args)
-      # result = Supervisor.start_child(IbGib.Expression.Supervisor, args)
-      # _ = Logger.debug "start_child result: #{inspect result}"
-      # case result do
-      #   {:ok, expr_pid} ->
-      #     _ = Logger.debug "start_child result matches {ok, expr_pid}"
-      #     register_result = IbGib.Expression.Registry.register(expr_ib_gib, expr_pid)
-      #     _ = Logger.debug "register_result: #{inspect register_result}"
-      #     {:ok, expr_pid}
-      #   error ->
-      #     _ = Logger.debug "start_child result matches error"
-      #     {:error, "could not register expression with registry"}
-      # end
     end
   end
   def start_expression({ib, gib}) when is_bitstring(ib) and is_bitstring(gib) do

@@ -243,6 +243,7 @@ defmodule IbGib.Expression do
       end
     register_result = IbGib.Expression.Registry.register(Helper.get_ib_gib!(ib, gib), self)
     if register_result == :ok do
+      {:ok, :ok} = set_life_timeout(:load)
       {:ok, %{:info => info}}
     else
       _ = Logger.error "Register expression error: #{inspect register_result}"
@@ -250,35 +251,70 @@ defmodule IbGib.Expression do
     end
   end
   # Creating a "new" ib_gib from two existing ib_gib by "applying" b to a.
+  # Currently, this is only used for applying a query. All other applies now
+  # happen within the express process which uses plans.
   def init({:apply, {a, b}}) when is_map(a) and is_map(b) do
     Logger.metadata([x: :apply])
 
-    case {b[:ib], b[:gib]} do
-      {"fork", b_gib} when b_gib != "gib" -> apply_fork(a, b)
-      {"mut8", b_gib} when b_gib != "gib" -> apply_mut8(a, b)
-      {"rel8", b_gib} when b_gib != "gib" -> apply_rel8(a, b)
-      {"query", b_gib} when b_gib != "gib" -> apply_query(a, b)
-      {_b_ib, _b_gib} ->
-        err_msg = "unknown combination: a: #{inspect a}, b: #{inspect b}"
-        _ = Logger.error err_msg
-        {:error, err_msg}
+    if b[:ib] == "query" and b[:gib] != "gib" do
+      with(
+        {:ok, %{:info => this_info} = state} <- apply_query(a, b),
+        {:ok, this_ib_gib} <- Helper.get_ib_gib(this_info),
+        :ok <- IbGib.Expression.Registry.register(this_ib_gib, self),
+        {:ok, :ok} <- set_life_timeout(:query)
+      ) do
+        {:ok, state}
+      else
+        error -> Helper.default_handle_error(error)
+      end
+    else
+      invalid_args({:apply, {a, b}})
     end
   end
-  # Creating a "new" ib_gib from two existing ib_gib by "applying" b to a.
-  # This is going to be replacing the :apply version I think. WIP.
-  # I may be able to just remove all of these, and have this be a relatively
-  # blank init process function.
+  # Creating a "blank" ib_gib in preparation for expression of a and b.
   def init({:express, {identity_ib_gibs, a_ib_gib, _a_info, b_ib_gib}})
     when is_bitstring(a_ib_gib) and is_bitstring(b_ib_gib) do
     Logger.metadata([x: :express])
     _ = Logger.debug "express. identity_ib_gibs: #{inspect identity_ib_gibs}\na_ib_gib: #{a_ib_gib}\n, b_ib_gib: #{b_ib_gib}"
 
-    # First, we just store our state with mama and papa ib_gib (and identities)
-    # state = %{"expressed" => false, "a_info" => a_info}
+    {:ok, :ok} = set_life_timeout(:expression)
+
     # I don't think any state is required...but maybe the expressed flag would be good.
     state = %{}
 
     {:ok, state}
+  end
+
+
+  # These set basic life timeout limits on the ib_gib processes. Each process
+  # is already persisted in the data store, so this is more of a caching
+  # mechanism.
+  # Queries are the least short lived, when they first get run. They will
+  # be regenerated when they are rerun.
+  # Next are expressions. They last a little longer.
+  # Anything that is loaded from memory indicates something that the user is
+  # reusing, so that lasts the longest.
+  defp set_life_timeout(:query) do
+    _ = Logger.debug "setting life timeout for :query"
+    set_life_timeout(:query, 300_000)
+  end
+  defp set_life_timeout(:expression) do
+    _ = Logger.debug "setting life timeout for :expression"
+    set_life_timeout(:expression, 900_000)
+  end
+  defp set_life_timeout(:load) do
+    _ = Logger.debug "setting life timeout for :load"
+    set_life_timeout(:load, 1_800_000)
+  end
+  defp set_life_timeout(what, timeout_ms) do
+    timeout_ms = timeout_ms + :rand.uniform(15_000)
+    _ref = self() |> Process.send_after({:life_timeout, what}, timeout_ms)
+    {:ok, :ok}
+  end
+
+  def handle_info({:life_timeout, what}, state) do
+    _ = Logger.warn "timeout...stopping #{what} normally"
+    {:stop, :normal, state}
   end
 
   # Note: Root maps to "ib". All of the others map to the string.
@@ -772,21 +808,15 @@ defmodule IbGib.Expression do
       # -----------------------
       # Get plan process and info
       {:ok, b} <- get_process(identity_ib_gibs, b_ib_gib),
-
-      # {:ok, :ok} <- log_yo(:warn, "1\nb: #{inspect b}"),
-
       {:ok, plan_info} <- b |> get_info,
 
-      # {:ok, :ok} <- log_yo(:warn, "2\nplan_info:\n#{inspect plan_info, [pretty: true]}"),
       # -----------------------
       # Compile the plan to a concrete plan, and get the next step (transform)
       {:ok, {concrete_plan_info, next_step_transform_info, _next_step_index}} <-
         compile(identity_ib_gibs, a_ib_gib, b_ib_gib, plan_info),
 
-      # {:ok, :ok} <- log_yo(:warn, "3\nconcrete_plan_info:\n#{inspect concrete_plan_info, pretty: true}\nnext_step_transform_info:\n#{inspect next_step_transform_info, pretty: true}"),
       # -----------------------
       # Prepare `a` information.
-      # {:ok, :ok} <- log_yo(:warn, "4\na_info: #{inspect a_info, pretty: true}"),
       {:ok, a_info} <-
         (
           if is_nil(a_info) do
@@ -800,7 +830,6 @@ defmodule IbGib.Expression do
           end
         ),
 
-      # {:ok, :ok} <- log_yo(:warn, "5\na_info: #{inspect a_info, pretty: true}"),
       # -----------------------
       # We now have both `a` and `b`.
       # We can now express this "blank" process by applying the next step
@@ -818,6 +847,7 @@ defmodule IbGib.Expression do
       #  also there will be a new "final" plan with additional information that
       #  will not be rel8d to this)
       {:ok, :ok} <- IbGib.Data.save(this_info),
+      :ok <- IbGib.Expression.Registry.register(this_ib_gib, self),
       # -----------------------
       {:ok, {final_ib_gib, final_state}} <-
         on_complete_express_iteration(identity_ib_gibs,
@@ -858,7 +888,6 @@ defmodule IbGib.Expression do
         {:ok, {next_step, next_step_index}} <- get_next_step(plan_info),
         new_next_step <- Map.put(next_step, "out", this_ib_gib),
         # {:ok, :ok} <-
-        #   log_yo(:debug, "plan_info:\n#{inspect plan_info, pretty: true}"),
         new_steps <-
           List.replace_at(plan_info[:data]["steps"],
                           next_step_index - 1,
@@ -868,8 +897,6 @@ defmodule IbGib.Expression do
 
         # Increment plan "i" (step index)
         new_plan_info <- increment_plan_step_index(new_plan_info),
-        # {:ok, :ok} <-
-        #   log_yo(:debug, "after increment plan step index. new_plan_info:\n#{inspect new_plan_info, pretty: true}"),
 
         # Recalculate the gib hash and save
         new_plan_gib <-
@@ -878,12 +905,9 @@ defmodule IbGib.Expression do
                       new_plan_info[:data]),
         new_plan_info <- Map.put(new_plan_info, :gib, new_plan_gib),
         # {:ok, :ok} <-
-        #   log_yo(:debug, "hrmm..new_plan_info before saving:\n#{inspect new_plan_info, pretty: true}"),
         {:ok, :ok} <- IbGib.Data.save(new_plan_info),
 
         {:ok, new_plan_ib_gib} <- Helper.get_ib_gib(new_plan_info),
-
-        # {:ok, :ok} <- log_yo(:debug, "recursive????"),
 
         # Call express recursively with our new information!
         {:ok, final_ib_gib} <-
@@ -1346,8 +1370,14 @@ defmodule IbGib.Expression do
   then it will be used. If not, then the info will be loaded via the given
   `a_ib_gib`.
 
-  All of this happens within the process' init function, so it is happening
-  in parallel, independent of any other processes.
+  Expression happens on the erlang "server" node, which should be a "blank"
+  node that has just been started specifically for the purpose of being
+  expressed.
+
+  This gives us a couple benefits:
+    1. All "processing" happens in parallel.
+    2. Any errors are confined to the new server process.
+    3. No database info is persisted unless the process expresses successfully.
   """
   def express(identity_ib_gibs, a_ib_gib, a_info, b_ib_gib)
   def express(_identity_ib_gibs, a_ib_gib, _a_info, @root_ib_gib) do
@@ -1714,6 +1744,10 @@ defmodule IbGib.Expression do
     end
   end
 
+  # ----------------------------------------------------------------------------
+  # Server - rel8 impl
+  # ----------------------------------------------------------------------------
+
   defp rel8_impl(other_pid, identity_ib_gibs, rel8ns, opts, state) do
     _ = Logger.debug "state: #{inspect state}"
 
@@ -1748,6 +1782,10 @@ defmodule IbGib.Expression do
         {:error, "#{inspect error}"}
     end
   end
+
+  # ----------------------------------------------------------------------------
+  # Server - instance impl
+  # ----------------------------------------------------------------------------
 
   defp instance_impl(@bootstrap_identity_ib_gib, dest_ib, opts, state) do
     _ = Logger.debug "state: #{inspect state}"
@@ -1790,12 +1828,17 @@ defmodule IbGib.Expression do
     end
   end
 
+  # ----------------------------------------------------------------------------
+  # Server - query impl
+  # ----------------------------------------------------------------------------
+
   defp query_impl(identity_ib_gibs, query_options, state)
     when is_map(query_options) do
     _ = Logger.debug "_state_: #{inspect state}"
 
-    # 1. Create query ib_gib
-    with {:ok, query_info} <-
+    with(
+      # 1. Create query ib_gib
+      {:ok, query_info} <-
         TransformFactory.query(identity_ib_gibs, query_options),
 
       # 2. Save query ib_gib
@@ -1805,8 +1848,8 @@ defmodule IbGib.Expression do
       {:ok, query} <- IbGib.Expression.Supervisor.start_expression({query_info[:ib], query_info[:gib]}),
 
       # 4. Apply transform
-      {:ok, new_pid} <- contact_impl(query, state) do
-
+      {:ok, new_pid} <- contact_impl(query, state)
+    ) do
       # 5. Return new process of applied transform
       {:ok, new_pid}
     else
@@ -1823,9 +1866,11 @@ defmodule IbGib.Expression do
     _ = Logger.debug "state: #{inspect state}"
     _ = Logger.debug "other_expr_pid: #{inspect other_pid}"
 
-    with {:ok, other_info} <- get_info(other_pid),
+    with(
+      {:ok, other_info} <- get_info(other_pid),
       {:ok, new_pid} <-
-        IbGib.Expression.Supervisor.start_expression({state[:info], other_info}) do
+        IbGib.Expression.Supervisor.start_expression({state[:info], other_info})
+    ) do
       {:ok, new_pid}
     else
       {:error, reason} -> {:error, reason}
