@@ -34,13 +34,13 @@ defmodule WebGib.IbGibController do
     _ = Logger.debug "conn: #{inspect conn}"
     _ = Logger.debug "index. params: #{inspect params}"
 
-    path_before_redirect = conn |> get_session(@path_before_redirect_key) |> URI.decode()
+    path_before_redirect = conn |> get_session(@path_before_redirect_key)
     prefix = "/ibgib/"
     {conn, target} =
-      if path_before_redirect == nil or !String.starts_with?(path_before_redirect, prefix) do
+      if path_before_redirect == nil or path_before_redirect == "" or !String.starts_with?(path_before_redirect |> URI.decode(), prefix) do
         {conn, @root_ib_gib}
       else
-        target_ibgib = String.replace(path_before_redirect, prefix, "")
+        target_ibgib = String.replace(path_before_redirect |> URI.decode(), prefix, "")
         Logger.debug("new target_ibgib: #{target_ibgib}" |> ExChalk.bg_blue)
         conn = conn |> put_session(@path_before_redirect_key, nil)
         {conn, target_ibgib}
