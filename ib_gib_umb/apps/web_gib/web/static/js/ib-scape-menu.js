@@ -70,7 +70,7 @@ export class IbScapeMenu {
         .style("fill", "blue");
         // .style("background-color", "transparent");
 
-    t.menuVis = t.menuArea
+    t.svgGroup = t.menuArea
       .append("svg:g")
         .attr("id", "d3menuvis");
 
@@ -84,42 +84,47 @@ export class IbScapeMenu {
 
     let graph = t.getMenuCommandsJson(d);
 
-    let nodeGroup =
-      t.menuVis.append("g")
-        .attr("class", "nodes")
-        .selectAll("circle")
+    let graphNodesAndLinks =
+      t.svgGroup
+        .selectAll("g.gnode")
         .data(graph.nodes)
-        .enter();
+        .enter()
+        .append("g");
+
+
+    let graphNodes =
+      graphNodesAndLinks
+        .append("g")
+        .classed('gnode', true)
+        .on("click", nodeClicked)
+        .on("mousedown", nodeMouseDown)
+        .on("touchstart", nodeTouchStart)
+        .on("touchend", nodeTouchEnd)
+        .attr("cursor", "pointer")
+        .on("contextmenu", (d, i)  => { d3.event.preventDefault(); })
+        ;
 
     let nodeCircles =
-      nodeGroup
+      graphNodes
         .append("circle")
+        .attr("class", "nodes")
         .attr("id", d => d.id)
         .attr("r", t.menuButtonRadius)
         .attr("cursor", "pointer")
-        .on("click", menuNodeClicked)
         .attr("fill", d => d.color);
 
     nodeCircles
         .append("title")
         .text(d => d.text);
 
-    let nodeTextsGroup =
-      t.menuVis.append("g")
-        .attr("class", "nodeTexts")
-        .selectAll("text")
-        .data(graph.nodes)
-        .enter();
-
     let nodeTexts =
-      nodeTextsGroup
+      graphNodes
         .append("text")
         .attr("font-size", "30px")
         .attr("fill", "#4F6627")
         .attr("text-anchor", "middle")
         .attr("cursor", "pointer")
         .attr("class", "ib-noselect")
-        .on("click", menuNodeClicked)
         .text(d => d.text)
         .attr('dominant-baseline', 'central')
         .attr('font-family', 'FontAwesome')
@@ -129,7 +134,7 @@ export class IbScapeMenu {
         .append("title")
         .text(d => `${d.text}: ${d.description}`);
 
-    let menuNodeHyperlinks = nodeGroup
+    let menuNodeHyperlinks = graphNodesAndLinks
         .append("foreignObject")
         .attr("name", "menuNodeHyperlink")
         .attr("width", 1)
@@ -141,7 +146,7 @@ export class IbScapeMenu {
 
     d3.selectAll("[name=menuNodeHyperlink]")
         .select("a")
-        .on("click", menuNodeClicked);
+        .on("click", nodeHyperlinkClicked);
 
 
     let nodes = graph.nodes;
@@ -165,9 +170,27 @@ export class IbScapeMenu {
         .attr("y", d => d.y);
     }
 
-    function menuNodeClicked(d) {
-      console.log(`menu node clicked. d: ${JSON.stringify(d)}`);
+    function handleTouchstartOrMouseDown(d, dIndex, dList) {
+      t.beforeLastMouseDownTime = t.lastMouseDownTime || 0;
+      t.lastMouseDownTime = new Date();
 
+      setTimeout(() => {
+        if (t.lastMouseDownTime && ((t.lastMouseDownTime - t.beforeLastMouseDownTime) < d3DblClickMs)) {
+          delete t.lastMouseDownTime;
+          delete t.beforeLastMouseDownTime;
+
+          // We toggle expanding if the node is double clicked.
+          handleDblClicked(d);
+        } else if (t.lastMouseDownTime) {
+          handleLongClicked(d);
+        } else {
+          // alert("else handletouchor")
+        }
+      }, d3LongPressMs);
+    }
+
+    function handleClicked(d) {
+      console.log(`menu node clicked. d: ${JSON.stringify(d)}`);
       let transition =
         d3.transition()
           .duration(150)
@@ -181,14 +204,90 @@ export class IbScapeMenu {
 
       t.executeMenuCommand(t.ibScape.selectedDatum, d);
     }
+
+    function handleDblClicked(d) {
+      console.log(`menu node dblclicked. d: ${JSON.stringify(d)}`);
+    }
+
+    function handleLongClicked(d) {
+      console.log(`menu node longclicked. d: ${JSON.stringify(d)}`);
+    }
+
+    function nodeTouchStart(d, dIndex, dList) {
+      // alert("touchstart");
+      t.isTouch = true;
+      t.lastTouchStart = d3.event;
+      t.targetNode = d3.event.target;
+      let touch = t.lastTouchStart.touches[0];
+      handleTouchstartOrMouseDown(d, dIndex, dList);
+      d3.event.preventDefault();
+    }
+
+    function nodeTouchEnd(d, dIndex, dList) {
+      // debugger;
+      t.lastTouchEnd = d3.event;
+      let elapsedMs = new Date() - t.lastMouseDownTime;
+      if (elapsedMs < d3LongPressMs) { nodeClicked(d); }
+    }
+
+    function nodeMouseDown(d, dIndex, dList) {
+      t.isTouch = false;
+      t.lastMouseDownEvent = d3.event;
+      t.targetNode = t.lastMouseDownEvent.target;
+      // console.log("nodeMouseDown")
+      if (d3.event.button === 0) {
+        handleTouchstartOrMouseDown(d, dIndex, dList);
+      }
+      d3.event.preventDefault();
+    }
+
+    function nodeHyperlinkClicked(d) {
+      console.log("nodeHyperlinkClicked");
+      // This is a hack so that the long-click doesn't get triggered when
+      // using vimperator.
+      // The intent is just "Hey, this is a fake mousedown so don't long-click."
+      t.lastMouseDown = new Date();
+      handleClicked(d);
+    }
+
+    function nodeClicked(d) {
+      // Only handle the click if it's not a double-click.
+      if (t.maybeDoubleClicking) {
+        // we're double-clicking
+        delete t.maybeDoubleClicking;
+        delete t.targetNode;
+      } else {
+        t.maybeDoubleClicking = true;
+
+        setTimeout(() => {
+          if (t.maybeDoubleClicking) {
+            // Not double-clicking, so handle click
+            let now = new Date();
+            let elapsedMs = now - t.lastMouseDownTime;
+            // alert("nodeclicked maybe")
+            delete t.lastMouseDownTime;
+            if (elapsedMs < d3LongPressMs) {
+              // normal click
+              handleClicked(d);
+            } else {
+              // long click, handled already in mousedown handler.
+              console.log("long click, already handled. no click handler.");
+            }
+
+            delete t.maybeDoubleClicking;
+          }
+        }, d3DblClickMs);
+      }
+    }
+
   }
 
   close() {
     if (this.menuArea) { d3.select("#ib-d3-graph-menu-area").remove();
       delete this.menuArea;
     }
-    if (this.menuVis) { d3.select("#d3menuvis").remove();
-      delete this.menuVis;
+    if (this.svgGroup) { d3.select("#d3menuvis").remove();
+      delete this.svgGroup;
     }
 
     d3.select("#ib-d3-graph-menu-div")
@@ -384,37 +483,6 @@ export class IbScapeMenu {
 
   execRefresh(dIbGib) {
     location.href = `/ibgib/${dIbGib.ibgib}?latest=true`
-  }
-
-  getMenuPosition(mouseOrTouchPosition, targetNode) {
-    // Start our position away from right where we click.
-
-    // let bufferAwayFromClickPoint = this.menuRadius;
-    let bufferAwayFromClickPoint = 30; //magic number :-/
-    let $graphDivPos = $(`#${this.graphDiv.id}`).position();
-
-    let mousePosIsOnLeftSide = mouseOrTouchPosition[0] < this.ibScape.width/2;
-    let x = mousePosIsOnLeftSide ?
-            $graphDivPos.left + mouseOrTouchPosition[0] + bufferAwayFromClickPoint :
-            $graphDivPos.left + mouseOrTouchPosition[0] - this.menuDiam;
-    if (x < $graphDivPos.left) { x = $graphDivPos.left; }
-    if (x > $graphDivPos.left + this.ibScape.width - this.menuDiam) {
-      x = $graphDivPos.left + this.ibScape.width - this.menuDiam;
-    }
-
-    let mousePosIsInTopHalf = mouseOrTouchPosition[1] < (this.ibScape.height/2);
-    let y = mousePosIsInTopHalf ?
-            $graphDivPos.top + mouseOrTouchPosition[1] + bufferAwayFromClickPoint :
-            $graphDivPos.top + mouseOrTouchPosition[1] - this.menuDiam;
-    if (y < $graphDivPos.top) { y = $graphDivPos.top; }
-    if (y > $graphDivPos.top + this.ibScape.height - this.menuDiam) {
-      y = $graphDivPos.top + this.ibScape.height - this.menuDiam;
-    }
-
-    return {
-      x: x,
-      y: y
-    }
   }
 
   /**

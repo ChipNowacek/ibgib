@@ -21,7 +21,7 @@ export class IbScape {
     d3.select("main")
       .style("height", "100% !important")
       .style("width", "100% !important");
-    }
+  }
 
   initWindowResize() {
     let t = this;
@@ -210,10 +210,19 @@ export class IbScape {
 
       let pressTimer;
 
-      let graphNodes = svgGroup
+      let graphNodesAndLinks =
+        t.svgGroup
           .selectAll("g.gnode")
           .data(modifiedNodes)
           .enter()
+          .append("g")
+          .call(d3.drag()
+              .on("start", dragstarted)
+              .on("drag", dragged)
+              .on("end", dragended));
+
+      let graphNodes =
+        graphNodesAndLinks
           .append("g")
           .classed('gnode', true)
           .on("click", nodeClicked)
@@ -221,13 +230,10 @@ export class IbScape {
           .on("touchstart", nodeTouchStart)
           .on("touchend", nodeTouchEnd)
           .attr("cursor", "pointer")
-          .on("contextmenu", (d, i)  => { d3.event.preventDefault(); })
-          .call(d3.drag()
-              .on("start", dragstarted)
-              .on("drag", dragged)
-              .on("end", dragended));
+          .on("contextmenu", (d, i)  => { d3.event.preventDefault(); });
 
-      let graphNodeHyperlinks = graphNodes
+      let graphNodeHyperlinks =
+        graphNodesAndLinks
           .append("foreignObject")
           .attr("name", "graphNodeLink")
           .attr("width", 1)
@@ -291,7 +297,7 @@ export class IbScape {
             .attr("y2", d => d.target.y);
 
         // Translate the groups
-        graphNodes
+        graphNodesAndLinks
             .attr("transform", d => 'translate(' + [d.x, d.y] + ')');
       }
     });
@@ -338,33 +344,54 @@ export class IbScape {
       d3.event.preventDefault();
     }
 
+    function handleClicked(d) {
+      console.log(`node clicked. d: ${JSON.stringify(d)}`);
+
+      if (t.selectedDatum && t.selectedDatum.js_id === d.js_id) {
+        t.clearSelectedNode();
+      } else {
+        t.clearSelectedNode();
+        t.selectNode(d);
+      }
+    }
+
+    function handleDblClicked(d) {
+      console.log(`node dblclicked. d: ${JSON.stringify(d)}`);
+
+      delete t.lastMouseDownTime;
+      delete t.beforeLastMouseDownTime;
+
+      // We toggle expanding if the node is double clicked.
+      if (d.render && d.render === "image") {
+        t.execFullscreen(d);
+      } else if (d.render && d.render === "text") {
+        t.getIbGibJson(d.ibgib, (ibGibJson) => {
+          if (ibGibJson.data && ibGibJson.data.text) {
+            alert(ibGibJson.data.text);
+          }
+        });
+      } else if (d.ibgib !== "ib^gib") {
+        t.clearSelectedNode();
+
+        t.toggleExpandNode(d);
+        t.destroyStuff();
+        t.update(null);
+      }
+    }
+
+    function handleLongClicked(d) {
+      console.log(`node longclicked. d: ${JSON.stringify(d)}`);
+    }
+
     function handleTouchstartOrMouseDown(d, dIndex, dList) {
       t.beforeLastMouseDownTime = t.lastMouseDownTime || 0;
       t.lastMouseDownTime = new Date();
 
       setTimeout(() => {
         if (t.lastMouseDownTime && ((t.lastMouseDownTime - t.beforeLastMouseDownTime) < d3DblClickMs)) {
-          delete t.lastMouseDownTime;
-          delete t.beforeLastMouseDownTime;
-
-          // We toggle expanding if the node is double clicked.
-          if (d.render && d.render === "image") {
-            t.execFullscreen(d);
-          } else if (d.render && d.render === "text") {
-            t.getIbGibJson(d.ibgib, (ibGibJson) => {
-              if (ibGibJson.data && ibGibJson.data.text) {
-                alert(ibGibJson.data.text);
-              }
-            });
-          } else if (d.ibgib !== "ib^gib") {
-            t.clearSelectedNode();
-
-            t.toggleExpandNode(d);
-            t.destroyStuff();
-            t.update(null);
-          }
+          handleDblClicked(d);
         } else if (t.lastMouseDownTime) {
-          console.log("long click handler here");
+          handleLongClicked(d);
         } else {
           // alert("else handletouchor")
         }
@@ -408,7 +435,7 @@ export class IbScape {
       // using vimperator.
       // The intent is just "Hey, this is a fake mousedown so don't long-click."
       t.lastMouseDown = new Date();
-      nodeClicked(d);
+      handleClicked(d);
     }
 
     function nodeClicked(d) {
@@ -434,12 +461,7 @@ export class IbScape {
             delete t.lastMouseDownTime;
             if (elapsedMs < d3LongPressMs) {
               // normal click
-              if (t.selectedDatum && t.selectedDatum.js_id === d.js_id) {
-                t.clearSelectedNode();
-              } else {
-                t.clearSelectedNode();
-                t.selectNode(d);
-              }
+              handleClicked(d);
             } else {
               // long click, handled already in mousedown handler.
               console.log("long click, already handled. no click handler.");
@@ -708,7 +730,7 @@ export class IbScape {
         .attr("stroke-width", "10px");
 
 
-    let position = this.getMenuPosition(this.mouseOrTouchPosition, this.targetNode);
+    let position = this.getMenuPosition(this.mouseOrTouchPosition || {x: 0, y: 0}, this.targetNode);
     this.menu.moveTo(position);
   }
 
