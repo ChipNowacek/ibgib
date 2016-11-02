@@ -765,7 +765,7 @@ export class IbScape {
    * specifics to the given cmdName and pops it up. This also takes care of
    * cancelling, which is effected when the user just clicks somewhere else.
    */
-  showDetails(cmdName, detailsInitFunction) {
+  showDetails(cmdName, detailsInitFunction, keepMenuOpen) {
     this.ibScapeDetails =
       d3.select("#ib-scape-details")
         .attr("class", "ib-pos-abs ib-info-border");
@@ -780,7 +780,11 @@ export class IbScape {
       detailsInitFunction();
     }
 
-    this.tearDownMenu(/*cancelDetails*/ false);
+    if (keepMenuOpen) {
+      // do nothing?
+    } else {
+      this.tearDownMenu(/*cancelDetails*/ false);
+    }
   }
 
   openImage(ibGib) {

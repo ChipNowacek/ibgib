@@ -171,6 +171,18 @@ export class IbScapeMenu {
     }
 
     function handleTouchstartOrMouseDown(d, dIndex, dList) {
+      let transition =
+        d3.transition()
+          .duration(500)
+          .ease(d3.easeLinear);
+
+      d3.select(`#${d.id}`)
+        .transition(transition)
+          .attr("r", 3 * t.menuButtonRadius)
+        .transition()
+          .attr("r", t.menuButtonRadius);
+
+
       t.beforeLastMouseDownTime = t.lastMouseDownTime || 0;
       t.lastMouseDownTime = new Date();
 
@@ -193,12 +205,12 @@ export class IbScapeMenu {
       console.log(`menu node clicked. d: ${JSON.stringify(d)}`);
       let transition =
         d3.transition()
-          .duration(150)
+          .duration(250)
           .ease(d3.easeLinear);
 
       d3.select(`#${d.id}`)
         .transition(transition)
-          .attr("r", 1.2 * t.menuButtonRadius)
+          .attr("r", 2 * t.menuButtonRadius)
         .transition()
           .attr("r", t.menuButtonRadius);
 
@@ -206,15 +218,27 @@ export class IbScapeMenu {
     }
 
     function handleDblClicked(d) {
-      console.log(`menu node dblclicked. d: ${JSON.stringify(d)}`);
+      // console.log(`menu node dblclicked. d: ${JSON.stringify(d)}`);
     }
 
     function handleLongClicked(d) {
-      console.log(`menu node longclicked. d: ${JSON.stringify(d)}`);
+      // console.log(`menu node longclicked. d: ${JSON.stringify(d)}`);
+
+      t.detailsRefCount = t.detailsRefCount || 0;
+
+      let init = () => {
+        t.detailsRefCount += 1;
+        d3.select("#ib-scape-details").attr("z-index", 10000);
+        $("#ib-help-details-text").text(d.description).attr("z-index", 10000);
+        setTimeout(() => {
+          t.cancelHelpDetails(/*force*/ false);
+        }, 4000)
+      };
+
+      t.ibScape.showDetails("help", init, /*keepMenuOpen*/ true);
     }
 
     function nodeTouchStart(d, dIndex, dList) {
-      // alert("touchstart");
       t.isTouch = true;
       t.lastTouchStart = d3.event;
       t.targetNode = d3.event.target;
@@ -299,6 +323,10 @@ export class IbScapeMenu {
   }
 
   executeMenuCommand(dIbGib, dCommand) {
+    if (dCommand.name !== "help") {
+      this.cancelHelpDetails(/*force*/ true);
+    }
+
     if ((dCommand.name === "view" || dCommand.name === "hide")) {
       this.execView(dIbGib)
     } else if (dCommand.name === "fork") {
@@ -354,9 +382,9 @@ export class IbScapeMenu {
         "haven't included help for this yet. Let me know please :-O";
 
       if (dIbGib.ibgib === "ib^gib") {
-        text = `ibGib are like ideas. Click an ibGib to view its menu, double-click to expand/collapse it. Click the "Spock Hand" to create a forked ("new") ibGib. Click "login" to identify yourself with your (public) email address. Click "search" to search your existing ibGib. Click the pointer finger to navigate to an ibGib. For more info on ibGib and what you can do with them, see https://github.com/ibgib/ibgib/wiki/Just-What-Exactly-**IS**-an-ibGib-(or-at-least,-how-can-i-use-them)`;
+        text = `These circles of ibGib - they will increase your smartnesses, fun-having, people-likening, and more, all while solving all of your problems and creating world peace and understanding. You can add pictures, links, comments, and more to them. Click one to bring up its menu which has a bunch of commands you can give. Long-click a command to see its description. Click the Spock Hand to get started. If you're a confused dummE or a nerd looking for more information, check out www.ibgib.com/huh. (Some statements here may be inaccurate or take an infinite amount of time to complete and/or explain.) God Bless.`;
       } else if (dIbGib.cat === "ib") {
-        text = `This is your current ibGib. Click the information (i) button to get more details about it. Double-click to expand/collapse any children. Spock hand to fork it, or add comments, pictures, links, and more.`;
+        text = `This is your current ibGib. Right now, it's the center of your ibverse. Click the information (i) button to get more details about it. Spock hand to fork it, or add comments, pictures, links, and more.`;
       } else if (dIbGib.cat === "ancestor") {
         text = `This is an "ancestor" ibGib, like a parent or grandparent. Each time you "fork" a new ibGib, the src ibGib becomes its ancestor. For example, if you fork a RecipeGib -> WaffleGib, then the WaffleGib becomes a child of the RecipeGib.`
       } else if (dIbGib.cat === "past") {
@@ -528,5 +556,14 @@ export class IbScapeMenu {
         .style("top", position.y + "px")
         .style("visibility", null)
         .attr("z-index", 1000);
+  }
+
+  cancelHelpDetails(force) {
+    this.detailsRefCount -= 1;
+
+    if (force || this.detailsRefCount <= 0) {
+      this.detailsRefCount = 0;
+      this.ibScape.cancelDetails();
+    }
   }
 }
