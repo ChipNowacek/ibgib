@@ -72,7 +72,7 @@ var d3MenuCommands = [
     "name": "pic",
     "text": "Pic",
     "icon": "\uf03e",
-    "description": "This will let you upload an image or link to an existing one online",
+    "description": "The Picture button will add a picture to the selected ibGib. You can choose to upload a file, or take a picture with your camera. You can even add pictures to pictures",
     "color": "#61B9FF"
   },
   {
@@ -80,7 +80,7 @@ var d3MenuCommands = [
     "name": "info",
     "text": "Info",
     "icon": "\uf05a",
-    "description": "This lets you see additional information, like when this ibGib was created",
+    "description": "The Information button lets you see the internal gibblies of an ibGib",
     "color": "#CFA1C8"
   },
   {
@@ -96,7 +96,7 @@ var d3MenuCommands = [
     "name": "help",
     "text": "Help",
     "icon": "\uf29c",
-    "description": "This shows general help information for the available commands",
+    "description": "The Help button shows you help about the selected ibGib",
     "color": "#EBFF0F"
   },
   {
@@ -104,7 +104,7 @@ var d3MenuCommands = [
     "name": "share",
     "text": "Share",
     "icon": "\uf1e0",
-    "description": "Share this ibGib with others on things like Facebook or Twitter",
+    "description": "The Share button will share a link to this ibGib to others",
     "color": "gold"
   },
   {
@@ -112,7 +112,7 @@ var d3MenuCommands = [
     "name": "comment",
     "text": "Comment",
     "icon": "\uf075",
-    "description": "Add a comment (or any text really) to this ibGib",
+    "description": "The Comment button adds a comment (or any text really) to the selected ibGib",
     "color": "#61B9FF"
   },
   {
@@ -120,7 +120,7 @@ var d3MenuCommands = [
     "name": "star",
     "text": "Star",
     "icon": "\uf005",
-    "description": "Give this ibGib a rating",
+    "description": "The Star button will rate the selected ibGib",
     "color": "gold"
   },
   {
@@ -128,7 +128,7 @@ var d3MenuCommands = [
     "name": "fork",
     "text": "Fork",
     "icon": "\uf259",
-    "description": "Ah, forking...this is how you create a 'new' ibGib or copy from an existing one. You will be using this a lot",
+    "description": "The Fork button will take the selected ibGib and create a new one based on it in your personal ib space. Live Long and Prosper!",
     "color": "#61B9FF"
   },
   {
@@ -136,7 +136,7 @@ var d3MenuCommands = [
     "name": "flag",
     "text": "Flag",
     "icon": "\uf024",
-    "description": "Flag this ibGib as having inappropriate content",
+    "description": "The Flag button will mark the selected ibGib as containing inappropriate content",
     "color": "#FF4F4F"
   },
   {
@@ -144,7 +144,7 @@ var d3MenuCommands = [
     "name": "thumbs up",
     "text": "Thumbs up",
     "icon": "\uf087",
-    "description": "Give it the thumbs up yo",
+    "description": "The Thumbs Up button will let you give the selected ibGib a Thumbs Up",
     "color": "gold"
   },
   {
@@ -152,7 +152,7 @@ var d3MenuCommands = [
     "name": "link",
     "text": "Link",
     "icon": "\uf0c1",
-    "description": "Add a hyperlink from the world wide interweb",
+    "description": "The Link button will add a hyperlink from the World Wide interWeb to the selected ibGib",
     "color": "#61B9FF"
   },
   {
@@ -160,7 +160,7 @@ var d3MenuCommands = [
     "name": "meta",
     "text": "Meta",
     "icon": "\uf013",
-    "description": "This contains settings, tweaks, preferences, et cetera, et cetera",
+    "description": "The Meta button contains settings, tweaks, preferences, etc",
     "color": "lightgray"
   },
   {
@@ -168,7 +168,7 @@ var d3MenuCommands = [
     "name": "mut8",
     "text": "Mut8",
     "icon": "\u2622",
-    "description": "This will allow you to edit an existing ibGib",
+    "description": "The Mut8 button will allow you to edit the selected ibGib",
     "color": "lightblue"
   },
   {
@@ -176,7 +176,7 @@ var d3MenuCommands = [
     "name": "view",
     "text": "View",
     "icon": "\uf06e",
-    "description": "Expand/collapse an ibGib's visible children",
+    "description": "The View button will show/hide the selected ibGib's children",
     "color": "#CFA1C8"
   },
   {
@@ -184,7 +184,7 @@ var d3MenuCommands = [
     "name": "query",
     "text": "Query",
     "icon": "\uf002",
-    "description": "Create a query to look for other ibGib",
+    "description": "The Query button will show you a search screen where you can look for other ibGib",
     "color": "#C7FF4F"
   },
   {
@@ -192,7 +192,7 @@ var d3MenuCommands = [
     "name": "goto",
     "text": "Goto",
     "icon": "\uf0a6",
-    "description": "Navigate to the ibGib",
+    "description": "The Goto button will navigate you to the selected ibGib",
     "color": "#C7FF4F"
   },
   {
@@ -200,15 +200,15 @@ var d3MenuCommands = [
     "name": "fullscreen",
     "text": "View Fullscreen",
     "icon": "\uf0b2",
-    "description": "View fullscreen",
+    "description": "The Fullscreen button will view something in fullscreen",
     "color": "#CFA1C8"
   },
   {
     "id": "menu-externallink",
     "name": "externallink",
-    "text": "Open external link.",
+    "text": "Open external link",
     "icon": "\uf08e",
-    "description": "Open external link",
+    "description": "The Open Link button will open a link in your browser",
     "color": "#C7FF4F"
   },
   {
@@ -216,7 +216,7 @@ var d3MenuCommands = [
     "name": "identemail",
     "text": "Login via email",
     "icon": "\uf090",
-    "description": "Sends an email containing a link to login",
+    "description": "The Login button will let you identify yourself with an email address",
     "color": "#FFFFFF"
   },
   {
@@ -224,7 +224,7 @@ var d3MenuCommands = [
     "name": "refresh",
     "text": "Refresh ibGib",
     "icon": "\uf021",
-    "description": "Refreshes the current ibGib to the most recent version (of any timeline)",
+    "description": "The Refresh button refreshes the selected ibGib to the most up-to-date version",
     "color": "#C7FF4F"
   }
 ];
