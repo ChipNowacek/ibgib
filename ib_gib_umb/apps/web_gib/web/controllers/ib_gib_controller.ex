@@ -150,10 +150,16 @@ defmodule WebGib.IbGibController do
       # We will query off of the current identity
       {:ok, src} <- IbGib.Expression.Supervisor.start_expression(Enum.at(identity_ib_gibs, 0)),
 
-      # Build the query options
-      query_opts <- build_query_opts_latest(identity_ib_gibs, ib_gib),
+      # Our search for the latest version must be using the credentials of
+      # **that** ibgib's identities, i.e. in that timeline.
+      {:ok, ib_gib_process} <-
+        IbGib.Expression.Supervisor.start_expression(ib_gib),
+      {:ok, ib_gib_info} <- ib_gib_process |> Expression.get_info,
+      {:ok, ib_gib_identity_ib_gibs} <-
+        get_ib_gib_identity_ib_gibs(ib_gib_info),
 
-      :ok <- Logger.debug("stayin home"),
+      # Build the query options
+      query_opts <- build_query_opts_latest(ib_gib_identity_ib_gibs, ib_gib),
 
       # Execute the query itself, which creates the query_result ib_gib
       {:ok, query_result} <-
@@ -167,6 +173,15 @@ defmodule WebGib.IbGibController do
     else
       error -> default_handle_error(error)
     end
+  end
+
+  defp get_ib_gib_identity_ib_gibs(ib_gib_info) do
+    _ = Logger.debug("ib_gib_info:\n#{inspect ib_gib_info}" |> ExChalk.magenta)
+    rel8ns = ib_gib_info[:rel8ns]
+    _ = Logger.debug("rel8ns:\n#{inspect rel8ns}" |> ExChalk.magenta)
+    identities = rel8ns["identity"]
+    _ = Logger.debug("identities:\n#{inspect identities}" |> ExChalk.magenta)
+    {:ok, identities}
   end
 
   defp build_query_opts_latest(identity_ib_gibs, ib_gib) do
@@ -1169,21 +1184,6 @@ defmodule WebGib.IbGibController do
     Logger.metadata(x: :query)
     _ = Logger.debug "conn: #{inspect conn}"
 
-  #   query(conn,
-  #         %{"search_ib" => search_ib,
-  #           "ib_query_type" => ib_query_type,
-  #           "latest" => params["query_form_data"]["latest"] == "latest",
-  #           "search_data" => search_data,
-  #           "src_ib_gib" => src_ib_gib})
-  # end
-  # def query(conn, %{"search_ib" => search_ib,
-  #                   "ib_query_type" => ib_query_type,
-  #                   "latest" => latest,
-  #                   "search_data" => search_data,
-  #                   "src_ib_gib" => src_ib_gib} = params) do
-  #   Logger.metadata(x: :query_2)
-  #   _ = Logger.debug "conn: #{inspect conn}"
-  #
     if validate(:query_params, query_params) and
        validate(:ib_gib, src_ib_gib) do
       _ = Logger.debug "query is valid. query_params: #{inspect query_params}"
