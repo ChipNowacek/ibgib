@@ -166,7 +166,7 @@ defmodule WebGib.Web.Components.Details.Query do
         include_options
         global_options
 
-        div [class: "ib-tooltip"] do
+        div [class: "ib-tooltip download_form_submit_btn_div"] do
           button [type: "submit"] do
             span [class: "ib-center-glyph glyphicon glyphicon-search ib-green"]
             span [class: "ib-tooltiptext"], do: gettext("Go Query Go! Go Spurs Go! err...Go Query Go! :-?")

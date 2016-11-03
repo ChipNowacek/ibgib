@@ -214,7 +214,7 @@ export class IbScapeMenu {
         .transition()
           .attr("r", t.menuButtonRadius);
 
-      t.executeMenuCommand(t.ibScape.selectedDatum, d);
+      t.execMenuCommand(t.ibScape.selectedDatum, d);
     }
 
     function handleDblClicked(d) {
@@ -322,7 +322,7 @@ export class IbScapeMenu {
     delete(this.ibScape);
   }
 
-  executeMenuCommand(dIbGib, dCommand) {
+  execMenuCommand(dIbGib, dCommand) {
     if (dCommand.name !== "help") {
       this.cancelHelpDetails(/*force*/ true);
     }
@@ -353,6 +353,8 @@ export class IbScapeMenu {
       this.execQuery(dIbGib);
     } else if (dCommand.name === "refresh") {
       this.execRefresh(dIbGib);
+    } else if (dCommand.name === "download") {
+      this.execDownload(dIbGib);
     }
   }
 
@@ -513,6 +515,56 @@ export class IbScapeMenu {
     location.href = `/ibgib/${dIbGib.ibgib}?latest=true`
   }
 
+  execDownload(dIbGib) {
+    let t = this;
+    let imageUrl =
+      t.ibScape.ibGibImageProvider.getFullImageUrl(dIbGib.ibgib);
+
+    let init = () => {
+      let btn = d3.select("#download_form_submit_btn");
+      btn
+        .attr("href", imageUrl)
+        .attr("download", "");
+
+      if (!btn.node().onclick) {
+        btn.node().onclick = () => {
+          t.ibScape.cancelDetails();
+          t.ibScape.clearSelectedNode();
+        }
+      }
+
+      d3.select("#download_form_url")
+        .text(imageUrl);
+
+      d3.select("#download_form_filetype")
+        .text("not set");
+
+      d3.select("#download_form_filename")
+        .text("not set");
+
+      t.ibScape.repositionDetails();
+
+      t.ibScape.getIbGibJson(dIbGib.ibgib, (ibGibJson) => {
+        if (ibGibJson.data) {
+          if (ibGibJson.data.content_type) {
+            d3.select("#download_form_filetype")
+              .text(ibGibJson.data.content_type);
+          }
+          if (ibGibJson.data.filename) {
+            d3.select("#download_form_filename")
+              .text(ibGibJson.data.filename);
+            btn
+              .attr("download", ibGibJson.data.filename);
+          }
+        }
+      });
+    };
+
+    t.ibScape.showDetails("download", init);
+
+    $("#download_form_submit_btn").focus();
+  }
+
   /**
    * Builds the json that d3 requires for showing the menu to the user.
    * This menu is what shows the commands for the user to do, e.g. "fork",
@@ -534,6 +586,7 @@ export class IbScapeMenu {
 
     if (d.render && d.render === "image") {
       commands.push("fullscreen");
+      commands.push("download");
     }
     if (d.cat === "link") {
       commands.push("externallink");
