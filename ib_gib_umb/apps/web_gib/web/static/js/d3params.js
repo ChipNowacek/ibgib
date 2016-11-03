@@ -226,6 +226,14 @@ var d3MenuCommands = [
     "icon": "\uf021",
     "description": "The Refresh button refreshes the selected ibGib to the most up-to-date version",
     "color": "#C7FF4F"
+  },
+  {
+    "id": "menu-download",
+    "name": "download",
+    "text": "Download from the Cloud",
+    "icon": "\uf0ed",
+    "description": "The Cloud Download button saves the pic/file to your local device",
+    "color": "#CFA1C8"
   }
 ];
 
