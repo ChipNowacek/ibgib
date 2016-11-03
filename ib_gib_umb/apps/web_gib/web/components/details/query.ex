@@ -9,6 +9,14 @@ defmodule WebGib.Web.Components.Details.Query do
   use WebGib.MarkerElements
   import WebGib.Gettext
 
+  use IbGib.Constants, :ib_gib
+  use IbGib.Constants, :validation
+  # Need to expose via function, because in the Marker component macro, the `@`
+  # attempts to pull from assigns (not a module attribute).
+  defp max_id_length, do: @max_id_length
+  defp min_query_data_text_size, do: @min_query_data_text_size
+  defp max_query_data_text_size, do: @max_query_data_text_size
+
   component :ib_options do
     # ib options
     fieldset [class: "ib-details-fieldset"] do
@@ -42,8 +50,8 @@ defmodule WebGib.Web.Components.Details.Query do
             input [id: "query_form_data_search_ib",
                    name: "query_form_data[search_ib]",
                    type: "text",
+                   maxlength: max_id_length,
                    value: ""]
-
           end
         end
       end
@@ -63,6 +71,8 @@ defmodule WebGib.Web.Components.Details.Query do
             input [id: "query_form_data_search_data",
                    name: "query_form_data[search_data]",
                    type: "text",
+                   pattern: ".{#{min_query_data_text_size},#{max_query_data_text_size}}",
+                   title: "Please enter query data text with a maximum of #{max_query_data_text_size} characters.",
                    value: ""]
           end
         end

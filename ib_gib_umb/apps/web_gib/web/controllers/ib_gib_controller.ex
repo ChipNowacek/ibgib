@@ -1439,7 +1439,7 @@ defmodule WebGib.IbGibController do
   defp validate(:search_data, %{"search_data" => search_data})
     when is_bitstring(search_data) do
     _ = Logger.debug "validating search_data: #{search_data}"
-    String.length(search_data) < @max_id_length
+    String.length(search_data) <= @max_query_data_text_size
   end
   defp validate(:search_data, %{"search_data" => search_data}) do
     _ = Logger.warn "Invalid search_data: #{inspect search_data}"

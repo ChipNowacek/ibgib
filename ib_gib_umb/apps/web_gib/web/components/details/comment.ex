@@ -9,6 +9,11 @@ defmodule WebGib.Web.Components.Details.Comment do
   use WebGib.MarkerElements
   import WebGib.Gettext
 
+  use IbGib.Constants, :validation
+  # Need to expose via function, because in the Marker component macro, the `@`
+  # attempts to pull from assigns (not a module attribute).
+  defp max_comment_text_size, do: @max_comment_text_size
+
   component :comment_details do
 
     # Comment details
@@ -18,8 +23,7 @@ defmodule WebGib.Web.Components.Details.Comment do
         input [id: "comment_form_data_src_ib_gib", name: "comment_form_data[src_ib_gib]",type: "hidden", value: ""]
         input [name: "_utf8", type: "hidden", value: "✓"]
         p "Comment: "
-        # input [id: "comment_form_data_text", name: "comment_form_data[comment_text]",  type: "text", value: "ib"]
-        textarea [id: "comment_form_data_text", name: "comment_form_data[comment_text]", value: "ib"]
+        textarea [id: "comment_form_data_text", required: "", name: "comment_form_data[comment_text]", maxlength: max_comment_text_size, title: "Enter your text up to #{max_comment_text_size} characters.", value: "ib"]
         input [name: "_csrf_token", type: "hidden", value: Phoenix.Controller.get_csrf_token]
         div [class: "ib-tooltip"] do
           button [type: "submit"] do
