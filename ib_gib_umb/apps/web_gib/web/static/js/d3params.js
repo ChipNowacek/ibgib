@@ -1,6 +1,6 @@
 var d3CircleRadius = 10;
-var d3LongPressMs = 500;
-var d3DblClickMs = 300;
+var d3LongPressMs = 900;
+var d3DblClickMs = 200;
 
 let d3LinkDistances = {
   "special": 90,
@@ -39,11 +39,15 @@ let d3Colors = {
   "comment": "#CCF26B",
   "text": "#CCF26B",
   "name": "#FFDFAB",
-  "pic": "#AABF73",
-  "image": "#AABF73",
-  "img": "#AABF73",
+  "pic": "#DDEDD3",
+  "image": "#DDEDD3",
+  "img": "#DDEDD3",
   "identity": "#FFFFFF",
-  "default": "#AEA6E3"
+  "default": "#AEA6E3",
+
+  "imageBorder": "#3CAA71",
+  "textBorder": "#8F26A3",
+  "defaultBorder": "#ED6DCD"
 };
 
 var d3DefaultCollapsed = [

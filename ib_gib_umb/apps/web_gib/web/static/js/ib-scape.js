@@ -68,13 +68,11 @@ export class IbScape {
     t.width = t.graphDiv.scrollWidth;
     t.height = t.graphDiv.scrollHeight;
     t.center = {x: t.width / 2, y: t.height / 2};
-    // console.log(`width, height: ${t.width}, ${t.height}`);
 
     // For some reason, when resizing vertically, it doesn't always trigger
     // the graph itself to change sizes. So we're checking the parent.
     t.parentWidth = t.graphDiv.parentNode.scrollWidth;
     t.parentHeight = t.graphDiv.parentNode.scrollHeight;
-    // console.log(`parent width, parent height: ${t.parentWidth}, ${t.parentHeight}`);
 
     t.repositionDetails();
 
@@ -169,9 +167,7 @@ export class IbScape {
               node.collapsed = false;
               l.active = true;
 
-              // debugger;
               let subLinks = graph.links.filter(sl => {
-                // debugger;
                 return sl.source === l.target;
               });
               subLinks.forEach(sl => {
@@ -186,10 +182,6 @@ export class IbScape {
         t.ibNode.collapsed = false;
 
         t.workingData = graph;
-
-        // At this point, these graph nodes and links do not have the same
-        // structure as later.
-        // t.expandNode(ibNode);
       }
 
       graph = t.workingData;
@@ -232,6 +224,11 @@ export class IbScape {
           .attr("cursor", "pointer")
           .on("contextmenu", (d, i)  => { d3.event.preventDefault(); });
 
+      let graphImageDefs = graphNodes
+          .append("defs")
+          .attr("id", d => "imgDefs_" + d.js_id);
+      t.graphImageDefs = graphImageDefs;
+
       let graphNodeHyperlinks =
         graphNodesAndLinks
           .append("foreignObject")
@@ -247,18 +244,16 @@ export class IbScape {
           .select("a")
           .on("click", nodeHyperlinkClicked);
 
-      let graphImageDefs = graphNodes
-          .append("defs")
-          .attr("id", "imgDefs");
-      t.graphImageDefs = graphImageDefs;
-
       let graphNodeCircles = graphNodes
           .append("circle")
           .attr("class", "nodes")
           .attr("id", d => d.js_id || null)
           .attr("cursor", "pointer")
           .attr("r", getRadius)
-          .attr("fill", getColor);
+          .attr("fill", getColor)
+          .attr("stroke", t.getBorderStroke)
+          .attr("stroke-width", "0.5px")
+          ;
 
       graphNodeCircles.append("title")
           .text(getNodeTitle);
@@ -273,10 +268,10 @@ export class IbScape {
           .attr("id", d => "img_" + d.js_id)
           .attr("opacity", 0.1)
           .attr("xlink:href", getNodeImage)
-          .attr("x", -8)
-          .attr("y", -8)
-          .attr("width", 16)
-          .attr("height", 16);
+          .attr("x", 0)
+          .attr("y", 0)
+          .attr("width", 1)
+          .attr("height", 1);
 
       graphNodeImages.append("title")
           .text(d => d.id);
@@ -306,9 +301,38 @@ export class IbScape {
     this.menu.init();
 
     /** Gets the radius of the circle, depending on the data category. */
-    function getRadius(d) {
+    function getRadius(d, other) {
       let multiplier = d3Scales[d.cat] || d3Scales["default"];
-      return d3CircleRadius * multiplier;
+
+      let result = d3CircleRadius * multiplier;
+
+      return result;
+    }
+
+    function getMagicOffset(d) {
+      // This has to do with how to size the image.
+      // I have the images thumbnails to 300x300 ATOW (2016/10/16), so
+      // this is actually scaling down a bit, but we can zoom in svgs.
+      let magicOffset = -7.5;
+
+      if (d.cat === "ib") {
+        magicOffset = 0;
+      }
+
+      return magicOffset;
+    }
+
+    function getMagicSize(d) {
+      // This has to do with how to size the image.
+      // I have the images thumbnails to 300x300 ATOW (2016/10/16), so
+      // this is actually scaling down a bit, but we can zoom in svgs.
+      let magicSize = 75;
+
+      if (d.cat === "ib") {
+        magicSize = 100;
+      }
+
+      return magicSize;
     }
 
     /**
@@ -330,7 +354,7 @@ export class IbScape {
     }
 
     function backgroundClicked(d) {
-      console.log("background clicked");
+      // console.log("background clicked");
       // alert("background clicked")
 
       t.clearSelectedNode();
@@ -345,7 +369,7 @@ export class IbScape {
     }
 
     function handleClicked(d) {
-      console.log(`node clicked. d: ${JSON.stringify(d)}`);
+      // console.log(`node clicked. d: ${JSON.stringify(d)}`);
 
       if (t.selectedDatum && t.selectedDatum.js_id === d.js_id) {
         t.clearSelectedNode();
@@ -356,7 +380,7 @@ export class IbScape {
     }
 
     function handleDblClicked(d) {
-      console.log(`node dblclicked. d: ${JSON.stringify(d)}`);
+      // console.log(`node dblclicked. d: ${JSON.stringify(d)}`);
 
       delete t.lastMouseDownTime;
       delete t.beforeLastMouseDownTime;
@@ -611,10 +635,12 @@ export class IbScape {
       } else if (d.render && d.render === "image") {
         let ibGibJson = t.ibGibCache.get(d.ibgib);
         if (ibGibJson) {
+          // console.log("already ibGibJson")
           let imageUrl =
             t.ibGibImageProvider.getThumbnailImageUrl(d.ibgib, ibGibJson);
           makeImageNode(d, ibGibJson, imageUrl);
         } else {
+          // console.log("not yet ibGibJson")
           d3.json(t.baseJsonPath + d.ibgib, ibGibJson => {
             t.ibGibCache.add(ibGibJson);
 
@@ -629,40 +655,37 @@ export class IbScape {
         return "/images/ibgib_100x200.png";
       }
     }
+    function getPatternSize(d) {
+      return d.cat === "ib" ? 2 : 1;
+    }
 
     function makeImageNode(d, ibGibJson, imageUrl) {
       let patternId = "imgDef_" + d.js_id;
-      let imagePattern = t.graphImageDefs
+      let imagePattern = d3.select(d3.select(`#${d.js_id}`).node().parentNode)
         .append("pattern")
         .attr("id", patternId)
         // height/width seems to have a tiling effect if set to a fraction
-        .attr("height", 1)
-        .attr("width", 1)
+        .attr("height", getPatternSize(d))
+        .attr("width", getPatternSize(d))
         .attr("x", 0)
         .attr("y", 0);
 
-      // This has to do with how to size the image.
-      // I have the images thumbnails to 300x300 ATOW (2016/10/16), so
-      // this is actually scaling down a bit, but we can zoom in svgs.
-      // I'm not sure what the magic offset is, but it works.
-      let magicSize = 75;
-      let magicOffset = -7.5;
 
       // background fill color
       imagePattern
         .append("circle")
-        .attr("r", getRadius)
+        .attr("r", getRadius(d, "background"))
         .attr("fill", d3Colors.pic)
-        .attr("cx", d => { return getRadius(d) + magicOffset; })
-        .attr("cy", d => { return getRadius(d) + magicOffset; });
+        .attr("cx", getRadius(d))
+        .attr("cy", getRadius(d));
 
       // pic
       imagePattern
         .append("image")
-        .attr("height", magicSize)
-        .attr("width", magicSize)
-        .attr("x", magicOffset)
-        .attr("y", magicOffset)
+        .attr("height", getMagicSize(d))
+        .attr("width", getMagicSize(d))
+        .attr("x", getMagicOffset(d))
+        .attr("y", getMagicOffset(d))
         .attr("xlink:href", imageUrl);
 
       let label = ibGibJson.data.filename;
@@ -679,6 +702,10 @@ export class IbScape {
         .attr("fill", `url(#${patternId})`)
         .select('title')
         .text(label);
+
+      d3.select("#" + d.js_id)
+          .attr("stroke", t.getBorderStroke(d))
+          .attr("stroke-width", "0.5px");
     }
 
     function getLinkDistance(l) {
@@ -703,15 +730,28 @@ export class IbScape {
     d3.select("#d3vis")
       .selectAll("circle")
         .style("opacity", 1)
-        .attr("stroke", null)
-        .attr("stroke-width", null)
-        ;
+        .attr("stroke", this.getBorderStroke)
+        .attr("stroke-width", "0.5px");
 
     if (this.selectedNode) {
       this.tearDownMenu(/*cancelDetails*/ true);
 
       delete this.selectedNode;
       delete this.selectedDatum;
+    }
+  }
+
+  getBorderStroke(d) {
+    if (d.render) {
+      if (d.render === "image") {
+        return d3Colors["imageBorder"];
+      } else if (d.render === "text") {
+        return d3Colors["textBorder"];
+      } else {
+        return d3Colors["defaultBorder"];
+      }
+    } else {
+      return d3Colors["defaultBorder"];
     }
   }
 
@@ -823,7 +863,7 @@ export class IbScape {
   /** Closes the details modal view. */
   cancelDetails() {
     if (this.details) {
-      console.log("cancelled.");
+      // console.log("cancelled.");
       d3.select("#ib-scape-details")
         .attr("class", "ib-pos-abs ib-details-off");
 
