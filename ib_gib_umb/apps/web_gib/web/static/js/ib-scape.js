@@ -742,14 +742,19 @@ export class IbScape {
   }
 
   getBorderStroke(d) {
+    console.log(JSON.stringify(d))
     if (d.render) {
       if (d.render === "image") {
         return d3Colors["imageBorder"];
       } else if (d.render === "text") {
         return d3Colors["textBorder"];
+      } else if (d.ibgib === "ib^gib") {
+        return d3Colors["rootBorder"];
       } else {
         return d3Colors["defaultBorder"];
       }
+    } else if (d.ibgib === "ib^gib") {
+      return d3Colors["rootBorder"];
     } else {
       return d3Colors["defaultBorder"];
     }

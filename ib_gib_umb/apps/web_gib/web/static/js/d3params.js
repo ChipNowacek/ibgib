@@ -47,6 +47,7 @@ let d3Colors = {
 
   "imageBorder": "#3CAA71",
   "textBorder": "#8F26A3",
+  "rootBorder": "#12F50A",
   "defaultBorder": "#ED6DCD"
 };
 
