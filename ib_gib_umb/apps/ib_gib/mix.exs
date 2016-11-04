@@ -8,7 +8,7 @@ defmodule IbGib.Mixfile do
 
   def project do
     [app: :ib_gib,
-     version: "0.1.0",
+     version: "0.1.1",
      build_path: "../../_build",
      config_path: "../../config/config.exs",
      deps_path: "../../deps",
@@ -35,7 +35,7 @@ defmodule IbGib.Mixfile do
   #
   # Or git/path repositories:
   #
-  #   {:mydep, git: "https://github.com/elixir-lang/mydep.git", tag: "0.1.0"}
+  #   {:mydep, git: "https://github.com/elixir-lang/mydep.git", tag: "0.99.99"}
   #
   # To depend on another app inside the umbrella:
   #

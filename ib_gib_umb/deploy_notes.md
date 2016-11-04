@@ -1,5 +1,9 @@
 ### Command lines that I'm using a bit
 
+NOTE: These were the ORIGINAL commands I used. I am keeping this around only
+for historical purposes. I now have commands that I save outside of version
+control for convenience.
+
 I run all of these commands inside the root of the umbrella app.
 
 * Distillery

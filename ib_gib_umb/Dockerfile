@@ -9,7 +9,7 @@ RUN apt-get install -y \
     imagemagick
 
 RUN mkdir -p /app
-ARG VERSION=0.1.0
+ARG VERSION=0.1.1
 # Copy the app over.
 COPY rel/ib_gib_umb/releases/${VERSION}/ib_gib_umb.tar.gz /app/ib_gib_umb.tar.gz
 
