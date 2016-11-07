@@ -1,0 +1,8 @@
+/**
+ * IbGibEngine
+ */
+class IbGibEngine {
+    constructor() {
+        
+    }
+}

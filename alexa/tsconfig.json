@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "target": "es5",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "noImplicitAny": false,
+        "outDir": "bin",
+        "rootDir": "src",
+        "noFallthroughCasesInSwitch": true,
+        "sourceMap": true
+    },
+    "exclude": [
+        "bin",
+        "node_modules",
+        "typings/browser",
+        "typings/browser.d.ts",
+        "typings/main.d.ts"
+    ]
+}
