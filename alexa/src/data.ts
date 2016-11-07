@@ -2,7 +2,7 @@ var spokenAppName = "ib jib";
 var spokenAppNameSsml = "ib jib";
 
 
-/** Represents a FSM Context (State). */
+/** Represents information for a given FSM-ish Context. */
 export interface AlexaContextData {
     id: string,
     spokenContext: string,

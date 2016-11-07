@@ -16,8 +16,7 @@
 */
 
 /**
- * Imports the passages as a hard-coded datastore.
- * Need to take this out 
+ * Not sure what I'm doing at the moment!... :thinking:
  */
 import * as data from './data';
 import { Helper } from './helper'; // logging, utilities
@@ -34,7 +33,7 @@ import { APP_ID } from './private/constants';
 import * as ask from 'ask-gib';
 
 /**
- * Primary class of our Skill called "Bible Seeds and Such".
+ * Primary class of our Skill called "ibGib".
  *
  * This is based off of code from Amazon's Space Geeks example.
  */
@@ -60,9 +59,7 @@ class IbGibAlexa extends ask.AlexaSkill {
                 // any initialization logic goes here
                 helper.currentUserId = session.user.userId;
 
-                // This will create a table for the current user
-                // t._storage = new AwsDynamoStorage();
-                // Todo: Test ibGib API connectivity
+                // Todo: Get the user's identity from ibGib API
             };
 
             this.eventHandlers.onLaunch = function (launchRequest: ask.LaunchRequest, session: ask.Session, response: ask.ResponseClass) {
@@ -115,36 +112,15 @@ class IbGibAlexa extends ask.AlexaSkill {
             };
 
             this.intentHandlers = {
-                "OpenJibIntent": function (intent: ask.Intent, session: ask.Session, response: ask.ResponseClass) {
-                    let logContext = `IbGibAlexa.intentHandlers.OpenJibIntent`;
+                "OpenIbGibIntent": function (intent: ask.Intent, session: ask.Session, response: ask.ResponseClass) {
+                    let logContext = `IbGibAlexa.intentHandlers.OpenIbGibIntent`;
                     helper.logFuncStart(logContext);
                     try {
                         helper.log(`intent: ${JSON.stringify(intent)}`, 'debug', 0, logContext);
                         helper.log(`session: ${JSON.stringify(session)}`, 'debug', 0, logContext);
                         helper.log(`response: ${JSON.stringify(response)}`, 'debug', 0, logContext);
 
-                        t.handleOpenJibRequest(session, response);
-                    } catch (errFunc) {
-                        helper.logError(`errFunc`, errFunc, logContext);
-                        throw errFunc;
-                    }
-
-                    helper.logFuncComplete(logContext);
-                },
-
-                "ContinueIntent": function (intent, session, response: ask.ResponseClass) {
-                    let logContext = `IbGibAlexa.intentHandlers.ContinueIntent`;
-                    helper.logFuncStart(logContext);
-
-                    try {
-                        helper.log(`${JSON.stringify(session)}`, 'debug', 0, logContext);
-                        if (session.attributes && (session.attributes.passageIndex ||
-                             session.attributes.passageIndex === 0)) {
-                            t.handleContinueRequest(session, response);
-                        }
-                        else {
-                            t.handleOpenJibRequest(session, response);
-                        }
+                        t.handleOpenIbGibIntent(intent, session, response);
                     } catch (errFunc) {
                         helper.logError(`errFunc`, errFunc, logContext);
                         throw errFunc;
@@ -159,40 +135,6 @@ class IbGibAlexa extends ask.AlexaSkill {
                         text: "You're welcome! Goodbye."
                     };
                     response.tell({ outputSpeech: outputSpeech });
-                },
-
-                "AMAZON.RepeatIntent": function (intent, session, response: ask.ResponseClass) {
-                    let logContext = `IbGibAlexa.intentHandlers.RepeatIntent`;
-                    helper.logFuncStart(logContext);
-
-                    try {
-                        helper.log(`${JSON.stringify(session)}`, 'debug', 0, logContext);
-
-                        if (session.attributes && session.attributes.lastOutputSpeech) {
-
-                            response.tell({ outputSpeech: session.attributes.lastOutputSpeech, repromptSpeech: session.attributes.lastRepromptSpeech,
-                                shouldEndSession: false });
-                            ;
-
-                        } else {
-                            this.handleContinueRequest()
-                        }
-
-                        if (session.attributes && (session.attributes.passageIndex ||
-                             session.attributes.passageIndex === 0)) {
-
-                            t.handleOpenJibRequest(session, response);
-                        }
-                        else {
-                            t.handleContinueRequest(session, response);
-                            t.handleOpenJibRequest(session, response);
-                        }
-                    } catch (errFunc) {
-                        helper.logError(`errFunc`, errFunc, logContext);
-                        throw errFunc;
-                    }
-
-                    helper.logFuncComplete(logContext);
                 },
 
                 "AMAZON.HelpIntent": function (intent, session, response: ask.ResponseClass) {
@@ -210,7 +152,7 @@ class IbGibAlexa extends ask.AlexaSkill {
                         }
                     }
 
-                    let repromptText = lastRepromptText ? lastRepromptText : `Would you like me to give you a passage?`;
+                    let repromptText = lastRepromptText ? lastRepromptText : `Would you like to open your shopping list?`;
 
                     let repromptSpeech: ask.OutputSpeech = lastRepromptSpeech ?
                         lastRepromptSpeech :
@@ -219,25 +161,14 @@ class IbGibAlexa extends ask.AlexaSkill {
                             text: repromptText
                         };
 
-                    let helpText = `With ib jib, you can do a lot of cool stuff. For example, you can say "Open my shopping list". I'll then open that up and you can For example, you can say 'Give me a passage.' I will then give you a location like, 'Luke Chapter 4 Verse 4'. Then, you would review the passage in your mind. When you're ready to hear the passage, say 'Okay' or 'Continue'. If you need more time, say 'Wait'. You can exit at any time when you're are through.`;
+                    let helpText = `With ib jib, you can track your lists and other things. For example, you can say "Open my shopping list" or "Read my todo list".`;
 
                     let outputSpeech: ask.OutputSpeech = {
                         type: ask.OutputSpeechType.PlainText,
                         text: `${helpText} Now, ${repromptText}`
                     };
 
-                    // let repromptSpeech: ask.OutputSpeech = session.attributes && session.attributes.lastRepromptSpeech ?
-                    //     session.attributes.lastRepromptSpeech :
-                    //     {
-                    //         type: ask.OutputSpeechType.PlainText,
-                    //         text: "Would you like me to give you a passage?"
-                    //     };
-                    // let repromptSpeech: ask.OutputSpeech = {
-                    //     type: ask.OutputSpeechType.PlainText,
-                    //     text: "Would you like me to give you a passage?"
-                    // };
-
-                    response.askWithCard({ outputSpeech: outputSpeech, repromptSpeech: repromptSpeech, cardTitle: `Bible Seeds and Such Help`, cardContent: helpText });
+                    response.askWithCard({ outputSpeech: outputSpeech, repromptSpeech: repromptSpeech, cardTitle: `ibGib`, cardContent: helpText });
                 },
 
                 "AMAZON.StopIntent": function (intent, session, response: ask.ResponseClass) {
@@ -264,99 +195,48 @@ class IbGibAlexa extends ask.AlexaSkill {
         this._helper.logFuncComplete(logContext);
     }
 
-    getContinueText(): string {
-        let options = [
-            'Would you like another passage?',
-            'Do you want another passage?',
-            'Would you like another one?',
-            'Do you want another one?'
-        ];
-
-        let resultIndex = Math.floor(Math.random() * options.length);
-
-        return options[resultIndex];
-    }
-
-    handleContinueRequest(session: ask.Session, response: ask.ResponseClass): void {
-        let logContext = `IbGibAlexa.handleContinueRequest`;
-        this._helper.logFuncStart(logContext);
-
-        try {
-            let index: number = session.attributes.passageIndex;
-            // let index = Math.floor(Math.random() * data.PASSAGES.length);
-            let passage = data.PASSAGES[index];
-
-            let passageContent = passage.contentSsml ? passage.contentSsml : passage.content;
-            let continueText = this.getContinueText();
-
-            let ssml = `<speak><p>${passageContent}.</p><p>${continueText}</p></speak>`;
-
-            // Create speech output
-            let outputSpeech: ask.OutputSpeech = {
-                type: ask.OutputSpeechType.SSML,
-                ssml: ssml
-            }
-
-            // Create reprompt speech
-            let repromptSpeech: ask.OutputSpeech = {
-                type: ask.OutputSpeechType.SSML,
-                ssml: `<speak>${continueText}</speak>`
-            };
-
-            delete session.attributes.passageIndex;
-
-            session.attributes.lastOutputSpeech = outputSpeech;
-            session.attributes.lastRepromptSpeech = repromptSpeech;
-
-            response.tellWithCard({ outputSpeech: outputSpeech, repromptSpeech: repromptSpeech, cardTitle: "Bible Seeds and Such", cardContent: passage.content, shouldEndSession: false });
-            // response.tellWithCard({ outputSpeech: speechOutput, cardTitle: "Bible Seeds and Such", cardContent: passage.content, shouldEndSession: false });
-        } catch (errFunc) {
-            this._helper.logError(`errFunc`, errFunc, logContext);
-            throw errFunc;
-        }
-
-        this._helper.logFuncComplete(logContext);
-    }
-
     /**
-     * Picks a random passage. Tells the user the location, and waits for the user
-     * to continue.
+     * Opens an ibGib, most likely a shopping or todo list.
      */
-    handleOpenJibRequest(session: ask.Session, response: ask.ResponseClass): void {
+    handleOpenIbGibIntent(intent: ask.Intent, session: ask.Session, response: ask.ResponseClass): void {
         let logContext = `handleOpenJibRequest`;
         this._helper.logFuncStart(logContext);
 
         try {
-            // 
-            
-            let passageIndex = Math.floor(Math.random() * data.PASSAGES.length);
-            let passage = data.PASSAGES[passageIndex];
 
-            let passageContent = passage.contentSsml ? passage.contentSsml : passage.content;
-            let instructions = `${passage.location}. Try to recall the passage. When you are ready, say "continue" or "ok". If you need more time, say "hold on" or "wait".`;
+            let toOpen = "";
+            if (intent.slots && intent.slots.length > 0 && intent.slots[0].value) {
+                toOpen = intent.slots[0].value;
+            }  
+            
+            // would call the ibGib API here.
+
+            // let passageContent = passage.contentSsml ? passage.contentSsml : passage.content;
+            let outputContent = `Howdy. Open jib placeholder speech here.`; 
+            let instructions = `Howdy. Instructions placeholder here.`;
 
             // Create passage content speech output
-            let passageSsml = `<speak>${passage.location}</speak>`;
+            let outputSsml = `<speak>${outputContent}</speak>`;
             let outputSpeech: ask.OutputSpeech = {
                 type: ask.OutputSpeechType.SSML,
-                ssml: passageSsml
+                ssml: outputSsml
             }
 
             // Create reprompt speech (instructions)
             let repromptSsml = `<speak>${instructions}</speak>`;
             let repromptSpeech: ask.OutputSpeech = {
                 type: ask.OutputSpeechType.SSML,
-                ssml: passageSsml
+                ssml: outputSsml
             }
 
-            if (!session.attributes) { session.attributes = {}; }
+            // if (!session.attributes) { session.attributes = {}; }
 
-            session.attributes.passageIndex = passageIndex;
+            // session.attributes.passageIndex = passageIndex;
 
-            session.attributes.lastOutputSpeech = outputSpeech;
-            session.attributes.lastRepromptSpeech = repromptSpeech;
+            // session.attributes.lastOutputSpeech = outputSpeech;
+            // session.attributes.lastRepromptSpeech = repromptSpeech;
 
-            response.askWithCard({ outputSpeech: outputSpeech, repromptSpeech: repromptSpeech, cardTitle: "Bible Seeds and Such", cardContent: instructions });
+            response.askWithCard({ outputSpeech: outputSpeech, repromptSpeech: repromptSpeech, cardTitle: "ibGib", cardContent: instructions });
 
         } catch (errFunc) {
             this._helper.logError(`errFunc`, errFunc, logContext);
@@ -374,7 +254,7 @@ class IbGibAlexa extends ask.AlexaSkill {
             this._helper.currentUserId = session.user.userId;
 
             // Create passage content speech output
-            let welcome = `Howdy, and welcome to thing jib! Your user I.D. length is ${session.user.userId.length}.`;
+            let welcome = `Howdy, and welcome to ib jib! Your user I.D. length is ${session.user.userId.length}.`;
             let description = `Ib jib can help you organize things. For starters, we can do a shopping list. yada yada yada...`
             let prompt = `How does that sound to you?`;
 
