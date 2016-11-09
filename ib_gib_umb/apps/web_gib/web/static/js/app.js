@@ -25,7 +25,6 @@
 // import { IbScape } from "./ibscape-pixi";
 
 import { IbScape } from "./ib-scape";
-// import { IbScape } from "./dyn-ib-scape";
 import { IbGibCache } from "./services/ibgib-cache";
 import { IbGibImageProvider } from "./services/ibgib-image-provider";
 
@@ -56,16 +55,13 @@ class App {
       // Create the ibScape, which is the d3 "landscape" for the ibgib.
       let graphDiv = document.querySelector("#ib-d3-graph-div");
 
+
+
       this.ibScape = new IbScape(graphDiv, baseJsonPath, ibGibCache, ibGibImageProvider);
 
       // We set the ibScape to get its json data
-      let dataUrl = baseD3JsonPath + ibgib;
-      this.ibScape.update();
-
-      // this.ibScape = new IbScape(graphDiv);
-      // this.ibScape.setGraphType("d3force");
-      // this.ibScape.addTestData();
-
+      let data = baseD3JsonPath + ibgib;
+      this.ibScape.update(data);
     }
 
     // if (!this.ibGibChannel) {
