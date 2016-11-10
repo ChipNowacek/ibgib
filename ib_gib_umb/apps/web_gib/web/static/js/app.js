@@ -27,6 +27,7 @@
 // import { IbScape } from "./ib-scape";
 // import { IbScape } from "./dyn-ib-scape";
 import { D3ForceGraph } from "./graphs/d3-force-graph";
+import { D3ForceGraph2 } from "./graphs/d3-force-graph2";
 import { IbGibCache } from "./services/ibgib-cache";
 import { IbGibImageProvider } from "./services/ibgib-image-provider";
 
@@ -63,7 +64,7 @@ class App {
       // let data = baseD3JsonPath + ibgib;
       // this.ibScape.update(data);
 
-      let graph = new D3ForceGraph(graphDiv, "testSvgId");
+      let graph = new D3ForceGraph2(graphDiv, "testSvgId");
       graph.init();
 
       setTimeout(() => {
@@ -95,12 +96,14 @@ class App {
           let newLink = {source: randomNode.id, target: randomId};
           graph.add([newNode], [newLink]);
           count ++;
-          if (count % 1000 === 0) {
+          if (count % 100 === 0) {
             console.log(`count: ${count}`)
-            clearInterval(interval);
+            if (count % 2000 === 0) {
+              clearInterval(interval);
+            }
           }
 
-        }, 200)
+        }, 10)
 
       }, 500);
 

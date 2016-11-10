@@ -2,8 +2,8 @@
 
 circle.node {
   cursor: pointer;
-  stroke: #000;
-  stroke-width: 2.5px;
+  stroke: green;
+  stroke-width: 10px;
 }
 
 line.link {
@@ -15,13 +15,13 @@ line.link {
 
 .links line {
   stroke: $ibgib_green;
-  stroke-width: 0.08px;
+  stroke-width: 1.08px;
   stroke-opacity: 1.5;
 }
 
 .nodes circle {
-  stroke: #eee;
-  stroke-width: 1.5px;
+  stroke: green;
+  stroke-width: 1px;
 }
 
 
@@ -51,6 +51,7 @@ line.link {
 }
 
 #ib-scape-details {
+  // background-color: #CDDEC5;
   background-color: #CDDEC5;
 }
 
