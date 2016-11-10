@@ -24,7 +24,9 @@
 // import { IbScape } from "./ibscape-three";
 // import { IbScape } from "./ibscape-pixi";
 
-import { IbScape } from "./ib-scape";
+// import { IbScape } from "./ib-scape";
+// import { IbScape } from "./dyn-ib-scape";
+import { D3ForceGraph } from "./graphs/d3-force-graph";
 import { IbGibCache } from "./services/ibgib-cache";
 import { IbGibImageProvider } from "./services/ibgib-image-provider";
 
@@ -55,14 +57,29 @@ class App {
       // Create the ibScape, which is the d3 "landscape" for the ibgib.
       let graphDiv = document.querySelector("#ib-d3-graph-div");
 
+      // this.ibScape = new IbScape(graphDiv, baseJsonPath, ibGibCache, ibGibImageProvider);
+      //
+      // // We set the ibScape to get its json data
+      // let data = baseD3JsonPath + ibgib;
+      // this.ibScape.update(data);
 
+      let graph = new D3ForceGraph(graphDiv, "testSvgId");
+      graph.init();
 
-      this.ibScape = new IbScape(graphDiv, baseJsonPath, ibGibCache, ibGibImageProvider);
+      let nodes = [
+        {"id": 22, "name": "server 22"},
+        {"id": 23, "name": "server 23"},
+      ]
 
-      // We set the ibScape to get its json data
-      let data = baseD3JsonPath + ibgib;
-      this.ibScape.update(data);
+      let links = [
+        {source: 1, target: 22},
+        {source: 1, target: 23},
+      ]
+
+      // graph.add(nodes, links);
     }
+
+
 
     // if (!this.ibGibChannel) {
     //   this.ibGibChannel = new IbGibChannel();
@@ -107,6 +124,7 @@ class App {
     //   var username = this.sanitize(msg.user || "anonymous")
     //   $messages.append(`<br/><i>[${username} entered]</i>`)
     // })
+
   }
 
   // static sanitize(html){ return $("<div/>").text(html).html() }

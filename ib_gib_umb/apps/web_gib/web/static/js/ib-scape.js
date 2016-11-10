@@ -192,13 +192,21 @@ export class IbScape {
       // inactive means one of the link's endpoints is hidden.
       let modifiedLinks = graph.links.filter(l => l.active);
 
-
-      let graphLinks = svgGroup.append("g")
+      let graphLinksData = svgGroup.append("g")
           .attr("class", "links")
           .selectAll("line")
-          .data(modifiedLinks)
-          .enter().append("line")
+          .data(modifiedLinks);
+
+      let graphLinksEnter = graphLinksData
+          .enter()
+          .append("line")
           .attr("stroke-width", function(d) { return Math.sqrt(d.value); });
+
+      let graphLinksExit = graphLinksData
+          .exit()
+          .remove();
+      graphLinksData = graphLinksEnter.merge(graphLinksData);
+      graphLinksData = graphLinksExit.merge(graphLinksData);
 
       let pressTimer;
 
@@ -285,7 +293,7 @@ export class IbScape {
           .links(graph.links);
 
       function ticked() {
-        graphLinks
+        graphLinksEnter
             .attr("x1", d => d.source.x)
             .attr("y1", d => d.source.y)
             .attr("x2", d => d.target.x)
