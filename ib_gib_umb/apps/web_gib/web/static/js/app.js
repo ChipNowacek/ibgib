@@ -66,15 +66,54 @@ class App {
       let graph = new D3ForceGraph(graphDiv, "testSvgId");
       graph.init();
 
-      let nodes = [
-        {"id": 22, "name": "server 22"},
-        {"id": 23, "name": "server 23"},
-      ]
+      setTimeout(() => {
+        let initialCount = 10;
+        let nodes = [ {"id": 0, "name": "root node"} ];
+        let links = [];
+        for (var i = 1; i < initialCount; i++) {
+          let randomIndex = Math.trunc(Math.random() * nodes.length);
+          let randomNode = nodes[randomIndex];
+          let newNode = {id: i, name: `node ${i}`};
+          let newLink = {source: randomIndex, target: newNode.id};
 
-      let links = [
-        {source: 1, target: 22},
-        {source: 1, target: 23},
-      ]
+          nodes.push(newNode);
+          links.push(newLink);
+        }
+
+        graph.add(nodes, links);
+
+        let count = 0;
+        let interval = setInterval(() => {
+          let randomIndex = Math.trunc(Math.random() * graph.graphData.nodes.length);
+          let randomNode = graph.graphData.nodes[randomIndex];
+          let randomId = Math.trunc(Math.random() * 100000);
+          let newNode = {"id": randomId, "name": "server " + randomId};
+          if (randomNode.x) {
+            newNode.x = randomNode.x;
+            newNode.y = randomNode.y;
+          }
+          let newLink = {source: randomNode.id, target: randomId};
+          graph.add([newNode], [newLink]);
+          count ++;
+          if (count % 1000 === 0) {
+            console.log(`count: ${count}`)
+            clearInterval(interval);
+          }
+
+        }, 200)
+
+      }, 500);
+
+
+      // let nodes = [
+      //   {"id": 22, "name": "server 22"},
+      //   {"id": 23, "name": "server 23"},
+      // ]
+      //
+      // let links = [
+      //   {source: 1, target: 22},
+      //   {source: 1, target: 23},
+      // ]
 
       // graph.add(nodes, links);
     }

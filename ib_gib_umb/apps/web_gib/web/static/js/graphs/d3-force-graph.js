@@ -17,30 +17,7 @@ export class D3ForceGraph {
   init() {
     let t = this;
 
-    let nodes = [
-      {"id": 1, "name": "server 1"},
-      {"id": 2, "name": "server 2"},
-      {"id": 3, "name": "server 3"},
-      {"id": 4, "name": "server 4"},
-      {"id": 5, "name": "server 5"},
-      {"id": 6, "name": "server 6"},
-      {"id": 7, "name": "server 7"},
-      {"id": 8, "name": "server 8"},
-      {"id": 9, "name": "server 9"}
-    ]
-
-    let links = [
-      {source: 1, target: 2},
-      {source: 1, target: 3},
-      {source: 1, target: 4},
-      {source: 2, target: 5},
-      {source: 2, target: 6},
-      {source: 3, target: 7},
-      {source: 5, target: 8},
-      {source: 6, target: 9},
-    ]
-
-    t.graphData = { "nodes": nodes, "links": links };
+    t.graphData = { "nodes": [], "links": [] };
 
     // t.scaffoldGraph()
     // graph area
@@ -61,17 +38,28 @@ export class D3ForceGraph {
       .attr("height", t.height - 1)
       .on("click", handleBackgroundClicked);
 
-    // Holds child components (nodes, links), i.e. all but the background
-    let svgGroup = svg
-        .append('svg:g')
-          .attr("id", "svgGroup");
-
     function handleBackgroundClicked(d) {
       console.log("background clicked");
     }
 
 
-    // t.initZoom();
+    // Holds child components (nodes, links), i.e. all but the background
+    let svgGroup = svg
+        .append('svg:g')
+          .attr("id", "svgGroup");
+
+    let graphLinksGroup =
+      svgGroup
+        .append("g")
+        .attr("id", `links_${t.svgId}`)
+        .attr("class", "links");
+
+    let graphNodesGroup =
+      svgGroup
+        .append("g")
+        .attr("id", `nodes_${t.svgId}`)
+        .attr("class", "nodes");
+
     let zoom =
       d3.zoom()
         .on("zoom", handleZoom);
@@ -84,131 +72,105 @@ export class D3ForceGraph {
         `scale(${d3.event.transform.k})`);
     }
 
-
-
-    // t.initForceSimulation();
-
     let simulation =
       d3.forceSimulation()
         .velocityDecay(0.55)
-        .force("link", d3.forceLink().id(function(d) { return d.id; }))
-        .force("charge", d3.forceManyBody().strength(-25))
+        // .alphaTarget(0.01)
+        // .alphaDecay(0.1)
+        .force("link", d3.forceLink()
+                         .distance(100)
+                         .id(function(d) { return d.id; }))
+        .force("charge", d3.forceManyBody().strength(-100).distanceMin(10000))
         .force("collide", d3.forceCollide(25))
         .force("center", d3.forceCenter(t.center.x, t.center.y));
 
-    // t.initDrag();
-    let drag =
-      d3.drag()
-        .on("start", handleDragStarted)
-        .on("drag", handleDragged)
-        .on("end", handleDragEnded);
-
-    function handleDragStarted(d) {
-      if (!d3.event.active) simulation.alphaTarget(0.3).restart();
-
-      d.fx = d.x;
-      d.fy = d.y;
-
-      // t.x0 = d3.event.x;
-      // t.y0 = d3.event.y;
-      console.log(`drag started d.fx: ${d.fx}`)
-    }
-    function handleDragged(d) {
-      // console.log(`dragged d.fx: ${d.fx}`)
-
-      d.fx = d3.event.x;
-      d.fy = d3.event.y;
-    }
-    function handleDragEnded(d) {
-      console.log("handleDragEnded")
-      if (!d3.event.active) simulation.alphaTarget(0);
-
-      d.fx = d3.event.x;
-      d.fy = d3.event.y;
-
-      d.fx = null;
-      d.fy = null;
-    }
-
-    // t.update();
     update();
+
 
     function update() {
       let nodes = t.graphData.nodes;
       let links = t.graphData.links;
 
+      // t.initDrag();
+      let drag =
+        d3.drag()
+          .on("start", handleDragStarted)
+          .on("drag", handleDragged)
+          .on("end", handleDragEnded);
+
+      // nodes
+      let graphNodesData =
+        graphNodesGroup
+          .selectAll("g")
+          .data(nodes, d => d.id);
+      let graphNodesEnter =
+        graphNodesData
+          .enter()
+            .append("g")
+            .attr("id", d => d.id || null)
+            .on("contextmenu", (d, i)  => {
+               remove(d);
+               d3.event.preventDefault();
+            })
+            .on("mouseover", d => console.log(`d.id: ${d.id}`))
+            .on("click", handleNodeClicked)
+            .call(drag);
+      let graphNodesExit =
+        graphNodesData
+          .exit()
+          .call((s) => console.log(`selection exiting. s: ${JSON.stringify(s)}`))
+          .remove();
+
+      let graphNodeCircles =
+        graphNodesEnter
+          .append("circle")
+          .classed('node', true)
+          .attr("cursor", "pointer")
+          .attr("r", getRadius)
+          .attr("fill", getColor)
+          .attr("stroke", getBorderStroke)
+          .attr("stroke-width", getBorderStrokeWidth)
+          .call((d) => {
+            // console.log(`graphNodesEnter.append. d: ${JSON.stringify(d)}`);
+          });
+
+      let graphNodeLabels =
+        graphNodesEnter
+          .append("text")
+          .attr("id", d => "label_" + d.id)
+          .attr("font-size", `10px`)
+          .attr("text-anchor", "middle")
+          .text(d => `${d.id}`);
+
+      // merge
+      graphNodesData =
+        graphNodesEnter.merge(graphNodesData);
+
+      // links
       let graphLinksData =
-        svgGroup
-          .append("g")
-          .attr("class", "links")
+        graphLinksGroup
           .selectAll("line")
           .data(links);
       let graphLinksEnter =
          graphLinksData
           .enter()
-            .append("line")
-            .attr("stroke-width", "2px");//t.getLinkWidth); // necessary?
+            .append("line");
       let graphLinksExit =
         graphLinksData
           .exit()
           .remove();
-      graphLinksData =
-        graphLinksExit.merge(graphLinksData);
-
-      let graphNodesGroupData =
-        svgGroup
-          .selectAll("g.gnode")
-          .data(nodes);
-      let graphNodesGroupEnter =
-        graphNodesGroupData
-          .enter()
-            .append("g")
-            .on("click", e => { console.log("graphNodesGroup clicked") })
-            .call(drag);
-      // t.graphNodesGroupExit =
-      //   t.graphNodesGroupData
-      //     .exit()
-      //     .remove();
-      // t.graphNodesGroupData =
-      //   t.graphNodesGroupExit.merge(t.graphNodesGroupData);
-
-      // graphNodes is g, includes circles, imageDefs, labels, images
-      let graphNodes =
-        graphNodesGroupEnter
-          .append("g")
-          .classed('gnode', true)
-          .on("click", handleNodeClicked)
-          // .on("mousedown", handleNodeMouseDown)
-          // .on("touchstart", handleNodeTouchStart)
-          // .on("touchend", handleNodeTouchEnd)
-          .attr("cursor", "pointer")
-          .on("contextmenu", (d, i)  => { d3.event.preventDefault(); });
-
-      let graphNodeCircles =
-        graphNodes
-          .append("circle")
-          .attr("class", "nodes")
-          .attr("id", d => d.id || null)
-          .attr("cursor", "pointer")
-          .attr("r", getRadius)
-          .attr("fill", getColor)
-          .attr("stroke", getBorderStroke)
-          .attr("stroke-width", getBorderStrokeWidth);
-
       // merge
       graphLinksData =
         graphLinksEnter.merge(graphLinksData);
-      graphNodesGroupData =
-        graphNodesGroupEnter.merge(graphNodesGroupData);
 
       simulation
-        .nodes(t.graphData.nodes)
+        .nodes(nodes)
         .on("tick", handleTicked)
         .on("end", handleEnd);
 
       simulation
         .force("link")
-        .links(t.graphData.links);
+        .links(links);
 
       function handleTicked() {
         // let t = this;
@@ -221,15 +183,45 @@ export class D3ForceGraph {
           .attr("y2", d => d.target.y);
 
         // Translate the groups
-        graphNodesGroupData
+        graphNodesData
             .attr("transform", d => {
               // console.log(`d.x: ${d.x}`)
               return 'translate(' + [d.x, d.y] + ')';
             });
       }
+
+
+
+      function handleDragStarted(d) {
+        if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+
+        d.fx = d.x;
+        d.fy = d.y;
+
+        // t.x0 = d3.event.x;
+        // t.y0 = d3.event.y;
+        console.log(`drag started d.fx: ${d.fx}`)
+      }
+      function handleDragged(d) {
+        // console.log(`dragged d.fx: ${d.fx}`)
+
+        d.fx = d3.event.x;
+        d.fy = d3.event.y;
+      }
+      function handleDragEnded(d) {
+        console.log("handleDragEnded")
+        if (!d3.event.active) simulation.alphaTarget(0);
+
+        d.fx = d3.event.x;
+        d.fy = d3.event.y;
+
+        d.fx = undefined;
+        d.fy = undefined;
+      }
+
     }
 
-    function getForceVelocityDecay(d) { return 0.55; }
+    function getForceVelocityDecay(d) { return 0.25; }
     function getForceLinkDistance(d) { return 55; }
     function getForceStrength(d) { return 0.8; }
     function getForceChargeStrength(d) { return -25; }
@@ -242,13 +234,11 @@ export class D3ForceGraph {
 
     function handleNodeClicked(d) {
       console.log(`node clicked: ${JSON.stringify(d)}`);
-      // d.fx = 0;
-      // d.fy = 0;
 
       let newId = Math.trunc(Math.random() * 1000);
-      let newNode = {"id": newId, "name": "server 22"};
+      let newNode = {"id": newId, "name": "server 22", x: d.x, y: d.y};
       let newNodes = [newNode];
-      let newLinks = [{source: d, target: newNode}]
+      let newLinks = [{source: d.id, target: newNode.id}]
 
       add(newNodes, newLinks);
     }
@@ -266,6 +256,33 @@ export class D3ForceGraph {
       }
 
       update();
+      simulation.restart();
+      simulation.alpha(1);
+    }
+
+    t.add = (a, b) => add(a, b);
+
+    function remove(dToRemove) {
+      console.log(`dToRemove: ${JSON.stringify(dToRemove)}`)
+      // debugger;
+      let currentNodes = t.graphData.nodes;
+      let currentLinks = t.graphData.links;
+      let nIndex = currentNodes.indexOf(dToRemove);
+      if (nIndex > -1) {
+        currentNodes.splice(nIndex, 1);
+      }
+
+      let toRemoveLinks = currentLinks.filter(l => {
+        return l.source.id === dToRemove.id || l.target.id === dToRemove.id;
+      });
+      toRemoveLinks.forEach(l => {
+        let lIndex = currentLinks.indexOf(l);
+        currentLinks.splice(lIndex, 1);
+      })
+
+      update();
+      simulation.restart();
+      simulation.alpha(1);
     }
   }
 }
