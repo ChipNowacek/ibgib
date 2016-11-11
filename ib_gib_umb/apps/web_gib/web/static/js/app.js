@@ -72,12 +72,16 @@ class App {
 
         let count = 0;
         let interval = setInterval(() => {
-          console.log("adding from app.js")
+          // console.log("adding from app.js")
           let randomIndex = Math.trunc(Math.random() * graph.graphData.nodes.length);
           let randomNode = graph.graphData.nodes[randomIndex];
           if (randomNode) {
             let randomId = Math.trunc(Math.random() * 100000);
-            let newNode = {"id": randomId, "name": "server " + randomId};
+            let newNode = {
+              id: randomId,
+              name: "server " + randomId,
+              shape: Math.random() > 0.5 ? "circle" : "rect"
+            };
             if (randomNode.x) {
               newNode.x = randomNode.x;
               newNode.y = randomNode.y;
@@ -96,7 +100,7 @@ class App {
             // setTimeout(() => initNodes(), 500);
             console.log("no nodes");
           }
-        }, 50)
+        }, 5);
 
       }, 500);
 
