@@ -7,8 +7,9 @@ export class D3ForceGraph2 extends D3ForceGraph {
 
   getRadius(d) {
     const min = 5;
-    const max = 35;
-    let r = Math.trunc(5000 / (d.id || 1));
+    const max = 25;
+    let x = Math.abs(50000 - (d.id || 1)) / 50000;
+    let r = Math.trunc(x * max);
     if (r < min) r = min;
     if (r > max) r = max;
 

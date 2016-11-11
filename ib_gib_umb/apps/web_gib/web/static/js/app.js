@@ -68,6 +68,39 @@ class App {
       graph.init();
 
       setTimeout(() => {
+        initNodes();
+
+        let count = 0;
+        let interval = setInterval(() => {
+          console.log("adding from app.js")
+          let randomIndex = Math.trunc(Math.random() * graph.graphData.nodes.length);
+          let randomNode = graph.graphData.nodes[randomIndex];
+          if (randomNode) {
+            let randomId = Math.trunc(Math.random() * 100000);
+            let newNode = {"id": randomId, "name": "server " + randomId};
+            if (randomNode.x) {
+              newNode.x = randomNode.x;
+              newNode.y = randomNode.y;
+            }
+            let newLink = {source: randomNode.id, target: randomId};
+            graph.add([newNode], [newLink]);
+            count ++;
+            if (count % 100 === 0) {
+              console.log(`count: ${count}`)
+              if (count % 2000 === 0) {
+                clearInterval(interval);
+              }
+            }
+          } else {
+            // debugger;
+            // setTimeout(() => initNodes(), 500);
+            console.log("no nodes");
+          }
+        }, 50)
+
+      }, 500);
+
+      function initNodes() {
         let initialCount = 10;
         let nodes = [ {"id": 0, "name": "root node"} ];
         let links = [];
@@ -82,31 +115,7 @@ class App {
         }
 
         graph.add(nodes, links);
-
-        let count = 0;
-        let interval = setInterval(() => {
-          let randomIndex = Math.trunc(Math.random() * graph.graphData.nodes.length);
-          let randomNode = graph.graphData.nodes[randomIndex];
-          let randomId = Math.trunc(Math.random() * 100000);
-          let newNode = {"id": randomId, "name": "server " + randomId};
-          if (randomNode.x) {
-            newNode.x = randomNode.x;
-            newNode.y = randomNode.y;
-          }
-          let newLink = {source: randomNode.id, target: randomId};
-          graph.add([newNode], [newLink]);
-          count ++;
-          if (count % 100 === 0) {
-            console.log(`count: ${count}`)
-            if (count % 2000 === 0) {
-              clearInterval(interval);
-            }
-          }
-
-        }, 10)
-
-      }, 500);
-
+      }
 
       // let nodes = [
       //   {"id": 22, "name": "server 22"},

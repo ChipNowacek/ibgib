@@ -5,19 +5,45 @@ export class D3ForceGraph {
     let t = this;
 
     t.graphDiv = graphDiv;
-    t.rect = t.graphDiv.getBoundingClientRect();
-    t.width = t.graphDiv.scrollWidth;
-    t.height = t.graphDiv.scrollHeight;
-    t.center = {x: t.width / 2, y: t.height / 2};
-
     t.svgId = svgId;
-    t.updateRefCount = 0;
+
+    t.initResize();
+    t.graphData = { "nodes": [], "links": [] };
+  }
+
+  initResize() {
+    let t = this;
+
+    window.onresize = () => {
+      const debounceMs = 250;
+
+      if (t.resizeTimer) { clearTimeout(t.resizeTimer); }
+
+      t.resizeTimer = setTimeout(() => {
+        // For some reason, when resizing vertically, it doesn't always trigger
+        // the graph itself to change sizes. So we're checking the parent.
+        let nowWidth = t.graphDiv.parentNode.scrollWidth;
+        let nowHeight = t.graphDiv.parentNode.scrollHeight;
+        if (nowWidth !== t.parentWidth || nowHeight !== t.parentHeight) {
+          // Completely restart the graph
+          // I can't figure out how to cache/restore the zoom transform.
+          t.destroy();
+          t.init();
+        }
+      }, debounceMs);
+    };
   }
 
   init() {
     let t = this;
 
-    t.graphData = { "nodes": [], "links": [] };
+    t.rect = t.graphDiv.getBoundingClientRect();
+    t.width = t.graphDiv.scrollWidth;
+    t.height = t.graphDiv.scrollHeight;
+    t.parentWidth = t.graphDiv.parentNode.scrollWidth;
+    t.parentHeight = t.graphDiv.parentNode.scrollHeight;
+    t.center = {x: t.width / 2, y: t.height / 2};
+
 
     // graph area
     let svg = d3.select(t.graphDiv)
@@ -25,9 +51,11 @@ export class D3ForceGraph {
       .attr('id', t.svgId)
       .attr('width', t.width)
       .attr('height', t.height);
+    t.svg = svg;
 
     // Needs to be second, just after the svg itself.
     let background = t.initBackground(t, svg);
+    t.background = background;
     // background
 
     // Holds child components (nodes, links), i.e. all but the background
@@ -50,25 +78,15 @@ export class D3ForceGraph {
         .attr("class", "nodes");
     t.graphNodesGroup = graphNodesGroup;
 
-    let zoom =
+    t.zoom =
       d3.zoom()
         .on("zoom", () => t.handleZoom(svgGroup));
-    background.call(zoom);
-
+    background.call(t.zoom);
 
     let simulation = t.initSimulation();
     t.simulation = simulation;
 
-    // update();
-    t.update(t, simulation, graphNodesGroup, graphLinksGroup);
-
-    function getForceVelocityDecay(d) { return 0.25; }
-    function getForceLinkDistance(d) { return 55; }
-    function getForceStrength(d) { return 0.8; }
-    function getForceChargeStrength(d) { return -25; }
-
-
-
+    t.update();
   }
 
   initBackground(t, svg) {
@@ -104,7 +122,8 @@ export class D3ForceGraph {
   getRadius(d) {
     const min = 5;
     const max = 50;
-    let r = Math.trunc(500 / (d.id || 1));
+    let x = Math.abs(50000 - (d.id || 1)) / 50000;
+    let r = Math.trunc(x * 100);
     if (r < min) r = min;
     if (r > max) r = max;
 
@@ -150,20 +169,22 @@ export class D3ForceGraph {
       `scale(${d3.event.transform.k})`);
   }
 
-  update(t, simulation, graphNodesGroup, graphLinksGroup) {
+  update() {
+    let t = this;
+
     let nodes = t.graphData.nodes;
     let links = t.graphData.links;
 
     // t.initDrag();
     let drag =
       d3.drag()
-        .on("start", d => t.handleDragStarted(d, simulation))
+        .on("start", d => t.handleDragStarted(d, t.simulation))
         .on("drag", d => t.handleDragged(d))
-        .on("end", d => t.handleDragEnded(d, simulation));
+        .on("end", d => t.handleDragEnded(d, t.simulation));
 
     // nodes
     let graphNodesData =
-      graphNodesGroup
+      t.graphNodesGroup
         .selectAll("g")
         .data(nodes, d => d.id);
     let graphNodesEnter =
@@ -206,10 +227,11 @@ export class D3ForceGraph {
     // merge
     graphNodesData =
       graphNodesEnter.merge(graphNodesData);
+    t.graphNodesData = graphNodesData;
 
     // links
     let graphLinksData =
-      graphLinksGroup
+      t.graphLinksGroup
         .selectAll("line")
         .data(links);
     let graphLinksEnter =
@@ -223,32 +245,37 @@ export class D3ForceGraph {
     // merge
     graphLinksData =
       graphLinksEnter.merge(graphLinksData);
+    t.graphLinksData = graphLinksData;
 
-    simulation
+    t.simulation
       .nodes(nodes)
-      .on("tick", handleTicked)
+      .on("tick", () => t.handleTicked())
       .on("end", () => t.handleEnd());
 
-    simulation
+    t.simulation
       .force("link")
       .links(links);
+  }
 
-    function handleTicked() {
-      // let t = this;
-      // console.log('ticked')
+  handleTicked() {
+    let t = this;
+    // console.log('ticked')
 
-      graphLinksData
+    try {
+      // Update the link Positions
+      t.graphLinksData
         .attr("x1", d => d.source.x)
         .attr("y1", d => d.source.y)
         .attr("x2", d => d.target.x)
         .attr("y2", d => d.target.y);
 
-      // Translate the groups
-      graphNodesData
+      // Translate the node groups
+      t.graphNodesData
           .attr("transform", d => {
-            // console.log(`d.x: ${d.x}`)
-            return 'translate(' + [d.x, d.y] + ')';
+              return 'translate(' + [d.x, d.y] + ')';
           });
+    } catch (e) {
+      console.log("errored tick")
     }
   }
 
@@ -262,8 +289,7 @@ export class D3ForceGraph {
       linksToAdd.forEach(l => t.graphData.links.push(l));
     }
 
-    // update();
-    t.update(t, t.simulation, t.graphNodesGroup, t.graphLinksGroup)
+    t.update();
     t.simulation.restart();
     t.simulation.alpha(1);
   }
@@ -272,7 +298,6 @@ export class D3ForceGraph {
     console.log(`dToRemove: ${JSON.stringify(dToRemove)}`)
 
     let t = this;
-    // debugger;
     let currentNodes = t.graphData.nodes;
     let currentLinks = t.graphData.links;
     let nIndex = currentNodes.indexOf(dToRemove);
@@ -288,8 +313,7 @@ export class D3ForceGraph {
       currentLinks.splice(lIndex, 1);
     })
 
-    t.update(t, t.simulation, t.graphNodesGroup, t.graphLinksGroup)
-    // update();
+    t.update();
     t.simulation.restart();
     t.simulation.alpha(1);
   }
@@ -298,8 +322,7 @@ export class D3ForceGraph {
     console.log(`node clicked: ${JSON.stringify(d)}`);
 
     let t = this;
-
-    let newId = Math.trunc(Math.random() * 1000);
+    let newId = Math.trunc(Math.random() * 100000);
     let newNode = {"id": newId, "name": "server 22", x: d.x, y: d.y};
     let newNodes = [newNode];
     let newLinks = [{source: d.id, target: newNode.id}]
@@ -309,5 +332,29 @@ export class D3ForceGraph {
 
   handleEnd() {
     console.log("end yo");
+  }
+
+  // getForceVelocityDecay(d) { return 0.25; }
+  // getForceLinkDistance(d) { return 55; }
+  // getForceStrength(d) { return 0.8; }
+  // getForceChargeStrength(d) { return -25; }
+
+  destroy() {
+    let t = this;
+
+    t.simulation.stop();
+    t.simulation = null;
+    t.graphNodesGroup = null;
+    t.graphLinksGroup = null;
+    t.graphLinksData = null;
+    t.graphNodesData = null;
+    t.zoom = null;
+
+    d3.select(`#${t.svgId}`).remove();
+    t.svg = null;
+
+    d3.select(t.background).remove();
+    t.background = null;
+    // t.graphData = null;
   }
 }
