@@ -26,8 +26,8 @@
 
 // import { IbScape } from "./ib-scape";
 // import { IbScape } from "./dyn-ib-scape";
-import { D3ForceGraph } from "./graphs/d3-force-graph";
-import { D3ForceGraph2 } from "./graphs/d3-force-graph2";
+import { DynamicD3ForceGraph } from "./graphs/dynamic-d3-force-graph";
+import { DynamicD3ForceGraph2 } from "./graphs/dynamic-d3-force-graph2";
 import { IbGibCache } from "./services/ibgib-cache";
 import { IbGibImageProvider } from "./services/ibgib-image-provider";
 
@@ -64,17 +64,28 @@ class App {
       // let data = baseD3JsonPath + ibgib;
       // this.ibScape.update(data);
 
-      let graph = new D3ForceGraph2(graphDiv, "testSvgId");
+      let graph = new DynamicD3ForceGraph(graphDiv, "testSvgId");
       graph.init();
 
+      let graphDiv2 = document.createElement('div');
+      let graphDiv2Id = "graphDiv2";
+      graphDiv2.id = graphDiv2Id;
+      graphDiv2.className = "test-graph-div";
+      graphDiv.parentNode.appendChild(graphDiv2);
+      let graph2 = new DynamicD3ForceGraph2(graphDiv2, "testSvgId2");
+      graph2.init();
+
       setTimeout(() => {
-        initNodes();
+        initNodes(graph);
+        initNodes(graph2);
 
         let count = 0;
         let interval = setInterval(() => {
+          let targetGraph = Math.random() > 0.5 ? graph : graph2;
+
           // console.log("adding from app.js")
-          let randomIndex = Math.trunc(Math.random() * graph.graphData.nodes.length);
-          let randomNode = graph.graphData.nodes[randomIndex];
+          let randomIndex = Math.trunc(Math.random() * targetGraph.graphData.nodes.length);
+          let randomNode = targetGraph.graphData.nodes[randomIndex];
           if (randomNode) {
             let randomId = Math.trunc(Math.random() * 100000);
             let newNode = {
@@ -87,7 +98,7 @@ class App {
               newNode.y = randomNode.y;
             }
             let newLink = {source: randomNode.id, target: randomId};
-            graph.add([newNode], [newLink]);
+            targetGraph.add([newNode], [newLink]);
             count ++;
             if (count % 100 === 0) {
               console.log(`count: ${count}`)
@@ -104,7 +115,7 @@ class App {
 
       }, 500);
 
-      function initNodes() {
+      function initNodes(g) {
         let initialCount = 10;
         let nodes = [ {"id": 0, "name": "root node"} ];
         let links = [];
@@ -118,7 +129,7 @@ class App {
           links.push(newLink);
         }
 
-        graph.add(nodes, links);
+        g.add(nodes, links);
       }
 
       // let nodes = [
@@ -133,6 +144,7 @@ class App {
 
       // graph.add(nodes, links);
     }
+
 
 
 

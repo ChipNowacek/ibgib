@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 
-export class D3ForceGraph {
+export class DynamicD3ForceGraph {
   constructor(graphDiv, svgId) {
     let t = this;
 
@@ -65,7 +65,38 @@ export class D3ForceGraph {
     };
   }
 
+  /**
+   * Initializes the graph using `this.graphDiv`. This includes building the
+   * root `svg` element, the background, the simulation, and some other
+   * fundamental pieces.
+   */
   init() {
+    let t = this;
+
+    t.initGraphDiv();
+
+    t.initSvg();
+
+    // Needs to be second, just after the svg itself.
+    t.initBackground();
+
+    // Holds child components (nodes, links), i.e. all but the background
+    t.initSvgGroup();
+
+    t.initBackgroundZoom();
+
+    t.initGraphLinksGroup();
+
+    // Nodes must init **after** links, so that nodes show up on top.
+    t.initGraphNodesGroup();
+
+    t.initSimulation();
+
+    t.initNodeDrag();
+
+    t.update();
+  }
+  initGraphDiv() {
     let t = this;
 
     t.rect = t.graphDiv.getBoundingClientRect();
@@ -74,94 +105,106 @@ export class D3ForceGraph {
     t.parentWidth = t.graphDiv.parentNode.scrollWidth;
     t.parentHeight = t.graphDiv.parentNode.scrollHeight;
     t.center = {x: t.width / 2, y: t.height / 2};
+  }
+  initSvg() {
+    let t = this;
 
     // graph area
-    let svg = d3.select(t.graphDiv)
+    t.svg = d3.select(t.graphDiv)
       .append("svg")
       .attr('id', t.svgId)
       .attr('width', t.width)
       .attr('height', t.height);
-    t.svg = svg;
-
-    // Needs to be second, just after the svg itself.
-    t.background = t.initBackground(t, svg);
-
-    // Holds child components (nodes, links), i.e. all but the background
-    let svgGroup = svg
-        .append('svg:g')
-          .attr("id", "svgGroup");
-    t.svgGroup = svgGroup;
-
-    let graphLinksGroup =
-      svgGroup
-        .append("g")
-        .attr("id", () => t.getGraphLinksGroupId())
-        .attr("class", "links");
-    t.graphLinksGroup = graphLinksGroup;
-
-    let graphNodesGroup =
-      svgGroup
-        .append("g")
-        .attr("id", () => t.getGraphNodesGroupId())
-        .attr("class", "nodes");
-    t.graphNodesGroup = graphNodesGroup;
-
-    t.zoom =
-      d3.zoom()
-        .on("zoom", () => t.handleZoom(svgGroup));
-    t.background.call(t.zoom);
-
-    let simulation = t.initSimulation();
-    t.simulation = simulation;
-
-    t.update();
   }
+  initBackground(svg) {
+    let t = this;
 
-  initBackground(t, svg) {
-    let result = svg
+    t.background = t.svg
       .append("rect")
       .attr("fill", () => t.getBackgroundFill())
-      .attr("class", "view")
+      // .attr("class", "view")
       .attr("x", 0.5)
       .attr("y", 0.5)
       .attr("width", t.width - 1)
       .attr("height", t.height - 1)
       .on("click", () => t.handleBackgroundClicked());
-
-    return result;
   }
+  initSvgGroup() {
+    let t = this;
 
+    t.svgGroup = t.svg
+        .append('svg:g')
+          .attr("id", "svgGroup");
+  }
+  initGraphLinksGroup() {
+    let t = this;
+
+    t.graphLinksGroup =
+      t.svgGroup
+        .append("g")
+        .attr("id", () => t.getGraphLinksGroupId())
+        .attr("class", "links");
+  }
+  initGraphNodesGroup() {
+    let t = this;
+
+    t.graphNodesGroup =
+      t.svgGroup
+        .append("g")
+        .attr("id", () => t.getGraphNodesGroupId())
+        .attr("class", "nodes");
+  }
+  initBackgroundZoom() {
+    let t = this;
+
+    t.zoom =
+      d3.zoom()
+        .on("zoom", () => t.handleZoom(t.svgGroup));
+    t.background.call(t.zoom);
+  }
   initSimulation() {
     let t = this;
 
-    let result =
+    t.simulation =
       d3.forceSimulation()
         .velocityDecay(t.getVelocityDecay())
         .force("link", t.getForceLink())
         .force("charge", t.getForceCharge())
         .force("collide", t.getForceCollide())
         .force("center", t.getForceCenter());
-
-    return result;
   }
-
-  update() {
+  initNodeDrag() {
     let t = this;
-
-    let nodes = t.graphData.nodes;
-    let links = t.graphData.links;
 
     t.drag =
       d3.drag()
-        .on("start", d => t.handleDragStarted(d, t.simulation))
+        .on("start", d => t.handleDragStarted(d))
         .on("drag", d => t.handleDragged(d))
-        .on("end", d => t.handleDragEnded(d, t.simulation));
+        .on("end", d => t.handleDragEnded(d));
+  }
 
-    // nodes
+  /**
+   * Updates the d3 graph after a change to the underlying data, i.e. when
+   * a datapoint is added/removed.
+   */
+  update() {
+    let t = this;
+
+    t.updateNodeDataJoins();
+    t.updateNodeShapes();
+    t.updateNodeLabels();
+    t.updateNodeImages();
+
+    t.updateLinkDataJoins();
+    t.updateSimulation();
+  }
+  updateNodeDataJoins(nodes) {
+    let t = this;
+
     t.graphNodesData =
       t.graphNodesGroup
         .selectAll("g")
-        .data(nodes, d => t.nodeKeyFunction(d));
+        .data(t.graphData.nodes, d => t.nodeKeyFunction(d));
     t.graphNodesEnter =
       t.graphNodesData
         .enter()
@@ -179,28 +222,56 @@ export class D3ForceGraph {
     // merge the enter with the update
     t.graphNodesData =
       t.graphNodesEnter.merge(t.graphNodesData);
+  }
+  updateNodeShapes() {
+    let t = this;
 
-    t.graphNodeShapes = t.initGraphNodeShapes();
+    t.graphNodeCircles =
+      t.graphNodesEnter
+        .filter(d => t.getNodeShape(d) === "circle")
+        .append("circle")
+        .attr("r", d => t.getNodeShapeRadius(d))
+        .attr("fill", d => t.getNodeShapeFill(d));
+
+    t.graphNodeRects =
+      t.graphNodesEnter
+        .filter(d => t.getNodeShape(d) === "rect")
+        .append("rect")
+        .attr("width", d => t.getNodeShapeWidth(d))
+        .attr("height", d => t.getNodeShapeHeight(d))
+        .attr("x", d => Math.trunc(-1/2 * t.getNodeShapeWidth(d)))
+        .attr("y", d => Math.trunc(-1/2 * t.getNodeShapeHeight(d)))
+        .attr("fill", d => t.getNodeShapeFill(d));
+
+    t.graphNodeShapes = t.graphNodeCircles.merge(t.graphNodeRects);
+  }
+  updateNodeLabels() {
+    let t = this;
 
     t.graphNodeLabels =
       t.graphNodesEnter
         .append("text")
-        .attr("id", d => "label_" + d.id)
+        .attr("id", d => t.getNodeLabelId(d))
         .attr("font-size", `10px`)
         .attr("text-anchor", "middle")
         .text(d => `${d.id}`);
+  }
+  updateNodeImages() {
+    let t = this;
 
     t.graphImageDefs =
       t.graphNodesEnter
         .append("defs")
-        .attr("id", d => t.getImageDefId(d));
-
+        .attr("id", d => t.getNodeImageDefId(d));
+  }
+  updateLinkDataJoins() {
+    let t = this;
 
     // links
     t.graphLinksData =
       t.graphLinksGroup
         .selectAll("line")
-        .data(links);
+        .data(t.graphData.links);
     t.graphLinksEnter =
        t.graphLinksData
         .enter()
@@ -212,44 +283,22 @@ export class D3ForceGraph {
     // merge the enter with the update
     t.graphLinksData =
       t.graphLinksEnter.merge(t.graphLinksData);
-
+  }
+  updateSimulation() {
+    let t = this;
 
     // Attach the nodes and links to the simulation.
     t.simulation
-      .nodes(nodes)
+      .nodes(t.graphData.nodes)
       .on("tick", () => t.handleTicked())
       .on("end", () => t.handleEnd());
     t.simulation
       .force("link")
-      .links(links);
+      .links(t.graphData.links);
   }
 
-
-  initGraphNodeShapes() {
-    let t = this;
-
-    let graphNodeCircles =
-      t.graphNodesEnter
-        .filter(d => t.getNodeShape(d) === "circle")
-        .append("circle")
-        .attr("r", d => t.getNodeShapeRadius(d))
-        .attr("fill", d => t.getNodeShapeFill(d));
-
-    let graphNodeRects =
-      t.graphNodesEnter
-        .filter(d => t.getNodeShape(d) === "rect")
-        .append("rect")
-        .attr("width", d => t.getNodeShapeWidth(d))
-        .attr("height", d => t.getNodeShapeHeight(d))
-        .attr("x", d => Math.trunc(-1/2 * t.getNodeShapeWidth(d)))
-        .attr("y", d => Math.trunc(-1/2 * t.getNodeShapeHeight(d)))
-        .attr("fill", d => t.getNodeShapeFill(d));
-
-    return graphNodeCircles.merge(graphNodeRects);
-  }
-
-  handleDragStarted(d, simulation) {
-    if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+  handleDragStarted(d) {
+    if (!d3.event.active) this.simulation.alphaTarget(0.1).restart();
 
     d.fx = d.x;
     d.fy = d.y;
@@ -264,9 +313,9 @@ export class D3ForceGraph {
     d.fx = d3.event.x;
     d.fy = d3.event.y;
   }
-  handleDragEnded(d, simulation) {
+  handleDragEnded(d) {
     console.log("handleDragEnded")
-    if (!d3.event.active) simulation.alphaTarget(0);
+    if (!d3.event.active) this.simulation.alphaTarget(0);
 
     d.fx = d3.event.x;
     d.fy = d3.event.y;
@@ -274,18 +323,15 @@ export class D3ForceGraph {
     d.fx = undefined;
     d.fy = undefined;
   }
-
   handleBackgroundClicked() {
     console.log(`background clicked in numero 2`);
   }
-
   handleZoom(svgGroup) {
     svgGroup
       .attr("transform",
       `translate(${d3.event.transform.x}, ${d3.event.transform.y})` + " " +
       `scale(${d3.event.transform.k})`);
   }
-
   handleTicked() {
     let t = this;
     // console.log('ticked')
@@ -306,6 +352,29 @@ export class D3ForceGraph {
     } catch (e) {
       console.log("errored tick")
     }
+  }
+  handleNodeClicked(d) {
+    console.log(`node clicked: ${JSON.stringify(d)}`);
+
+    let t = this;
+    let newId = Math.trunc(Math.random() * 100000);
+    let newNode = {"id": newId, "name": "server 22", x: d.x, y: d.y};
+    newNode.shape = Math.random() > 0.5 ? "circle" : "rect";
+    let newNodes = [newNode];
+    let newLinks = [{source: d.id, target: newNode.id}]
+
+    t.add(newNodes, newLinks);
+  }
+  handleNodeContextMenu(d) {
+    let t = this;
+    t.remove(d);
+    d3.event.preventDefault();
+  }
+  handleNodeMouseover(d) {
+    console.log(`d.id: ${d.id}`);
+  }
+  handleEnd() {
+    console.log("end yo");
   }
 
   add(nodesToAdd, linksToAdd) {
@@ -347,32 +416,6 @@ export class D3ForceGraph {
     t.simulation.alpha(1);
   }
 
-  handleNodeClicked(d) {
-    console.log(`node clicked: ${JSON.stringify(d)}`);
-
-    let t = this;
-    let newId = Math.trunc(Math.random() * 100000);
-    let newNode = {"id": newId, "name": "server 22", x: d.x, y: d.y};
-    newNode.shape = Math.random() > 0.5 ? "circle" : "rect";
-    let newNodes = [newNode];
-    let newLinks = [{source: d.id, target: newNode.id}]
-
-    t.add(newNodes, newLinks);
-  }
-
-  handleNodeContextMenu(d) {
-    let t = this;
-    t.remove(d);
-    d3.event.preventDefault();
-  }
-
-  handleNodeMouseover(d) {
-    console.log(`d.id: ${d.id}`);
-  }
-
-  handleEnd() {
-    console.log("end yo");
-  }
 
   // getForceVelocityDecay(d) { return 0.25; }
   // getForceLinkDistance(d) { return 55; }
@@ -382,6 +425,7 @@ export class D3ForceGraph {
   // Svg Framing (svg, svgGroup, links group, nodes group, background)
   getGraphLinksGroupId() { return `links_${this.svgId}`; }
   getGraphNodesGroupId() { return `nodes_${this.svgId}`; }
+  // getBackgroundFill() { return "#F2F7F0"; }
   getBackgroundFill() { return "#F2F7F0"; }
 
   // Force Simulation Config
@@ -399,7 +443,8 @@ export class D3ForceGraph {
 
   // Nodes functions
   nodeKeyFunction(d) { return d.id; }
-  getImageDefId(d) { return "imgDefs_" + d.id; }
+  getNodeLabelId(d) { return "label_" + d.id; }
+  getNodeImageDefId(d) { return "imgDefs_" + d.id; }
   getNodeCursor(d) { return "pointer"; }
   getNodeShape(d) {
     return d.shape && (d.shape === "circle" || d.shape === "rect") ? d.shape : "circle";
