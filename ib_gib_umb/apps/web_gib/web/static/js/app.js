@@ -31,9 +31,6 @@ import { DynamicD3ForceGraph2 } from "./graphs/dynamic-d3-force-graph2";
 import { IbGibCache } from "./services/ibgib-cache";
 import { IbGibImageProvider } from "./services/ibgib-image-provider";
 
-
-// import { getData } from './miserables.js';
-
 class App {
 
   static init(){
@@ -75,6 +72,8 @@ class App {
       let graph2 = new DynamicD3ForceGraph2(graphDiv2, "testSvgId2");
       graph2.init();
 
+      initResize([graph, graph2]);
+
       setTimeout(() => {
         initNodes(graph);
         initNodes(graph2);
@@ -91,7 +90,9 @@ class App {
             let newNode = {
               id: randomId,
               name: "server " + randomId,
-              shape: Math.random() > 0.5 ? "circle" : "rect"
+              shape: Math.random() > 0.5 ? "circle" : "rect",
+              // render: Math.random() > 0.1 ? "image" : ""
+              render: "image"
             };
             if (randomNode.x) {
               newNode.x = randomNode.x;
@@ -100,9 +101,9 @@ class App {
             let newLink = {source: randomNode.id, target: randomId};
             targetGraph.add([newNode], [newLink]);
             count ++;
-            if (count % 100 === 0) {
+            if (count % 10 === 0) {
               console.log(`count: ${count}`)
-              if (count % 2000 === 0) {
+              if (count % 10 === 0) {
                 clearInterval(interval);
               }
             }
@@ -117,12 +118,12 @@ class App {
 
       function initNodes(g) {
         let initialCount = 10;
-        let nodes = [ {"id": 0, "name": "root node"} ];
+        let nodes = [ {"id": 0, "name": "root node", render: "image"} ];
         let links = [];
         for (var i = 1; i < initialCount; i++) {
           let randomIndex = Math.trunc(Math.random() * nodes.length);
           let randomNode = nodes[randomIndex];
-          let newNode = {id: i, name: `node ${i}`};
+          let newNode = {id: i, name: `node ${i}`, render: "image"};
           let newLink = {source: randomIndex, target: newNode.id};
 
           nodes.push(newNode);
@@ -130,6 +131,19 @@ class App {
         }
 
         g.add(nodes, links);
+      }
+
+      function initResize(graphs) {
+        window.onresize = () => {
+          const debounceMs = 250;
+
+          // hack: apparently no static "properties" in ES6, so putting it on window.
+          if (window.resizeTimer) { clearTimeout(window.resizeTimer); }
+
+          window.resizeTimer = setTimeout(() => {
+            graphs.forEach(g => g.handleResize());
+          }, debounceMs);
+        };
       }
 
       // let nodes = [
@@ -144,10 +158,6 @@ class App {
 
       // graph.add(nodes, links);
     }
-
-
-
-
     // if (!this.ibGibChannel) {
     //   this.ibGibChannel = new IbGibChannel();
     //   this.ibGibChannel.connect();
@@ -193,15 +203,6 @@ class App {
     // })
 
   }
-
-  // static sanitize(html){ return $("<div/>").text(html).html() }
-  //
-  // static messageTemplate(msg){
-  //   let username = this.sanitize(msg.user || "anonymous")
-  //   let body     = this.sanitize(msg.body)
-  //
-  //   return(`<p><a href='#'>[${username}]</a>&nbsp; ${body}</p>`)
-  // }
 }
 
 // Init slider

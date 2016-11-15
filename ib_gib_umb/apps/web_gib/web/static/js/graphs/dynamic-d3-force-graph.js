@@ -7,7 +7,6 @@ export class DynamicD3ForceGraph {
     t.graphDiv = graphDiv;
     t.svgId = svgId;
 
-    t.initResize();
     t.graphData = { "nodes": [], "links": [] };
   }
 
@@ -29,6 +28,8 @@ export class DynamicD3ForceGraph {
     t.graphNodeCircles = null;
     t.graphNodeRects = null;
     t.graphNodeLabels = null;
+
+    t.graphNodeImagePatternImage = null;
     t.graphNodeImages = null;
     t.graphImageDefs = null;
 
@@ -42,27 +43,19 @@ export class DynamicD3ForceGraph {
     t.background = null;
   }
 
-  initResize() {
+  handleResize() {
     let t = this;
 
-    window.onresize = () => {
-      const debounceMs = 250;
-
-      if (t.resizeTimer) { clearTimeout(t.resizeTimer); }
-
-      t.resizeTimer = setTimeout(() => {
-        // For some reason, when resizing vertically, it doesn't always trigger
-        // the graph itself to change sizes. So we're checking the parent.
-        let nowWidth = t.graphDiv.parentNode.scrollWidth;
-        let nowHeight = t.graphDiv.parentNode.scrollHeight;
-        if (nowWidth !== t.parentWidth || nowHeight !== t.parentHeight) {
-          // Completely restart the graph
-          // I can't figure out how to cache/restore the zoom transform.
-          t.destroy();
-          t.init();
-        }
-      }, debounceMs);
-    };
+    // For some reason, when resizing vertically, it doesn't always trigger
+    // the graph itself to change sizes. So we're checking the parent.
+    let nowWidth = t.graphDiv.parentNode.scrollWidth;
+    let nowHeight = t.graphDiv.parentNode.scrollHeight;
+    if (nowWidth !== t.parentWidth || nowHeight !== t.parentHeight) {
+      // Completely restart the graph
+      // I can't figure out how to cache/restore the zoom transform.
+      t.destroy();
+      t.init();
+    }
   }
 
   /**
@@ -74,24 +67,15 @@ export class DynamicD3ForceGraph {
     let t = this;
 
     t.initGraphDiv();
-
     t.initSvg();
-
-    // Needs to be second, just after the svg itself.
+    // Needs to be just after the svg itself.
     t.initBackground();
-
     // Holds child components (nodes, links), i.e. all but the background
     t.initSvgGroup();
-
     t.initBackgroundZoom();
-
     t.initGraphLinksGroup();
-
-    // Nodes must init **after** links, so that nodes show up on top.
-    t.initGraphNodesGroup();
-
+    t.initGraphNodesGroup(); // Must init **after** links, so nodes on top
     t.initSimulation();
-
     t.initNodeDrag();
 
     t.update();
@@ -230,6 +214,7 @@ export class DynamicD3ForceGraph {
       t.graphNodesEnter
         .filter(d => t.getNodeShape(d) === "circle")
         .append("circle")
+        .attr("id", d => t.getNodeShapeId(d))
         .attr("r", d => t.getNodeShapeRadius(d))
         .attr("fill", d => t.getNodeShapeFill(d));
 
@@ -237,6 +222,7 @@ export class DynamicD3ForceGraph {
       t.graphNodesEnter
         .filter(d => t.getNodeShape(d) === "rect")
         .append("rect")
+        .attr("id", d => t.getNodeShapeId(d))
         .attr("width", d => t.getNodeShapeWidth(d))
         .attr("height", d => t.getNodeShapeHeight(d))
         .attr("x", d => Math.trunc(-1/2 * t.getNodeShapeWidth(d)))
@@ -255,14 +241,80 @@ export class DynamicD3ForceGraph {
         .attr("font-size", `10px`)
         .attr("text-anchor", "middle")
         .text(d => `${d.id}`);
+    t.graphNodeLabels
+      .append("title")
+      .text(d => t.getNodeTitle(d));
   }
   updateNodeImages() {
     let t = this;
 
-    t.graphImageDefs =
+    t.graphNodesEnter_Images =
       t.graphNodesEnter
+        .filter(d => {
+          return t.getNodeRenderType(d) === "image";
+        });
+
+    t.graphImageDefs =
+      t.graphNodesEnter_Images
         .append("defs")
-        .attr("id", d => t.getNodeImageDefId(d));
+        .attr("id", d => {
+          return t.getNodeImageDefId(d);
+        });
+
+    t.graphImagePatterns =
+      t.graphImageDefs
+        .append("pattern")
+        .attr("id", d => t.getNodeImagePatternId(d))
+        .attr("height", d => t.getNodeImagePatternHeight(d))
+        .attr("width", d => t.getNodeImagePatternWidth(d))
+        .attr("x", 0)
+        .attr("y", 0);
+
+    t.imagePatternBackgrounds_Circle =
+      t.graphImagePatterns
+        .filter(d => t.getNodeShape(d) === "circle")
+        .append("circle")
+        .attr("r", d => t.getNodeShapeRadius(d))
+        .attr("cx", d => t.getNodeShapeRadius(d))
+        .attr("cy", d => t.getNodeShapeRadius(d))
+        .attr("fill", d => t.getNodeImageBackgroundFill(d));
+
+    t.imagePatternBackground_Rect =
+      t.graphImagePatterns
+        .filter(d => t.getNodeShape(d) === "rect")
+        .append("rect")
+        .attr("width", d => t.getNodeShapeWidth(d))
+        .attr("height", d => t.getNodeShapeHeight(d))
+        .attr("cx", d => Math.trunc(t.getNodeShapeWidth(d) / 2))
+        .attr("cy", d => Math.trunc(t.getNodeShapeHeight(d) / 2))
+        .attr("fill", d => t.getNodeImageBackgroundFill(d));
+
+    t.graphNodesEnter_Images
+      .data()
+      .map(d => {
+        console.log(`updating pattern: ${t.getNodeShapeId(d)} in graph ${t.svgId}`)
+        d3.select("#" + t.getNodeShapeId(d))
+          .attr("fill", `url(#${t.getNodeImagePatternId(d)})`)
+          .append("title")
+            .text(d => t.getNodeTitle(d));
+      });
+
+    //
+
+    t.graphNodeImagePatternImage =
+      t.graphImagePatterns
+        .append("image")
+        .attr("id", d => t.getNodeImageId(d))
+        .attr("opacity", 1)
+        .attr("height", d => t.getNodeImageMagicSize(d))
+        .attr("width", d => t.getNodeImageMagicSize(d))
+        .attr("x", d => t.getNodeImageMagicOffset(d))
+        .attr("y", d => t.getNodeImageMagicOffset(d))
+        .attr("xlink:href", d => t.getNodeImageHref(d));
+    // t.graphNodeImagePatternTitle =
+    //   t.graphImagePatterns
+    //     .append("title")
+    //     .text(d => d.id);
   }
   updateLinkDataJoins() {
     let t = this;
@@ -358,8 +410,14 @@ export class DynamicD3ForceGraph {
 
     let t = this;
     let newId = Math.trunc(Math.random() * 100000);
-    let newNode = {"id": newId, "name": "server 22", x: d.x, y: d.y};
-    newNode.shape = Math.random() > 0.5 ? "circle" : "rect";
+    let newNode = {
+      id: newId,
+      name: "server 22",
+      shape: Math.random() > 0.5 ? "circle" : "rect",
+      render: "image",
+      x: d.x,
+      y: d.y
+    };
     let newNodes = [newNode];
     let newLinks = [{source: d.id, target: newNode.id}]
 
@@ -423,8 +481,8 @@ export class DynamicD3ForceGraph {
   // getForceChargeStrength(d) { return -25; }
 
   // Svg Framing (svg, svgGroup, links group, nodes group, background)
-  getGraphLinksGroupId() { return `links_${this.svgId}`; }
-  getGraphNodesGroupId() { return `nodes_${this.svgId}`; }
+  getGraphLinksGroupId() { return `${this.svgId}_links_${this.svgId}`; }
+  getGraphNodesGroupId() { return `${this.svgId}_nodes_${this.svgId}`; }
   // getBackgroundFill() { return "#F2F7F0"; }
   getBackgroundFill() { return "#F2F7F0"; }
 
@@ -443,24 +501,47 @@ export class DynamicD3ForceGraph {
 
   // Nodes functions
   nodeKeyFunction(d) { return d.id; }
-  getNodeLabelId(d) { return "label_" + d.id; }
-  getNodeImageDefId(d) { return "imgDefs_" + d.id; }
+  getNodeLabelId(d) { return this.svgId + "_label_" + d.id; }
+  getNodeRenderType(d) { return d.render ? d.render : "default"; }
+  getNodeShapeId(d) { return this.svgId + "_shape_" + d.id; }
   getNodeCursor(d) { return "pointer"; }
+  getNodeTitle(d) { return d.id; }
   getNodeShape(d) {
     return d.shape && (d.shape === "circle" || d.shape === "rect") ? d.shape : "circle";
   }
   getNodeShapeRadius(d) {
     // console.log("getNodeShapeRadius");
-    const min = 2;
-    const max = 25;
+    const min = 15;
+    const max = 45;
     let x = Math.abs(50000 - (d.id || 1)) / 50000;
     let r = Math.trunc(x * 100);
     if (r < min) r = min;
     if (r > max) r = max;
+
+    d.r = r;
 
     return r;
   }
   getNodeShapeHeight(d) { return (2 * this.getNodeShapeRadius(d)); }
   getNodeShapeWidth(d) { return (2 * this.getNodeShapeRadius(d)); }
   getNodeShapeFill(d) { return "lightgreen"; }
+
+  getNodeImageGroupId(d) {
+    console.log("getNodeImageGroupId")
+    return this.svgId + "_imgGroup_" + d.id;
+  }
+  getNodeImageDefId(d) { return this.svgId + "_imgDefs_" + d.id; }
+  getNodeImagePatternId(d) { return this.svgId + "_imgPattern_" + d.id; }
+  getNodeImagePatternHeight(d) { return 1; }
+  getNodeImagePatternWidth(d) { return 1; }
+  getNodeImageId(d) { return this.svgId + "_img_" + d.id; }
+  getNodeImageHref(d) {
+    d.imageHref =
+      "/android-chrome-512x512.png";
+      // "https://www.ibgib.com/files/85C337DD86DB82A67DDA0364C0DF2561E1B3BF1ED04BBB135A3020F3EF75A0A1.jpg";
+    return d.imageHref;
+  }
+  getNodeImageBackgroundFill(d) { return "transparent"; }
+  getNodeImageMagicSize(d) { return 55 * (d.r / 25); }
+  getNodeImageMagicOffset(d) { return -2.5 * (d.r / 25); }
 }

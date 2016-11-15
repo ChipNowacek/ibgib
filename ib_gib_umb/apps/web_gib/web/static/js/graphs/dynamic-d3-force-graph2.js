@@ -16,5 +16,5 @@ export class DynamicD3ForceGraph2 extends DynamicD3ForceGraph {
              .id(d => d.id);
   }
 
-  getNodeShapeFill(d) { return "darkblue"; }
+  getNodeShapeFill(d) { return "lightblue"; }
 }

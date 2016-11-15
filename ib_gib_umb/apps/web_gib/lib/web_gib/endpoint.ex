@@ -11,7 +11,7 @@ defmodule WebGib.Endpoint do
   # when deploying your static files in production.
   plug Plug.Static,
     at: "/", from: :web_gib, gzip: false,
-    only: ~w(css fonts images js files favicon.ico favicon-32x32.png favicon-16x16.png favicon-48x48.png apple-touch-icon.png manifest.json safari-pinned-tab.svg android-chrome-192x192.png android-chrome-512x512.png browserconfig.xml mstile-150x150.png robots.txt)
+    only: ~w(css fonts images js files favicon.ico favicon-32x32.png favicon-16x16.png favicon48x48.ico apple-touch-icon.png manifest.json safari-pinned-tab.svg android-chrome-192x192.png android-chrome-512x512.png browserconfig.xml mstile-150x150.png robots.txt)
 
   plug Plug.Static,
     at: "files/", from: @upload_files_path, gzip: false
