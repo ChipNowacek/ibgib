@@ -70,17 +70,19 @@ class App {
       graphDiv2.className = "test-graph-div";
       graphDiv.parentNode.appendChild(graphDiv2);
       let graph2 = new DynamicD3ForceGraph2(graphDiv2, "testSvgId2");
-      graph2.init();
+      graph.addChildGraph(graph2, /*shareDataReference*/ false);
+      // graph2.init();
 
       initResize([graph, graph2]);
 
       setTimeout(() => {
         initNodes(graph);
-        initNodes(graph2);
+        // initNodes(graph2);
 
         let count = 0;
         let interval = setInterval(() => {
-          let targetGraph = Math.random() > 0.5 ? graph : graph2;
+          // let targetGraph = Math.random() > 0.5 ? graph : graph2;
+          let targetGraph = graph; // testing children
 
           // console.log("adding from app.js")
           let randomIndex = Math.trunc(Math.random() * targetGraph.graphData.nodes.length);
@@ -99,11 +101,11 @@ class App {
               newNode.y = randomNode.y;
             }
             let newLink = {source: randomNode.id, target: randomId};
-            targetGraph.add([newNode], [newLink]);
+            targetGraph.add([newNode], [newLink], /*updateParent*/ true, /*updateChildren*/ true);
             count ++;
-            if (count % 10 === 0) {
+            if (count % 100 === 0) {
               console.log(`count: ${count}`)
-              if (count % 10 === 0) {
+              if (count % 1000 === 0) {
                 clearInterval(interval);
               }
             }
@@ -118,19 +120,24 @@ class App {
 
       function initNodes(g) {
         let initialCount = 10;
-        let nodes = [ {"id": 0, "name": "root node", render: "image"} ];
+        let nodes = [ {"id": 0, "name": "root node", render: "image", shape: "circle" } ];
         let links = [];
         for (var i = 1; i < initialCount; i++) {
           let randomIndex = Math.trunc(Math.random() * nodes.length);
           let randomNode = nodes[randomIndex];
-          let newNode = {id: i, name: `node ${i}`, render: "image"};
+          let newNode = {
+            id: i,
+            name: `node ${i}`,
+            render: "image",
+            shape: Math.random() > 0.5 ? "circle" : "rect"
+          };
           let newLink = {source: randomIndex, target: newNode.id};
 
           nodes.push(newNode);
           links.push(newLink);
         }
 
-        g.add(nodes, links);
+        g.add(nodes, links, /*updateParent*/ true, /*updateChildren*/ true);
       }
 
       function initResize(graphs) {

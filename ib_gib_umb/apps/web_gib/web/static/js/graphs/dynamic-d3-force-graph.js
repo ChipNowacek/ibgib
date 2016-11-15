@@ -8,6 +8,7 @@ export class DynamicD3ForceGraph {
     t.svgId = svgId;
 
     t.graphData = { "nodes": [], "links": [] };
+    t.children = [];
   }
 
   destroy() {
@@ -41,21 +42,6 @@ export class DynamicD3ForceGraph {
 
     d3.select(t.background).remove();
     t.background = null;
-  }
-
-  handleResize() {
-    let t = this;
-
-    // For some reason, when resizing vertically, it doesn't always trigger
-    // the graph itself to change sizes. So we're checking the parent.
-    let nowWidth = t.graphDiv.parentNode.scrollWidth;
-    let nowHeight = t.graphDiv.parentNode.scrollHeight;
-    if (nowWidth !== t.parentWidth || nowHeight !== t.parentHeight) {
-      // Completely restart the graph
-      // I can't figure out how to cache/restore the zoom transform.
-      t.destroy();
-      t.init();
-    }
   }
 
   /**
@@ -150,21 +136,23 @@ export class DynamicD3ForceGraph {
     let t = this;
 
     t.simulation =
-      d3.forceSimulation()
-        .velocityDecay(t.getVelocityDecay())
-        .force("link", t.getForceLink())
-        .force("charge", t.getForceCharge())
-        .force("collide", t.getForceCollide())
-        .force("center", t.getForceCenter());
+        d3.forceSimulation()
+          .velocityDecay(t.getVelocityDecay())
+          .force("link", t.getForceLink())
+          .force("charge", t.getForceCharge())
+          .force("collide", t.getForceCollide())
+          .force("center", t.getForceCenter());
   }
   initNodeDrag() {
     let t = this;
 
     t.drag =
-      d3.drag()
-        .on("start", d => t.handleDragStarted(d))
-        .on("drag", d => t.handleDragged(d))
-        .on("end", d => t.handleDragEnded(d));
+      t.isChild && t.shareDataReference ?
+        t.parent.drag :
+        d3.drag()
+          .on("start", d => t.handleDragStarted(d))
+          .on("drag", d => t.handleDragged(d))
+          .on("end", d => t.handleDragEnded(d));
   }
 
   /**
@@ -216,7 +204,9 @@ export class DynamicD3ForceGraph {
         .append("circle")
         .attr("id", d => t.getNodeShapeId(d))
         .attr("r", d => t.getNodeShapeRadius(d))
-        .attr("fill", d => t.getNodeShapeFill(d));
+        .attr("fill", d => t.getNodeShapeFill(d))
+        .attr("stroke", d => t.getNodeBorderStroke(d))
+        .attr("stroke-width", d => t.getNodeBorderStrokeWidth(d));
 
     t.graphNodeRects =
       t.graphNodesEnter
@@ -227,7 +217,9 @@ export class DynamicD3ForceGraph {
         .attr("height", d => t.getNodeShapeHeight(d))
         .attr("x", d => Math.trunc(-1/2 * t.getNodeShapeWidth(d)))
         .attr("y", d => Math.trunc(-1/2 * t.getNodeShapeHeight(d)))
-        .attr("fill", d => t.getNodeShapeFill(d));
+        .attr("fill", d => t.getNodeShapeFill(d))
+        .attr("stroke", d => t.getNodeBorderStroke(d))
+        .attr("stroke-width", d => t.getNodeBorderStrokeWidth(d));
 
     t.graphNodeShapes = t.graphNodeCircles.merge(t.graphNodeRects);
   }
@@ -350,13 +342,17 @@ export class DynamicD3ForceGraph {
   }
 
   handleDragStarted(d) {
-    if (!d3.event.active) this.simulation.alphaTarget(0.1).restart();
+    if (!d3.event.active) {
+      this.simulation.alphaTarget(0.1).restart();
+      this.children.filter(child => child.shareDataReference === true).forEach(child => child.simulation.alphaTarget(0.1).restart());
+      if (this.isChild && this.parent && this.shareDataReference) {
+        this.parent.simulation.alphaTarget(0.1).restart();
+      }
+    }
 
     d.fx = d.x;
     d.fy = d.y;
 
-    // t.x0 = d3.event.x;
-    // t.y0 = d3.event.y;
     console.log(`drag started d.fx: ${d.fx}`)
   }
   handleDragged(d) {
@@ -367,7 +363,13 @@ export class DynamicD3ForceGraph {
   }
   handleDragEnded(d) {
     console.log("handleDragEnded")
-    if (!d3.event.active) this.simulation.alphaTarget(0);
+    if (!d3.event.active) {
+      this.simulation.alphaTarget(0);
+      this.children.filter(child => child.shareDataReference).forEach(child => child.simulation.alphaTarget(0));
+      if (this.isChild && this.parent && this.shareDataReference) {
+        this.parent.simulation.alphaTarget(0);
+      }
+    }
 
     d.fx = d3.event.x;
     d.fy = d3.event.y;
@@ -421,12 +423,12 @@ export class DynamicD3ForceGraph {
     let newNodes = [newNode];
     let newLinks = [{source: d.id, target: newNode.id}]
 
-    t.add(newNodes, newLinks);
+    t.add(newNodes, newLinks, /*updateParent*/ true, /*updateChildren*/ true);
   }
   handleNodeContextMenu(d) {
     let t = this;
-    t.remove(d);
     d3.event.preventDefault();
+    t.remove(d, /*updateParent*/ true, /*updateChildren*/ true);
   }
   handleNodeMouseover(d) {
     console.log(`d.id: ${d.id}`);
@@ -434,8 +436,22 @@ export class DynamicD3ForceGraph {
   handleEnd() {
     console.log("end yo");
   }
+  handleResize() {
+    let t = this;
 
-  add(nodesToAdd, linksToAdd) {
+    // For some reason, when resizing vertically, it doesn't always trigger
+    // the graph itself to change sizes. So we're checking the parent.
+    let nowWidth = t.graphDiv.parentNode.scrollWidth;
+    let nowHeight = t.graphDiv.parentNode.scrollHeight;
+    if (nowWidth !== t.parentWidth || nowHeight !== t.parentHeight) {
+      // Completely restart the graph
+      // I can't figure out how to cache/restore the zoom transform.
+      t.destroy();
+      t.init();
+    }
+  }
+
+  add(nodesToAdd, linksToAdd, updateParent, updateChildren) {
     let t = this;
 
     if (nodesToAdd) {
@@ -448,21 +464,67 @@ export class DynamicD3ForceGraph {
     t.update();
     t.simulation.restart();
     t.simulation.alpha(1);
-  }
 
-  remove(dToRemove) {
+    if (updateParent || updateChildren) {
+      if (t.isChild) {
+        if (t.shareDataReference) {
+          // child sharing data, just update
+          t.updateParent();
+        } else {
+          // child not sharing data passing clones to parent
+
+          // If we don't share a data reference then we must actually duplicate
+          // this call on the parent with duplicate json.
+          let nodesToAddClone = nodesToAdd.map(n => t.cloneJson(n));
+          let srcNodes = nodesToAddClone.concat(t.graphData.nodes);
+          let linksToAddClone = linksToAdd.map(l => {
+            let newSource = srcNodes.filter(n => t.nodeKeyFunction(n) === t.nodeKeyFunction(l.source))[0];
+            let newTarget = srcNodes.filter(n => t.nodeKeyFunction(n) === t.nodeKeyFunction(l.target))[0];
+
+            return { source: newSource.id, target: newTarget.id };
+          });
+
+          t.parent.add(nodesToAddClone, linksToAddClone, /*updateParent*/ false, /*updateChildren*/ false);
+        }
+      } else {
+        // If we don't share a data reference then we must actually duplicate
+        // this call on the parent with duplicate json.
+        let nodesToAddClone = nodesToAdd.map(n => t.cloneJson(n));
+        let srcNodes = nodesToAdd.concat(t.graphData.nodes);
+        let linksToAddClone = linksToAdd.map(l => {
+          let newSource = srcNodes.filter(n => t.nodeKeyFunction(n) === t.nodeKeyFunction(l.source))[0];
+          let newTarget = srcNodes.filter(n => t.nodeKeyFunction(n) === t.nodeKeyFunction(l.target))[0];
+
+          return { source: newSource.id, target: newTarget.id };
+        });
+
+        // For children that do not share data
+        t.children
+          .filter(child => !child.shareDataReference)
+          .map(child => child.add(nodesToAddClone, linksToAddClone, /*updateParent*/ false, /*updateChildren*/ false));
+
+        // Update children that do share data
+        t.updateChildrenYo(/*onlyShareData*/ true);
+      }
+    }
+  }
+  remove(dToRemove, updateParent, updateChildren) {
     console.log(`dToRemove: ${JSON.stringify(dToRemove)}`)
 
     let t = this;
     let currentNodes = t.graphData.nodes;
     let currentLinks = t.graphData.links;
-    let nIndex = currentNodes.indexOf(dToRemove);
+    let toRemoveRef = currentNodes.filter(n => t.nodeKeyFunction(n) === t.nodeKeyFunction(dToRemove))[0];
+    let nIndex = currentNodes.indexOf(toRemoveRef);
     if (nIndex > -1) {
       currentNodes.splice(nIndex, 1);
+    } else {
+      console.warn("remove not found")
     }
 
     let toRemoveLinks = currentLinks.filter(l => {
-      return l.source.id === dToRemove.id || l.target.id === dToRemove.id;
+      return t.nodeKeyFunction(l.source) === t.nodeKeyFunction(dToRemove) ||
+        t.nodeKeyFunction(l.target) === t.nodeKeyFunction(dToRemove);
     });
     toRemoveLinks.forEach(l => {
       let lIndex = currentLinks.indexOf(l);
@@ -472,6 +534,75 @@ export class DynamicD3ForceGraph {
     t.update();
     t.simulation.restart();
     t.simulation.alpha(1);
+
+    if (updateParent && t.isChild) {
+      if (t.shareDataReference) {
+        // We are sharing a reference to the same data object in memory, so
+        // we only need to update the parent.
+        t.updateParent();
+      } else {
+        // We're not sharing the data, so duplicate the call
+        t.parent.remove(dToRemove, /*updateParent*/ false, /*updateChildren*/ false);
+      }
+    } else if (updateChildren && !t.isChild) {
+      // For children that do not share data
+      t.children
+        .filter(child => !child.shareDataReference)
+        .map(child => child.remove(dToRemove, /*updateParent*/ false, /*updateChildren*/ false));
+
+      // Update children that do share data
+      t.updateChildrenYo(/*onlyShareData*/ true);
+    }
+  }
+  addChildGraph(child, shareDataReference) {
+    let t = this;
+    t.children.push(child);
+    child.isChild = true;
+    child.parent = t;
+    child.shareDataReference = shareDataReference;
+
+    child.graphData = shareDataReference ? t.graphData : t.copyGraphData();
+
+    child.init();
+    t.updateChildrenYo(/*onlyShareData*/ false);
+  }
+  destroyChildGraph(childGraph) {
+    let index = this.children.indexOf(childGraph);
+    if (index > -1) {
+      this.children.splice(index, 1);
+      childGraph.destroy();
+    } else {
+      console.warn("Tried to remove child from d3 force graph but it wasn't found.");
+    }
+  }
+
+  cloneJson(jsonSrc) { return JSON.parse(JSON.stringify(jsonSrc)); }
+  updateChildrenYo(onlyShareData) {
+    let t = this;
+
+    let toUpdate =
+      onlyShareData ?
+        t.children.filter(child => child.shareDataReference) :
+        t.children;
+
+    toUpdate
+      .forEach(child => {
+        child.update();
+        child.simulation.restart();
+        child.simulation.alpha(1);
+      });
+  }
+  updateParent() {
+    let t = this;
+    t.parent.update();
+    t.parent.simulation.restart();
+    t.parent.simulation.alpha(1);
+  }
+  copyGraphData() {
+    return {
+      nodes: this.graphData.nodes.splice(0),
+      links: this.graphData.links.splice(0)
+    };
   }
 
 
@@ -512,9 +643,9 @@ export class DynamicD3ForceGraph {
   getNodeShapeRadius(d) {
     // console.log("getNodeShapeRadius");
     const min = 15;
-    const max = 45;
+    const max = 35;
     let x = Math.abs(50000 - (d.id || 1)) / 50000;
-    let r = Math.trunc(x * 100);
+    let r = Math.trunc(x * 50);
     if (r < min) r = min;
     if (r > max) r = max;
 
@@ -525,6 +656,8 @@ export class DynamicD3ForceGraph {
   getNodeShapeHeight(d) { return (2 * this.getNodeShapeRadius(d)); }
   getNodeShapeWidth(d) { return (2 * this.getNodeShapeRadius(d)); }
   getNodeShapeFill(d) { return "lightgreen"; }
+  getNodeBorderStroke(d) { return "#ED6DCD"; }
+  getNodeBorderStrokeWidth(d) { return "0.5px"; }
 
   getNodeImageGroupId(d) {
     console.log("getNodeImageGroupId")
