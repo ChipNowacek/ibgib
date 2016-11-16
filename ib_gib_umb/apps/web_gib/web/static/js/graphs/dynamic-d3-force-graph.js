@@ -9,6 +9,11 @@ export class DynamicD3ForceGraph {
 
     t.graphData = { "nodes": [], "links": [] };
     t.children = [];
+
+    t.config = {
+      dblClickMs: 250,
+      longPressMs: 900
+    }
   }
 
   destroy() {
@@ -185,7 +190,10 @@ export class DynamicD3ForceGraph {
           .attr("cursor", d => t.getNodeCursor(d))
           .on("contextmenu", d  => t.handleNodeContextMenu(d))
           .on("mouseover", d => t.handleNodeMouseover(d))
-          .on("click", d => t.handleNodeClicked(d))
+          .on("click", d => t.handleNodeRawClicked(d))
+          .on("mousedown", d => t.handleNodeRawMouseDown(d))
+          .on("touchstart", d => t.handleNodeRawTouchStart(d))
+          .on("touchend", d => t.handleNodeRawTouchEnd(d))
           .call(t.drag);
     t.graphNodesExit =
       t.graphNodesData
@@ -329,47 +337,66 @@ export class DynamicD3ForceGraph {
     t.simulation
       .nodes(t.graphData.nodes)
       .on("tick", () => t.handleTicked())
-      .on("end", () => t.handleEnd());
+      .on("end", () => t.handleSimulationEnd());
     t.simulation
       .force("link")
       .links(t.graphData.links);
   }
 
   handleDragStarted(d) {
+    let t = this;
+
     if (!d3.event.active) {
-      this.simulation.alphaTarget(0.1).restart();
-      this.children.filter(child => child.shareDataReference === true).forEach(child => child.simulation.alphaTarget(0.1).restart());
-      if (this.isChild && this.parent && this.shareDataReference) {
-        this.parent.simulation.alphaTarget(0.1).restart();
+      t.simulation.alphaTarget(0.1).restart();
+      t.children.filter(child => child.shareDataReference === true).forEach(child => child.simulation.alphaTarget(0.1).restart());
+      if (t.isChild && t.parent && t.shareDataReference) {
+        t.parent.simulation.alphaTarget(0.1).restart();
       }
     }
 
+    // Fixes the position of the node to the event (mouse/touch pos)
     d.fx = d.x;
     d.fy = d.y;
+
+    t.x0 = d3.event.x;
+    t.y0 = d3.event.y;
 
     console.log(`drag started d.fx: ${d.fx}`)
   }
   handleDragged(d) {
-    // console.log(`dragged d.fx: ${d.fx}`)
+    let t = this;
 
+    // Fixes the position of the node to the event (mouse/touch pos)
     d.fx = d3.event.x;
     d.fy = d3.event.y;
+
+    // If we're dragging, then cancel any long press. The distance thing is to
+    // avoid jitter of a person's finger/mouse when long pressing.
+    let dist = Math.sqrt(Math.pow(t.x0 - d.fx, 2) + Math.pow(t.y0 - d.fy, 2));
+    if (dist > 2.5) {
+      // alert(`dist: ${dist}`)
+      delete t.lastMouseDownTime;
+      t.x0 = null;
+      t.y0 = null;
+    }
   }
   handleDragEnded(d) {
+    let t = this;
+
     console.log("handleDragEnded")
     if (!d3.event.active) {
-      this.simulation.alphaTarget(0);
-      this.children.filter(child => child.shareDataReference).forEach(child => child.simulation.alphaTarget(0));
-      if (this.isChild && this.parent && this.shareDataReference) {
-        this.parent.simulation.alphaTarget(0);
+      t.simulation.alphaTarget(0);
+      t.children.filter(child => child.shareDataReference).forEach(child => child.simulation.alphaTarget(0));
+      if (t.isChild && t.parent && t.shareDataReference) {
+        t.parent.simulation.alphaTarget(0);
       }
     }
 
-    d.fx = d3.event.x;
-    d.fy = d3.event.y;
-
     d.fx = undefined;
     d.fy = undefined;
+
+    t.x0 = null;
+    t.y0 = null;
   }
   handleBackgroundClicked() {
     console.log(`background clicked in numero 2`);
@@ -401,7 +428,7 @@ export class DynamicD3ForceGraph {
       console.log("errored tick")
     }
   }
-  handleNodeClicked(d) {
+  handleNodeNormalClicked(d) {
     console.log(`node clicked: ${JSON.stringify(d)}`);
 
     let t = this;
@@ -419,15 +446,108 @@ export class DynamicD3ForceGraph {
 
     t.add(newNodes, newLinks, /*updateParentOrChild*/ true);
   }
-  handleNodeContextMenu(d) {
+  handleNodeLongClicked(d) {
+    console.log(`node longclicked. d: ${JSON.stringify(d)}`);
+  }
+  handleNodeDblClicked(d) {
     let t = this;
+    console.log(`node doubleclicked. d: ${JSON.stringify(d)}`);
+
+    delete t.lastMouseDownTime;
+    delete t.beforeLastMouseDownTime;
+  }
+  /** Raw "clicked" event. Will process to determine if double/long click. */
+  handleNodeRawClicked(d) {
+    let t = this;
+
+    if (t.maybeDoubleClicking) {
+      // we're double-clicking
+      delete t.maybeDoubleClicking;
+      delete t.mouseOrTouchPosition;
+      delete t.targetNode;
+    } else {
+      t.maybeDoubleClicking = true;
+
+      setTimeout(() => {
+        if (t.maybeDoubleClicking) {
+          // Not double-clicking, so handle click
+          let now = new Date();
+          let elapsedMs = now - t.lastMouseDownTime;
+          // alert("nodeclicked maybe")
+          delete t.lastMouseDownTime;
+          if (elapsedMs < t.config.longPressMs) {
+            // normal click
+            t.handleNodeNormalClicked(d);
+          } else {
+            // long click, handled already in mousedown handler.
+            console.log("long click, already handled. no click handler.");
+          }
+
+          delete t.maybeDoubleClicking;
+        }
+      }, t.config.dblClickMs);
+    }
+  }
+  handleNodeRawMouseDown(d) {
+    let t = this;
+
+    t.isTouch = false;
+    t.mouseOrTouchPosition = d3.mouse(t.background.node());
+    t.lastMouseDownEvent = d3.event;
+    t.targetNode = t.lastMouseDownEvent.target;
+    if (d3.event.button === 0) {
+      t.handleNodeRawTouchstartOrMouseDown(d);
+    }
     d3.event.preventDefault();
-    t.remove(d, /*updateParentOrChild*/ true);
+  }
+  handleNodeRawTouchstartOrMouseDown(d) {
+    let t = this;
+
+    t.beforeLastMouseDownTime = t.lastMouseDownTime || 0;
+    t.lastMouseDownTime = new Date();
+
+    setTimeout(() => {
+      if (t.lastMouseDownTime && ((t.lastMouseDownTime - t.beforeLastMouseDownTime) < t.config.dblClickMs)) {
+        // Putting this here actually makes the double-click seem to lag, so I
+        // will want to correct this later. GEFN.
+        t.handleNodeDblClicked(d);
+      } else if (t.lastMouseDownTime) {
+        t.handleNodeLongClicked(d);
+      } else {
+        // alert("else handletouchor")
+      }
+    }, t.config.longPressMs);
+  }
+  handleNodeRawTouchStart(d) {
+    let t = this;
+
+    t.isTouch = true;
+    t.lastTouchStart = d3.event;
+    t.targetNode = d3.event.target;
+    t.mouseOrTouchPosition = [
+      t.lastTouchStart.touches[0].clientX,
+      t.lastTouchStart.touches[0].clientY
+    ];
+    t.handleNodeRawTouchstartOrMouseDown(d);
+    d3.event.preventDefault();
+  }
+  handleNodeRawTouchEnd(d) {
+    let t = this;
+
+    t.lastTouchEnd = d3.event;
+    let elapsedMs = new Date() - t.lastMouseDownTime;
+    if (elapsedMs < t.config.longPressMs) { t.handleNodeRawClicked(d); }
   }
   handleNodeMouseover(d) {
     console.log(`d.id: ${d.id}`);
   }
-  handleEnd() {
+  handleNodeContextMenu(d) {
+    let t = this;
+
+    d3.event.preventDefault();
+    t.remove(d, /*updateParentOrChild*/ true);
+  }
+  handleSimulationEnd() {
     console.log("end yo");
   }
   handleResize() {

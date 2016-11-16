@@ -104,7 +104,7 @@ class App {
             count ++;
             if (count % 100 === 0) {
               console.log(`count: ${count}`)
-              if (count % 300 === 0) {
+              if (count % 100 === 0) {
                 clearInterval(interval);
               }
             }
