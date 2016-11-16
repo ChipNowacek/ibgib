@@ -284,14 +284,12 @@ export class DynamicD3ForceGraph {
     t.graphNodesEnter_Images
       .data()
       .map(d => {
-        console.log(`updating pattern: ${t.getNodeShapeId(d)} in graph ${t.svgId}`)
+        // console.log(`updating pattern: ${t.getNodeShapeId(d)} in graph ${t.svgId}`)
         d3.select("#" + t.getNodeShapeId(d))
           .attr("fill", `url(#${t.getNodeImagePatternId(d)})`)
           .append("title")
             .text(d => t.getNodeTitle(d));
       });
-
-    //
 
     t.graphNodeImagePatternImage =
       t.graphImagePatterns
@@ -303,10 +301,6 @@ export class DynamicD3ForceGraph {
         .attr("x", d => t.getNodeImageMagicOffset(d))
         .attr("y", d => t.getNodeImageMagicOffset(d))
         .attr("xlink:href", d => t.getNodeImageHref(d));
-    // t.graphNodeImagePatternTitle =
-    //   t.graphImagePatterns
-    //     .append("title")
-    //     .text(d => d.id);
   }
   updateLinkDataJoins() {
     let t = this;
@@ -423,12 +417,12 @@ export class DynamicD3ForceGraph {
     let newNodes = [newNode];
     let newLinks = [{source: d.id, target: newNode.id}]
 
-    t.add(newNodes, newLinks, /*updateParent*/ true, /*updateChildren*/ true);
+    t.add(newNodes, newLinks, /*updateParentOrChild*/ true);
   }
   handleNodeContextMenu(d) {
     let t = this;
     d3.event.preventDefault();
-    t.remove(d, /*updateParent*/ true, /*updateChildren*/ true);
+    t.remove(d, /*updateParentOrChild*/ true);
   }
   handleNodeMouseover(d) {
     console.log(`d.id: ${d.id}`);
@@ -451,7 +445,8 @@ export class DynamicD3ForceGraph {
     }
   }
 
-  add(nodesToAdd, linksToAdd, updateParent, updateChildren) {
+  // Dynamic add/remove nodes/links
+  add(nodesToAdd, linksToAdd, updateParentOrChild) {
     let t = this;
 
     if (nodesToAdd) {
@@ -465,7 +460,7 @@ export class DynamicD3ForceGraph {
     t.simulation.restart();
     t.simulation.alpha(1);
 
-    if (updateParent || updateChildren) {
+    if (updateParentOrChild) {
       if (t.isChild) {
         if (t.shareDataReference) {
           // child sharing data, just update
@@ -484,7 +479,7 @@ export class DynamicD3ForceGraph {
             return { source: newSource.id, target: newTarget.id };
           });
 
-          t.parent.add(nodesToAddClone, linksToAddClone, /*updateParent*/ false, /*updateChildren*/ false);
+          t.parent.add(nodesToAddClone, linksToAddClone, /*updateParentOrChild*/ false);
         }
       } else {
         // If we don't share a data reference then we must actually duplicate
@@ -501,14 +496,14 @@ export class DynamicD3ForceGraph {
         // For children that do not share data
         t.children
           .filter(child => !child.shareDataReference)
-          .map(child => child.add(nodesToAddClone, linksToAddClone, /*updateParent*/ false, /*updateChildren*/ false));
+          .map(child => child.add(nodesToAddClone, linksToAddClone, /*updateParentOrChild*/ false));
 
         // Update children that do share data
-        t.updateChildrenYo(/*onlyShareData*/ true);
+        t.updateChildrenYo(/*onlyChildrenSharingData*/ true);
       }
     }
   }
-  remove(dToRemove, updateParent, updateChildren) {
+  remove(dToRemove, updateParentOrChild) {
     console.log(`dToRemove: ${JSON.stringify(dToRemove)}`)
 
     let t = this;
@@ -535,23 +530,23 @@ export class DynamicD3ForceGraph {
     t.simulation.restart();
     t.simulation.alpha(1);
 
-    if (updateParent && t.isChild) {
+    if (updateParentOrChild && t.isChild) {
       if (t.shareDataReference) {
         // We are sharing a reference to the same data object in memory, so
         // we only need to update the parent.
         t.updateParent();
       } else {
         // We're not sharing the data, so duplicate the call
-        t.parent.remove(dToRemove, /*updateParent*/ false, /*updateChildren*/ false);
+        t.parent.remove(dToRemove, /*updateParentOrChild*/ false);
       }
-    } else if (updateChildren && !t.isChild) {
+    } else if (updateParentOrChild && !t.isChild) {
       // For children that do not share data
       t.children
         .filter(child => !child.shareDataReference)
-        .map(child => child.remove(dToRemove, /*updateParent*/ false, /*updateChildren*/ false));
+        .map(child => child.remove(dToRemove, /*updateParentOrChild*/ false));
 
       // Update children that do share data
-      t.updateChildrenYo(/*onlyShareData*/ true);
+      t.updateChildrenYo(/*onlyChildrenSharingData*/ true);
     }
   }
   addChildGraph(child, shareDataReference) {
@@ -564,7 +559,7 @@ export class DynamicD3ForceGraph {
     child.graphData = shareDataReference ? t.graphData : t.copyGraphData();
 
     child.init();
-    t.updateChildrenYo(/*onlyShareData*/ false);
+    t.updateChildrenYo(/*onlyChildrenSharingData*/ false);
   }
   destroyChildGraph(childGraph) {
     let index = this.children.indexOf(childGraph);
@@ -576,12 +571,13 @@ export class DynamicD3ForceGraph {
     }
   }
 
+  // Child/parent graph helper methods
   cloneJson(jsonSrc) { return JSON.parse(JSON.stringify(jsonSrc)); }
-  updateChildrenYo(onlyShareData) {
+  updateChildrenYo(onlyChildrenSharingData) {
     let t = this;
 
     let toUpdate =
-      onlyShareData ?
+      onlyChildrenSharingData ?
         t.children.filter(child => child.shareDataReference) :
         t.children;
 
@@ -605,7 +601,6 @@ export class DynamicD3ForceGraph {
     };
   }
 
-
   // getForceVelocityDecay(d) { return 0.25; }
   // getForceLinkDistance(d) { return 55; }
   // getForceStrength(d) { return 0.8; }
@@ -614,7 +609,6 @@ export class DynamicD3ForceGraph {
   // Svg Framing (svg, svgGroup, links group, nodes group, background)
   getGraphLinksGroupId() { return `${this.svgId}_links_${this.svgId}`; }
   getGraphNodesGroupId() { return `${this.svgId}_nodes_${this.svgId}`; }
-  // getBackgroundFill() { return "#F2F7F0"; }
   getBackgroundFill() { return "#F2F7F0"; }
 
   // Force Simulation Config

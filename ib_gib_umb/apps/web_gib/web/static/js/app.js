@@ -101,11 +101,11 @@ class App {
               newNode.y = randomNode.y;
             }
             let newLink = {source: randomNode.id, target: randomId};
-            targetGraph.add([newNode], [newLink], /*updateParent*/ true, /*updateChildren*/ true);
+            targetGraph.add([newNode], [newLink], /*updateParentOrChild*/ true);
             count ++;
             if (count % 100 === 0) {
               console.log(`count: ${count}`)
-              if (count % 1000 === 0) {
+              if (count % 100 === 0) {
                 clearInterval(interval);
               }
             }
@@ -137,7 +137,7 @@ class App {
           links.push(newLink);
         }
 
-        g.add(nodes, links, /*updateParent*/ true, /*updateChildren*/ true);
+        g.add(nodes, links, /*updateParentOrChild*/ true);
       }
 
       function initResize(graphs) {
