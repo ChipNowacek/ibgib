@@ -193,7 +193,7 @@ export class DynamicD3ForceGraph {
     t.updateNodeShapes();
     t.updateNodeLabels();
     t.updateNodeImages();
-
+    t.updateNodeHyperlinks();
     t.updateLinkDataJoins();
     t.updateSimulation();
   }
@@ -332,6 +332,17 @@ export class DynamicD3ForceGraph {
         .attr("y", d => t.getNodeImageMagicOffset(d))
         .attr("xlink:href", d => t.getNodeImageHref(d));
   }
+  updateNodeHyperlinks() {
+    let t = this;
+
+    t.graphNodesEnter_Hyperlinks =
+      t.graphNodesEnter
+        .append("foreignObject")
+        .attr("name", "graphNodeLink")
+        .attr("width", 1)
+        .attr("height", 1)
+        .html('<a href="#"></a>');
+  }
   updateLinkDataJoins() {
     let t = this;
 
@@ -450,6 +461,33 @@ export class DynamicD3ForceGraph {
       console.log("errored tick")
     }
   }
+  handleNodeMouseover(d) {
+    console.log(`d.id: ${d.id}`);
+  }
+  handleNodeContextMenu(d) {
+    let t = this;
+
+    d3.event.preventDefault();
+    t.remove(d, /*updateParentOrChild*/ true);
+  }
+  handleSimulationEnd() {
+    console.log("end yo");
+  }
+  handleResize() {
+    let t = this;
+
+    // For some reason, when resizing vertically, it doesn't always trigger
+    // the graph itself to change sizes. So we're checking the parent.
+    let nowWidth = t.graphDiv.parentNode.scrollWidth;
+    let nowHeight = t.graphDiv.parentNode.scrollHeight;
+    if (nowWidth !== t.parentWidth || nowHeight !== t.parentHeight) {
+      // Completely restart the graph
+      // I can't figure out how to cache/restore the zoom transform.
+      t.destroy();
+      t.init();
+    }
+  }
+  // Actual Click handlers (not raw)
   handleNodeNormalClicked(d) {
     console.log(`node clicked: ${JSON.stringify(d)}`);
 
@@ -478,7 +516,7 @@ export class DynamicD3ForceGraph {
     delete t.lastMouseDownTime;
     delete t.beforeLastMouseDownTime;
   }
-  /** Raw "clicked" event. Will process to determine if double/long click. */
+  // Raw event handler to determine if double/long click.
   handleNodeRawClicked(d) {
     let t = this;
 
@@ -559,32 +597,6 @@ export class DynamicD3ForceGraph {
     t.lastTouchEnd = d3.event;
     let elapsedMs = new Date() - t.lastMouseDownTime;
     if (elapsedMs < t.config.mouse.longPressMs) { t.handleNodeRawClicked(d); }
-  }
-  handleNodeMouseover(d) {
-    console.log(`d.id: ${d.id}`);
-  }
-  handleNodeContextMenu(d) {
-    let t = this;
-
-    d3.event.preventDefault();
-    t.remove(d, /*updateParentOrChild*/ true);
-  }
-  handleSimulationEnd() {
-    console.log("end yo");
-  }
-  handleResize() {
-    let t = this;
-
-    // For some reason, when resizing vertically, it doesn't always trigger
-    // the graph itself to change sizes. So we're checking the parent.
-    let nowWidth = t.graphDiv.parentNode.scrollWidth;
-    let nowHeight = t.graphDiv.parentNode.scrollHeight;
-    if (nowWidth !== t.parentWidth || nowHeight !== t.parentHeight) {
-      // Completely restart the graph
-      // I can't figure out how to cache/restore the zoom transform.
-      t.destroy();
-      t.init();
-    }
   }
 
   // Dynamic add/remove nodes/links
@@ -742,11 +754,6 @@ export class DynamicD3ForceGraph {
       links: this.graphData.links.splice(0)
     };
   }
-
-  // getForceVelocityDecay(d) { return 0.25; }
-  // getForceLinkDistance(d) { return 55; }
-  // getForceStrength(d) { return 0.8; }
-  // getForceChargeStrength(d) { return -25; }
 
   // Svg Framing (svg, svgGroup, links group, nodes group, background)
   getGraphLinksGroupId() { return `${this.svgId}_links_${this.svgId}`; }

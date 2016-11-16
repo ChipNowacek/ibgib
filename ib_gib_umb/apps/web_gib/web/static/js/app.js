@@ -102,9 +102,9 @@ class App {
             let newLink = {source: randomNode.id, target: randomId};
             targetGraph.add([newNode], [newLink], /*updateParentOrChild*/ true);
             count ++;
-            if (count % 100 === 0) {
+            if (count % 10 === 0) {
               console.log(`count: ${count}`)
-              if (count % 100 === 0) {
+              if (count % 10 === 0) {
                 clearInterval(interval);
               }
             }
