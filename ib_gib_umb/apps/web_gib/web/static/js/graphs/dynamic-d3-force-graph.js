@@ -504,7 +504,7 @@ export class DynamicD3ForceGraph {
     }
   }
   remove(dToRemove, updateParentOrChild) {
-    console.log(`dToRemove: ${JSON.stringify(dToRemove)}`)
+    // console.log(`dToRemove: ${JSON.stringify(dToRemove)}`)
 
     let t = this;
     let currentNodes = t.graphData.nodes;
@@ -614,14 +614,26 @@ export class DynamicD3ForceGraph {
   // Force Simulation Config
   getVelocityDecay() { return 0.55; }
   getForceLink() {
+    let t = this;
+
     return d3.forceLink()
-             .distance(100)
-             .id(d => d.id);
+             .distance(d => t.getForceLinkDistance(d))
+             .id(d => t.getForceLinkId(d));
   }
+  getForceLinkId(d) { return this.nodeKeyFunction(d); }
+  getForceLinkDistance(d) { return Math.random() * 50; }
   getForceCharge() {
-    return d3.forceManyBody().strength(-100).distanceMin(10000);
+    let t = this;
+    return d3.forceManyBody()
+      .strength(d => t.getForceChargeStrength(d))
+      .distanceMin(100) // can't take a function for some reason
+      .distanceMax(10000); // can't take a function for some reason
   }
-  getForceCollide() { return d3.forceCollide(25); }
+  getForceChargeStrength(d) { return -25; }
+  getForceCollide() {
+    return d3.forceCollide(d => this.getForceCollideDistance(d));
+  }
+  getForceCollideDistance(d) { return 35; }
   getForceCenter() { return d3.forceCenter(this.center.x, this.center.y); }
 
   // Nodes functions
@@ -653,6 +665,7 @@ export class DynamicD3ForceGraph {
   getNodeBorderStroke(d) { return "#ED6DCD"; }
   getNodeBorderStrokeWidth(d) { return "0.5px"; }
 
+  // Node image
   getNodeImageGroupId(d) {
     console.log("getNodeImageGroupId")
     return this.svgId + "_imgGroup_" + d.id;
@@ -662,13 +675,10 @@ export class DynamicD3ForceGraph {
   getNodeImagePatternHeight(d) { return 1; }
   getNodeImagePatternWidth(d) { return 1; }
   getNodeImageId(d) { return this.svgId + "_img_" + d.id; }
-  getNodeImageHref(d) {
-    d.imageHref =
-      "/android-chrome-512x512.png";
-      // "https://www.ibgib.com/files/85C337DD86DB82A67DDA0364C0DF2561E1B3BF1ED04BBB135A3020F3EF75A0A1.jpg";
-    return d.imageHref;
-  }
+  getNodeImageHref(d) { return d.imageHref || "/android-chrome-512x512.png"; }
   getNodeImageBackgroundFill(d) { return "transparent"; }
+  /** Magic formula to get the node image/background positioning correct. */
   getNodeImageMagicSize(d) { return 55 * (d.r / 25); }
+  /** Magic formula to get the node image/background positioning correct. */
   getNodeImageMagicOffset(d) { return -2.5 * (d.r / 25); }
 }

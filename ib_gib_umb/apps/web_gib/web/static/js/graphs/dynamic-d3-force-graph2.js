@@ -10,11 +10,7 @@ export class DynamicD3ForceGraph2 extends DynamicD3ForceGraph {
   getBackgroundFill() { return "pink"; }
 
   getVelocityDecay() { return 0.15; }
-  getForceLink() {
-    return d3.forceLink()
-             .distance(500)
-             .id(d => d.id);
-  }
+  getForceLinkDistance(d) { return Math.random() * 600; }
 
   getNodeShapeRadius(d) {
     // console.log("getNodeShapeRadius");

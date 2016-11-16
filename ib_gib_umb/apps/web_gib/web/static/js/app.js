@@ -71,7 +71,6 @@ class App {
       graphDiv.parentNode.appendChild(graphDiv2);
       let graph2 = new DynamicD3ForceGraph2(graphDiv2, "testSvgId2");
       graph.addChildGraph(graph2, /*shareDataReference*/ false);
-      // graph2.init();
 
       initResize([graph, graph2]);
 
@@ -105,7 +104,7 @@ class App {
             count ++;
             if (count % 100 === 0) {
               console.log(`count: ${count}`)
-              if (count % 100 === 0) {
+              if (count % 300 === 0) {
                 clearInterval(interval);
               }
             }
