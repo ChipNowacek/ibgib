@@ -2,20 +2,46 @@ import * as d3 from 'd3';
 import { DynamicD3ForceGraph } from './dynamic-d3-force-graph';
 
 export class DynamicD3ForceGraph2 extends DynamicD3ForceGraph {
-  constructor(graphDiv, svgId) {
-    super(graphDiv, svgId);
+  constructor(graphDiv, svgId, config) {
+    super(graphDiv, svgId, {});
+    let t = this;
+
+    let defaults = {
+      backgroundFill: "pink",
+      mouse: {
+        dblClickMs: 250,
+        longPressMs: 900
+      },
+      simulation: {
+        velocityDecay: 0.15,
+        chargeStrength: -250,
+        chargeDistanceMin: 100,
+        chargeDistanceMax: 10000,
+        linkDistance: 1000,
+        collideDistance: 55,
+      },
+      node: {
+        cursorType: "crosshair",
+        baseRadiusSize: 35,
+        defShapeFill: "lightblue",
+        defBorderStroke: "darkgreen",
+        defBorderStrokeWidth: "5px",
+        image: {
+          backgroundFill: "purple"
+        }
+      }
+    }
+    t.config = $.extend({}, defaults, config || {});
   }
 
-
-  getBackgroundFill() { return "pink"; }
-
-  getVelocityDecay() { return 0.15; }
-  getForceLinkDistance(d) { return Math.random() * 600; }
+  getForceLinkDistance(d) {
+    return Math.random() * this.config.simulation.linkDistance;
+  }
 
   getNodeShapeRadius(d) {
     // console.log("getNodeShapeRadius");
     const min = 15;
-    const max = 65;
+    const max = 75;
     let x = Math.abs(50000 - (d.id || 1)) / 50000;
     let r = Math.trunc(x * 100);
     if (r < min) r = min;
@@ -25,8 +51,4 @@ export class DynamicD3ForceGraph2 extends DynamicD3ForceGraph {
 
     return r;
   }
-
-  getNodeShapeFill(d) { return "lightblue"; }
-  getNodeBorderStroke(d) { return "darkblue"; }
-  getNodeBorderStrokeWidth(d) { return "2.5px"; }
 }

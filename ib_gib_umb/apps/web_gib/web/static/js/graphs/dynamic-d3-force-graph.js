@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 
 export class DynamicD3ForceGraph {
-  constructor(graphDiv, svgId) {
+  constructor(graphDiv, svgId, config) {
     let t = this;
 
     t.graphDiv = graphDiv;
@@ -10,10 +10,32 @@ export class DynamicD3ForceGraph {
     t.graphData = { "nodes": [], "links": [] };
     t.children = [];
 
-    t.config = {
-      dblClickMs: 250,
-      longPressMs: 900
+    let defaults = {
+      backgroundFill: "#F2F7F0",
+      mouse: {
+        dblClickMs: 250,
+        longPressMs: 900
+      },
+      simulation: {
+        velocityDecay: 0.55,
+        chargeStrength: -25,
+        chargeDistanceMin: 100,
+        chargeDistanceMax: 10000,
+        linkDistance: 50,
+        collideDistance: 35,
+      },
+      node: {
+        cursorType: "pointer",
+        baseRadiusSize: 15,
+        defShapeFill: "lightgreen",
+        defBorderStroke: "#ED6DCD",
+        defBorderStrokeWidth: "0.5px",
+        image: {
+          backgroundFill: "transparent"
+        }
+      }
     }
+    t.config = $.extend({}, defaults, config || {});
   }
 
   destroy() {
@@ -475,7 +497,7 @@ export class DynamicD3ForceGraph {
           let elapsedMs = now - t.lastMouseDownTime;
           // alert("nodeclicked maybe")
           delete t.lastMouseDownTime;
-          if (elapsedMs < t.config.longPressMs) {
+          if (elapsedMs < t.config.mouse.longPressMs) {
             // normal click
             t.handleNodeNormalClicked(d);
           } else {
@@ -485,7 +507,7 @@ export class DynamicD3ForceGraph {
 
           delete t.maybeDoubleClicking;
         }
-      }, t.config.dblClickMs);
+      }, t.config.mouse.dblClickMs);
     }
   }
   handleNodeRawMouseDown(d) {
@@ -507,7 +529,7 @@ export class DynamicD3ForceGraph {
     t.lastMouseDownTime = new Date();
 
     setTimeout(() => {
-      if (t.lastMouseDownTime && ((t.lastMouseDownTime - t.beforeLastMouseDownTime) < t.config.dblClickMs)) {
+      if (t.lastMouseDownTime && ((t.lastMouseDownTime - t.beforeLastMouseDownTime) < t.config.mouse.dblClickMs)) {
         // Putting this here actually makes the double-click seem to lag, so I
         // will want to correct this later. GEFN.
         t.handleNodeDblClicked(d);
@@ -516,7 +538,7 @@ export class DynamicD3ForceGraph {
       } else {
         // alert("else handletouchor")
       }
-    }, t.config.longPressMs);
+    }, t.config.mouse.longPressMs);
   }
   handleNodeRawTouchStart(d) {
     let t = this;
@@ -536,7 +558,7 @@ export class DynamicD3ForceGraph {
 
     t.lastTouchEnd = d3.event;
     let elapsedMs = new Date() - t.lastMouseDownTime;
-    if (elapsedMs < t.config.longPressMs) { t.handleNodeRawClicked(d); }
+    if (elapsedMs < t.config.mouse.longPressMs) { t.handleNodeRawClicked(d); }
   }
   handleNodeMouseover(d) {
     console.log(`d.id: ${d.id}`);
@@ -729,10 +751,10 @@ export class DynamicD3ForceGraph {
   // Svg Framing (svg, svgGroup, links group, nodes group, background)
   getGraphLinksGroupId() { return `${this.svgId}_links_${this.svgId}`; }
   getGraphNodesGroupId() { return `${this.svgId}_nodes_${this.svgId}`; }
-  getBackgroundFill() { return "#F2F7F0"; }
+  getBackgroundFill() { return this.config.backgroundFill; }
 
   // Force Simulation Config
-  getVelocityDecay() { return 0.55; }
+  getVelocityDecay() { return this.config.simulation.velocityDecay; }
   getForceLink() {
     let t = this;
 
@@ -741,19 +763,19 @@ export class DynamicD3ForceGraph {
              .id(d => t.getForceLinkId(d));
   }
   getForceLinkId(d) { return this.nodeKeyFunction(d); }
-  getForceLinkDistance(d) { return Math.random() * 50; }
+  getForceLinkDistance(d) { return this.config.simulation.linkDistance; }
   getForceCharge() {
     let t = this;
     return d3.forceManyBody()
       .strength(d => t.getForceChargeStrength(d))
-      .distanceMin(100) // can't take a function for some reason
-      .distanceMax(10000); // can't take a function for some reason
+      .distanceMin(this.config.simulation.chargeDistanceMin)
+      .distanceMax(this.config.simulation.chargeDistanceMax);
   }
-  getForceChargeStrength(d) { return -25; }
+  getForceChargeStrength(d) { return this.config.simulation.chargeStrength; }
   getForceCollide() {
     return d3.forceCollide(d => this.getForceCollideDistance(d));
   }
-  getForceCollideDistance(d) { return 35; }
+  getForceCollideDistance(d) { return this.config.simulation.collideDistance; }
   getForceCenter() { return d3.forceCenter(this.center.x, this.center.y); }
 
   // Nodes functions
@@ -761,15 +783,16 @@ export class DynamicD3ForceGraph {
   getNodeLabelId(d) { return this.svgId + "_label_" + d.id; }
   getNodeRenderType(d) { return d.render ? d.render : "default"; }
   getNodeShapeId(d) { return this.svgId + "_shape_" + d.id; }
-  getNodeCursor(d) { return "pointer"; }
+  getNodeCursor(d) { return this.config.node.cursorType; }
   getNodeTitle(d) { return d.id; }
   getNodeShape(d) {
     return d.shape && (d.shape === "circle" || d.shape === "rect") ? d.shape : "circle";
   }
   getNodeShapeRadius(d) {
+    let t = this;
     // console.log("getNodeShapeRadius");
-    const min = 15;
-    const max = 35;
+    const min = 1 * t.config.node.baseRadiusSize;
+    const max = 3 * t.config.node.baseRadiusSize;
     let x = Math.abs(50000 - (d.id || 1)) / 50000;
     let r = Math.trunc(x * 50);
     if (r < min) r = min;
@@ -781,9 +804,9 @@ export class DynamicD3ForceGraph {
   }
   getNodeShapeHeight(d) { return (2 * this.getNodeShapeRadius(d)); }
   getNodeShapeWidth(d) { return (2 * this.getNodeShapeRadius(d)); }
-  getNodeShapeFill(d) { return "lightgreen"; }
-  getNodeBorderStroke(d) { return "#ED6DCD"; }
-  getNodeBorderStrokeWidth(d) { return "0.5px"; }
+  getNodeShapeFill(d) { return this.config.node.defShapeFill; }
+  getNodeBorderStroke(d) { return this.config.node.defBorderStroke; }
+  getNodeBorderStrokeWidth(d) { return this.config.node.defBorderStrokeWidth; }
 
   // Node image
   getNodeImageGroupId(d) {
@@ -796,7 +819,7 @@ export class DynamicD3ForceGraph {
   getNodeImagePatternWidth(d) { return 1; }
   getNodeImageId(d) { return this.svgId + "_img_" + d.id; }
   getNodeImageHref(d) { return d.imageHref || "/android-chrome-512x512.png"; }
-  getNodeImageBackgroundFill(d) { return "transparent"; }
+  getNodeImageBackgroundFill(d) { return this.config.node.image.backgroundFill; }
   /** Magic formula to get the node image/background positioning correct. */
   getNodeImageMagicSize(d) { return 55 * (d.r / 25); }
   /** Magic formula to get the node image/background positioning correct. */
