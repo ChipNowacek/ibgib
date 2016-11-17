@@ -7,7 +7,11 @@ export class DynamicD3ForceGraph2 extends DynamicD3ForceGraph {
     let t = this;
 
     let defaults = {
-      backgroundFill: "pink",
+      background: {
+        fill: "pink",
+        opacity: 0.7,
+        shape: "rect"
+      },
       mouse: {
         dblClickMs: 250,
         longPressMs: 900

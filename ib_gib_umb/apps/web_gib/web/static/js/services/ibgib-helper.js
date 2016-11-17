@@ -7,3 +7,7 @@ export function getDataText(ibGibJson) {
       ibGibJson.data.text :
       null;
 }
+
+export function getRandomString() {
+  return (Math.random() * 10000000).toString();
+}

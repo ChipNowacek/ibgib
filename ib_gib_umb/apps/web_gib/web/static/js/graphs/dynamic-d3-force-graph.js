@@ -11,7 +11,11 @@ export class DynamicD3ForceGraph {
     t.children = [];
 
     let defaults = {
-      backgroundFill: "#F2F7F0",
+      background: {
+        fill: "#F2F7F0",
+        opacity: 1,
+        shape: "rect"
+      },
       mouse: {
         dblClickMs: 250,
         longPressMs: 900
@@ -41,34 +45,36 @@ export class DynamicD3ForceGraph {
   destroy() {
     let t = this;
 
-    t.simulation.stop();
-    t.simulation = null;
+    if (t.simulation) {
+      t.simulation.stop();
+      t.simulation = null;
 
-    t.graphNodesGroup = null;
-    t.graphLinksGroup = null;
-    t.graphLinksData = null;
-    t.graphLinksEnter = null;
-    t.graphLinksExit = null;
-    t.graphNodesData = null;
-    t.graphNodesEnter = null;
-    t.graphNodesExit = null;
-    t.graphNodeShapes = null;
-    t.graphNodeCircles = null;
-    t.graphNodeRects = null;
-    t.graphNodeLabels = null;
+      t.graphNodesGroup = null;
+      t.graphLinksGroup = null;
+      t.graphLinksData = null;
+      t.graphLinksEnter = null;
+      t.graphLinksExit = null;
+      t.graphNodesData = null;
+      t.graphNodesEnter = null;
+      t.graphNodesExit = null;
+      t.graphNodeShapes = null;
+      t.graphNodeCircles = null;
+      t.graphNodeRects = null;
+      t.graphNodeLabels = null;
 
-    t.graphNodeImagePatternImage = null;
-    t.graphNodeImages = null;
-    t.graphImageDefs = null;
+      t.graphNodeImagePatternImage = null;
+      t.graphNodeImages = null;
+      t.graphImageDefs = null;
 
-    t.drag = null;
-    t.zoom = null;
+      t.drag = null;
+      t.zoom = null;
 
-    d3.select(`#${t.svgId}`).remove();
-    t.svg = null;
+      d3.select(`#${t.svgId}`).remove();
+      t.svg = null;
 
-    d3.select(t.background).remove();
-    t.background = null;
+      d3.select(t.background).remove();
+      t.background = null;
+    }
   }
 
   /**
@@ -116,15 +122,33 @@ export class DynamicD3ForceGraph {
   initBackground(svg) {
     let t = this;
 
-    t.background = t.svg
-      .append("rect")
-      .attr("fill", () => t.getBackgroundFill())
-      // .attr("class", "view")
-      .attr("x", 0.5)
-      .attr("y", 0.5)
-      .attr("width", t.width - 1)
-      .attr("height", t.height - 1)
-      .on("click", () => t.handleBackgroundClicked());
+    if (t.getBackgroundShape() === "circle") {
+      let radius = Math.trunc(t.width / 2);
+      t.background = t.svg
+        .append("circle")
+        .attr("id", () => t.getUniqueId(/*id*/ "background"))
+        .attr("fill", () => t.getBackgroundFill())
+        .attr("opacity", () => t.getBackgroundOpacity())
+        // .attr("class", "view")
+        .attr("x", radius)
+        .attr("y", radius)
+        .attr("cx", radius)
+        .attr("cy", radius)
+        .attr("r", radius)
+        .on("click", () => t.handleBackgroundClicked());
+    } else {
+      t.background = t.svg
+        .append("rect")
+        .attr("id", () => t.getUniqueId(/*id*/ "background"))
+        .attr("fill", () => t.getBackgroundFill())
+        .attr("opacity", () => t.getBackgroundOpacity())
+        // .attr("class", "view")
+        .attr("x", 0.5)
+        .attr("y", 0.5)
+        .attr("width", t.width - 1)
+        .attr("height", t.height - 1)
+        .on("click", () => t.handleBackgroundClicked());
+    }
   }
   initSvgGroup() {
     let t = this;
@@ -262,7 +286,7 @@ export class DynamicD3ForceGraph {
         .attr("id", d => t.getNodeLabelId(d))
         .attr("font-size", `10px`)
         .attr("text-anchor", "middle")
-        .text(d => `${d.id}`);
+        .text(d => t.getNodeLabelText(d));
     t.graphNodeLabels
       .append("title")
       .text(d => t.getNodeTitle(d));
@@ -505,6 +529,9 @@ export class DynamicD3ForceGraph {
     let newLinks = [{source: d.id, target: newNode.id}]
 
     t.add(newNodes, newLinks, /*updateParentOrChild*/ true);
+
+    t.animateNodeBorder(d, /*node*/ null);
+    t.animateNodeBorder(newNode, /*node*/ null);
   }
   handleNodeLongClicked(d) {
     console.log(`node longclicked. d: ${JSON.stringify(d)}`);
@@ -755,10 +782,46 @@ export class DynamicD3ForceGraph {
     };
   }
 
+  // Other ?
+  toggleFullScreen() {
+    let elementJquerySelector = `#${this.graphDiv.id}`
+    let selection = d3.select(elementJquerySelector);
+    let node = selection.node();
+    let isFullscreen = selection.classed("ib-fullscreen");
+    let body = d3.select("body").node();
+
+    if (isFullscreen) {
+      // return from fullscreen
+      body.removeChild(node);
+      this.currentParent.appendChild(node);
+      selection
+        .classed("ib-fullscreen", false);
+    } else {
+      // go fullscreen
+      this.currentParent = node.parentNode;
+      this.currentParent.removeChild(node)
+      body.appendChild(node);
+      selection
+        .classed("ib-fullscreen", true);
+    }
+
+    this.destroy();
+    this.init();
+  }
+  getUniqueId(id, prefix, suffix) {
+    let result = this.svgId;
+    if (prefix) { result += `_${prefix}`; }
+    if (id) { result += `_${id}`; }
+    if (suffix) { result += `_${suffix}`; }
+    return result;
+  }
+
   // Svg Framing (svg, svgGroup, links group, nodes group, background)
-  getGraphLinksGroupId() { return `${this.svgId}_links_${this.svgId}`; }
-  getGraphNodesGroupId() { return `${this.svgId}_nodes_${this.svgId}`; }
-  getBackgroundFill() { return this.config.backgroundFill; }
+  getGraphLinksGroupId() { return `${this.svgId}_linksGroup`; }
+  getGraphNodesGroupId() { return `${this.svgId}_nodesGroup`; }
+  getBackgroundFill() { return this.config.background.fill; }
+  getBackgroundOpacity() { return this.config.background.opacity; }
+  getBackgroundShape() { return this.config.background.shape; }
 
   // Force Simulation Config
   getVelocityDecay() { return this.config.simulation.velocityDecay; }
@@ -787,11 +850,14 @@ export class DynamicD3ForceGraph {
 
   // Nodes functions
   nodeKeyFunction(d) { return d.id; }
-  getNodeLabelId(d) { return this.svgId + "_label_" + d.id; }
+  // getNodeLabelId(d) { return this.svgId + "_label_" + d.id; }
+  getNodeLabelId(d) { return this.getUniqueId(d.id, /*prefix*/ "label"); }
   getNodeRenderType(d) { return d.render ? d.render : "default"; }
-  getNodeShapeId(d) { return this.svgId + "_shape_" + d.id; }
+  // getNodeShapeId(d) { return this.svgId + "_shape_" + d.id; }
+  getNodeShapeId(d) { return this.getUniqueId(d.id, /*prefix*/ "shape"); }
   getNodeCursor(d) { return this.config.node.cursorType; }
-  getNodeTitle(d) { return d.id; }
+  getNodeTitle(d) { return d.title || d.id; }
+  getNodeLabelText(d) { return d.title || d.id; }
   getNodeShape(d) {
     return d.shape && (d.shape === "circle" || d.shape === "rect") ? d.shape : "circle";
   }
@@ -831,4 +897,44 @@ export class DynamicD3ForceGraph {
   getNodeImageMagicSize(d) { return 55 * (d.r / 25); }
   /** Magic formula to get the node image/background positioning correct. */
   getNodeImageMagicOffset(d) { return -2.5 * (d.r / 25); }
+
+  animateNodeBorder(d, node) {
+    let t = this;
+
+    let nodeShape = node ? node : d3.select("#" + t.getNodeShapeId(d));
+
+    let initialStroke = nodeShape.attr("stroke");
+    let initialStrokeWidth = nodeShape.attr("stroke-width");
+
+    var transition =
+      d3.transition()
+        .duration(115)
+        .ease(d3.easeLinear);
+
+    nodeShape
+      .transition(transition)
+      .attr("stroke", "red")
+      .attr("stroke-width", "5px")
+      .transition(transition)
+      .attr("stroke", "orange")
+      .attr("stroke-width", "10px")
+      .transition(transition)
+      .attr("stroke", "yellow")
+      .attr("stroke-width", "15px")
+      .transition(transition)
+      .attr("stroke", "green")
+      .attr("stroke-width", "20px")
+      .transition(transition)
+      .attr("stroke", "blue")
+      .attr("stroke-width", "15px")
+      .transition(transition)
+      .attr("stroke", "indigo")
+      .attr("stroke-width", "10px")
+      .transition(transition)
+      .attr("stroke", "violet")
+      .attr("stroke-width", "5px")
+      .transition(transition)
+      .attr("stroke", initialStroke)
+      .attr("stroke-width", initialStrokeWidth);
+  }
 }

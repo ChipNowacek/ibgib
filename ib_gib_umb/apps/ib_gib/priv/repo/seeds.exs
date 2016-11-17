@@ -13,6 +13,7 @@ alias IbGib.Data.Schemas.Seeds
 :ok = Seeds.insert(:root)
 
 :ok = Seeds.insert(:error)
+:ok = Seeds.insert(:huh)
 
 # Fundamental Transforms
 :ok = Seeds.insert(:fork, %{
