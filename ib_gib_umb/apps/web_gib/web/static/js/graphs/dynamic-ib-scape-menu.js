@@ -30,15 +30,22 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
         chargeStrength: 0.02,
         chargeDistanceMin: 10,
         chargeDistanceMax: 10000,
-        linkDistance: 22,
+        linkDistance: 1,
         collideDistance: 45,
       },
       node: {
         cursorType: "crosshair",
-        baseRadiusSize: 11,
+        baseRadiusSize: 20,
         defShapeFill: "pink",
         defBorderStroke: "darkgreen",
         defBorderStrokeWidth: "2px",
+        label: {
+          fontFamily: "FontAwesome",
+          fontStroke: "darkgreen",
+          fontFill: "darkgreen",
+          fontSize: "38px",
+          fontOffset: 14
+        },
         image: {
           backgroundFill: "yellow"
         }
@@ -47,7 +54,7 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
         radius: 120,
         diam: menuDiam,
         size: menuDivSize,
-        buttonRadius: 22,
+        buttonRadius: 28,
         position: position,
         d: d
       }
@@ -65,7 +72,6 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
     d3.select(t.graphDiv)
       .style("top", 200 + "px")
       .style("left", 200 + "px")
-      .attr("z-index", d3.select(t.ibScape.graphDiv).attr("z-index") + 100)
       .style('width', `${t.config.menu.size}px`)
       .style('height', `${t.config.menu.size}px`)
       .style("border-radius", "50%");
@@ -77,7 +83,6 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
     let t = this;
 
     let graph = t.getMenuCommandsJson(d);
-
     t.moveTo(t.config.menu.position); // temp
 
     for (var i = 0; i < graph.nodes.length; i++) {
@@ -419,11 +424,14 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
   }
 
   moveTo(position) {
+
+    let t = this;
+
     let transition =
       d3.transition()
         .duration(150)
         .ease(d3.easeLinear);
-    d3.select("#ib-d3-graph-menu-div")
+    d3.select(t.graphDiv)
       .transition(transition)
         .style("left", position.x + "px")
         .style("top", position.y + "px")
@@ -480,4 +488,23 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
   }
 
   getNodeShapeRadius(d) { return this.config.menu.buttonRadius; }
+
+  // updateNodeLabels() {
+  //   let t = this;
+  //
+  //   t.graphNodeLabels =
+  //     t.graphNodesEnter
+  //       .append("text")
+  //       .attr("id", d => t.getNodeLabelId(d))
+  //       .attr("font-size", `10px`)
+  //       .attr("text-anchor", "middle")
+  //       .text(d => t.getNodeLabelText(d));
+  //   t.graphNodeLabels
+  //     .append("title")
+  //     .text(d => t.getNodeTitle(d));
+  // }
+
+  getNodeTitle(d) { return d.cmd.description || d.title || d.id || ""; }
+  getNodeLabelText(d) { return d.cmd.icon || d.label || d.title || d.id; }
+  getNodeShapeFill(d) { return d.cmd.color || this.config.node.defShapeFill; }
 }

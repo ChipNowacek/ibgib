@@ -34,6 +34,13 @@ export class DynamicD3ForceGraph {
         defShapeFill: "lightgreen",
         defBorderStroke: "#ED6DCD",
         defBorderStrokeWidth: "0.5px",
+        label: {
+          fontFamily: "Arial",
+          fontStroke: "pink",
+          fontFill: "red",
+          fontSize: "12px",
+          fontOffset: 0
+        },
         image: {
           backgroundFill: "transparent"
         }
@@ -284,8 +291,13 @@ export class DynamicD3ForceGraph {
       t.graphNodesEnter
         .append("text")
         .attr("id", d => t.getNodeLabelId(d))
-        .attr("font-size", `10px`)
+        .attr("font-size", d => t.getNodeLabelFontSize(d))
+        .attr("font-family", d => t.getNodeLabelFontFamily(d))
+        // .attr("stroke", "green")
+        .attr("stroke", d => t.getNodeLabelStroke(d))
+        .attr("fill", d => t.getNodeLabelFill(d))
         .attr("text-anchor", "middle")
+        .attr("y", d => t.getNodeLabelFontOffset(d))
         .text(d => t.getNodeLabelText(d));
     t.graphNodeLabels
       .append("title")
@@ -590,6 +602,8 @@ export class DynamicD3ForceGraph {
   handleNodeRawTouchstartOrMouseDown(d) {
     let t = this;
 
+    t.animateNodeBorder(d, /*node*/ null);
+
     t.beforeLastMouseDownTime = t.lastMouseDownTime || 0;
     t.lastMouseDownTime = new Date();
 
@@ -852,12 +866,21 @@ export class DynamicD3ForceGraph {
   nodeKeyFunction(d) { return d.id; }
   // getNodeLabelId(d) { return this.svgId + "_label_" + d.id; }
   getNodeLabelId(d) { return this.getUniqueId(d.id, /*prefix*/ "label"); }
+  getNodeLabelFontSize(d) { return this.config.node.label.fontSize; }
+  getNodeLabelFontFamily(d) {
+    return d.fontFamily ? d.fontFamily : this.config.node.label.fontFamily;
+  }
+  getNodeLabelFontOffset(d) {
+    return d.fontOffset ? d.fontOffset : this.config.node.label.fontOffset;
+  }
+  getNodeLabelStroke(d) { return this.config.node.label.fontStroke; }
+  getNodeLabelFill(d) { return this.config.node.label.fontFill; }
   getNodeRenderType(d) { return d.render ? d.render : "default"; }
   // getNodeShapeId(d) { return this.svgId + "_shape_" + d.id; }
   getNodeShapeId(d) { return this.getUniqueId(d.id, /*prefix*/ "shape"); }
   getNodeCursor(d) { return this.config.node.cursorType; }
-  getNodeTitle(d) { return d.title || d.id; }
-  getNodeLabelText(d) { return d.title || d.id; }
+  getNodeTitle(d) { return d.title || d.id || ""; }
+  getNodeLabelText(d) { return d.label || d.title || d.id; }
   getNodeShape(d) {
     return d.shape && (d.shape === "circle" || d.shape === "rect") ? d.shape : "circle";
   }
@@ -903,12 +926,9 @@ export class DynamicD3ForceGraph {
 
     let nodeShape = node ? node : d3.select("#" + t.getNodeShapeId(d));
 
-    let initialStroke = nodeShape.attr("stroke");
-    let initialStrokeWidth = nodeShape.attr("stroke-width");
-
     var transition =
       d3.transition()
-        .duration(115)
+        .duration(75)
         .ease(d3.easeLinear);
 
     nodeShape
@@ -923,7 +943,7 @@ export class DynamicD3ForceGraph {
       .attr("stroke-width", "15px")
       .transition(transition)
       .attr("stroke", "green")
-      .attr("stroke-width", "20px")
+      .attr("stroke-width", "15px")
       .transition(transition)
       .attr("stroke", "blue")
       .attr("stroke-width", "15px")
@@ -934,7 +954,7 @@ export class DynamicD3ForceGraph {
       .attr("stroke", "violet")
       .attr("stroke-width", "5px")
       .transition(transition)
-      .attr("stroke", initialStroke)
-      .attr("stroke-width", initialStrokeWidth);
+      .attr("stroke", d => t.getNodeBorderStroke(nodeShape.data()))
+      .attr("stroke-width", t.getNodeBorderStrokeWidth(nodeShape.data()));
   }
 }

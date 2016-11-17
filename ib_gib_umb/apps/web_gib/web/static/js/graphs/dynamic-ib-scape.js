@@ -40,6 +40,13 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         defShapeFill: "lightblue",
         defBorderStroke: "darkgreen",
         defBorderStrokeWidth: "2px",
+        label: {
+          fontFamily: "Times New Roman",
+          fontStroke: "blue",
+          fontFill: "darkgreen",
+          fontSize: "25px",
+          fontOffset: 8
+        },
         image: {
           backgroundFill: "purple"
         }
@@ -54,31 +61,51 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     console.log("init")
 
+    t.initResize();
     t.addRoot();
   }
 
+  initResize() {
+    let t = this;
+
+    if (!window.onresize) {
+      window.onresize = () => {
+        const debounceMs = 250;
+
+        if (t.resizeTimer) { clearTimeout(t.resizeTimer); }
+
+        t.resizeTimer = setTimeout(() => {
+          t.handleResize();
+        }, debounceMs);
+      };
+
+    }
+  }
 
   addRoot() {
     let t = this;
 
-    t.getIbGibJson("ib^gib", ibGibJson => {
-      let node = {
-        id: t.getUniqueId("root"),
-        title: "ib",
-        name: "ib",
-        cat: "ibgib",
-        ibgib: "ib^gib",
-        ibGibJson: ibGibJson,
-        shape: "circle"
-      };
+    if (!t.graphData || !t.graphData.nodes || t.graphData.nodes.length === 0) {
+      t.getIbGibJson("ib^gib", ibGibJson => {
+        let node = {
+          id: t.getUniqueId("root"),
+          title: "ib",
+          name: "ib",
+          cat: "ibgib",
+          ibgib: "ib^gib",
+          ibGibJson: ibGibJson,
+          shape: "circle"
+        };
 
-      t.add([node], [], /*updateParentOrChild*/ true);
-    })
+        t.add([node], [], /*updateParentOrChild*/ true);
+      })
+    }
   }
 
-  addHuh() {
+  huhGibYo(rootNode, callback) {
     let t = this;
 
+    // let rootNode = t.graphData.nodes.filter(x => x.id === t.getUniqueId("root"))[0];
     let huhId = t.getUniqueId("huh");
 
     if (t.graphData.nodes.some(n => n.id === huhId)) {
@@ -89,18 +116,20 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.getIbGibJson("huh^gib", ibGibJson => {
       let newNode = {
         id: huhId,
-        title: "?",
+        title: "Help", // shows as the label
+        label: "\uf29c", // Shows as the tooltip
+        fontFamily: "FontAwesome",
+        fontOffset: "9px",
         name: "huh",
         cat: "huh",
         ibgib: ibHelper.getFull_ibGib(ibGibJson),
         ibGibJson: ibGibJson,
-        shape: "circle"
+        shape: "circle",
+        x: rootNode.x,
+        y: rootNode.y,
       };
 
-      let link = { source: t.getUniqueId("root"), target: newNode };
-
-      t.add([newNode], [link], /*updateParentOrChild*/ true);
-      t.animateNodeBorder(newNode, /*node*/ null);
+      callback(newNode);
     });
   }
 
@@ -191,16 +220,40 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   handleNodeNormalClicked(d) {
     let t = this;
     t.clearSelectedNode();
-    if (d.cat === "ibgib") {
-      t.addHuh();
-    } else {
-      super.handleNodeNormalClicked(d);
-    }
+
     t.animateNodeBorder(d, /*node*/ null);
+
+    if (d.cat === "ibgib") {
+      t.toggleRootGibs(d);
+    } if (d.cat === "huh") {
+      super.handleNodeNormalClicked(d);
+    } else {
+      // super.handleNodeNormalClicked(d);
+    }
   }
   handleNodeLongClicked(d) {
     this.clearSelectedNode();
     this.selectNode(d);
+  }
+
+  toggleRootGibs(dRoot) {
+    let t = this;
+    if (t.rootGibs) {
+      t.rootGibs.forEach(rootGib => {
+        t.remove(rootGib, /*updateParentOrChild*/ true)
+      });
+      t.rootGibs = null;
+    } else {
+      t.rootGibs = [];
+      t.huhGibYo(dRoot, dHuh => t.addAndAnimateRootGib(dRoot, dHuh))
+    }
+  }
+
+  addAndAnimateRootGib(root, rootGib) {
+    let t = this;
+    t.add([rootGib], [{ source: root, target: rootGib }], /*updateParentOrChild*/ true);
+    t.animateNodeBorder(rootGib, /*node*/ null);
+    t.rootGibs.push(rootGib);
   }
 
   openMenu(d) {
@@ -208,7 +261,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     const size = 240;
     const halfSize = Math.trunc(size / 2);
-    const pos = {x: t.center - halfSize, y: t.center - halfSize};
+    const pos = {x: t.center.x - halfSize, y: t.center.y - halfSize};
 
     let menuDiv =
       d3.select(t.graphDiv)
@@ -238,5 +291,19 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     d3.select(`#${this.getGraphNodesGroupId()}`)
       .selectAll(shape)
       .style("opacity", opacity);
+  }
+
+  handleResize() {
+    let t = this;
+
+    super.handleResize();
+
+    if (t.menu) {
+      const size = 240;
+      const halfSize = Math.trunc(size / 2);
+      const pos = {x: t.center.x - halfSize, y: t.center.y - halfSize};
+
+      t.menu.moveTo(pos);
+    }
   }
 }

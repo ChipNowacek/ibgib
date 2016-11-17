@@ -30,6 +30,13 @@ export class DynamicD3ForceGraph2 extends DynamicD3ForceGraph {
         defShapeFill: "lightblue",
         defBorderStroke: "darkgreen",
         defBorderStrokeWidth: "5px",
+        label: {
+          fontFamily: "Arial",
+          fontStroke: "pink",
+          fontFill: "red",
+          fontSize: "12px",
+          fontOffset: 8
+        },
         image: {
           backgroundFill: "purple"
         }
