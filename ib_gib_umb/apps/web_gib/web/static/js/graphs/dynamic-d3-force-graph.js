@@ -682,6 +682,9 @@ export class DynamicD3ForceGraph {
     }
   }
   handleNodeRawMouseUp(d) {
+    this.handleNodeRawMouseUpOrTouchEnd(d);
+  }
+  handleNodeRawMouseUpOrTouchEnd(d) {
     let t = this;
     console.log("mouseup")
     t.lastMouseUpTime = new Date();
@@ -732,15 +735,7 @@ export class DynamicD3ForceGraph {
     d3.event.preventDefault();
   }
   handleNodeRawTouchEnd(d) {
-    let t = this;
-
-    // t.lastTouchEnd = d3.event;
-    t.lastMouseUpTime = new Date();
-    delete t.lastMouseDownTime;
-
-    // t.elapsedMouseDownToUp = t.lastMouseUpTime - t.lastMouseDownTime;
-    //
-    // if (t.elapsedMouseDownToUp < t.config.mouse.longPressMs) { t.handleNodeRawClicked(d); }
+    this.handleNodeRawMouseUpOrTouchEnd(d);
   }
 
   // Dynamic add/remove nodes/links
