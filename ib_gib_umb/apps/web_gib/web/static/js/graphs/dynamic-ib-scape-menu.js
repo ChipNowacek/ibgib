@@ -31,7 +31,6 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
         chargeDistanceMin: 10,
         chargeDistanceMax: 10000,
         linkDistance: 1,
-        collideDistance: 45,
       },
       node: {
         cursorType: "crosshair",

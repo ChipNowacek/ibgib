@@ -10,6 +10,8 @@ export class DynamicD3ForceGraph {
     t.graphData = { "nodes": [], "links": [] };
     t.children = [];
 
+    // My current implementation for overriding config with defaults doesn't
+    // work. That's why I'm duplicating the entire structure on all descendants.
     let defaults = {
       background: {
         fill: "#F2F7F0",
@@ -25,8 +27,7 @@ export class DynamicD3ForceGraph {
         chargeStrength: -25,
         chargeDistanceMin: 100,
         chargeDistanceMax: 10000,
-        linkDistance: 50,
-        collideDistance: 35,
+        linkDistance: 50
       },
       node: {
         cursorType: "pointer",
@@ -243,8 +244,14 @@ export class DynamicD3ForceGraph {
           .attr("cursor", d => t.getNodeCursor(d))
           .on("contextmenu", d  => t.handleNodeContextMenu(d))
           .on("mouseover", d => t.handleNodeMouseover(d))
-          .on("click", d => t.handleNodeRawClicked(d))
+          // .on("click", d => t.handleNodeRawClicked(d))
+          // .on("click", d => t.handleNodeRawClicked(d))
           .on("mousedown", d => t.handleNodeRawMouseDown(d))
+          .on("mouseout", d => t.handleNodeRawMouseOut(d))
+          .on("click", d => {
+            // debugger;
+            t.handleNodeRawMouseUp(d);
+          })
           .on("touchstart", d => t.handleNodeRawTouchStart(d))
           .on("touchend", d => t.handleNodeRawTouchEnd(d))
           .call(t.drag);
@@ -444,6 +451,10 @@ export class DynamicD3ForceGraph {
     let dist = Math.sqrt(Math.pow(t.x0 - d.fx, 2) + Math.pow(t.y0 - d.fy, 2));
     if (dist > 2.5) {
       // alert(`dist: ${dist}`)
+      if (t.longPressTimeout) {
+        clearTimeout(t.longPressTimeout);
+        delete t.longPressTimeout;
+      }
       delete t.lastMouseDownTime;
       t.x0 = null;
       t.y0 = null;
@@ -466,6 +477,8 @@ export class DynamicD3ForceGraph {
 
     t.x0 = null;
     t.y0 = null;
+
+    t.animateNodeBorder(d);
   }
   handleBackgroundClicked() {
     console.log(`background clicked in numero 2`);
@@ -552,43 +565,45 @@ export class DynamicD3ForceGraph {
     let t = this;
     console.log(`node doubleclicked. d: ${JSON.stringify(d)}`);
 
-    delete t.lastMouseDownTime;
-    delete t.beforeLastMouseDownTime;
+    // delete t.lastMouseDownTime;
+    // delete t.beforeLastMouseDownTime;
   }
   // Raw event handler to determine if double/long click.
-  handleNodeRawClicked(d) {
-    let t = this;
-
-    if (t.maybeDoubleClicking) {
-      // we're double-clicking
-      delete t.maybeDoubleClicking;
-      delete t.mouseOrTouchPosition;
-      delete t.targetNode;
-    } else {
-      t.maybeDoubleClicking = true;
-
-      setTimeout(() => {
-        if (t.maybeDoubleClicking) {
-          // Not double-clicking, so handle click
-          let now = new Date();
-          let elapsedMs = now - t.lastMouseDownTime;
-          // alert("nodeclicked maybe")
-          delete t.lastMouseDownTime;
-          if (elapsedMs < t.config.mouse.longPressMs) {
-            // normal click
-            t.handleNodeNormalClicked(d);
-          } else {
-            // long click, handled already in mousedown handler.
-            console.log("long click, already handled. no click handler.");
-          }
-
-          delete t.maybeDoubleClicking;
-        }
-      }, t.config.mouse.dblClickMs);
-    }
-  }
+  // handleNodeRawClicked(d) {
+  //   let t = this;
+  //
+  //   if (t.maybeDoubleClicking) {
+  //     // we're double-clicking
+  //     delete t.maybeDoubleClicking;
+  //     delete t.mouseOrTouchPosition;
+  //     delete t.targetNode;
+  //   } else {
+  //     t.maybeDoubleClicking = true;
+  //
+  //     setTimeout(() => {
+  //       if (t.maybeDoubleClicking) {
+  //         // Not double-clicking, so handle click
+  //         let now = new Date();
+  //         let elapsedMs = now - t.lastMouseDownTime;
+  //         // alert("nodeclicked maybe")
+  //         delete t.lastMouseDownTime;
+  //         if (elapsedMs < t.config.mouse.longPressMs) {
+  //           // normal click
+  //           t.handleNodeNormalClicked(d);
+  //         } else {
+  //           // long click, handled already in mousedown handler.
+  //           console.log("long click, already handled. no click handler.");
+  //         }
+  //
+  //         delete t.maybeDoubleClicking;
+  //       }
+  //     }, t.config.mouse.dblClickMs);
+  //   }
+  // }
   handleNodeRawMouseDown(d) {
     let t = this;
+
+    console.log(`mousedown`)
 
     t.isTouch = false;
     t.mouseOrTouchPosition = d3.mouse(t.background.node());
@@ -602,22 +617,106 @@ export class DynamicD3ForceGraph {
   handleNodeRawTouchstartOrMouseDown(d) {
     let t = this;
 
+    t.mouseDownCounter = t.mouseDownCounter || 1;
+
+    if (t.longPressTimeout) {
+      clearTimeout(t.longPressTimeout);
+      delete t.longPressTimeout;
+    }
+
+    if (t.dblClickTimeout) {
+      // we're clicking again within the dblClickMs
+      clearTimeout(t.dblClickTimeout);
+      delete t.dblClickTimeout;
+      t.mouseDownCounter += 1;
+      t.handleNodeDblClicked(d);
+    } else {
+      t.dblClickTimeout = setTimeout(() => {
+        delete t.dblClickTimeout;
+      }, t.config.mouse.dblClickMs);
+
+      t.longPressTimeout = setTimeout(() => {
+        if (t.longPressTimeout) {
+          t.longClicked = true;
+          clearTimeout(t.longPressTimeout);
+          delete t.longPressTimeout;
+          delete t.mouseDownCounter;
+          t.handleNodeLongClicked(d);
+        }
+      }, t.config.mouse.longPressMs);
+    }
+
     t.animateNodeBorder(d, /*node*/ null);
 
-    t.beforeLastMouseDownTime = t.lastMouseDownTime || 0;
-    t.lastMouseDownTime = new Date();
+    // t.beforeLastMouseDownTime = t.lastMouseDownTime || 0;
+    // t.lastMouseDownTime = new Date();
+    //
+    // t.longPressTimeout = setTimeout(() => {
+    //   if (t.lastMouseDownTime && ((t.lastMouseDownTime - t.beforeLastMouseDownTime) < t.config.mouse.dblClickMs)) {
+    //     // Putting this here actually makes the double-click seem to lag, so I
+    //     // will want to correct this later. GEFN.
+    //     t.handleNodeDblClicked(d);
+    //   } else if (t.lastMouseDownTime &&
+    //              (!t.lastMouseUpTime ||
+    //               (t.elapsedMouseDownToUp >= t.config.mouse.longPressMs))) {
+    //     t.lastMouseUpTime = null;
+    //     t.elapsedMouseDownToUp = null;
+    //     t.handleNodeLongClicked(d);
+    //   } else {
+    //     console.log("-----------")
+    //     console.log("-----------")
+    //     console.log(`handleNodeRawTouchstartOrMouseDown timeout`)
+    //     console.log(`t.lastMouseDownTime: ${t.lastMouseDownTime}`)
+    //     console.log(`t.elapsedMouseDownToUp: ${t.elapsedMouseDownToUp}`)
+    //     console.log("-----------")
+    //     console.log("-----------")
+    //   }
+    // }, t.config.mouse.longPressMs);
+  }
+  handleNodeRawMouseOut(d) {
+    let t = this;
+    if (t.longClicked) {
+      console.log(`mouseout deleting t.longClicked`)
+      delete t.longClicked;
+      // do nothing
+    }
+  }
+  handleNodeRawMouseUp(d) {
+    let t = this;
+    console.log("mouseup")
+    t.lastMouseUpTime = new Date();
+    delete t.lastMouseDownTime;
 
-    setTimeout(() => {
-      if (t.lastMouseDownTime && ((t.lastMouseDownTime - t.beforeLastMouseDownTime) < t.config.mouse.dblClickMs)) {
-        // Putting this here actually makes the double-click seem to lag, so I
-        // will want to correct this later. GEFN.
-        t.handleNodeDblClicked(d);
-      } else if (t.lastMouseDownTime) {
-        t.handleNodeLongClicked(d);
-      } else {
-        // alert("else handletouchor")
-      }
-    }, t.config.mouse.longPressMs);
+    if (t.longPressTimeout) {
+      clearTimeout(t.longPressTimeout);
+      delete t.longPressTimeout;
+    }
+
+    if (t.longClicked) {
+      console.log(`deleting t.longClicked`)
+      delete t.longClicked;
+      // do nothing
+    } else {
+      // either we've just clicked a single click, the first click of a double-click or the second click of a double-click.
+      // If it's a single click, then if we wait the double-click amount of
+      // time and the mouse down counter is 1.
+      // If it's a double-click part 1, then if we wait the double-click time
+      // then the mouse down counter will be > 1.
+      // If it's a double-click part 2, then if we wait the double-click time
+      // then the mouse down counter will be > 1.
+
+      setTimeout(() => {
+        // debugger;
+        if (t.mouseDownCounter && t.mouseDownCounter === 1) {
+          delete t.mouseDownCounter;
+          t.handleNodeNormalClicked(d);
+        } else {
+          // some kind of double-clicking going on.
+          // so do nothing.
+          delete t.mouseDownCounter;
+        }
+      }, t.config.mouse.dblClickMs);
+    }
   }
   handleNodeRawTouchStart(d) {
     let t = this;
@@ -635,9 +734,13 @@ export class DynamicD3ForceGraph {
   handleNodeRawTouchEnd(d) {
     let t = this;
 
-    t.lastTouchEnd = d3.event;
-    let elapsedMs = new Date() - t.lastMouseDownTime;
-    if (elapsedMs < t.config.mouse.longPressMs) { t.handleNodeRawClicked(d); }
+    // t.lastTouchEnd = d3.event;
+    t.lastMouseUpTime = new Date();
+    delete t.lastMouseDownTime;
+
+    // t.elapsedMouseDownToUp = t.lastMouseUpTime - t.lastMouseDownTime;
+    //
+    // if (t.elapsedMouseDownToUp < t.config.mouse.longPressMs) { t.handleNodeRawClicked(d); }
   }
 
   // Dynamic add/remove nodes/links
@@ -859,7 +962,7 @@ export class DynamicD3ForceGraph {
   getForceCollide() {
     return d3.forceCollide(d => this.getForceCollideDistance(d));
   }
-  getForceCollideDistance(d) { return this.config.simulation.collideDistance; }
+  getForceCollideDistance(d) { return this.getNodeShapeRadius(d); }
   getForceCenter() { return d3.forceCenter(this.center.x, this.center.y); }
 
   // Nodes functions

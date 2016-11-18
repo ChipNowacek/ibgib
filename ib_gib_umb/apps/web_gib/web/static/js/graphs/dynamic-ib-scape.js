@@ -23,8 +23,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         shape: "rect"
       },
       mouse: {
-        dblClickMs: 250,
-        longPressMs: 800
+        dblClickMs: 300,
+        longPressMs: 750
       },
       simulation: {
         velocityDecay: 0.45,
@@ -32,11 +32,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         chargeDistanceMin: 10,
         chargeDistanceMax: 10000,
         linkDistance: 75,
-        collideDistance: 25,
       },
       node: {
         cursorType: "crosshair",
-        baseRadiusSize: 35,
+        baseRadiusSize: 85,
         defShapeFill: "lightblue",
         defBorderStroke: "darkgreen",
         defBorderStrokeWidth: "2px",
@@ -180,6 +179,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     return d3Colors[index] || d3Colors["default"];
   }
 
+
+
   selectNode(d) {
     let t = this;
 
@@ -304,6 +305,15 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       const pos = {x: t.center.x - halfSize, y: t.center.y - halfSize};
 
       t.menu.moveTo(pos);
+    }
+  }
+
+  handleNodeRawMouseDown(d) {
+    let t = this;
+    if (t.menu) {
+      t.closeMenu();
+    } else {
+      super.handleNodeRawMouseDown(d);
     }
   }
 }

@@ -1,4 +1,4 @@
-var d3CircleRadius = 10;
+var d3CircleRadius = 20;
 var d3LongPressMs = 900;
 var d3DblClickMs = 200;
 

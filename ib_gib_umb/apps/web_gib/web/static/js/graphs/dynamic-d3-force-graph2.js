@@ -22,7 +22,6 @@ export class DynamicD3ForceGraph2 extends DynamicD3ForceGraph {
         chargeDistanceMin: 100,
         chargeDistanceMax: 10000,
         linkDistance: 1000,
-        collideDistance: 55,
       },
       node: {
         cursorType: "crosshair",
