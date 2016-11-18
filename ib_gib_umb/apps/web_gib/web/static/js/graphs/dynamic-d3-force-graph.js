@@ -244,14 +244,10 @@ export class DynamicD3ForceGraph {
           .attr("cursor", d => t.getNodeCursor(d))
           .on("contextmenu", d  => t.handleNodeContextMenu(d))
           .on("mouseover", d => t.handleNodeMouseover(d))
-          // .on("click", d => t.handleNodeRawClicked(d))
-          // .on("click", d => t.handleNodeRawClicked(d))
           .on("mousedown", d => t.handleNodeRawMouseDown(d))
           .on("mouseout", d => t.handleNodeRawMouseOut(d))
-          .on("click", d => {
-            // debugger;
-            t.handleNodeRawMouseUp(d);
-          })
+          // Using "click" event because mouseup event doesn't fire
+          .on("click", d => t.handleNodeRawMouseUp(d))
           .on("touchstart", d => t.handleNodeRawTouchStart(d))
           .on("touchend", d => t.handleNodeRawTouchEnd(d))
           .call(t.drag);
@@ -450,11 +446,15 @@ export class DynamicD3ForceGraph {
     // avoid jitter of a person's finger/mouse when long pressing.
     let dist = Math.sqrt(Math.pow(t.x0 - d.fx, 2) + Math.pow(t.y0 - d.fy, 2));
     if (dist > 2.5) {
+      // console.log(`dist: ${dist}`)
       // alert(`dist: ${dist}`)
+      t.dragging = true;
       if (t.longPressTimeout) {
+
         clearTimeout(t.longPressTimeout);
         delete t.longPressTimeout;
       }
+
       delete t.lastMouseDownTime;
       t.x0 = null;
       t.y0 = null;
@@ -463,7 +463,7 @@ export class DynamicD3ForceGraph {
   handleDragEnded(d) {
     let t = this;
 
-    console.log("handleDragEnded")
+    // console.log("handleDragEnded")
     if (!d3.event.active) {
       t.simulation.alphaTarget(0);
       t.children.filter(child => child.shareDataReference).forEach(child => child.simulation.alphaTarget(0));
@@ -600,21 +600,7 @@ export class DynamicD3ForceGraph {
   //     }, t.config.mouse.dblClickMs);
   //   }
   // }
-  handleNodeRawMouseDown(d) {
-    let t = this;
-
-    console.log(`mousedown`)
-
-    t.isTouch = false;
-    t.mouseOrTouchPosition = d3.mouse(t.background.node());
-    t.lastMouseDownEvent = d3.event;
-    t.targetNode = t.lastMouseDownEvent.target;
-    if (d3.event.button === 0) {
-      t.handleNodeRawTouchstartOrMouseDown(d);
-    }
-    d3.event.preventDefault();
-  }
-  handleNodeRawTouchstartOrMouseDown(d) {
+  handleNodeRawMouseDownOrTouchstart(d) {
     let t = this;
 
     t.mouseDownCounter = t.mouseDownCounter || 1;
@@ -647,46 +633,15 @@ export class DynamicD3ForceGraph {
     }
 
     t.animateNodeBorder(d, /*node*/ null);
-
-    // t.beforeLastMouseDownTime = t.lastMouseDownTime || 0;
-    // t.lastMouseDownTime = new Date();
-    //
-    // t.longPressTimeout = setTimeout(() => {
-    //   if (t.lastMouseDownTime && ((t.lastMouseDownTime - t.beforeLastMouseDownTime) < t.config.mouse.dblClickMs)) {
-    //     // Putting this here actually makes the double-click seem to lag, so I
-    //     // will want to correct this later. GEFN.
-    //     t.handleNodeDblClicked(d);
-    //   } else if (t.lastMouseDownTime &&
-    //              (!t.lastMouseUpTime ||
-    //               (t.elapsedMouseDownToUp >= t.config.mouse.longPressMs))) {
-    //     t.lastMouseUpTime = null;
-    //     t.elapsedMouseDownToUp = null;
-    //     t.handleNodeLongClicked(d);
-    //   } else {
-    //     console.log("-----------")
-    //     console.log("-----------")
-    //     console.log(`handleNodeRawTouchstartOrMouseDown timeout`)
-    //     console.log(`t.lastMouseDownTime: ${t.lastMouseDownTime}`)
-    //     console.log(`t.elapsedMouseDownToUp: ${t.elapsedMouseDownToUp}`)
-    //     console.log("-----------")
-    //     console.log("-----------")
-    //   }
-    // }, t.config.mouse.longPressMs);
-  }
-  handleNodeRawMouseOut(d) {
-    let t = this;
-    if (t.longClicked) {
-      console.log(`mouseout deleting t.longClicked`)
-      delete t.longClicked;
-      // do nothing
-    }
-  }
-  handleNodeRawMouseUp(d) {
-    this.handleNodeRawMouseUpOrTouchEnd(d);
   }
   handleNodeRawMouseUpOrTouchEnd(d) {
     let t = this;
-    console.log("mouseup")
+
+    if (t.dragging) {
+      delete t.dragging;
+      return;
+    }
+
     t.lastMouseUpTime = new Date();
     delete t.lastMouseDownTime;
 
@@ -696,7 +651,6 @@ export class DynamicD3ForceGraph {
     }
 
     if (t.longClicked) {
-      console.log(`deleting t.longClicked`)
       delete t.longClicked;
       // do nothing
     } else {
@@ -709,17 +663,34 @@ export class DynamicD3ForceGraph {
       // then the mouse down counter will be > 1.
 
       setTimeout(() => {
-        // debugger;
         if (t.mouseDownCounter && t.mouseDownCounter === 1) {
           delete t.mouseDownCounter;
           t.handleNodeNormalClicked(d);
         } else {
-          // some kind of double-clicking going on.
-          // so do nothing.
+          // some kind of double-clicking going on, so do nothing.
           delete t.mouseDownCounter;
         }
       }, t.config.mouse.dblClickMs);
     }
+  }
+  handleNodeRawMouseDown(d) {
+    let t = this;
+
+    t.isTouch = false;
+    t.mouseOrTouchPosition = d3.mouse(t.background.node());
+    t.lastMouseDownEvent = d3.event;
+    t.targetNode = t.lastMouseDownEvent.target;
+    if (d3.event.button === 0) {
+      t.handleNodeRawMouseDownOrTouchstart(d);
+    }
+    d3.event.preventDefault();
+  }
+  handleNodeRawMouseOut(d) {
+    let t = this;
+    if (t.longClicked) { delete t.longClicked; }
+  }
+  handleNodeRawMouseUp(d) {
+    this.handleNodeRawMouseUpOrTouchEnd(d);
   }
   handleNodeRawTouchStart(d) {
     let t = this;
@@ -731,7 +702,7 @@ export class DynamicD3ForceGraph {
       t.lastTouchStart.touches[0].clientX,
       t.lastTouchStart.touches[0].clientY
     ];
-    t.handleNodeRawTouchstartOrMouseDown(d);
+    t.handleNodeRawMouseDownOrTouchstart(d);
     d3.event.preventDefault();
   }
   handleNodeRawTouchEnd(d) {
