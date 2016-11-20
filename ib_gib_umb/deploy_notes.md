@@ -1,3 +1,9 @@
+For the history of my first deploy, see the issues on github:
+
+* [Closed devops issues](https://github.com/ibgib/ibgib/issues?q=is%3Aissue+deploy+is%3Aclosed+label%3Adevops)
+* [Deploy 0.1.0](https://github.com/ibgib/ibgib/issues/74)
+* [Deploy 0.1.1](https://github.com/ibgib/ibgib/issues/102)
+
 ### Command lines that I'm using a bit
 
 NOTE: These were the ORIGINAL commands I used. I am keeping this around only

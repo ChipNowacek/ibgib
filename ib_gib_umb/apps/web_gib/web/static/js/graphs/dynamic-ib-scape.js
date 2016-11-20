@@ -132,19 +132,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     });
   }
 
-  handleBackgroundClicked() {
-    let t = this;
-    t.clearSelectedNode();
-
-    // d3.select("#ib-d3-graph-menu-div")
-    //   .style("left", t.center.x + "px")
-    //   .style("top", t.center.y + "px")
-    //   .style("visibility", "hidden")
-    //   .attr("z-index", -1);
-
-    d3.event.preventDefault();
-  }
-
   getIbGibJson(ibgib, callback) {
     let ibGibJson = this.ibGibCache.get(ibgib);
     if (ibGibJson) {
@@ -178,8 +165,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
     return d3Colors[index] || d3Colors["default"];
   }
-
-
 
   selectNode(d) {
     let t = this;
@@ -218,6 +203,18 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
   }
 
+  handleBackgroundClicked() {
+    let t = this;
+    t.clearSelectedNode();
+
+    // d3.select("#ib-d3-graph-menu-div")
+    //   .style("left", t.center.x + "px")
+    //   .style("top", t.center.y + "px")
+    //   .style("visibility", "hidden")
+    //   .attr("z-index", -1);
+
+    d3.event.preventDefault();
+  }
   handleNodeNormalClicked(d) {
     let t = this;
     t.clearSelectedNode();
@@ -235,6 +232,28 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   handleNodeLongClicked(d) {
     this.clearSelectedNode();
     this.selectNode(d);
+  }
+  handleResize() {
+    let t = this;
+
+    super.handleResize();
+
+    if (t.menu) {
+      const size = 240;
+      const halfSize = Math.trunc(size / 2);
+      const pos = {x: t.center.x - halfSize, y: t.center.y - halfSize};
+
+      t.menu.moveTo(pos);
+      if (t.menu.currentDetails) { t.menu.currentDetails.reposition(); }
+    }
+  }
+  handleNodeRawMouseDown(d) {
+    let t = this;
+    if (t.menu) {
+      t.closeMenu();
+    } else {
+      super.handleNodeRawMouseDown(d);
+    }
   }
 
   toggleRootGibs(dRoot) {
@@ -276,16 +295,14 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.menu = new DynamicIbScapeMenu(menuDiv, /*svgId*/ t.svgId + "_menu", /*config*/ null, /*ibScape*/ t, d, pos);
     t.menu.init();
   }
-
   closeMenu() {
     let t = this;
 
-    // let menuDiv = t.menu.graphDiv;
-    t.menu.destroy();
-
-    delete t.menu;
-
-    d3.select("#" + t.getUniqueId("menu")).remove();
+    if (t.menu) {
+      t.menu.close();
+      delete t.menu;
+      d3.select("#" + t.getUniqueId("menu")).remove();
+    }
   }
 
   setShapesOpacity(shape, opacity) {
@@ -294,26 +311,4 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       .style("opacity", opacity);
   }
 
-  handleResize() {
-    let t = this;
-
-    super.handleResize();
-
-    if (t.menu) {
-      const size = 240;
-      const halfSize = Math.trunc(size / 2);
-      const pos = {x: t.center.x - halfSize, y: t.center.y - halfSize};
-
-      t.menu.moveTo(pos);
-    }
-  }
-
-  handleNodeRawMouseDown(d) {
-    let t = this;
-    if (t.menu) {
-      t.closeMenu();
-    } else {
-      super.handleNodeRawMouseDown(d);
-    }
-  }
 }

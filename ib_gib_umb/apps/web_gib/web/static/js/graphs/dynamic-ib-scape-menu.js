@@ -3,7 +3,9 @@ import * as d3text from 'd3-textwrap';
 
 import { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3DefaultCollapsed, d3RequireExpandLevel2, d3MenuCommands } from '../d3params';
 import { DynamicD3ForceGraph } from './dynamic-d3-force-graph';
+import * as details from '../details';
 import * as ibHelper from '../services/ibgib-helper';
+
 
 
 export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
@@ -33,7 +35,7 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
         linkDistance: 1,
       },
       node: {
-        cursorType: "crosshair",
+        cursorType: "pointer",
         baseRadiusSize: 20,
         defShapeFill: "pink",
         defBorderStroke: "darkgreen",
@@ -131,63 +133,72 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
   }
 
   close() {
-    if (this.menuArea) { d3.select("#ib-d3-graph-menu-area").remove();
-      delete this.menuArea;
+    let t = this;
+
+    if (t.menuArea) { d3.select("#ib-d3-graph-menu-area").remove();
+      delete t.menuArea;
     }
-    if (this.svgGroup) { d3.select("#d3menuvis").remove();
-      delete this.svgGroup;
+    if (t.svgGroup) { d3.select("#d3menuvis").remove();
+      delete t.svgGroup;
     }
+
+    if (t.currentDetails) { t.currentDetails.close(); delete t.currentDetails; }
+
+    if (t.ibScape) { delete t.ibScape; }
 
     d3.select("#ib-d3-graph-menu-div")
       .style("visibility", "hidden");
   }
 
-  destroyStuff() {
-    delete(this.ibScape);
-  }
-
   execMenuCommand(dIbGib, dCommand) {
-    if (dCommand.name !== "help") {
-      this.cancelHelpDetails(/*force*/ true);
+    let t = this;
+    let cmdName = dCommand.cmd.name;
+
+    if (t.currentDetails) {
+      t.currentDetails.close();
     }
 
-    if ((dCommand.name === "view" || dCommand.name === "hide")) {
-      this.execView(dIbGib)
-    } else if (dCommand.name === "fork") {
-      this.execFork(dIbGib)
-    } else if (dCommand.name === "goto") {
-      this.execGoto(dIbGib);
-    } else if (dCommand.name === "help") {
-      this.execHelp(dIbGib);
-    } else if (dCommand.name === "comment") {
-      this.execComment(dIbGib);
-    } else if (dCommand.name === "pic") {
-      this.execPic(dIbGib);
-    } else if (dCommand.name === "fullscreen") {
-      this.execFullscreen(dIbGib);
-    } else if (dCommand.name === "link") {
-      this.execLink(dIbGib);
-    } else if (dCommand.name === "externallink") {
-      this.execExternalLink(dIbGib);
-    } else if (dCommand.name === "identemail") {
-      this.execIdentEmail(dIbGib);
-    } else if (dCommand.name === "info") {
-      this.execInfo(dIbGib);
-    } else if (dCommand.name === "query") {
-      this.execQuery(dIbGib);
-    } else if (dCommand.name === "refresh") {
-      this.execRefresh(dIbGib);
-    } else if (dCommand.name === "download") {
-      this.execDownload(dIbGib);
+    // if (cmdName !== "help") {
+    //   this.cancelHelpDetails(/*force*/ true);
+    // }
+
+    if ((cmdName === "view" || cmdName === "hide")) {
+      t.execView(dIbGib)
+    } else if (cmdName === "fork") {
+      t.execFork(dIbGib)
+    } else if (cmdName === "goto") {
+      t.execGoto(dIbGib);
+    } else if (cmdName === "help") {
+      t.execHelp(dIbGib);
+    } else if (cmdName === "comment") {
+      t.execComment(dIbGib);
+    } else if (cmdName === "pic") {
+      t.execPic(dIbGib);
+    } else if (cmdName === "fullscreen") {
+      t.execFullscreen(dIbGib);
+    } else if (cmdName === "link") {
+      t.execLink(dIbGib);
+    } else if (cmdName === "externallink") {
+      t.execExternalLink(dIbGib);
+    } else if (cmdName === "identemail") {
+      t.execIdentEmail(dIbGib);
+    } else if (cmdName === "info") {
+      t.currentDetails = t.getDetails_Info(dIbGib);
+    } else if (cmdName === "query") {
+      t.execQuery(dIbGib);
+    } else if (cmdName === "refresh") {
+      t.execRefresh(dIbGib);
+    } else if (cmdName === "download") {
+      t.execDownload(dIbGib);
     }
+
+    t.currentDetails.open();
   }
-
   execView(dIbGib) {
     this.ibScape.toggleExpandNode(dIbGib);
     this.ibScape.destroyStuff();
     this.ibScape.update(null);
   }
-
   execFork(dIbGib) {
     let init = () => {
       d3.select("#fork_form_data_src_ib_gib")
@@ -196,11 +207,9 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
     this.ibScape.showDetails("fork", init);
     $("#fork_form_data_dest_ib").focus();
   }
-
   execGoto(dIbGib) {
     location.href = `/ibgib/${dIbGib.ibgib}`
   }
-
   execHelp(dIbGib) {
     let init = () => {
       console.log("initializing help...");
@@ -240,7 +249,6 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
 
     this.ibScape.showDetails("help", init);
   }
-
   execComment(dIbGib) {
     let init = () => {
       d3.select("#comment_form_data_src_ib_gib")
@@ -249,7 +257,6 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
     this.ibScape.showDetails("comment", init);
     $("#comment_form_data_text").focus();
   }
-
   execPic(dIbGib) {
     let init = () => {
       d3.select("#pic_form_data_src_ib_gib")
@@ -258,7 +265,6 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
     this.ibScape.showDetails("pic", init);
     $("#pic_form_data_file").focus();
   }
-
   execLink(dIbGib) {
     let init = () => {
       d3.select("#link_form_data_src_ib_gib")
@@ -267,7 +273,6 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
     this.ibScape.showDetails("link", init);
     $("#link_form_data_text").focus();
   }
-
   execFullscreen(dIbGib) {
     if (dIbGib.ibgib === "ib^gib") {
       let id = this.ibScape.graphDiv.id;
@@ -276,7 +281,6 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
       this.ibScape.openImage(dIbGib.ibgib);
     }
   }
-
   execExternalLink(dIbGib) {
     let ibGibJson = this.ibGibCache.get(dIbGib.ibgib);
     let url = ibHelper.getDataText(ibGibJson);
@@ -286,7 +290,6 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
       alert("Error opening external link... :-/");
     }
   }
-
   execIdentEmail(dIbGib) {
     let init = () => {
       d3.select("#ident_form_data_src_ib_gib")
@@ -295,37 +298,37 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
     this.ibScape.showDetails("ident", init);
     $("#ident_form_data_text").focus();
   }
-
-  execInfo(dIbGib) {
-    let t = this;
-    let init = () => {
-      d3.select("#info_form_data_src_ib_gib")
-        .attr("value", dIbGib.ibgib);
-
-      let container = d3.select("#ib-info-details-container");
-      container.each(function() {
-        while (this.firstChild) {
-          this.removeChild(this.firstChild);
-        }
-      });
-
-      t.ibScape.getIbGibJson(dIbGib.ibgib, ibGibJson => {
-
-        let text = JSON.stringify(ibGibJson, null, 2);
-        // Formats new lines in json.data values. It's still a hack just
-        // showing the JSON but it's an improvement.
-        // Thanks SO (for the implementation sort of) http://stackoverflow.com/questions/42068/how-do-i-handle-newlines-in-json
-        text = text.replace(/\\n/g, "\n").replace(/\\r/g, "").replace(/\\t/g, "\t");
-        container
-          .append("pre")
-          .text(text);
-
-        t.ibScape.repositionDetails();
-      });
-    };
-    this.ibScape.showDetails("info", init);
+  getDetails_Info(dIbGib) {
+    return new details.InfoDetails(this.ibScape, dIbGib);
+    //
+    //
+    // let init = () => {
+    //   d3.select("#info_form_data_src_ib_gib")
+    //     .attr("value", dIbGib.ibgib);
+    //
+    //   let container = d3.select("#ib-info-details-container");
+    //   container.each(function() {
+    //     while (this.firstChild) {
+    //       this.removeChild(this.firstChild);
+    //     }
+    //   });
+    //
+    //   t.ibScape.getIbGibJson(dIbGib.ibgib, ibGibJson => {
+    //
+    //     let text = JSON.stringify(ibGibJson, null, 2);
+    //     // Formats new lines in json.data values. It's still a hack just
+    //     // showing the JSON but it's an improvement.
+    //     // Thanks SO (for the implementation sort of) http://stackoverflow.com/questions/42068/how-do-i-handle-newlines-in-json
+    //     text = text.replace(/\\n/g, "\n").replace(/\\r/g, "").replace(/\\t/g, "\t");
+    //     container
+    //       .append("pre")
+    //       .text(text);
+    //
+    //     t.ibScape.repositionDetails();
+    //   });
+    // };
+    // this.ibScape.showDetails("info", init);
   }
-
   execQuery(dIbGib) {
     let init = () => {
       d3.select("#query_form_data_src_ib_gib")
@@ -334,11 +337,9 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
     this.ibScape.showDetails("query", init);
     $("#query_form_data_search_ib").focus();
   }
-
   execRefresh(dIbGib) {
     location.href = `/ibgib/${dIbGib.ibgib}?latest=true`
   }
-
   execDownload(dIbGib) {
     let t = this;
     let imageUrl =
