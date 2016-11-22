@@ -1,4 +1,5 @@
 import * as d3 from 'd3';
+import * as ibHelper from '../ibgib-helper';
 
 
 export class CommandBase {
@@ -189,5 +190,21 @@ export class HelpDetailsCommand extends DetailsCommandBase {
     }
 
     $("#ib-help-details-text").text(text);
+  }
+}
+
+export class QueryDetailsCommand extends DetailsCommandBase {
+  constructor(ibScape, d) {
+    const cmdName = "query";
+    super(cmdName, ibScape, d);
+  }
+
+  init() {
+    let t = this;
+
+    d3.select("#query_form_data_src_ib_gib")
+      .attr("value", t.d.ibgib);
+
+    $("#query_form_data_search_ib").focus();
   }
 }

@@ -5,6 +5,7 @@ import { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales,
 import { DynamicD3ForceGraph } from './dynamic-d3-force-graph';
 import { DynamicIbScapeMenu } from './dynamic-ib-scape-menu';
 import * as ibHelper from '../services/ibgib-helper';
+import { IbGibCommandMgr } from '../services/commanding/ibgib-command-mgr';
 
 export class DynamicIbScape extends DynamicD3ForceGraph {
   constructor(graphDiv, svgId, config, baseJsonPath, ibGibCache, ibGibImageProvider, ibgib) {
@@ -15,6 +16,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.baseJsonPath = baseJsonPath;
     t.ibGibCache = ibGibCache;
     t.ibGibImageProvider = ibGibImageProvider;
+    t.commandMgr = new IbGibCommandMgr(t);
 
     let defaults = {
       background: {
@@ -237,6 +239,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     let t = this;
     t.clearSelectedNode();
 
+    if (t.currentDetails) {
+      t.currentDetails.close();
+      delete t.currentDetails;
+    }
+
     // d3.select("#ib-d3-graph-menu-div")
     //   .style("left", t.center.x + "px")
     //   .style("top", t.center.y + "px")
@@ -253,13 +260,20 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     if (d.cat === "ibgib") {
       t.toggleRootGibs(d);
-    } if (d.cat === "huh") {
+    } else if (d.cat === "huh") {
       t.clearSelectedNode();
       t.selectNode(d);
-      t.menu.hide();
-      t.menu.execMenuCommand(t.graphData.nodes.filter(x => x.cat === "ibgib")[0], t.menu.graphData.nodes.filter(x => x.cmd.name === "help")[0]);
 
-      // super.handleNodeNormalClicked(d);
+      let dIbGib = t.graphData.nodes.filter(x => x.cat === "huh")[0];
+      let dCommand = d3MenuCommands.filter(x => x.name === "help")[0];
+      t.commandMgr.exec(dIbGib, dCommand);
+    } else if (d.cat === "query") {
+      t.clearSelectedNode();
+      t.selectNode(d);
+
+      let dIbGib = t.graphData.nodes.filter(x => x.cat === "query")[0];
+      let dCommand = d3MenuCommands.filter(x => x.name === "query")[0];
+      t.commandMgr.exec(dIbGib, dCommand);
     } else {
       // super.handleNodeNormalClicked(d);
     }

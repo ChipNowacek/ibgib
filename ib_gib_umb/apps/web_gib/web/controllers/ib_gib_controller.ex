@@ -1399,10 +1399,18 @@ defmodule WebGib.IbGibController do
   end
   defp validate(:ib_gib, ib_gib) when is_bitstring(ib_gib) do
     _ = Logger.debug "valid_ib_gib?: #{valid_ib_gib?(ib_gib)}"
-    valid_ib_gib?(ib_gib)
+    valid? = valid_ib_gib?(ib_gib)
+
+    if valid? do
+      _ = Logger.debug("valid?: #{valid?}" |> ExChalk.bg_green)
+    else
+      _ = Logger.debug("valid?: #{valid?}\nib_gib: #{ib_gib}" |> ExChalk.bg_red)
+    end
+    valid?
   end
   defp validate(:ib_gib, ib_gib) do
     _ = Logger.warn "Invalid ib_gib: #{inspect ib_gib}"
+    _ = Logger.debug("valid?: #{false}" |> ExChalk.bg_red)
     false
   end
   defp validate(:query_params, query_params) do
@@ -1412,6 +1420,11 @@ defmodule WebGib.IbGibController do
       validate(:ib_query_type, query_params) and
       validate(:search_data, query_params)
 
+    if valid? do
+      _ = Logger.debug("valid?: #{valid?}" |> ExChalk.bg_green)
+    else
+      _ = Logger.debug("valid?: #{valid?}" |> ExChalk.bg_red)
+    end
     valid?
   end
   defp validate(:search_ib, %{"search_ib" => search_ib})
