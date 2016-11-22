@@ -93,7 +93,7 @@ export class DetailsCommandBase extends CommandBase {
     let posTop = marginY;
     let posLeft = marginX;
     let height = t.ibScape.height - (2 * marginY);
-    let width = t.ibScape.width - (2 * marginX);
+    let width = t.ibScape.width - (2 * marginX) - 15;
     ibScapeDetailsDiv.style.position = "absolute";
     ibScapeDetailsDiv.style.top = posTop + "px";
     ibScapeDetailsDiv.style.bottom = posTop + height + "px";
@@ -206,5 +206,9 @@ export class QueryDetailsCommand extends DetailsCommandBase {
       .attr("value", t.d.ibgib);
 
     $("#query_form_data_search_ib").focus();
+  }
+
+  exec() {
+    super.exec();
   }
 }

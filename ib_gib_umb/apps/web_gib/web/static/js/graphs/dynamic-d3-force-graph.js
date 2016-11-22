@@ -282,7 +282,9 @@ export class DynamicD3ForceGraph {
         .attr("r", d => t.getNodeShapeRadius(d))
         .attr("fill", d => t.getNodeShapeFill(d))
         .attr("stroke", d => t.getNodeBorderStroke(d))
-        .attr("stroke-width", d => t.getNodeBorderStrokeWidth(d));
+        .attr("stroke-width", d => t.getNodeBorderStrokeWidth(d))
+        .attr("stroke-dasharray", d => t.getNodeBorderStrokeDashArray(d))
+        .attr("opacity", d => t.getNodeShapeOpacity(d));
 
     t.graphNodeRects =
       t.graphNodesEnter
@@ -295,7 +297,9 @@ export class DynamicD3ForceGraph {
         .attr("y", d => Math.trunc(-1/2 * t.getNodeShapeHeight(d)))
         .attr("fill", d => t.getNodeShapeFill(d))
         .attr("stroke", d => t.getNodeBorderStroke(d))
-        .attr("stroke-width", d => t.getNodeBorderStrokeWidth(d));
+        .attr("stroke-width", d => t.getNodeBorderStrokeWidth(d))
+        .attr("stroke-dasharray", d => t.getNodeBorderStrokeDashArray(d))
+        .attr("opacity", d => t.getNodeShapeOpacity(d));
 
     t.graphNodeShapes = t.graphNodeCircles.merge(t.graphNodeRects);
   }
@@ -988,6 +992,8 @@ export class DynamicD3ForceGraph {
   getNodeShapeFill(d) { return this.config.node.defShapeFill; }
   getNodeBorderStroke(d) { return this.config.node.defBorderStroke; }
   getNodeBorderStrokeWidth(d) { return this.config.node.defBorderStrokeWidth; }
+  getNodeBorderStrokeDashArray(d) { return null; }
+  getNodeShapeOpacity(d) { return 1; }
 
   // Node image
   getNodeImageGroupId(d) {

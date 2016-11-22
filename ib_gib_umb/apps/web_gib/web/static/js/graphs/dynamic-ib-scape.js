@@ -185,6 +185,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     return result;
   }
   getNodeShapeFill(d) {
+    // debugger;
     let index = d.cat;
     if (d.ibgib === "ib^gib") {
       index = "ibGib";
@@ -196,6 +197,12 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       index = d.id;
     }
     return d3Colors[index] || d3Colors["default"];
+  }
+  getNodeBorderStrokeDashArray(d) {
+    return (d.cat === "huh" || d.cat === "help" || d.cat === "query") ? "7,7,7" : null;
+  }
+  getNodeShapeOpacity(d) {
+    return (d.cat === "huh" || d.cat === "help" || d.cat === "query") ? 0.777 : 1;
   }
 
   selectNode(d) {
@@ -220,11 +227,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     if (t.selectedNode) {
 
-      t.setShapesOpacity("circle", 1);
-      t.setShapesOpacity("rect", 1);
+      t.setShapesOpacity("circle", null);
+      t.setShapesOpacity("rect", null);
 
       t.selectedNode
-          .style("opacity", 1)
+          .style("opacity", d => t.getNodeShapeOpacity(d))
           .attr("stroke", d => t.getNodeBorderStroke(d))
           .attr("stroke-width", d => t.getNodeBorderStrokeWidth(d));
 
@@ -267,6 +274,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       let dIbGib = t.graphData.nodes.filter(x => x.cat === "huh")[0];
       let dCommand = d3MenuCommands.filter(x => x.name === "help")[0];
       t.commandMgr.exec(dIbGib, dCommand);
+
+      let dRoot = t.graphData.nodes.filter(x => x.cat === "ibgib")[0];
+      t.toggleRootGibs(dRoot);
     } else if (d.cat === "query") {
       t.clearSelectedNode();
       t.selectNode(d);
@@ -274,6 +284,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       let dIbGib = t.graphData.nodes.filter(x => x.cat === "query")[0];
       let dCommand = d3MenuCommands.filter(x => x.name === "query")[0];
       t.commandMgr.exec(dIbGib, dCommand);
+
+      let dRoot = t.graphData.nodes.filter(x => x.cat === "ibgib")[0];
+      t.toggleRootGibs(dRoot);
     } else {
       // super.handleNodeNormalClicked(d);
     }
@@ -356,9 +369,17 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   }
 
   setShapesOpacity(shape, opacity) {
-    d3.select(`#${this.getGraphNodesGroupId()}`)
-      .selectAll(shape)
-      .style("opacity", opacity);
+    let t = this;
+    let selection = d3.select(`#${this.getGraphNodesGroupId()}`)
+      .selectAll(shape);
+
+    if (opacity || opacity === 0) {
+      selection
+        .style("opacity", opacity);
+    } else {
+      selection
+        .style("opacity", d => t.getNodeShapeOpacity(d));
+    }
   }
 
 }

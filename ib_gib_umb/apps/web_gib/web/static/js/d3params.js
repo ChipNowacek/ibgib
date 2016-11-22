@@ -43,6 +43,9 @@ let d3Colors = {
   "image": "#DDEDD3",
   "img": "#DDEDD3",
   "identity": "#FFFFFF",
+  "huh": "#EBFF0F",
+  "help": "#EBFF0F",
+  "query": "#C7FF4F",
   "default": "#AEA6E3",
 
   "imageBorder": "#3CAA71",
