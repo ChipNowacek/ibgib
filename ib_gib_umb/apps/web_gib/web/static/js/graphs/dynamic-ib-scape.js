@@ -131,6 +131,36 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       callback(newNode);
     });
   }
+  queryGibYo(rootNode, callback) {
+    let t = this;
+
+    // let rootNode = t.graphData.nodes.filter(x => x.id === t.getUniqueId("root"))[0];
+    let queryId = t.getUniqueId("query");
+
+    if (t.graphData.nodes.some(n => n.id === queryId)) {
+      console.log("query already added.");
+      return;
+    }
+
+    t.getIbGibJson("query^gib", ibGibJson => {
+      let newNode = {
+        id: queryId,
+        title: "Search", // shows as the label
+        label: "\uf002", // Shows as the tooltip
+        fontFamily: "FontAwesome",
+        fontOffset: "9px",
+        name: "query",
+        cat: "query",
+        ibgib: ibHelper.getFull_ibGib(ibGibJson),
+        ibGibJson: ibGibJson,
+        shape: "circle",
+        x: rootNode.x,
+        y: rootNode.y,
+      };
+
+      callback(newNode);
+    });
+  }
 
   getIbGibJson(ibgib, callback) {
     let ibGibJson = this.ibGibCache.get(ibgib);
@@ -224,7 +254,12 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     if (d.cat === "ibgib") {
       t.toggleRootGibs(d);
     } if (d.cat === "huh") {
-      super.handleNodeNormalClicked(d);
+      t.clearSelectedNode();
+      t.selectNode(d);
+      t.menu.hide();
+      t.menu.execMenuCommand(t.graphData.nodes.filter(x => x.cat === "ibgib")[0], t.menu.graphData.nodes.filter(x => x.cmd.name === "help")[0]);
+
+      // super.handleNodeNormalClicked(d);
     } else {
       // super.handleNodeNormalClicked(d);
     }
@@ -265,7 +300,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       t.rootGibs = null;
     } else {
       t.rootGibs = [];
-      t.huhGibYo(dRoot, dHuh => t.addAndAnimateRootGib(dRoot, dHuh))
+      t.huhGibYo(dRoot, dHuh => t.addAndAnimateRootGib(dRoot, dHuh));
+      t.queryGibYo(dRoot, dQuery => t.addAndAnimateRootGib(dRoot, dQuery));
     }
   }
 

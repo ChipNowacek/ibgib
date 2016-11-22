@@ -450,7 +450,8 @@ export class DynamicD3ForceGraph {
       // alert(`dist: ${dist}`)
       t.dragging = true;
       if (t.longPressTimeout) {
-
+        // console.log("clearing long timeout in dragged event")
+        // t.mouseDownCounter = 0;
         clearTimeout(t.longPressTimeout);
         delete t.longPressTimeout;
       }
@@ -471,6 +472,8 @@ export class DynamicD3ForceGraph {
         t.parent.simulation.alphaTarget(0);
       }
     }
+
+    delete t.dragging;
 
     d.fx = undefined;
     d.fy = undefined;
@@ -663,6 +666,7 @@ export class DynamicD3ForceGraph {
       // then the mouse down counter will be > 1.
 
       setTimeout(() => {
+        // debugger;
         if (t.mouseDownCounter && t.mouseDownCounter === 1) {
           delete t.mouseDownCounter;
           t.handleNodeNormalClicked(d);

@@ -3,7 +3,7 @@ import * as d3text from 'd3-textwrap';
 
 import { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3DefaultCollapsed, d3RequireExpandLevel2, d3MenuCommands } from '../d3params';
 import { DynamicD3ForceGraph } from './dynamic-d3-force-graph';
-import * as details from '../details';
+import * as commands from '../commands';
 import * as ibHelper from '../services/ibgib-helper';
 
 
@@ -150,6 +150,16 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
       .style("visibility", "hidden");
   }
 
+  show() {
+    let t = this;
+    d3.select(t.graphDiv).classed("ib-hidden", false);
+  }
+
+  hide() {
+    let t = this;
+    d3.select(t.graphDiv).classed("ib-hidden", true);
+  }
+
   execMenuCommand(dIbGib, dCommand) {
     let t = this;
     let cmdName = dCommand.cmd.name;
@@ -169,7 +179,8 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
     } else if (cmdName === "goto") {
       t.execGoto(dIbGib);
     } else if (cmdName === "help") {
-      t.execHelp(dIbGib);
+      t.currentDetails = t.getDetails_Help(dIbGib);
+      // t.execHelp(dIbGib);
     } else if (cmdName === "comment") {
       t.execComment(dIbGib);
     } else if (cmdName === "pic") {
@@ -192,7 +203,7 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
       t.execDownload(dIbGib);
     }
 
-    t.currentDetails.open();
+    t.currentDetails.exec();
   }
   execView(dIbGib) {
     this.ibScape.toggleExpandNode(dIbGib);
@@ -210,44 +221,46 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
   execGoto(dIbGib) {
     location.href = `/ibgib/${dIbGib.ibgib}`
   }
-  execHelp(dIbGib) {
-    let init = () => {
-      console.log("initializing help...");
-      let text = "Hrmmm...you shouldn't be seeing this! This means that I " +
-        "haven't included help for this yet. Let me know please :-O";
+  getDetails_Info(dIbGib) {
+    return new commands.InfoDetailsCommand(this.ibScape, dIbGib);
 
-      if (dIbGib.ibgib === "ib^gib") {
-        text = `These circles of ibGib - they will increase your smartnesses, fun-having, people-likening, and more, all while solving all of your problems and creating world peace and understanding. You can add pictures, links, comments, and more to them. Click one to bring up its menu which has a bunch of commands you can give. Long-click a command to see its description. Click the Spock Hand to get started. If you're a confused dummE or a nerd looking for more information, check out www.ibgib.com/huh. (Some statements here may be inaccurate or take an infinite amount of time to complete and/or explain.) God Bless.`;
-      } else if (dIbGib.cat === "ib") {
-        text = `This is your current ibGib. Right now, it's the center of your ibverse. Click the information (i) button to get more details about it. Spock hand to fork it, or add comments, pictures, links, and more.`;
-      } else if (dIbGib.cat === "ancestor") {
-        text = `This is an "ancestor" ibGib, like a parent or grandparent. Each time you "fork" a new ibGib, the src ibGib becomes its ancestor. For example, if you fork a RecipeGib -> WaffleGib, then the WaffleGib becomes a child of the RecipeGib.`
-      } else if (dIbGib.cat === "past") {
-        text = `This is a "past" version of your current ibGib. A past ibGib kinda like previous versions of a text document, whither you can 'undo'. Each time you mut8 an ibGib, either by adding/removing a comment or image, changing a comment, etc., you create a "new" version in time. ibGib retains all histories of all changes of all ibGib!`
-      } else if (dIbGib.cat === "dna") {
-        text = `Each ibGib is produced by an internal "dna" code, precisely as living organisms are. Each building block is itself an ibGib that you can navigate to, fork, etc. We can't dynamically build dna yet though (in the future of ibGib!)`;
-      } else if (dIbGib.cat === "identity") {
-        text = `This is an identity ibGib. It gives you information about who produced what ibGib. You can add layers of identities to "provide more identification", like showing someone your driver's license, your voter's card, club membership, etc. Each identity's ib should start with either "session" or "email". Session is an anonymous id and should be attached to each and every ibGib. Email ids show the email that was used to "log in" (but you can log in with multiple emails!). All authenticated identities should be "stamped" (the "gib" starts and ends with "ibGib", e.g. "ibGib_LETTERSandNUMBERS_ibGib").`;
-      } else if (dIbGib.cat === "rel8n") {
-        text = `This is a '${dIbGib.name}' rel8n node. All of its children are rel8ed to the current ibGib by this rel8n. One ibGib can have multiple rel8ns to any other ibGib. You can expand / collapse the rel8n to show / hide its children by either double-clicking or clicking and selecting the "view" button. Click help on the children to learn more about that rel8n.`;
-      } else if (dIbGib.cat === "pic") {
-        text = `This is a picture that you have uploaded! Viewing it in fullscreen will open the image in a new window or tab, depending on your browser preferences. Navigating to it will take you to the pic's ibGib itself. (We're working on an improved experience with adding comments, pictures, etc.)`;
-      } else if (dIbGib.cat === "comment") {
-        let ibGibJson = this.ibGibCache.get(dIbGib.ibgib);
-        let commentText = ibHelper.getDataText(ibGibJson);
-        text = `This is a comment. It contains text...umm...you can comment on just about anything. (We're working on an improved experience with adding comments, pictures, etc.) This particular comment's text is: "${commentText}"`;
-      } else if (dIbGib.cat === "link") {
-        let ibGibJson = this.ibGibCache.get(dIbGib.ibgib);
-        let linkText = ibHelper.getDataText(ibGibJson);
-        text = `This is a hyperlink to somewhere outside of ibGib. If you want to navigate to the external link, then choose the open external link command. If you want to goto the link's ibGib, then click the goto navigation. (We're working on an improved experience with adding comments, pictures, etc.) \n\nLink: "${linkText}"`;
-      } else {
-        text = `This ibGib is rel8d to the current ibGib via ${dIbGib.cat}. Click the information button to get more details about it. You can also navigate to it, expand / collapse any children, fork it, add comments, pictures, links, and more.`;
-      }
-
-      $("#ib-help-details-text").text(text);
-    };
-
-    this.ibScape.showDetails("help", init);
+    // let init = () => {
+    //   console.log("initializing help...");
+    //   let text = "Hrmmm...you shouldn't be seeing this! This means that I " +
+    //     "haven't included help for this yet. Let me know please :-O";
+    //
+    //   if (dIbGib.ibgib === "ib^gib") {
+    //     text = `These circles of ibGib - they will increase your smartnesses, fun-having, people-likening, and more, all while solving all of your problems and creating world peace and understanding. You can add pictures, links, comments, and more to them. Click one to bring up its menu which has a bunch of commands you can give. Long-click a command to see its description. Click the Spock Hand to get started. If you're a confused dummE or a nerd looking for more information, check out www.ibgib.com/huh. (Some statements here may be inaccurate or take an infinite amount of time to complete and/or explain.) God Bless.`;
+    //   } else if (dIbGib.cat === "ib") {
+    //     text = `This is your current ibGib. Right now, it's the center of your ibverse. Click the information (i) button to get more details about it. Spock hand to fork it, or add comments, pictures, links, and more.`;
+    //   } else if (dIbGib.cat === "ancestor") {
+    //     text = `This is an "ancestor" ibGib, like a parent or grandparent. Each time you "fork" a new ibGib, the src ibGib becomes its ancestor. For example, if you fork a RecipeGib -> WaffleGib, then the WaffleGib becomes a child of the RecipeGib.`
+    //   } else if (dIbGib.cat === "past") {
+    //     text = `This is a "past" version of your current ibGib. A past ibGib kinda like previous versions of a text document, whither you can 'undo'. Each time you mut8 an ibGib, either by adding/removing a comment or image, changing a comment, etc., you create a "new" version in time. ibGib retains all histories of all changes of all ibGib!`
+    //   } else if (dIbGib.cat === "dna") {
+    //     text = `Each ibGib is produced by an internal "dna" code, precisely as living organisms are. Each building block is itself an ibGib that you can navigate to, fork, etc. We can't dynamically build dna yet though (in the future of ibGib!)`;
+    //   } else if (dIbGib.cat === "identity") {
+    //     text = `This is an identity ibGib. It gives you information about who produced what ibGib. You can add layers of identities to "provide more identification", like showing someone your driver's license, your voter's card, club membership, etc. Each identity's ib should start with either "session" or "email". Session is an anonymous id and should be attached to each and every ibGib. Email ids show the email that was used to "log in" (but you can log in with multiple emails!). All authenticated identities should be "stamped" (the "gib" starts and ends with "ibGib", e.g. "ibGib_LETTERSandNUMBERS_ibGib").`;
+    //   } else if (dIbGib.cat === "rel8n") {
+    //     text = `This is a '${dIbGib.name}' rel8n node. All of its children are rel8ed to the current ibGib by this rel8n. One ibGib can have multiple rel8ns to any other ibGib. You can expand / collapse the rel8n to show / hide its children by either double-clicking or clicking and selecting the "view" button. Click help on the children to learn more about that rel8n.`;
+    //   } else if (dIbGib.cat === "pic") {
+    //     text = `This is a picture that you have uploaded! Viewing it in fullscreen will open the image in a new window or tab, depending on your browser preferences. Navigating to it will take you to the pic's ibGib itself. (We're working on an improved experience with adding comments, pictures, etc.)`;
+    //   } else if (dIbGib.cat === "comment") {
+    //     let ibGibJson = this.ibGibCache.get(dIbGib.ibgib);
+    //     let commentText = ibHelper.getDataText(ibGibJson);
+    //     text = `This is a comment. It contains text...umm...you can comment on just about anything. (We're working on an improved experience with adding comments, pictures, etc.) This particular comment's text is: "${commentText}"`;
+    //   } else if (dIbGib.cat === "link") {
+    //     let ibGibJson = this.ibGibCache.get(dIbGib.ibgib);
+    //     let linkText = ibHelper.getDataText(ibGibJson);
+    //     text = `This is a hyperlink to somewhere outside of ibGib. If you want to navigate to the external link, then choose the open external link command. If you want to goto the link's ibGib, then click the goto navigation. (We're working on an improved experience with adding comments, pictures, etc.) \n\nLink: "${linkText}"`;
+    //   } else {
+    //     text = `This ibGib is rel8d to the current ibGib via ${dIbGib.cat}. Click the information button to get more details about it. You can also navigate to it, expand / collapse any children, fork it, add comments, pictures, links, and more.`;
+    //   }
+    //
+    //   $("#ib-help-details-text").text(text);
+    // };
+    //
+    // this.ibScape.showDetails("help", init);
   }
   execComment(dIbGib) {
     let init = () => {
@@ -298,36 +311,8 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
     this.ibScape.showDetails("ident", init);
     $("#ident_form_data_text").focus();
   }
-  getDetails_Info(dIbGib) {
-    return new details.InfoDetails(this.ibScape, dIbGib);
-    //
-    //
-    // let init = () => {
-    //   d3.select("#info_form_data_src_ib_gib")
-    //     .attr("value", dIbGib.ibgib);
-    //
-    //   let container = d3.select("#ib-info-details-container");
-    //   container.each(function() {
-    //     while (this.firstChild) {
-    //       this.removeChild(this.firstChild);
-    //     }
-    //   });
-    //
-    //   t.ibScape.getIbGibJson(dIbGib.ibgib, ibGibJson => {
-    //
-    //     let text = JSON.stringify(ibGibJson, null, 2);
-    //     // Formats new lines in json.data values. It's still a hack just
-    //     // showing the JSON but it's an improvement.
-    //     // Thanks SO (for the implementation sort of) http://stackoverflow.com/questions/42068/how-do-i-handle-newlines-in-json
-    //     text = text.replace(/\\n/g, "\n").replace(/\\r/g, "").replace(/\\t/g, "\t");
-    //     container
-    //       .append("pre")
-    //       .text(text);
-    //
-    //     t.ibScape.repositionDetails();
-    //   });
-    // };
-    // this.ibScape.showDetails("info", init);
+  getDetails_Help(dIbGib) {
+    return new commands.HelpDetailsCommand(this.ibScape, dIbGib);
   }
   execQuery(dIbGib) {
     let init = () => {
