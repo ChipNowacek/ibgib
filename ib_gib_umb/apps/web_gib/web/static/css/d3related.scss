@@ -44,6 +44,7 @@
 #ib-scape-details {
   // background-color: #CDDEC5;
   background-color: #CDDEC5;
+  // width: 99% !important;
 }
 
 .ib-details-on {
@@ -56,8 +57,16 @@
   position: absolute;
 }
 
+
+#ib-help-details {
+  display: flex;
+  align-items: center;
+}
+
 #ib-help-details-text {
-  width: 250px;
+  // width: 250px;
+  width: 100%;
+  text-align: center;
 }
 
 #comment_form_data_text {

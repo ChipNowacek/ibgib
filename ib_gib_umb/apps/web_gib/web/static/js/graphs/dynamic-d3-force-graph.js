@@ -111,10 +111,10 @@ export class DynamicD3ForceGraph {
     let t = this;
 
     t.rect = t.graphDiv.getBoundingClientRect();
-    t.width = t.graphDiv.scrollWidth;
-    t.height = t.graphDiv.scrollHeight;
-    t.parentWidth = t.graphDiv.parentNode.scrollWidth;
-    t.parentHeight = t.graphDiv.parentNode.scrollHeight;
+    t.width = t.graphDiv.offsetWidth;
+    t.height = t.graphDiv.offsetHeight;
+    t.parentWidth = t.graphDiv.parentNode.offsetWidth;
+    t.parentHeight = t.graphDiv.parentNode.offsetHeight;
     t.center = {x: t.width / 2, y: t.height / 2};
   }
   initSvg() {
@@ -124,8 +124,10 @@ export class DynamicD3ForceGraph {
     t.svg = d3.select(t.graphDiv)
       .append("svg")
       .attr('id', t.svgId)
-      .attr('width', t.width)
-      .attr('height', t.height);
+      .attr("width", "100%")
+      .attr("height", "100%")
+      // .attr('width', t.width)
+      // .attr('height', t.height);
   }
   initBackground(svg) {
     let t = this;
@@ -151,10 +153,20 @@ export class DynamicD3ForceGraph {
         .attr("fill", () => t.getBackgroundFill())
         .attr("opacity", () => t.getBackgroundOpacity())
         // .attr("class", "view")
-        .attr("x", 0.5)
-        .attr("y", 0.5)
-        .attr("width", t.width - 1)
-        .attr("height", t.height - 1)
+        .attr("x", 0)
+        .attr("y", 0)
+        .attr("width", "100%")
+        .attr("height", "100%")
+        // .attr("width", t.width)
+        // .attr("height", t.height)
+        .attr("border-style", "solid")
+        .attr("border-width", "1px")
+        .attr("stroke", "pink")
+        .attr("stroke-width", "3px")
+        // .attr("x", 0.5)
+        // .attr("y", 0.5)
+        // .attr("width", t.width - 1)
+        // .attr("height", t.height - 1)
         .on("click", () => t.handleBackgroundClicked());
     }
   }

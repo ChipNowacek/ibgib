@@ -86,17 +86,23 @@ export class DetailsCommandBase extends CommandBase {
 
     let marginX = 5;
     let marginY = 55;
+
+    // bah, this whole thing is a hack.
+
+    let posTop = marginY;
+    let posLeft = marginX;
+    let height = t.ibScape.height - (2 * marginY);
+    let width = t.ibScape.width - (2 * marginX);
     ibScapeDetailsDiv.style.position = "absolute";
-    ibScapeDetailsDiv.style.marginTop = marginY + "px";
-    ibScapeDetailsDiv.style.marginBottom = marginY + "px";
-    ibScapeDetailsDiv.style.marginLeft = marginX + "px";
-    ibScapeDetailsDiv.style.marginRight = marginX + "px";
-    ibScapeDetailsDiv.style.padding = "20px";
-    ibScapeDetailsDiv.style.top = "0px";
-    ibScapeDetailsDiv.style.left = "0px";
-    ibScapeDetailsDiv.style.height = (t.ibScape.height - (2 * marginY)) + "px";
-    ibScapeDetailsDiv.style.width = (t.ibScape.width - (2 * marginX)) + "px";
-    t.ibScapeDetails.attr("z-index", 1000000);
+    ibScapeDetailsDiv.style.top = posTop + "px";
+    ibScapeDetailsDiv.style.bottom = posTop + height + "px";
+    ibScapeDetailsDiv.style.height = height + "px";
+    ibScapeDetailsDiv.style.width = width + "px";
+    // ibScapeDetailsDiv.style.marginTop = marginY + "px";
+    // ibScapeDetailsDiv.style.marginBottom = marginY + "px";
+    // ibScapeDetailsDiv.style.marginLeft = marginX + "px";
+    // ibScapeDetailsDiv.style.marginRight = "50px";
+    // ibScapeDetailsDiv.style.padding = "20px";
   }
 }
 
