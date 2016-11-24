@@ -46,29 +46,29 @@ class App {
       // let query = divIbGibData.getAttribute("data-metaqueryibgib");
       // let queryResult = divIbGibData.getAttribute("data-metaqueryresultibgib");
 
-      // The server passes the current ibgib via the ibgib attribute.
-      let ibgib = divIbGibData.getAttribute("ibgib");
+      // The server passes the current ibGib via the ibgib attribute.
+      let ibGib = divIbGibData.getAttribute("ibgib");
 
       // This is our base json path that we will use to pull anything down.
       let baseJsonPath = divIbGibData.getAttribute("data-path");
       let baseD3JsonPath = divIbGibData.getAttribute("d3-data-path");
 
-      // Create the ibScape, which is the d3 "landscape" for the ibgib.
+      // Create the ibScape, which is the d3 "landscape" for the ibGib.
       let graphDiv = document.querySelector("#ib-d3-graph-div");
 
       // this.ibScape = new IbScape(graphDiv, baseJsonPath, ibGibCache, ibGibImageProvider);
       //
       // // We set the ibScape to get its json data
-      // let data = baseD3JsonPath + ibgib;
+      // let data = baseD3JsonPath + ibGib;
       // this.ibScape.update(data);
 
-      this.ibScape = new DynamicIbScape(graphDiv, "mainIbScapeSvg", /*config*/ null, baseJsonPath, ibGibCache, ibGibImageProvider, ibgib);
+      this.ibScape = new DynamicIbScape(graphDiv, "mainIbScapeSvg", /*config*/ null, baseJsonPath, ibGibCache, ibGibImageProvider, ibGib);
       // this.ibScape.init();
       this.ibScape.toggleFullScreen();
 
       //
       // // We set the ibScape to get its json data
-      // let data = baseD3JsonPath + ibgib;
+      // let data = baseD3JsonPath + ibGib;
       // this.ibScape.update(data);
 
       // let graph = new DynamicD3ForceGraph(graphDiv, "testSvgId", /*config*/ null);

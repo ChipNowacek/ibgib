@@ -574,8 +574,8 @@ export class DynamicD3ForceGraph {
 
     t.add(newNodes, newLinks, /*updateParentOrChild*/ true);
 
-    t.animateNodeBorder(d, /*node*/ null);
-    t.animateNodeBorder(newNode, /*node*/ null);
+    t.animateNodeBorder(d, /*nodeShape*/ null);
+    t.animateNodeBorder(newNode, /*nodeShape*/ null);
   }
   handleNodeLongClicked(d) {
     console.log(`node longclicked. d: ${JSON.stringify(d)}`);
@@ -651,7 +651,7 @@ export class DynamicD3ForceGraph {
       }, t.config.mouse.longPressMs);
     }
 
-    t.animateNodeBorder(d, /*node*/ null);
+    t.animateNodeBorder(d, /*nodeShape*/ null);
   }
   handleNodeRawMouseUpOrTouchEnd(d) {
     let t = this;
@@ -682,7 +682,6 @@ export class DynamicD3ForceGraph {
       // then the mouse down counter will be > 1.
 
       setTimeout(() => {
-        // debugger;
         if (t.mouseDownCounter && t.mouseDownCounter === 1) {
           delete t.mouseDownCounter;
           t.handleNodeNormalClicked(d);
@@ -730,6 +729,11 @@ export class DynamicD3ForceGraph {
   }
 
   // Dynamic add/remove nodes/links
+  /*
+   * Adds node(s) and link(s) to the graph and updates the simulation.
+   *
+   * @param `updateParentOrChild` is for use with avoid recursion with parent/child graphs. (So probably going forward, set this to true.)
+   */
   add(nodesToAdd, linksToAdd, updateParentOrChild) {
     let t = this;
 
@@ -787,6 +791,11 @@ export class DynamicD3ForceGraph {
       }
     }
   }
+  /**
+   * Removes node (and any links) from graph.
+   *
+   * @param `updateParentOrChild` is for use with avoid recursion with parent/child graphs. (So probably going forward, set this to true.)
+   */
   remove(dToRemove, updateParentOrChild) {
     // console.log(`dToRemove: ${JSON.stringify(dToRemove)}`)
 
@@ -966,7 +975,14 @@ export class DynamicD3ForceGraph {
   getNodeLabelFill(d) { return this.config.node.label.fontFill; }
   getNodeRenderType(d) { return d.render ? d.render : "default"; }
   // getNodeShapeId(d) { return this.svgId + "_shape_" + d.id; }
-  getNodeShapeId(d) { return this.getUniqueId(d.id, /*prefix*/ "shape"); }
+  getNodeShapeId(d) {
+    if (!d || !d.id) {
+      // debugger;
+      console.log("getNodeShapeId(d): d is null")
+      return null;
+    }
+    return this.getUniqueId(d.id, /*prefix*/ "shape");
+  }
   getNodeCursor(d) { return this.config.node.cursorType; }
   getNodeTitle(d) { return d.title || d.id || ""; }
   getNodeLabelText(d) { return d.label || d.title || d.id; }
@@ -1012,10 +1028,14 @@ export class DynamicD3ForceGraph {
   /** Magic formula to get the node image/background positioning correct. */
   getNodeImageMagicOffset(d) { return -2.5 * (d.r / 25); }
 
-  animateNodeBorder(d, node) {
+  /**
+   * Applies super-fun border transition effect to `nodeShape`.
+   * If `nodeShape` is not given, then will selected it from `d.id`.
+   */
+  animateNodeBorder(d, nodeShape) {
     let t = this;
 
-    let nodeShape = node ? node : d3.select("#" + t.getNodeShapeId(d));
+    nodeShape = nodeShape ? nodeShape : d3.select("#" + t.getNodeShapeId(d));
 
     var transition =
       d3.transition()
@@ -1034,7 +1054,7 @@ export class DynamicD3ForceGraph {
       .attr("stroke-width", "15px")
       .transition(transition)
       .attr("stroke", "green")
-      .attr("stroke-width", "15px")
+      .attr("stroke-width", "16px")
       .transition(transition)
       .attr("stroke", "blue")
       .attr("stroke-width", "15px")

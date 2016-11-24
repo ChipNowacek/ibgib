@@ -242,6 +242,14 @@ var d3MenuCommands = [
     "icon": "\uf0ed",
     "description": "The Cloud Download button saves the pic/file to your local device",
     "color": "#CFA1C8"
+  },
+  {
+    "id": "menu-zap",
+    "name": "zap",
+    "text": "Zap",
+    "icon": "\uf0e7",
+    "description": "Zaps ibGib with some juice - It's alive! (Loads a virtual ibGib, making it become concrete.)",
+    "color": "yellow"
   }
 ];
 

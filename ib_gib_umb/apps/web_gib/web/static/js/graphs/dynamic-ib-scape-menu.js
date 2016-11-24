@@ -169,25 +169,32 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
    */
   getMenuCommandsJson(d) {
     // TODO: ib-scape.js getMenuCommandsJson: When we have client-side dynamicism (prefs, whatever), then we need to change this to take that into account when building the popup menu.
-    let commands = [];
+    let commands;
 
-    if (d.cat === "rel8n") {
-      commands = ["help", "view"];
-    } else if (d.ibgib && d.ibgib === "ib^gib") {
-      commands = ["help", "fork", "goto", "identemail", "fullscreen", "query"];
-    } else if (d.cat === "ib") {
-      commands = ["help", "view", "fork", "comment", "pic", "link", "info", "refresh"];
+    if (d.virtualId) {
+      // Virtual ibGib
+      commands = ["zap", "help"];
     } else {
-      commands = ["help", "view", "fork", "goto", "comment", "pic", "link", "info", "refresh"];
+      // Concrete ibGib
+      if (d.cat === "virtual") {
+        commands = ["help", "view"];
+      } else if (d.ibGib && d.ibGib === "ib^gib") {
+        commands = ["help", "fork", "goto", "identemail", "fullscreen", "query"];
+      } else if (d.cat === "ib") {
+        commands = ["help", "view", "fork", "comment", "pic", "link", "info", "refresh"];
+      } else {
+        commands = ["help", "view", "fork", "goto", "comment", "pic", "link", "info", "refresh"];
+      }
+
+      if (d.render && d.render === "image") {
+        commands.push("fullscreen");
+        commands.push("download");
+      }
+      if (d.cat === "link") {
+        commands.push("externallink");
+      }
     }
 
-    if (d.render && d.render === "image") {
-      commands.push("fullscreen");
-      commands.push("download");
-    }
-    if (d.cat === "link") {
-      commands.push("externallink");
-    }
 
     let nodes = commands.map(cmdName => d3MenuCommands.filter(cmd => cmd.name === cmdName)[0]);
     return {

@@ -9,5 +9,5 @@ export function getDataText(ibGibJson) {
 }
 
 export function getRandomString() {
-  return (Math.random() * 10000000).toString();
+  return Math.trunc(Math.random() * 10000000).toString();
 }

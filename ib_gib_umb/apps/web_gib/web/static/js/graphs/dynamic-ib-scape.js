@@ -8,7 +8,7 @@ import * as ibHelper from '../services/ibgib-helper';
 import { IbGibCommandMgr } from '../services/commanding/ibgib-command-mgr';
 
 export class DynamicIbScape extends DynamicD3ForceGraph {
-  constructor(graphDiv, svgId, config, baseJsonPath, ibGibCache, ibGibImageProvider, ibgib) {
+  constructor(graphDiv, svgId, config, baseJsonPath, ibGibCache, ibGibImageProvider, sourceIbGib) {
     super(graphDiv, svgId, {});
 
     let t = this;
@@ -54,16 +54,19 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       }
     }
     t.config = $.extend({}, defaults, config || {});
+
+    t.sourceIbGib = sourceIbGib;
   }
 
   init() {
     super.init();
     let t = this;
 
-    console.log("init")
+    console.log("init");
 
     t.initResize();
     t.addRoot();
+    // t.addSourceIbGib();
   }
 
   initResize() {
@@ -83,85 +86,156 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
   }
 
+  /** Adds the root, returns the id. */
   addRoot() {
     let t = this;
 
+    // Only add the root if there are no existing nodes on the graph.
     if (!t.graphData || !t.graphData.nodes || t.graphData.nodes.length === 0) {
-      t.getIbGibJson("ib^gib", ibGibJson => {
-        let node = {
-          id: t.getUniqueId("root"),
-          title: "ib",
-          name: "ib",
-          cat: "ibgib",
-          ibgib: "ib^gib",
-          ibGibJson: ibGibJson,
-          shape: "circle"
-        };
+      let rootId = t.getUniqueId("root"),
+          rootType = "ibGib",
+          rootIbGib = "ib^gib",
+          rootShape = "circle",
+          autoZap = false,
+          fadeTimeoutMs = 3000,
+          rootPulseMs = 2000;
 
-        t.add([node], [], /*updateParentOrChild*/ true);
-      })
+      t.addVirtualNode(rootId, rootType, rootIbGib, /*srcNode*/ null, rootShape, autoZap, fadeTimeoutMs);
+
+      // Call recursively. If it was succesfully added and subsequently
+      // zapped by the user, then we won't be at this point.
+      setTimeout(() => t.addRoot(), fadeTimeoutMs + rootPulseMs);
+
+      // t.getIbGibJson("ib^gib", ibGibJson => {
+      //   let node = {
+      //     id: t.getUniqueId("root"),
+      //     title: "ib",
+      //     name: "ib",
+      //     cat: "ibGib",
+      //     ibgib: "ib^gib",
+      //     ibGibJson: ibGibJson,
+      //     shape: "circle"
+      //   };
+      //
+      //   t.add([node], [], /*updateParentOrChild*/ true);
+      // })
+    // } else {
+      // console.log("root node already added.");
     }
   }
 
-  huhGibYo(rootNode, callback) {
+  /**
+   * Creates a virtual node with the d.id of `id` for the given `nameOrIbGib`.
+   * It then creates a link from the `srcNode` to this virtual node and adds
+   * it to the graph.
+   *
+   * The virtualNode added will have a `virtualId`. This is how we can
+   * later find the virtual node when we want to concretize/remove the node.
+   * This is also how we determine if a node is virtual, i.e. if it has a
+   * `virtualId`, then it is virtual.
+   *
+   * @param `id` if not given, will create a new one. NB that this is NOT the `virtualId`.
+   * @param `type` can be `cmd`, `ibGib`, or `rel8n`.
+   *
+   * If `autozap` is true, then will automatically zap the virtual node, thus
+   * either concretizing it if it's an ibGib or `rel8n` node. If it's a `cmd`
+   * node, then `autozap` is ignored.
+   *
+   * `fadeTimeoutMs` controls how long the virtual node will live without any
+   * user interaction. If `!fadeTimeoutMs || fadeTimeoutMs< 0`, then the virtual
+   * node will not automatically time out and will stay virtual until zap
+   * completes. If `autoZap` is true, then this is ignored.
+   *
+   * @returns The virtual node added.
+   * @see `DynamicIbScape.zapVirtualNode`
+   */
+  addVirtualNode(id, type, nameOrIbGib, srcNode, shape, autoZap, fadeTimeoutMs) {
     let t = this;
 
-    // let rootNode = t.graphData.nodes.filter(x => x.id === t.getUniqueId("root"))[0];
-    let huhId = t.getUniqueId("huh");
+    let virtualNode = t.createVirtualNode(id, type, nameOrIbGib, shape);
+    let links = srcNode ? [{ source: srcNode, target: virtualNode }] : [];
+    t.add([virtualNode], links, /*updateParentOrChild*/ true);
 
-    if (t.graphData.nodes.some(n => n.id === huhId)) {
-      console.log("huh already added.");
-      return;
+    t.animateNodeBorder(/*d*/ srcNode, /*nodeShape*/ null);
+    t.animateNodeBorder(/*d*/ virtualNode, /*nodeShape*/ null);
+
+    if (type !== "cmd" && autoZap) {
+      t.zapVirtualNode(virtualNode);
+    } else if (fadeTimeoutMs) {
+      let nodeShape = d3.select("#" + virtualNode.id);
+
+      var transition =
+        d3.transition()
+          .duration(fadeTimeoutMs)
+          .ease(d3.easeLinear);
+
+      console.log("fading out...");
+      // debugger;
+      let o = nodeShape.attr("opacity");
+      // debugger;
+      nodeShape
+        .attr("opacity", 1)
+        .transition(transition)
+        .attr("opacity", 0.3);
+
+      virtualNode.fadeTimer = setTimeout(() => {
+        t.remove(virtualNode, /*updateParentOrChild*/ true);
+      }, fadeTimeoutMs);
     }
-
-    t.getIbGibJson("huh^gib", ibGibJson => {
-      let newNode = {
-        id: huhId,
-        title: "Help", // shows as the label
-        label: "\uf29c", // Shows as the tooltip
-        fontFamily: "FontAwesome",
-        fontOffset: "9px",
-        name: "huh",
-        cat: "huh",
-        ibgib: ibHelper.getFull_ibGib(ibGibJson),
-        ibGibJson: ibGibJson,
-        shape: "circle",
-        x: rootNode.x,
-        y: rootNode.y,
-      };
-
-      callback(newNode);
-    });
   }
-  queryGibYo(rootNode, callback) {
+
+  zapVirtualNode(virtualNode) {
     let t = this;
 
-    // let rootNode = t.graphData.nodes.filter(x => x.id === t.getUniqueId("root"))[0];
-    let queryId = t.getUniqueId("query");
-
-    if (t.graphData.nodes.some(n => n.id === queryId)) {
-      console.log("query already added.");
+    if (!virtualNode.virtualId) {
       return;
     }
 
-    t.getIbGibJson("query^gib", ibGibJson => {
-      let newNode = {
-        id: queryId,
-        title: "Search", // shows as the label
-        label: "\uf002", // Shows as the tooltip
-        fontFamily: "FontAwesome",
-        fontOffset: "9px",
-        name: "query",
-        cat: "query",
-        ibgib: ibHelper.getFull_ibGib(ibGibJson),
-        ibGibJson: ibGibJson,
-        shape: "circle",
-        x: rootNode.x,
-        y: rootNode.y,
-      };
+    t.clearFadeTimeout(virtualNode);
+    t.animateNodeBorder(/*d*/ virtualNode, /*nodeShape*/ null);
 
-      callback(newNode);
-    });
+    switch (virtualNode.type) {
+      case "cmd":
+        break;
+
+      case "ibGib":
+        t.getIbGibJson(virtualNode.ibGib, ibGibJson => {
+          console.log(`got json: ${JSON.stringify(ibGibJson)}`)
+          virtualNode.ibGibJson = ibGibJson;
+          if (ibGibJson.ib === "pic") {
+            virtualNode.render = "image";
+          } else if (ibGibJson.ib === "comment") {
+            virtualNode.render = "text";
+          }
+          delete virtualNode.virtualId;
+
+          let links = t.graphData.links.filter(l => l.source.id === virtualNode.id || l.target.id === virtualNode.id);
+
+          t.remove(virtualNode);
+          t.add([virtualNode], links, /*updateParentOrChild*/ true);
+        });
+        break;
+
+      case "rel8n":
+        break;
+
+      default:
+        console.warn(`zapVirtualNode: Unknown node type: ${virtualNode.type}`);
+    }
+  }
+
+  clearFadeTimeout(virtualNode) {
+    let t = this;
+
+    let nodeShape = d3.select("#" + t.getNodeShapeId(virtualNode.id));
+    nodeShape
+      .attr("opacity", d => t.getNodeShapeOpacity(d))
+      .transition(); // resets/"removes" the fade transition
+
+    if (virtualNode.fadeTimer) {
+      clearTimeout(virtualNode.fadeTimer);
+      delete virtualNode.fadeTimer;
+    }
   }
 
   getIbGibJson(ibgib, callback) {
@@ -185,9 +259,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     return result;
   }
   getNodeShapeFill(d) {
-    // debugger;
     let index = d.cat;
-    if (d.ibgib === "ib^gib") {
+    if (d.ibGib === "ib^gib") {
       index = "ibGib";
     } else if (d.render && d.render === "text") {
       index = "text";
@@ -202,7 +275,28 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     return (d.cat === "huh" || d.cat === "help" || d.cat === "query") ? "7,7,7" : null;
   }
   getNodeShapeOpacity(d) {
-    return (d.cat === "huh" || d.cat === "help" || d.cat === "query") ? 0.777 : 1;
+    return 1;
+    // return d.virtualId ? 0.9 : 1;
+  }
+  getNodeShapeRadius(d) {
+    let multiplier = d3Scales[d.cat] || d3Scales["default"];
+
+    let result = d3CircleRadius * multiplier;
+
+    return result;
+  }
+  getNodeLabelText(d) {
+    if (d.virtualId) {
+      return "...";
+    } else if (d.type === "ibGib" && d.ibGibJson) {
+      if (d.ibGibJson.data && d.ibGibJson.data.label) {
+        return d.ibGibJson.data.label;
+      } else {
+        return d.ibGibJson.ib;
+      }
+    } else {
+      return d.id;
+    }
   }
 
   selectNode(d) {
@@ -263,32 +357,35 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     let t = this;
     t.clearSelectedNode();
 
-    t.animateNodeBorder(d, /*node*/ null);
+    t.animateNodeBorder(d, /*nodeShape*/ null);
 
-    if (d.cat === "ibgib") {
-      t.toggleRootGibs(d);
-    } else if (d.cat === "huh") {
-      t.clearSelectedNode();
-      t.selectNode(d);
-
-      let dIbGib = t.graphData.nodes.filter(x => x.cat === "huh")[0];
-      let dCommand = d3MenuCommands.filter(x => x.name === "help")[0];
-      t.commandMgr.exec(dIbGib, dCommand);
-
-      let dRoot = t.graphData.nodes.filter(x => x.cat === "ibgib")[0];
-      t.toggleRootGibs(dRoot);
-    } else if (d.cat === "query") {
-      t.clearSelectedNode();
-      t.selectNode(d);
-
-      let dIbGib = t.graphData.nodes.filter(x => x.cat === "query")[0];
-      let dCommand = d3MenuCommands.filter(x => x.name === "query")[0];
-      t.commandMgr.exec(dIbGib, dCommand);
-
-      let dRoot = t.graphData.nodes.filter(x => x.cat === "ibgib")[0];
-      t.toggleRootGibs(dRoot);
+    if (d.virtualId) {
+      t.zapVirtualNode(d);
     } else {
-      // super.handleNodeNormalClicked(d);
+      if (d.cat === "ibGib") {
+        t.toggleDefaultVirtualNodes(d);
+      } else if (d.cat === "huh") {
+        t.clearSelectedNode();
+        t.selectNode(d);
+
+        let dIbGib = t.graphData.nodes.filter(x => x.cat === "huh")[0];
+        let dCommand = d3MenuCommands.filter(x => x.name === "help")[0];
+        t.commandMgr.exec(dIbGib, dCommand);
+        let dRoot = t.graphData.nodes.filter(x => x.cat === "ibGib")[0];
+        t.toggleDefaultVirtualNodes(dRoot);
+      } else if (d.cat === "query") {
+        t.clearSelectedNode();
+        t.selectNode(d);
+
+        let dIbGib = t.graphData.nodes.filter(x => x.cat === "query")[0];
+        let dCommand = d3MenuCommands.filter(x => x.name === "query")[0];
+        t.commandMgr.exec(dIbGib, dCommand);
+
+        let dRoot = t.graphData.nodes.filter(x => x.cat === "ibGib")[0];
+        t.toggleDefaultVirtualNodes(dRoot);
+      } else {
+        // super.handleNodeNormalClicked(d);
+      }
     }
   }
   handleNodeLongClicked(d) {
@@ -318,25 +415,25 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
   }
 
-  toggleRootGibs(dRoot) {
+  toggleDefaultVirtualNodes(d) {
     let t = this;
-    if (t.rootGibs) {
-      t.rootGibs.forEach(rootGib => {
-        t.remove(rootGib, /*updateParentOrChild*/ true)
+    if (d.defaultVirtualNodes) {
+      d.defaultVirtualNodes.forEach(virtualNode => {
+        t.remove(virtualNode, /*updateParentOrChild*/ true)
       });
-      t.rootGibs = null;
+      delete d.defaultVirtualNodes;
     } else {
-      t.rootGibs = [];
-      t.huhGibYo(dRoot, dHuh => t.addAndAnimateRootGib(dRoot, dHuh));
-      t.queryGibYo(dRoot, dQuery => t.addAndAnimateRootGib(dRoot, dQuery));
+      d.defaultVirtualNodes = t.getDefaultVirtualNodes(d);
     }
   }
 
-  addAndAnimateRootGib(root, rootGib) {
-    let t = this;
-    t.add([rootGib], [{ source: root, target: rootGib }], /*updateParentOrChild*/ true);
-    t.animateNodeBorder(rootGib, /*node*/ null);
-    t.rootGibs.push(rootGib);
+  getDefaultVirtualNodes(d) {
+    if (d.cat === "ibGib") {
+      t.huhGibYo(dRoot, dHuh => t.addAndAnimateRootGib(dRoot, dHuh));
+      t.queryGibYo(dRoot, dQuery => t.addAndAnimateRootGib(dRoot, dQuery));
+    } else {
+
+    }
   }
 
   openMenu(d) {
@@ -382,4 +479,89 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
   }
 
+  huhGibYo(rootNode, callback) {
+    let t = this;
+
+    // let rootNode = t.graphData.nodes.filter(x => x.id === t.getUniqueId("root"))[0];
+    let huhId = t.getUniqueId("huh");
+
+    if (t.graphData.nodes.some(n => n.id === huhId)) {
+      console.log("huh already added.");
+      return;
+    }
+
+    t.getIbGibJson("huh^gib", ibGibJson => {
+      let newNode = {
+        id: huhId,
+        title: "Help", // shows as the label
+        label: "\uf29c", // Shows as the tooltip
+        fontFamily: "FontAwesome",
+        fontOffset: "9px",
+        name: "huh",
+        cat: "huh",
+        ibgib: ibHelper.getFull_ibGib(ibGibJson),
+        ibGibJson: ibGibJson,
+        shape: "circle",
+        x: rootNode.x,
+        y: rootNode.y,
+        virtualId: ibHelper.getRandomString()
+      };
+
+      callback(newNode);
+    });
+  }
+  queryGibYo(rootNode, callback) {
+    let t = this;
+
+    // let rootNode = t.graphData.nodes.filter(x => x.id === t.getUniqueId("root"))[0];
+    let queryId = t.getUniqueId("query");
+    let queryIbgib = "query^gib";
+
+    if (t.graphData.nodes.some(n => n.id === queryId)) {
+      console.log("query already added.");
+      return;
+    }
+
+    let virtualNode = t.createVirtualNode(queryId, queryIbgib);
+
+    t.getIbGibJson("query^gib", ibGibJson => {
+      let newNode = {
+        id: queryId,
+        title: "Search", // shows as the label
+        label: "\uf002", // Shows as the tooltip
+        fontFamily: "FontAwesome",
+        fontOffset: "9px",
+        name: "query",
+        cat: "query",
+        ibgib: ibHelper.getFull_ibGib(ibGibJson),
+        ibGibJson: ibGibJson,
+        shape: "circle",
+        x: rootNode.x,
+        y: rootNode.y,
+        virtualId: ibHelper.getRandomString()
+      };
+
+      callback(newNode);
+    });
+  }
+
+  createVirtualNode(id, type, nameOrIbGib, shape) {
+    let virtualNode = {
+      id: id || ibHelper.getRandomString(),
+      title: "...", // shows as the label
+      label: "...", // shows as the tooltip
+      fontFamily: "FontAwesome",
+      fontOffset: "9px",
+      type: type,
+      name: nameOrIbGib,
+      shape: shape || "circle",
+      virtualId: ibHelper.getRandomString()
+    };
+
+    if (type === "ibGib") {
+      virtualNode.ibGib = nameOrIbGib;
+    }
+
+    return virtualNode;
+  }
 }
