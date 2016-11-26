@@ -14,7 +14,7 @@ export class CommandBase {
   exec() {
     // do nothing by default
     // this.ibScape.closeMenu();
-    this.ibScape.menu.hide();
+    if (this.ibScape.menu) { this.ibScape.menu.hide(); }
   }
 }
 
@@ -53,11 +53,11 @@ export class DetailsCommandBase extends CommandBase {
       d3.select(`#ib-${t.cmdName}-details`)
         .attr("class", "ib-details-on ib-height-100");
 
-    t.reposition();
+    t.repositionView();
 
     if (t.init) { t.init(); }
 
-    t.reposition();
+    t.repositionView();
   }
 
   close() {
@@ -78,7 +78,7 @@ export class DetailsCommandBase extends CommandBase {
   }
 
   /** Positions the details modal view, e.g. comment text, info details, etc. */
-  reposition() {
+  repositionView() {
     let t = this;
 
     // Position the details based on its size.
@@ -86,7 +86,7 @@ export class DetailsCommandBase extends CommandBase {
     let detailsRect = ibScapeDetailsDiv.getBoundingClientRect();
 
     let marginX = 5;
-    let marginY = 55;
+    let marginY = 15;
 
     // bah, this whole thing is a hack.
 
@@ -104,6 +104,12 @@ export class DetailsCommandBase extends CommandBase {
     // ibScapeDetailsDiv.style.marginLeft = marginX + "px";
     // ibScapeDetailsDiv.style.marginRight = "50px";
     // ibScapeDetailsDiv.style.padding = "20px";
+
+    // position close button
+    d3.select(ibScapeDetailsDiv)
+      .selectAll("[name=ib-scape-details-close-btn]")
+      .style("top", (posTop + 10) + "px")
+      .style("left", (posLeft + width - 50) + "px");
   }
 }
 

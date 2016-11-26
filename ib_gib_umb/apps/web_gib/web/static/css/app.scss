@@ -24,6 +24,14 @@
   overflow-y: hidden;
 }
 
+.ib-overflow-y-scroll {
+  overflow-y: scroll;
+}
+
+.ib-overflow-y-auto {
+  overflow-y: auto;
+}
+
 .ib-padding-sm {
   padding: 5px;
 }
@@ -172,16 +180,21 @@
 /* Tag overrides */
 /*---------------------------------------------------------------------------*/
 
-// html {
-//   height: 98% !important;
-// }
-//
-// main {
-//   height: 98%;
-// }
+html {
+  // To (try to) prevent scrolling
+  // overflow-x: hidden;
+  // overflow-y: hidden;
+  height: 100%;
+  width: 100%;
+}
 
 body {
-  margin-top: 5px !important;
+  // To (try to) prevent scrolling
+  // overflow-x: hidden;
+  // overflow-y: hidden;
+  // position: relative;
+
+  margin-top: 0px !important;
 }
 
 body > .container-fluid {

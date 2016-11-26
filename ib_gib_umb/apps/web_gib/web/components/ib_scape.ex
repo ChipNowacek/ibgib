@@ -19,6 +19,10 @@ defmodule WebGib.Web.Components.IbScape do
       # These are hidden divs that I show when I need them.
       # The positioning, showing/hiding is all done in the js.
       div [id: "ib-scape-details", class: "ib-details-off ib-pos-abs"] do
+        button [name: "ib-scape-details-close-btn"] do
+          span [class: "close ib-center-glyph glyphicon glyphicon-remove ib-red"]
+        end
+
         fork_details
         help_details
         comment_details

@@ -108,6 +108,14 @@ var d3MenuCommands = [
     "color": "#EBFF0F"
   },
   {
+    "id": "menu-huh",
+    "name": "huh",
+    "text": "Huh?",
+    "icon": "\uf128 \uf12a \uf128",
+    "description": "I have no idea what is going on right now...",
+    "color": "#EBFF0F"
+  },
+  {
     "id": "menu-share",
     "name": "share",
     "text": "Share",
@@ -248,7 +256,7 @@ var d3MenuCommands = [
     "name": "zap",
     "text": "Zap",
     "icon": "\uf0e7",
-    "description": "Zaps ibGib with some juice - It's alive! (Loads a virtual ibGib, making it become concrete.)",
+    "description": "Zaps virtual ibGib with some juice \u26a1",
     "color": "yellow"
   }
 ];

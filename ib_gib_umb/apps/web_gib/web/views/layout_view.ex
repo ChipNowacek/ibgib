@@ -19,6 +19,7 @@ defmodule WebGib.LayoutView do
         link rel: "manifest", href: "/manifest.json"
         link rel: "mask-icon", href: "/safari-pinned-tab.svg", color: "#6c8e2e"
         meta name: "theme-color", content: "#f0fcda"
+        meta name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"
       end
       body [class: "ib-height-100"] do
         div [class: "container-fluid ib-width-100 ib-height-100"] do

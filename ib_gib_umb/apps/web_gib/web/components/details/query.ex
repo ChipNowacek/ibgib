@@ -156,7 +156,7 @@ defmodule WebGib.Web.Components.Details.Query do
   component :query_details do
 
     div [id: "ib-query-details", class: "ib-details-off"] do
-      form [action: "/ibgib/query", method: "post"] do
+      form [action: "/ibgib/query", method: "post", class: "ib-overflow-y-auto ib-height-100"] do
         input [id: "query_form_data_src_ib_gib", name: "query_form_data[src_ib_gib]",type: "hidden", value: ""]
         input [name: "_utf8", type: "hidden", value: "✓"]
         input [name: "_csrf_token", type: "hidden", value: Phoenix.Controller.get_csrf_token]

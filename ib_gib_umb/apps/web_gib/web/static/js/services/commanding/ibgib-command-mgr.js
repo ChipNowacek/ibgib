@@ -12,47 +12,63 @@ export class IbGibCommandMgr {
     let t = this;
     let cmdName = dCommand.name;
 
-    if (t.ibScape.currentDetails) {
-      t.ibScape.currentDetails.close();
+    if (t.ibScape.currentCmd) {
+      t.ibScape.currentCmd.close();
     }
 
     // if (cmdName !== "help") {
     //   this.cancelHelpDetails(/*force*/ true);
     // }
-
-    if ((cmdName === "view" || cmdName === "hide")) {
-      t.execView(dIbGib)
-    } else if (cmdName === "fork") {
-      t.execFork(dIbGib)
-    } else if (cmdName === "goto") {
-      t.execGoto(dIbGib);
-    } else if (cmdName === "help") {
-      t.ibScape.currentDetails = t.getDetails_Help(dIbGib);
-      // t.execHelp(dIbGib);
-    } else if (cmdName === "comment") {
-      t.execComment(dIbGib);
-    } else if (cmdName === "pic") {
-      t.execPic(dIbGib);
-    } else if (cmdName === "fullscreen") {
-      t.execFullscreen(dIbGib);
-    } else if (cmdName === "link") {
-      t.execLink(dIbGib);
-    } else if (cmdName === "externallink") {
-      t.execExternalLink(dIbGib);
-    } else if (cmdName === "identemail") {
-      t.execIdentEmail(dIbGib);
-    } else if (cmdName === "info") {
-      t.ibScape.currentDetails = t.getDetails_Info(dIbGib);
-    } else if (cmdName === "query") {
-      t.ibScape.currentDetails = t.getDetails_Query(dIbGib);
-      // t.execQuery(dIbGib);
-    } else if (cmdName === "refresh") {
-      t.execRefresh(dIbGib);
-    } else if (cmdName === "download") {
-      t.execDownload(dIbGib);
+    switch (cmdName) {
+      case "info":
+        t.ibScape.currentCmd = t.getCommand_Info(dIbGib);
+        break;
+      case "query":
+        t.ibScape.currentCmd = t.getCommand_Query(dIbGib);
+        break;
+      case "help":
+        t.ibScape.currentCmd = t.getCommand_Help(dIbGib);
+        break;
+      case "huh":
+        t.ibScape.currentCmd = t.getCommand_Help(dIbGib);
+        break;
+      default:
+        console.error(`unknown cmdName: ${cmdName}`);
     }
+    //
+    // if ((cmdName === "view" || cmdName === "hide")) {
+    //   t.execView(dIbGib)
+    // } else if (cmdName === "fork") {
+    //   t.execFork(dIbGib)
+    // } else if (cmdName === "goto") {
+    //   t.execGoto(dIbGib);
+    // } else if (cmdName === "help") {
+    //   t.ibScape.currentCmd = t.getCommand_Help(dIbGib);
+    //   // t.execHelp(dIbGib);
+    // } else if (cmdName === "comment") {
+    //   t.execComment(dIbGib);
+    // } else if (cmdName === "pic") {
+    //   t.execPic(dIbGib);
+    // } else if (cmdName === "fullscreen") {
+    //   t.execFullscreen(dIbGib);
+    // } else if (cmdName === "link") {
+    //   t.execLink(dIbGib);
+    // } else if (cmdName === "externallink") {
+    //   t.execExternalLink(dIbGib);
+    // } else if (cmdName === "identemail") {
+    //   t.execIdentEmail(dIbGib);
+    // } else if (cmdName === "info") {
+    //   t.ibScape.currentCmd = t.getCommand_Info(dIbGib);
+    // } else if (cmdName === "query") {
+    //   t.ibScape.currentCmd = t.getCommand_Query(dIbGib);
+    //   // t.execQuery(dIbGib);
+    // } else if (cmdName === "refresh") {
+    //   t.execRefresh(dIbGib);
+    // } else if (cmdName === "download") {
+    //   t.execDownload(dIbGib);
+    // }
 
-    t.ibScape.currentDetails.exec();
+    if (t.ibScape.currentCmd) { t.ibScape.currentCmd.exec(); }
   }
   execView(dIbGib) {
     this.ibScape.toggleExpandNode(dIbGib);
@@ -70,7 +86,7 @@ export class IbGibCommandMgr {
   execGoto(dIbGib) {
     location.href = `/ibgib/${dIbGib.ibgib}`
   }
-  getDetails_Info(dIbGib) {
+  getCommand_Info(dIbGib) {
     return new commands.InfoDetailsCommand(this.ibScape, dIbGib);
 
     // let init = () => {
@@ -160,10 +176,10 @@ export class IbGibCommandMgr {
     this.ibScape.showDetails("ident", init);
     $("#ident_form_data_text").focus();
   }
-  getDetails_Help(dIbGib) {
+  getCommand_Help(dIbGib) {
     return new commands.HelpDetailsCommand(this.ibScape, dIbGib);
   }
-  getDetails_Query(dIbGib) {
+  getCommand_Query(dIbGib) {
     return new commands.QueryDetailsCommand(this.ibScape, dIbGib);
   }
   execRefresh(dIbGib) {

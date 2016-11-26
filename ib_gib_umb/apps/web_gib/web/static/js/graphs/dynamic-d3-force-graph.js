@@ -302,6 +302,10 @@ export class DynamicD3ForceGraph {
         .attr("opacity", d => t.getNodeShapeOpacity(d));
 
     t.graphNodeShapes = t.graphNodeCircles.merge(t.graphNodeRects);
+
+    t.graphNodeShapes
+      .append("title")
+      .text(d => t.getNodeTitle(d));
   }
   updateNodeLabels() {
     let t = this;

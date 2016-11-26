@@ -6,6 +6,7 @@
 $ibgib_white: #fff;
 $ibgib_green: #76963e;
 $ibgib_red: #BF0D49;
+$ibgib_red_dark: #85032E;
 $ibgib_pink: #F01ABE;
 $ibgib_blue: #1A77F0;
 $ibgib_orange: #FA9200;
@@ -21,6 +22,9 @@ $ibgib_green_very_light: #E0F2BF;
 }
 .ib-red {
   color: $ibgib_red;
+}
+.ib-red:hover {
+  color: $ibgib_red_dark
 }
 .ib-pink {
   color: $ibgib_pink;

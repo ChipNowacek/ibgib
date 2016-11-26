@@ -112,19 +112,6 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
     console.log(`menu node longclicked. d: ${JSON.stringify(d)}`);
 
     t.animateNodeBorder(d, /*node*/ null);
-
-    // t.detailsRefCount = t.detailsRefCount || 0;
-
-    // let init = () => {
-    //   t.detailsRefCount += 1;
-    //   d3.select("#ib-scape-details").attr("z-index", 10000);
-    //   $("#ib-help-details-text").text(d.description).attr("z-index", 10000);
-    //   setTimeout(() => {
-    //     t.cancelHelpDetails(/*force*/ false);
-    //   }, 4000)
-    // };
-    //
-    // t.ibScape.showDetails("help", init, /*keepMenuOpen*/ true);
   }
   handleNodeRawTouchstartOrMouseDown(d) {
     let t = this;
@@ -137,12 +124,12 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
   close() {
     let t = this;
 
-    if (t.menuArea) { d3.select("#ib-d3-graph-menu-area").remove();
-      delete t.menuArea;
-    }
-    if (t.svgGroup) { d3.select("#d3menuvis").remove();
-      delete t.svgGroup;
-    }
+    // if (t.menuArea) { d3.select("#ib-d3-graph-menu-area").remove();
+    //   delete t.menuArea;
+    // }
+    // if (t.svgGroup) { d3.select("#d3menuvis").remove();
+    //   delete t.svgGroup;
+    // }
 
     if (t.currentDetails) { t.currentDetails.close(); delete t.currentDetails; }
 
@@ -231,7 +218,6 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
     let t = this;
     return d3.forceCenter(t.config.menu.radius, t.config.menu.radius);
   }
-
 
   initSimulation() {
     let t = this;
