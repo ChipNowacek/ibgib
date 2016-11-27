@@ -450,16 +450,12 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       delete t.currentCmd;
     }
 
-    // d3.select("#ib-d3-graph-menu-div")
-    //   .style("left", t.center.x + "px")
-    //   .style("top", t.center.y + "px")
-    //   .style("visibility", "hidden")
-    //   .attr("z-index", -1);
-
     d3.event.preventDefault();
   }
   handleNodeNormalClicked(d) {
     let t = this;
+    console.log(`node clicked: ${JSON.stringify(d)}`);
+
     t.clearSelectedNode();
 
     t.animateNodeBorder(d, /*nodeShape*/ null);

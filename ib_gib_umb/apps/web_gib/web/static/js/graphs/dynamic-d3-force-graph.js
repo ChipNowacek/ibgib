@@ -243,6 +243,23 @@ export class DynamicD3ForceGraph {
   }
   updateNodeDataJoins(nodes) {
     let t = this;
+    var menu = [
+        {
+            title: 'Item #1',
+            action: function(elm, d, i) {
+                console.log('Item #1 clicked!');
+                console.log('The data for this circle is: ' + d);
+            },
+            disabled: false // optional, defaults to false
+        },
+        {
+            title: 'Item #2',
+            action: function(elm, d, i) {
+                console.log('You have clicked the second item!');
+                console.log('The data for this circle is: ' + d);
+            }
+        }
+    ]
 
     t.graphNodesData =
       t.graphNodesGroup
@@ -465,8 +482,8 @@ export class DynamicD3ForceGraph {
     // If we're dragging, then cancel any long press. The distance thing is to
     // avoid jitter of a person's finger/mouse when long pressing.
     let dist = Math.sqrt(Math.pow(t.x0 - d.fx, 2) + Math.pow(t.y0 - d.fy, 2));
-    if (dist > 2.5) {
-      // console.log(`dist: ${dist}`)
+    console.log(`dist: ${dist}`)
+    if (dist > 50) {
       // alert(`dist: ${dist}`)
       t.dragging = true;
       if (t.longPressTimeout) {
@@ -477,13 +494,15 @@ export class DynamicD3ForceGraph {
       }
 
       delete t.lastMouseDownTime;
-      t.x0 = null;
-      t.y0 = null;
+      // t.x0 = null;
+      // t.y0 = null;
     }
   }
   handleDragEnded(d) {
     let t = this;
 
+    t.handleNodeRawMouseUp(d);
+    
     // console.log("handleDragEnded")
     if (!d3.event.active) {
       t.simulation.alphaTarget(0);
@@ -538,7 +557,6 @@ export class DynamicD3ForceGraph {
   }
   handleNodeContextMenu(d) {
     let t = this;
-
     d3.event.preventDefault();
     t.remove(d, /*updateParentOrChild*/ true);
   }
@@ -591,38 +609,6 @@ export class DynamicD3ForceGraph {
     // delete t.lastMouseDownTime;
     // delete t.beforeLastMouseDownTime;
   }
-  // Raw event handler to determine if double/long click.
-  // handleNodeRawClicked(d) {
-  //   let t = this;
-  //
-  //   if (t.maybeDoubleClicking) {
-  //     // we're double-clicking
-  //     delete t.maybeDoubleClicking;
-  //     delete t.mouseOrTouchPosition;
-  //     delete t.targetNode;
-  //   } else {
-  //     t.maybeDoubleClicking = true;
-  //
-  //     setTimeout(() => {
-  //       if (t.maybeDoubleClicking) {
-  //         // Not double-clicking, so handle click
-  //         let now = new Date();
-  //         let elapsedMs = now - t.lastMouseDownTime;
-  //         // alert("nodeclicked maybe")
-  //         delete t.lastMouseDownTime;
-  //         if (elapsedMs < t.config.mouse.longPressMs) {
-  //           // normal click
-  //           t.handleNodeNormalClicked(d);
-  //         } else {
-  //           // long click, handled already in mousedown handler.
-  //           console.log("long click, already handled. no click handler.");
-  //         }
-  //
-  //         delete t.maybeDoubleClicking;
-  //       }
-  //     }, t.config.mouse.dblClickMs);
-  //   }
-  // }
   handleNodeRawMouseDownOrTouchstart(d) {
     let t = this;
 
@@ -685,6 +671,7 @@ export class DynamicD3ForceGraph {
       // If it's a double-click part 2, then if we wait the double-click time
       // then the mouse down counter will be > 1.
 
+      console.warn("not long clicked")
       setTimeout(() => {
         if (t.mouseDownCounter && t.mouseDownCounter === 1) {
           delete t.mouseDownCounter;
@@ -699,20 +686,21 @@ export class DynamicD3ForceGraph {
   handleNodeRawMouseDown(d) {
     let t = this;
 
-    t.isTouch = false;
-    t.mouseOrTouchPosition = d3.mouse(t.background.node());
-    t.lastMouseDownEvent = d3.event;
-    t.targetNode = t.lastMouseDownEvent.target;
     if (d3.event.button === 0) {
-      t.handleNodeRawMouseDownOrTouchstart(d);
+      t.isTouch = false;
+      t.mouseOrTouchPosition = d3.mouse(t.background.node());
+      t.lastMouseDownEvent = d3.event;
+      t.targetNode = t.lastMouseDownEvent.target;
+        t.handleNodeRawMouseDownOrTouchstart(d);
+      d3.event.preventDefault();
     }
-    d3.event.preventDefault();
   }
   handleNodeRawMouseOut(d) {
     let t = this;
     if (t.longClicked) { delete t.longClicked; }
   }
   handleNodeRawMouseUp(d) {
+    console.log("handleNodeRawMouseUp")
     this.handleNodeRawMouseUpOrTouchEnd(d);
   }
   handleNodeRawTouchStart(d) {
@@ -978,11 +966,10 @@ export class DynamicD3ForceGraph {
   getNodeLabelStroke(d) { return this.config.node.label.fontStroke; }
   getNodeLabelFill(d) { return this.config.node.label.fontFill; }
   getNodeRenderType(d) { return d.render ? d.render : "default"; }
-  // getNodeShapeId(d) { return this.svgId + "_shape_" + d.id; }
   getNodeShapeId(d) {
     if (!d || !d.id) {
       // debugger;
-      console.log("getNodeShapeId(d): d is null")
+      // console.log("getNodeShapeId(d): d is null")
       return null;
     }
     return this.getUniqueId(d.id, /*prefix*/ "shape");
