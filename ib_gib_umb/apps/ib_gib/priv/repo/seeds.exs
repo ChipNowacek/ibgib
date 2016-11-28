@@ -14,6 +14,7 @@ alias IbGib.Data.Schemas.Seeds
 
 :ok = Seeds.insert(:error)
 :ok = Seeds.insert(:huh)
+:ok = Seeds.insert(:rel8n)
 
 # Fundamental Transforms
 :ok = Seeds.insert(:fork, %{
@@ -54,6 +55,7 @@ Seeds.insert(:identity)
 Seeds.insert(:session)
 Seeds.insert(:email)
 Seeds.insert(:bootstrap_identity)
+Seeds.insert(:identemail)
 
 # Text Related
 Seeds.insert(:text)

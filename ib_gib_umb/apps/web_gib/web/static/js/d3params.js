@@ -14,7 +14,8 @@ let d3Scales = {
   "dna": 1,
   "ancestor": 1,
   "past": 2,
-  "ib": 5,
+  // "ib": 5,
+  "source": 5,
   "ibGib": 4,
   "result": 2,
   // "rel8d": 3,
@@ -261,4 +262,14 @@ var d3MenuCommands = [
   }
 ];
 
-export { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3DefaultCollapsed, d3RequireExpandLevel2, d3MenuCommands };
+let d3Rel8nIcons = {
+  "identity": "\uf007",
+  "pic": "\uf03e",
+  "comment": "\uf075",
+  "past": "\uf100",
+  "ancestor": "\uf102",
+  "instance": "\uf107",
+  "result": "\uf1c0",
+};
+
+export { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3DefaultCollapsed, d3RequireExpandLevel2, d3MenuCommands, d3Rel8nIcons };

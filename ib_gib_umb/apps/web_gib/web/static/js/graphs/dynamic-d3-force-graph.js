@@ -502,7 +502,7 @@ export class DynamicD3ForceGraph {
     let t = this;
 
     t.handleNodeRawMouseUp(d);
-    
+
     // console.log("handleDragEnded")
     if (!d3.event.active) {
       t.simulation.alphaTarget(0);
@@ -671,7 +671,6 @@ export class DynamicD3ForceGraph {
       // If it's a double-click part 2, then if we wait the double-click time
       // then the mouse down counter will be > 1.
 
-      console.warn("not long clicked")
       setTimeout(() => {
         if (t.mouseDownCounter && t.mouseDownCounter === 1) {
           delete t.mouseDownCounter;
