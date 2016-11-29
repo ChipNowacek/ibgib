@@ -21,6 +21,12 @@ export class CommandBase {
 /**
  * Command that has a details view.
  *
+ * By convention, the details view is located in `web/components/details/cmdname.ex` (capitalization may differ). The details
+ * view must have a div with `ib-${cmdName}-details` with exact capitalization
+ * and spelling. So for the fork command, there is a
+ * `web/components/details/fork.ex` file with a div with id of
+ * `ib-fork-details`.
+ *
  * Details views are shown when a user executes a command on an ibGib.
  *
  * TIP: Code-fold this page to see a list of all of the available details.
@@ -232,6 +238,26 @@ export class QueryDetailsCommand extends DetailsCommandBase {
       .attr("value", t.d.ibGib);
 
     $("#query_form_data_search_ib").focus();
+  }
+
+  exec() {
+    super.exec();
+  }
+}
+
+export class AddIbGibDetailsCommand extends DetailsCommandBase {
+  constructor(ibScape, d) {
+    const cmdName = "addibgib";
+    super(cmdName, ibScape, d);
+  }
+
+  init() {
+    let t = this;
+
+    d3.select("#addibgib_form_data_src_ib_gib")
+      .attr("value", t.d.ibGib);
+
+    $("#addibgib_form_data_dest_ib").focus();
   }
 
   exec() {

@@ -31,6 +31,7 @@ import { DynamicD3ForceGraph } from "./graphs/dynamic-d3-force-graph";
 import { DynamicD3ForceGraph2 } from "./graphs/dynamic-d3-force-graph2";
 import { IbGibCache } from "./services/ibgib-cache";
 import { IbGibImageProvider } from "./services/ibgib-image-provider";
+import { IbGibChannel } from "./services/ibgib-channel";
 
 class App {
 
@@ -41,6 +42,9 @@ class App {
     if (divIbGibData) {
       let ibGibCache = new IbGibCache();
       let ibGibImageProvider = new IbGibImageProvider(ibGibCache);
+      let ibIdentityToken = document.getElementsByName("ib_identity_token")[0].content;
+      let ibGibChannel = new IbGibChannel(ibIdentityToken);
+      ibGibChannel.connect();
 
       // // I'm not sure if these are really useful anymore.
       // let query = divIbGibData.getAttribute("data-metaqueryibgib");

@@ -75,6 +75,10 @@ var d3RequireExpandLevel2 = [
   "identity"
 ];
 
+/**
+ * For commands with a details view, the corresponding view is located in
+ * `web/components/details/cmdname.ex`.
+ */
 var d3MenuCommands = [
   {
     "id": "menu-pic",
@@ -259,7 +263,16 @@ var d3MenuCommands = [
     "icon": "\uf0e7",
     "description": "Zaps virtual ibGib with some juice \u26a1",
     "color": "yellow"
-  }
+  },
+  {
+    "id": "menu-addibgib",
+    "name": "addibgib",
+    "text": "Add ibGib",
+    // http://www.alt-codes.net/plus-sign-symbols
+    "icon": "\u29c2",
+    "description": "Creates and adds a new ibGib \u29c2.",
+    "color": "#C7FF4F"
+  },
 ];
 
 let d3Rel8nIcons = {
@@ -270,6 +283,7 @@ let d3Rel8nIcons = {
   "ancestor": "\uf102",
   "instance": "\uf107",
   "result": "\uf1c0",
+  "verse": "\uf30c",
 };
 
 export { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3DefaultCollapsed, d3RequireExpandLevel2, d3MenuCommands, d3Rel8nIcons };

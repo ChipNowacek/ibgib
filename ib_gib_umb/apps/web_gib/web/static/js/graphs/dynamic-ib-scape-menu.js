@@ -160,17 +160,15 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
 
     if (d.virtualId) {
       // Virtual ibGib
-      commands = ["zap", "help"];
+      commands = ["zap"];
     } else {
       // Concrete ibGib
       if (d.cat === "virtual") {
         commands = ["help", "view"];
       } else if (d.ibGib && d.ibGib === "ib^gib") {
-        commands = ["help", "fork", "goto", "identemail", "fullscreen", "query"];
-      } else if (d.cat === "ib") {
-        commands = ["help", "view", "fork", "comment", "pic", "link", "info", "refresh"];
+        commands = ["help", "fork", "goto", "identemail", "fullscreen", "query", "addibgib"];
       } else {
-        commands = ["help", "view", "fork", "goto", "comment", "pic", "link", "info", "refresh"];
+        commands = ["help", "view", "fork", "goto", "comment", "pic", "link", "info", "refresh", "addibgib"];
       }
 
       if (d.render && d.render === "image") {

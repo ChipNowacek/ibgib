@@ -3,7 +3,7 @@ defmodule WebGib.Endpoint do
   use IbGib.Constants, :ib_gib
   use WebGib.Constants, :config
 
-  # socket "/ibgibsocket", WebGib.IbGibSocket
+  socket "/ibgibsocket", WebGib.IbGibSocket
 
   # Serve at "/" the static files from "priv/static" directory.
   #

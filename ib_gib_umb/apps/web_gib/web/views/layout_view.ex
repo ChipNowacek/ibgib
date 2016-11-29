@@ -1,5 +1,8 @@
 defmodule WebGib.LayoutView do
+  require Logger
+
   use WebGib.Web, :view
+  use WebGib.Constants, :keys
 
   template :app do
     html lang: "en" do
@@ -10,6 +13,7 @@ defmodule WebGib.LayoutView do
         meta name: "viewport", content: "width=device-width, initial-scale=1"
         meta name: "description", content: ""
         meta name: "author", content: ""
+        meta name: "ib_identity_token", content: @ib_identity_token
 
         title "ibGib"
         link rel: "stylesheet", href: static_path(@conn, "/css/app.css")
@@ -40,5 +44,17 @@ defmodule WebGib.LayoutView do
     end
   end
 
-  def render(_template, assigns), do: app(assigns)
+  def render(_template, %{:conn => conn} = assigns) do
+    _ = Logger.warn("assigns: #{inspect assigns}" |> ExChalk.bg_cyan)
+    _ = Logger.warn("conn: #{inspect conn}" |> ExChalk.black |> ExChalk.bg_green)
+    identity_ib_gibs = conn |> Plug.Conn.get_session(@ib_identity_ib_gibs_key)
+    _ = Logger.warn("identity_ib_gibs: #{inspect identity_ib_gibs}" |> ExChalk.bg_cyan |> ExChalk.magenta)
+    identity_token =
+      Phoenix.Token.sign(WebGib.Endpoint, "identity", identity_ib_gibs)
+    _ = Logger.warn("identity_token: #{inspect identity_token}" |> ExChalk.bg_cyan |> ExChalk.magenta)
+    assigns = Map.put(assigns, :ib_identity_token, identity_token)
+    _ = Logger.warn("assigns: #{inspect assigns}" |> ExChalk.bg_white |> ExChalk.red)
+
+    app(assigns)
+  end
 end

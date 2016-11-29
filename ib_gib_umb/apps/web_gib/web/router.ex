@@ -17,6 +17,7 @@ defmodule WebGib.Router do
   pipeline :ib_gib_pipe do
     plug WebGib.Plugs.EnsureIbGibSession
     plug WebGib.Plugs.IbGibIdentity
+    # plug WebGib.Plugs.AggregateIDHash
     plug WebGib.Plugs.EnsureMetaQuery
     plug WebGib.Plugs.IbGibRoot
   end

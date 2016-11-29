@@ -463,4 +463,94 @@ defmodule IbGib.Helper do
     end
   end
 
+
+  # @doc """
+  # IbGib uses identity claims as opposed to a single "user_id" field. So we will
+  # do an aggregate "user_id" hash which is generated based on the current
+  # identities.
+  #
+  # ## Examples
+  #
+  #   One string
+  #     iex> identity_ib_gibs = ["a"]
+  #     ...> {result, _hash} = IbGib.Helper.get_aggregate_id_hash(identity_ib_gibs)
+  #     ...> result
+  #     :ok
+  #
+  #   Two strings
+  #     iex> identity_ib_gibs = ["a", "b"]
+  #     ...> {result, _hash} = IbGib.Helper.get_aggregate_id_hash(identity_ib_gibs)
+  #     ...> result
+  #     :ok
+  #
+  #   One email identity string
+  #     iex> identity_ib_gibs = ["email_a"]
+  #     ...> {result, _hash} = IbGib.Helper.get_aggregate_id_hash(identity_ib_gibs)
+  #     ...> result
+  #     :ok
+  #
+  #   One email identity string with other non-email string
+  #     iex> identity_ib_gibs = ["email_a", "b"]
+  #     ...> {result, _hash} = IbGib.Helper.get_aggregate_id_hash(identity_ib_gibs)
+  #     ...> result
+  #     :ok
+  #
+  #   Same email with other non-email ids should generate same hash
+  #     iex> identity_ib_gibs1 = ["email_a", "session_123"]
+  #     ...> identity_ib_gibs2 = ["email_a", "session_456"]
+  #     ...> {:ok, hash1} = IbGib.Helper.get_aggregate_id_hash(identity_ib_gibs1)
+  #     ...> {:ok, hash2} = IbGib.Helper.get_aggregate_id_hash(identity_ib_gibs2)
+  #     ...> hash1 === hash2
+  #     true
+  #
+  #   To ensure we have consistent hashing (sha256 internals shouldn't change!)
+  #     iex> identity_ib_gibs = ["email_a", "email_b", "session_123"]
+  #     ...> {result, hash} = IbGib.Helper.get_aggregate_id_hash(identity_ib_gibs)
+  #     ...> {result, hash}
+  #     {:ok, "1174A7BAB4B6A811E8B345DAC5FD50201FD7904362C873D94125F2BAEB75E309"}
+  #
+  #   Can't be nil
+  #     iex> identity_ib_gibs = nil
+  #     ...> Logger.disable(self())
+  #     ...> {result, _reason} = IbGib.Helper.get_aggregate_id_hash(identity_ib_gibs)
+  #     ...> Logger.enable(self())
+  #     ...> result
+  #     :error
+  #
+  #   Can't be empty list
+  #     iex> identity_ib_gibs = []
+  #     ...> Logger.disable(self())
+  #     ...> {result, _reason} = IbGib.Helper.get_aggregate_id_hash(identity_ib_gibs)
+  #     ...> Logger.enable(self())
+  #     ...> result
+  #     :error
+  # """
+  # def get_aggregate_id_hash(identity_ib_gibs)
+  # def get_aggregate_id_hash(identity_ib_gibs)
+  #   when is_list(identity_ib_gibs) and
+  #        length(identity_ib_gibs) > 0 do
+  #
+  #   email_identity_ib_gibs =
+  #     Enum.filter(identity_ib_gibs, &(String.starts_with?(&1, "email")))
+  #
+  #   src_identities =
+  #     if Enum.count(email_identity_ib_gibs) > 0 do
+  #       email_identity_ib_gibs
+  #     else
+  #       identity_ib_gibs
+  #     end
+  #
+  #   agg_hash =
+  #     src_identities
+  #     |> Enum.sort()
+  #     |> Enum.reduce("", fn(identity_ib_gib, acc) -> acc <> identity_ib_gib end)
+  #     |> hash()
+  #
+  #   {:ok, agg_hash}
+  # end
+  # def get_aggregate_id_hash(unknown_arg) do
+  #   emsg = "#{emsg_invalid_identity_ib_gibs} #{emsg_invalid_args([unknown_arg])}"
+  #   _ = Logger.error(emsg)
+  #   {:error, emsg}
+  # end
 end
