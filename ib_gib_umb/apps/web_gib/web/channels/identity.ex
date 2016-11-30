@@ -6,6 +6,9 @@ defmodule WebGib.Channels.Identity do
   use Phoenix.Channel
   require Logger
 
+  import IbGib.Helper
+  import WebGib.Validate
+
   def join("identity:" <> agg_id_hash, message, socket) do
     _ = Logger.debug("identity:#{agg_id_hash}.\nmessage: #{inspect message}\nsocket: #{inspect socket}" |> ExChalk.black |> ExChalk.green)
     {:ok, socket}
@@ -38,11 +41,64 @@ defmodule WebGib.Channels.Identity do
     broadcast! socket, "user_cmd2", %{body: body}
     {:noreply, socket}
   end
-  def handle_in("addibgib", msg, socket) do
-    _ = Logger.debug("in user_cmd.\nmsg: #{inspect msg}\nsocket: #{inspect socket}" |> ExChalk.black |> ExChalk.green)
+  def handle_in(msg_name,
+                %{"data" => data,
+                  "metadata" => %{"type" => "cmd"} = metadata
+                } = msg,
+                socket) do
+    _ = Logger.debug("msg_name: #{msg_name}\ndata: #{inspect data}\nmetadata: #{inspect metadata}\nmsg: #{inspect msg}\nsocket: #{inspect socket}" |> ExChalk.black |> ExChalk.green)
+    handle_cmd(msg_name, data, msg, socket)
+  end
 
-    broadcast! socket, "user_cmd", %{body: "yo"}
-    {:noreply, socket}
+  defp handle_cmd("addibgib" = cmd_name,
+                  %{"dest_ib" => dest_ib,
+                    "src_ib_gib" => src_ib_gib} = data,
+                  msg,
+                  socket)
+    when is_nil(dest_ib) or dest_ib == "" do
+    # dest_ib is empty or nil, so fill it with either the src ib or a new id
+    dest_ib =
+      if valid_ib_gib?(src_ib_gib) do
+        {src_ib, _gib} = separate_ib_gib!(src_ib_gib)
+        src_ib
+      else
+        new_id
+      end
+    data = Map.put(data, "dest_ib", dest_ib)
+    msg = Map.put(msg, "data", data)
+
+    handle_cmd(cmd_name, data, msg, socket)
+  end
+  defp handle_cmd("addibgib" = cmd_name,
+                  %{"dest_ib" => dest_ib,
+                    "src_ib_gib" => src_ib_gib} = data,
+                  msg,
+                  %{assigns:
+                    %{ib_identity_ib_gibs: identity_ib_gibs}
+                  } = socket) do
+    _ = Logger.debug("yoooo" |> ExChalk.blue |> ExChalk.bg_white)
+
+    with(
+      {:dest_ib, true} <- validate_input(:dest_ib, dest_ib),
+      {:src_ib_gib, true} <- validate_input(:src_ib_gib, src_ib_gib),
+      {:ok, reply_msg} <- addibgib_impl(identity_ib_gibs, dest_ib, src_ib_gib)
+    ) do
+      {:reply, reply_msg, socket}
+    else
+      {:dest_ib, error} ->
+        handle_cmd_error(:dest_ib, "Invalid destination ib", msg, socket)
+      {:src_ib_gib, error} ->
+        handle_cmd_error(:src_ib_gib, "Invalid source ibGib", msg, socket)
+      {:error, reason} ->
+        handle_cmd_error(:error, inspect reason, msg, socket)
+      error ->
+        handle_cmd_error(:error, inspect error, msg, socket)
+    end
+  end
+
+  # Convenience wrapper that calls wraps validate call
+  defp validate_input(name, value, emsg) do
+    {name, validate(name, value)}
   end
 
   @doc """

@@ -37,7 +37,6 @@ defmodule WebGib.Constants do
     quote do
       @min_ident_pin_size 0
       @max_ident_pin_size 64
-
       @max_ident_elapsed_ms 300_000
     end
   end

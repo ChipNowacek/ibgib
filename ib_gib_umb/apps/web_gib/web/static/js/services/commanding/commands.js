@@ -266,29 +266,36 @@ export class AddIbGibDetailsCommand extends DetailsCommandBase {
       let form = document.getElementById("ib-addibgib-details-form");
       if (form.checkValidity()) {
         console.log("form is valid");
-        debugger;
-        let virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ t.d, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "\u29c2");
-
-        let msg = {
-          name: t.cmdName,
-          src_ib_gib: t.d.ibGib,
-          virtual_id: virtualNode.virtualId,
-          dest_ib: $("#addibgib_form_data_dest_ib").val()
-        };
+        t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ t.d, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "\u29c2");
 
         let channel = t.ibScape.ibGibSocketAndChannels.identityChannel;
-        channel.push(t.cmdName, msg);
+        // debugger;
+        let msg = t.getMessage();
+        channel.push(msg.metadata.name, msg);
       } else {
         console.log("form is invalid");
       }
     });
   }
 
-  exec() {
-    super.exec();
+  getMessage() {
+    let t = this;
+
+    return {
+      data: {
+        src_ib_gib: t.d.ibGib,
+        virtual_id: t.virtualNode.virtualId,
+        dest_ib: $("#addibgib_form_data_dest_ib").val()
+      },
+      metadata: {
+        name: t.cmdName,
+        type: "cmd",
+        local_time: new Date()
+      }
+    };
   }
 
-  getMessage() {
-
+  exec() {
+    super.exec();
   }
 }

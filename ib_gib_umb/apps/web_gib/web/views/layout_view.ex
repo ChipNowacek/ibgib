@@ -60,7 +60,13 @@ defmodule WebGib.LayoutView do
                          @ib_identity_token_salt,
                          identity_ib_gibs)
 
-    {:ok, aggregate_id_hash} = Helper.get_aggregate_id_hash(identity_ib_gibs)
+    {:ok, aggregate_id_hash} =
+      if identity_ib_gibs do
+        Helper.get_aggregate_id_hash(identity_ib_gibs)
+      else
+        # User has just navigated to the site and does not have an identity yet.
+        {:ok, nil}
+      end
 
     assigns
     |> Map.put(:ib_identity_token, identity_token)
