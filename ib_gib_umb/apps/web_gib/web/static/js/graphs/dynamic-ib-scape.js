@@ -8,7 +8,7 @@ import * as ibHelper from '../services/ibgib-helper';
 import { IbGibCommandMgr } from '../services/commanding/ibgib-command-mgr';
 
 export class DynamicIbScape extends DynamicD3ForceGraph {
-  constructor(graphDiv, svgId, config, baseJsonPath, ibGibCache, ibGibImageProvider, sourceIbGib) {
+  constructor(graphDiv, svgId, config, baseJsonPath, ibGibCache, ibGibImageProvider, sourceIbGib, ibGibSocketAndChannels) {
     super(graphDiv, svgId, {});
     let t = this;
 
@@ -16,6 +16,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.ibGibCache = ibGibCache;
     t.ibGibImageProvider = ibGibImageProvider;
     t.commandMgr = new IbGibCommandMgr(t);
+    t.ibGibSocketAndChannels = ibGibSocketAndChannels;
 
     let defaults = {
       background: {
@@ -28,8 +29,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         longPressMs: 750
       },
       simulation: {
-        velocityDecay: 0.45,
-        chargeStrength: -25,
+        velocityDecay: 0.85,
+        chargeStrength: -35,
         chargeDistanceMin: 10,
         chargeDistanceMax: 10000,
         linkDistance: 75,
@@ -177,6 +178,30 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
   getNodeShapeFromIb(ib) {
     return ib === "comment" ? "rect" : "circle";
+  }
+
+  createVirtualNode(id, type, nameOrIbGib, shape, cmd, title, label) {
+    let virtualNode = {
+      id: id || ibHelper.getRandomString(),
+      title: title || "", // shows as the label - disgusting I know, but the woman is especially teed today.
+      label: label || "...", // shows as the tooltip
+      fontFamily: "FontAwesome",
+      fontOffset: "9px",
+      type: type,
+      name: nameOrIbGib,
+      shape: shape || "circle",
+      virtualId: ibHelper.getRandomString()
+    };
+
+    if (type === "ibGib") {
+      virtualNode.ibGib = nameOrIbGib;
+    } else if (type === "cmd" && cmd) {
+      virtualNode.cmd = cmd;
+    } else if (type === "rel8n") {
+      virtualNode.rel8nName = label // out of hand, but can't refactor right now
+    }
+
+    return virtualNode;
   }
 
   /**
@@ -400,9 +425,12 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     return result;
   }
   getNodeLabelText(d) {
+    // debugger;
     if (d.type === "ibGib" && d.ibGibJson) {
       if (d.ibGibJson.data && d.ibGibJson.data.label) {
         return d.ibGibJson.data.label;
+      } else if (d.ibGib === "ib^gib") {
+        return "\u29c2";
       } else {
         return d.ibGibJson.ib;
       }
@@ -655,27 +683,4 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
   }
 
-  createVirtualNode(id, type, nameOrIbGib, shape, cmd, title, label) {
-    let virtualNode = {
-      id: id || ibHelper.getRandomString(),
-      title: title || "", // shows as the label - disgusting I know, but the woman is especially teed today.
-      label: label || "...", // shows as the tooltip
-      fontFamily: "FontAwesome",
-      fontOffset: "9px",
-      type: type,
-      name: nameOrIbGib,
-      shape: shape || "circle",
-      virtualId: ibHelper.getRandomString()
-    };
-
-    if (type === "ibGib") {
-      virtualNode.ibGib = nameOrIbGib;
-    } else if (type === "cmd" && cmd) {
-      virtualNode.cmd = cmd;
-    } else if (type === "rel8n") {
-      virtualNode.rel8nName = label // out of hand, but can't refactor right now
-    }
-
-    return virtualNode;
-  }
 }

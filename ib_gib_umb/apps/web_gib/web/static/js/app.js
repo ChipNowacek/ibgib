@@ -18,7 +18,7 @@
 // Local files can be imported directly using relative
 // paths "./socket" or full ones "web/static/js/socket".
 
-// import { IbGibChannel } from "./socket"
+// import { IbGibSocketAndChannels } from "./socket"
 
 // import { CircleMenu } from "./circlemenu";
 // import { IbScape } from "./ibscape-three";
@@ -31,7 +31,7 @@ import { DynamicD3ForceGraph } from "./graphs/dynamic-d3-force-graph";
 import { DynamicD3ForceGraph2 } from "./graphs/dynamic-d3-force-graph2";
 import { IbGibCache } from "./services/ibgib-cache";
 import { IbGibImageProvider } from "./services/ibgib-image-provider";
-import { IbGibChannel } from "./services/ibgib-channel";
+import { IbGibSocketAndChannels } from "./services/ibgib-channel";
 
 class App {
 
@@ -43,8 +43,10 @@ class App {
       let ibGibCache = new IbGibCache();
       let ibGibImageProvider = new IbGibImageProvider(ibGibCache);
       let ibIdentityToken = document.getElementsByName("ib_identity_token")[0].content;
-      let ibGibChannel = new IbGibChannel(ibIdentityToken);
-      ibGibChannel.connect();
+      let ibAggregateIdentityHash =
+        document.getElementsByName("ib_agg_identity_hash")[0].content;
+      let ibGibSocketAndChannels = new IbGibSocketAndChannels(ibIdentityToken, ibAggregateIdentityHash);
+      ibGibSocketAndChannels.connect();
 
       // // I'm not sure if these are really useful anymore.
       // let query = divIbGibData.getAttribute("data-metaqueryibgib");
@@ -66,7 +68,7 @@ class App {
       // let data = baseD3JsonPath + ibGib;
       // this.ibScape.update(data);
 
-      this.ibScape = new DynamicIbScape(graphDiv, "mainIbScapeSvg", /*config*/ null, baseJsonPath, ibGibCache, ibGibImageProvider, ibGib);
+      this.ibScape = new DynamicIbScape(graphDiv, "mainIbScapeSvg", /*config*/ null, baseJsonPath, ibGibCache, ibGibImageProvider, ibGib, ibGibSocketAndChannels);
       // this.ibScape.init();
       this.ibScape.toggleFullScreen();
 
@@ -168,7 +170,7 @@ class App {
 
     }
     // if (!this.ibGibChannel) {
-    //   this.ibGibChannel = new IbGibChannel();
+    //   this.ibGibChannel = new IbGibSocketAndChannels();
     //   this.ibGibChannel.connect();
     // }
 

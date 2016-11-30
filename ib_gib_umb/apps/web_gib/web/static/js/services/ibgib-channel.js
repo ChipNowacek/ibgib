@@ -5,47 +5,49 @@
 // and connect at the socket path in "lib/my_app/endpoint.ex":
 import { Socket } from "phoenix";
 
-export class IbGibChannel {
-  constructor(ibIdentityToken) {
+export class IbGibSocketAndChannels {
+  constructor(ibIdentityToken, ibAggregateIdentityHash) {
     this.ibIdentityToken = ibIdentityToken;
+    this.ibAggregateIdentityHash = ibAggregateIdentityHash;
   }
 
   connect() {
-    if (!this.socket) {
-      this.initSocket();
-    }
-
-    if (!this.channel) {
-      this.initChannel();
-    }
+    if (!this.socket) { this.initSocket(); }
+    if (!this.identityChannel) { this.initIdentityChannel(); }
   }
 
   initSocket() {
-    console.log('IbGibChannel.initSocket')
-    let blah = window.userToken;
-    debugger;
+    console.log('IbGibSocketAndChannels.initSocket')
     let socket = new Socket("/ibgibsocket", {params: {token: this.ibIdentityToken}})
     socket.connect();
     this.socket = socket;
   }
 
-  initChannel() {
+  initIdentityChannel() {
     // Now that you are connected, you can join channels with a topic:
-    let channel = this.socket.channel("ibgib:lobby", {});
+    // debugger;
+    let channel = this.socket.channel(`identity:${this.ibAggregateIdentityHash}`, {});
+    // let channel = this.socket.channel(`ibgib:lobby`, {});
+    // let channel = this.socket.channel(`ident:lobby`, {});
 
-    setInterval(() => {
-      let now = new Date();
-      channel.push("new_msg", {body: now.toString()});
-    }, 3000);
+    // setInterval(() => {
+    //   let now = new Date();
+    //   let msgName = Math.random() > 0.5 ? "user_cmd" : "user_cmd2";
+    //   channel.push(msgName, {body: now.toString()});
+    // }, 3000);
 
-    channel.on("new_msg", payload => {
-      console.log(`new_msg payload: ${JSON.stringify(payload)}`);
+    channel.on("user_cmd", payload => {
+      console.log(`user_cmd payload: ${JSON.stringify(payload)}`);
+    });
+
+    channel.on("user_cmd2", payload => {
+      console.log(`user_cmd2 yo payload: ${JSON.stringify(payload)}`);
     });
 
     channel.join()
       .receive("ok", resp => { console.log("Joined channel successfully", resp) })
       .receive("error", resp => { console.error("Unable to join channel", resp) })
 
-    this.channel = channel;
+    this.identityChannel = channel;
   }
 }

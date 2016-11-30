@@ -257,10 +257,38 @@ export class AddIbGibDetailsCommand extends DetailsCommandBase {
     d3.select("#addibgib_form_data_src_ib_gib")
       .attr("value", t.d.ibGib);
 
-    $("#addibgib_form_data_dest_ib").focus();
+    $("#addibgib_form_data_dest_ib").val(t.d.ibGibJson.ib).focus();
+
+    $("#ib-addibgib-details-form").submit(function(event) {
+      event.preventDefault();
+      console.log("submit clicked");
+
+      let form = document.getElementById("ib-addibgib-details-form");
+      if (form.checkValidity()) {
+        console.log("form is valid");
+        debugger;
+        let virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ t.d, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "\u29c2");
+
+        let msg = {
+          name: t.cmdName,
+          src_ib_gib: t.d.ibGib,
+          virtual_id: virtualNode.virtualId,
+          dest_ib: $("#addibgib_form_data_dest_ib").val()
+        };
+
+        let channel = t.ibScape.ibGibSocketAndChannels.identityChannel;
+        channel.push(t.cmdName, msg);
+      } else {
+        console.log("form is invalid");
+      }
+    });
   }
 
   exec() {
     super.exec();
+  }
+
+  getMessage() {
+
   }
 }

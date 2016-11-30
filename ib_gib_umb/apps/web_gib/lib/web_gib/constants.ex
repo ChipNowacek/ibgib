@@ -48,7 +48,8 @@ defmodule WebGib.Constants do
       @upload_files_path "./files/"
       @pic_thumb_filename_prefix "thumb_"
       @pic_thumb_size "300x300"
-      # @upload_files_path "/var/www/app/files/"
+      @ib_identity_token_salt "8eymmTYgMlKzeGH0JmThq0tJ56uBBPS6"
+      @ib_identity_token_max_age 604_800 # seconds in 1 week
     end
   end
 

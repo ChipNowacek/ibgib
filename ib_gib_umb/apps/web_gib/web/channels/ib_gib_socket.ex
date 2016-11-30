@@ -2,9 +2,11 @@ defmodule WebGib.IbGibSocket do
   require Logger
   use Phoenix.Socket
 
+  use WebGib.Constants, :config
+
   ## Channels
   # This is where we match a server-side Channel module to the route.
-  channel "ibgib:*", WebGib.IbGibChannel
+  channel "identity:*", WebGib.Channels.Identity
 
   ## Transports
   transport :websocket, Phoenix.Transports.WebSocket
@@ -23,10 +25,10 @@ defmodule WebGib.IbGibSocket do
   # performing token verification on connect.
   def connect(%{"token" => token} = _params, socket) do
     _ = Logger.debug("connecting with token: #{token}" |> ExChalk.yellow |> ExChalk.bg_blue)
-    case Phoenix.Token.verify(WebGib.Endpoint, "identity", token, max_age: 20) do
+    case Phoenix.Token.verify(WebGib.Endpoint, @ib_identity_token_salt, token, max_age: @ib_identity_token_max_age) do
       {:ok, identity_ib_gibs} ->
         _ = Logger.debug("verified token identity_ib_gibs: #{inspect identity_ib_gibs}" |> ExChalk.yellow |> ExChalk.bg_blue)
-        {:ok, socket}
+        {:ok, assign(socket, :ib_identity_ib_gibs, identity_ib_gibs)}
 
       {:error, :expired} ->
         emsg = "Session expired. Please log back in."

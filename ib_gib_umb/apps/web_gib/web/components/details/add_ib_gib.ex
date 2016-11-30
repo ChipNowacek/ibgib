@@ -19,7 +19,7 @@ defmodule WebGib.Web.Components.Details.AddIbGib do
     # AddIbGib details
     # This is shown when the user presses the Add IbGib button on an ibGib.
     div [id: "ib-addibgib-details", class: "ib-details-off"] do
-      form [action: "/ibgib/addibgib", method: "post"] do
+      form [id: "ib-addibgib-details-form", action: "/ibgib/addibgib", method: "post"] do
         input [id: "addibgib_form_data_src_ib_gib", name: "addibgib_form_data[src_ib_gib]",type: "hidden", value: ""]
         input [name: "_utf8", type: "hidden", value: "✓"]
         p "Give it an ib:   "
