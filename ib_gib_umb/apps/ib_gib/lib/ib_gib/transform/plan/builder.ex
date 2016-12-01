@@ -239,12 +239,15 @@ defmodule IbGib.Transform.Plan.Builder do
   @doc """
   Adds a `mut8` step to the plan.
 
+  If this is called with `new_data` being either nil or an empty map, then
+  this will simply return the plan as-is. 
+
   Returns {:ok, plan} | {:error, reason}
   """
   @spec add_mut8(map, String.t, map) :: {:ok, map} | {:error, String.t}
   def add_mut8(plan, name, new_data)
   def add_mut8(plan, name, new_data)
-    when is_map(new_data) do
+    when is_map(new_data) and map_size(new_data) > 0 do
     add_step(
               plan,
               %{
@@ -255,6 +258,14 @@ defmodule IbGib.Transform.Plan.Builder do
                 }
               }
             )
+  end
+  def add_mut8(plan, name, new_data)
+    when is_nil(new_data) do
+    plan
+  end
+  def add_mut8(plan, name, new_data)
+    when is_map(new_data) and map_size(new_data) === 0 do
+    plan
   end
   def add_mut8(plan, name, new_data) do
     invalid_args([plan, name, new_data])

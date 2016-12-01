@@ -19,7 +19,7 @@ defmodule WebGib.Web.Components.Details.Fork do
     # Fork details
     # This is shown when the user presses the fork button on an ibGib.
     div [id: "ib-fork-details", class: "ib-details-off"] do
-      form [action: "/ibgib/fork", method: "post"] do
+      form [id: "ib-fork-details-form" action: "/ibgib/fork", method: "post"] do
         input [id: "fork_form_data_src_ib_gib", name: "fork_form_data[src_ib_gib]",type: "hidden", value: ""]
         input [name: "_utf8", type: "hidden", value: "✓"]
         p "Give it an ib:   "

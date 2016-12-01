@@ -264,15 +264,15 @@ var d3MenuCommands = [
     "description": "Zaps virtual ibGib with some juice \u26a1",
     "color": "yellow"
   },
-  {
-    "id": "menu-addibgib",
-    "name": "addibgib",
-    "text": "Add ibGib",
-    // http://www.alt-codes.net/plus-sign-symbols
-    "icon": "\u29c2",
-    "description": "Creates and adds a new ibGib \u29c2.",
-    "color": "#C7FF4F"
-  },
+  // {
+  //   "id": "menu-addibgib",
+  //   "name": "addibgib",
+  //   "text": "Add ibGib",
+  //   // http://www.alt-codes.net/plus-sign-symbols
+  //   "icon": "\u29c2",
+  //   "description": "Creates and adds a new ibGib \u29c2.",
+  //   "color": "#C7FF4F"
+  // },
 ];
 
 let d3Rel8nIcons = {

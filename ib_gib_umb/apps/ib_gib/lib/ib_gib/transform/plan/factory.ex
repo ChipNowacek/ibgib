@@ -2,6 +2,8 @@ defmodule IbGib.Transform.Plan.Factory do
   @moduledoc """
   Uses the `IbGib.Transform.Plan.Builder` to create plans for transforming
   ibGibs.
+
+  Using `PB` because it's short and used a lot...think PlanBuilder & Jelly!
   """
 
   # ----------------------------------------------------------------------------
@@ -14,6 +16,7 @@ defmodule IbGib.Transform.Plan.Factory do
 
   alias IbGib.Transform.Plan.Builder, as: PB
   import IbGib.Helper
+  use IbGib.Constants, :ib_gib
 
   # ----------------------------------------------------------------------------
   # Basic Transform Plans
@@ -76,4 +79,25 @@ defmodule IbGib.Transform.Plan.Factory do
     ~>> PB.add_rel8("rel8_2_src", "[plan.src]", ["instance_of"])
     ~>> PB.yo
   end
+
+  # @doc """
+  # Builds a multi-step plan to create a new ibGib and "add" it to some other
+  # ibGib (`add_target`) via some `rel8ns`.
+  #
+  # This plan instances the src ibGib with the given `dest_ib`. It then
+  # rel8s the new ibGib instance to the `add_target` ibGib with the given
+  # `rel8ns`.
+  #
+  # This should be able to be used for adding pics, comments, and any ol' blank
+  # ibGib to an existing ibGib.
+  # """
+  # @spec add_ibgib(list(String.t), String.t, String.t, list(String.t), map) :: {:ok, map} | {:error, String.t}
+  # def add_ibgib(identity_ib_gibs, add_target, dest_ib, data, rel8ns, opts) do
+  #   {:ok, identity_ib_gibs}
+  #   ~>> PB.plan("[src]", opts)
+  #   ~>> PB.add_fork("fork1", dest_ib)
+  #   ~>> PB.add_rel8("rel8_2_src", "[plan.src]", ["instance_of"])
+  #   ~>> PB.add_rel8("rel8_2_target", add_target, rel8ns)
+  #   ~>> PB.yo
+  # end
 end

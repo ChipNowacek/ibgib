@@ -245,33 +245,38 @@ export class QueryDetailsCommand extends DetailsCommandBase {
   }
 }
 
-export class AddIbGibDetailsCommand extends DetailsCommandBase {
+export class ForkDetailsCommand extends DetailsCommandBase {
   constructor(ibScape, d) {
-    const cmdName = "addibgib";
+    const cmdName = "fork";
     super(cmdName, ibScape, d);
   }
 
   init() {
     let t = this;
 
-    d3.select("#addibgib_form_data_src_ib_gib")
+    d3.select("#fork_form_data_src_ib_gib")
       .attr("value", t.d.ibGib);
 
-    $("#addibgib_form_data_dest_ib").val(t.d.ibGibJson.ib).focus();
+    $("#fork_form_data_dest_ib").val(t.d.ibGibJson.ib).focus();
 
-    $("#ib-addibgib-details-form").submit(function(event) {
+    $("#ib-fork-details-form").submit(function(event) {
       event.preventDefault();
       console.log("submit clicked");
 
-      let form = document.getElementById("ib-addibgib-details-form");
+      let form = document.getElementById("ib-fork-details-form");
       if (form.checkValidity()) {
         console.log("form is valid");
         t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ t.d, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "\u29c2");
 
-        let channel = t.ibScape.ibGibSocketAndChannels.identityChannel;
+        let channel = t.ibScape.ibGibSocketAndChannels.primaryChannel;
         // debugger;
         let msg = t.getMessage();
-        channel.push(msg.metadata.name, msg);
+        let response = channel.push(msg.metadata.name, msg)
+          .receive("ok", (msg) => {
+            let { metadata } = msg;
+            let { virtualIds } = metadata;
+
+          });
       } else {
         console.log("form is invalid");
       }
@@ -283,9 +288,9 @@ export class AddIbGibDetailsCommand extends DetailsCommandBase {
 
     return {
       data: {
-        src_ib_gib: t.d.ibGib,
         virtual_id: t.virtualNode.virtualId,
-        dest_ib: $("#addibgib_form_data_dest_ib").val()
+        src_ib_gib: t.d.ibGib,
+        dest_ib: $("#fork_form_data_dest_ib").val()
       },
       metadata: {
         name: t.cmdName,

@@ -1572,8 +1572,8 @@ defmodule IbGib.Expression do
   Forks the given `expr_pid`, and then relates the new forked expression to
   `expr_pid` with `instance` and `instance_of` rel8ns.
 
-  Returns a new version of the given `expr_pid` and the new forked expression.
-  E.g. {pid_a0} returns {pid_a1, pid_a_instance)
+  Returns the (tagged) pid of the new version of the given `expr_pid`.
+  E.g. pid_a0 returns {:ok, pid_a1}
   """
   @spec instance(pid, list(String.t), String.t, map) :: {:ok, pid} | {:error, any}
   def instance(expr_pid,
@@ -1597,7 +1597,7 @@ defmodule IbGib.Expression do
   end
 
   @doc """
-  Bang version of `instance/2`.
+  Bang version of `instance/4`.
   """
   @spec instance!(pid, list(String.t), String.t, map) :: pid | any
   def instance!(expr_pid,
@@ -1614,6 +1614,37 @@ defmodule IbGib.Expression do
          is_bitstring(dest_ib) do
     _ = Logger.debug "bad opts: #{inspect opts}"
     bang(instance(expr_pid, identity_ib_gibs, dest_ib, %{}))
+  end
+
+  @doc """
+  Executes the given `plan` using the `expr_pid` as the source ibGib.
+
+  See `IbGib.Transform.Plan.Factory` for individual plans, and
+  `IbGib.Transform.Plan.Builder` for how the plans are constructed.
+
+  This is how I'm "planning" on going forward with commands from clients.
+  Ideally I should have my validate plan logic here, but for now I am keeping
+  the validation logic in the front-facing layer. This Expression will simply
+  execute or fail in attempting to do so.
+  """
+  @spec execute_plan(pid, map) :: {:ok, pid} | {:error, any}
+  def execute_plan(expr_pid, plan)
+  def execute_plan(expr_pid, plan)
+    when is_pid(expr_pid) and is_map(plan) do
+    GenServer.call(expr_pid, {:execute_plan, plan})
+  end
+  def execute_plan(expr_pid, plan) do
+    emsg = emsg_invalid_args([expr_pid, plan])
+    _ = Logger.error emsg
+    {:error, emsg}
+  end
+
+  @doc """
+  Bang version of `execute_plan/2`.
+  """
+  @spec execute_plan!(pid, map) :: pid | any
+  def execute_plan!(expr_pid, plan) do
+    bang(execute_plan(expr_pid, plan))
   end
 
   def get_info(expr_pid) when is_pid(expr_pid) do
@@ -1662,6 +1693,10 @@ defmodule IbGib.Expression do
   def handle_call({:instance, identity_ib_gibs, dest_ib, opts}, _from, state) do
     Logger.metadata([x: :instance])
     {:reply, instance_impl(identity_ib_gibs, dest_ib, opts, state), state}
+  end
+  def handle_call({:execute_plan, plan}, _from, state) do
+    Logger.metadata([x: :execute_plan])
+    {:reply, execute_plan_impl(plan, state), state}
   end
   def handle_call({:query, identity_ib_gibs, query_options}, _from, state) do
     Logger.metadata([x: :query])
@@ -1805,7 +1840,7 @@ defmodule IbGib.Expression do
       {ib, gib} <- {info[:ib], info[:gib]},
       {:ok, ib_gib} <- Helper.get_ib_gib(ib, gib),
 
-      # Build the plan (_simple_ happy pipe would be awesome)
+      # Build the plan
       {:ok, plan} <- PlanFactory.instance(identity_ib_gibs, dest_ib, opts),
 
       # Save the plan
@@ -1817,6 +1852,38 @@ defmodule IbGib.Expression do
       {:ok, new_pid} <- IbGib.Expression.Supervisor.start_expression(new_ib_gib)
     ) do
       # {:ok, new_ib_gib}
+      {:ok, new_pid}
+    else
+      {:error, reason} ->
+        _ = Logger.error "#{inspect reason}"
+        {:error, reason}
+      error ->
+        _ = Logger.error "#{inspect error}"
+        {:error, "#{inspect error}"}
+    end
+  end
+
+  # ----------------------------------------------------------------------------
+  # Server - execute_plan impl
+  # ----------------------------------------------------------------------------
+
+  defp execute_plan_impl(plan, state) do
+    _ = Logger.debug "plan: #{inspect plan}\nstate: #{inspect state}"
+
+    with(
+      identity_ib_gibs <- plan["identities"],
+      info <- state[:info],
+      {ib, gib} <- {info[:ib], info[:gib]},
+      {:ok, ib_gib} <- Helper.get_ib_gib(ib, gib),
+
+      # Save the plan
+      {:ok, :ok} <- IbGib.Data.save(plan),
+      {:ok, plan_ib_gib} <- Helper.get_ib_gib(plan),
+
+      # Express (via spawned processes).
+      {:ok, new_ib_gib} <- express(identity_ib_gibs, ib_gib, info, plan_ib_gib),
+      {:ok, new_pid} <- IbGib.Expression.Supervisor.start_expression(new_ib_gib)
+    ) do
       {:ok, new_pid}
     else
       {:error, reason} ->

@@ -32,8 +32,8 @@ export class IbGibCommandMgr {
       case "huh":
         t.ibScape.currentCmd = t.getCommand_Help(dIbGib);
         break;
-      case "addibgib":
-        t.ibScape.currentCmd = t.getCommand_AddIbGib(dIbGib);
+      case "fork":
+        t.ibScape.currentCmd = t.getCommand_Fork(dIbGib);
         break;
       default:
         console.error(`unknown cmdName: ${cmdName}`);
@@ -185,8 +185,8 @@ export class IbGibCommandMgr {
   getCommand_Query(dIbGib) {
     return new commands.QueryDetailsCommand(this.ibScape, dIbGib);
   }
-  getCommand_AddIbGib(dIbGib) {
-    return new commands.AddIbGibDetailsCommand(this.ibScape, dIbGib);
+  getCommand_Fork(dIbGib) {
+    return new commands.ForkDetailsCommand(this.ibScape, dIbGib);
   }
   execRefresh(dIbGib) {
     location.href = `/ibgib/${dIbGib.ibgib}?latest=true`
@@ -241,5 +241,5 @@ export class IbGibCommandMgr {
     $("#download_form_submit_btn").focus();
   }
 
-  
+
 }

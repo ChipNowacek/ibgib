@@ -13,7 +13,7 @@ export class IbGibSocketAndChannels {
 
   connect() {
     if (!this.socket) { this.initSocket(); }
-    if (!this.identityChannel) { this.initIdentityChannel(); }
+    if (!this.primaryChannel) { this.initPrimaryChannel(); }
   }
 
   initSocket() {
@@ -23,12 +23,10 @@ export class IbGibSocketAndChannels {
     this.socket = socket;
   }
 
-  initIdentityChannel() {
+  initPrimaryChannel() {
     // Now that you are connected, you can join channels with a topic:
     // debugger;
-    let channel = this.socket.channel(`identity:${this.ibAggregateIdentityHash}`, {});
-    // let channel = this.socket.channel(`ibgib:lobby`, {});
-    // let channel = this.socket.channel(`ident:lobby`, {});
+    let channel = this.socket.channel(`primary:${this.ibAggregateIdentityHash}`, {});
 
     // setInterval(() => {
     //   let now = new Date();
@@ -48,6 +46,6 @@ export class IbGibSocketAndChannels {
       .receive("ok", resp => { console.log("Joined channel successfully", resp) })
       .receive("error", resp => { console.error("Unable to join channel", resp) })
 
-    this.identityChannel = channel;
+    this.primaryChannel = channel;
   }
 }
