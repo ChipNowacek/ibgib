@@ -1,7 +1,6 @@
 defmodule WebGib.IbGibView do
   use WebGib.Web, :view
 
-  # require WebGib.Web.Components.Login
   require WebGib.Web.Components.IbScape
 
   template :show do

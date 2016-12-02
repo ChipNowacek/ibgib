@@ -7,130 +7,15 @@ defmodule WebGib.Bus.Commanding do
 
   require Logger
 
-  alias IbGib.Transform.Plan.Factory, as: PlanFactory
-  import IbGib.Expression
-  import IbGib.Helper
-  import WebGib.Validate
-  use IbGib.Constants, :ib_gib
+  alias WebGib.Bus.Commanding.{Fork}
 
-  # fork command
-  def handle_cmd("fork" = cmd_name,
-                  %{"dest_ib" => dest_ib,
-                    "src_ib_gib" => src_ib_gib} = data,
-                  metadata,
-                  msg,
-                  socket)
-    when is_nil(dest_ib) or dest_ib == "" do
-    # dest_ib is empty or nil, so fill it with either the src ib or a new id
-    dest_ib =
-      if valid_ib_gib?(src_ib_gib) do
-        {src_ib, _gib} = separate_ib_gib!(src_ib_gib)
-        src_ib
-      else
-        new_id
-      end
-    data = Map.put(data, "dest_ib", dest_ib)
-    msg = Map.put(msg, "data", data)
+  def handle_cmd(cmd_name, data, metadata, msg, socket) do
+    _ = Logger.debug("cmd_name: #{cmd_name}\ndata: #{inspect data}\nmetadata: #{inspect metadata}\nmsg: #{inspect msg}\nsocket: #{inspect socket}" |> ExChalk.bg_cyan |> ExChalk.red)
 
-    handle_cmd(cmd_name, data, metadata, msg, socket)
-  end
-  def handle_cmd("fork" = cmd_name,
-                 %{"dest_ib" => dest_ib,
-                   "src_ib_gib" => src_ib_gib} = data,
-                 _metadata,
-                 msg,
-                 %{assigns:
-                   %{ib_identity_ib_gibs: identity_ib_gibs}
-                 } = socket) do
-    _ = Logger.debug("yoooo.\nsrc_ib_gib: #{src_ib_gib}" |> ExChalk.blue |> ExChalk.bg_white)
-    with(
-      {:dest_ib, true} <-
-        validate_input(:dest_ib, dest_ib, "Invalid destination ib."),
-      {:src_ib_gib, true} <-
-        validate_input(:src_ib_gib, src_ib_gib, "Invalid source ibGib", :ib_gib),
-      {:ok, forked_ib_gib}  <- fork_impl(identity_ib_gibs, src_ib_gib, dest_ib),
-      {:ok, reply_msg} <- get_reply_msg("fork", forked_ib_gib)
-    ) do
-      {:reply, {:ok, reply_msg}, socket}
-    else
-      # {:dest_ib, error} ->
-      #   handle_cmd_error(:dest_ib, "Invalid destination ib", msg, socket)
-      # {:src_ib_gib, error} ->
-      #   handle_cmd_error(:src_ib_gib, "Invalid source ibGib", msg, socket)
-      # {:error, reason} ->
-      #   handle_cmd_error(:error, inspect reason, msg, socket)
-      error ->
-        handle_cmd_error(:error, inspect(error), msg, socket)
-    end
+    handle_cmd_impl(cmd_name, data, metadata, msg, socket)
   end
 
-  defp fork_impl(identity_ib_gibs, src_ib_gib, dest_ib) do
-    with(
-      {:ok, src} <- IbGib.Expression.Supervisor.start_expression(src_ib_gib),
-      {:ok, forked_pid} <-
-        src |> fork(identity_ib_gibs, dest_ib, @default_transform_options),
-      {:ok, forked_info} <- get_info(forked_pid),
-      {:ok, forked_ib_gib} <- get_ib_gib(forked_info)
-    ) do
-      {:ok, forked_ib_gib}
-    else
-      error ->  default_handle_error(error)
-    end
+  defp handle_cmd_impl("fork", data,  metadata, msg, socket) do
+    Fork.handle_cmd(data, metadata, msg, socket)
   end
-
-  defp get_reply_msg("fork", forked_ib_gib) do
-    reply_msg =
-      %{
-        "data" => %{
-          "forked_ib_gib" => forked_ib_gib
-        }
-      }
-    {:ok, reply_msg}
-  end
-
-  # ------------------------------------------------------------------------
-  # Error
-  # ------------------------------------------------------------------------
-
-  def handle_cmd_error(:error, reason, msg, socket) do
-    # stub - do nothing right now :-/
-    _ = Logger.error("error reason: #{inspect reason}.\nmsg: #{inspect msg}\nsocket: #{inspect socket}")
-    error_msg = %{
-      "errors" => [
-        %{
-          "id" => "General Gibberish",
-          "title" => "Generic Error Msg Oh No! :-?",
-          "detail" => reason
-        }
-      ]
-    }
-    {:reply, {:error, error_msg}, socket}
-  end
-
-  # ------------------------------------------------------------------------
-  # Helper
-  # ------------------------------------------------------------------------
-
-  # Convenience wrapper that wraps validate call for use in `with` statement
-  # error pattern matching.
-  # Example:
-  # If valid, will return e.g. {:dest_ib, true}
-  # Invalid, will return e.g. {:error, emsg}
-  # Not thrilled, but it's very slow going right now :-/ (should refactor)
-  defp validate_input(name, value, emsg) do
-    if validate(name, value) do
-      {name, true}
-    else
-      {:error, emsg}
-    end
-  end
-
-  defp validate_input(name, value, emsg, validate_type) do
-    if validate(validate_type, value) do
-      {name, true}
-    else
-      {:error, emsg}
-    end
-  end
-
 end
