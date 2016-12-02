@@ -118,6 +118,57 @@ export class DetailsCommandBase extends CommandBase {
   }
 }
 
+/**
+ * For commands that have a details page that is a form.
+ * Basically looks for the form
+ */
+export class FormDetailsCommandBase extends DetailsCommandBase {
+  constructor(cmdName, ibScape, d) {
+    super(cmdName, ibScape, d);
+
+    let t = this;
+
+    t.initForm();
+  }
+
+  /** By default, this looks for id ib-cmdName-details-form. */
+  getFormId() { return `ib-${this.cmdName}-details-form`; }
+
+  /**
+   * By default, this sets this command's details form to NOT submit when
+   * submit input is pressed. Rather, it executes the `submitFunc` function.
+   * Sub-classes should override `submitFunc`.
+   *
+   * If for some reason we want to keep the original submit functionality,
+   * then override this function to do nothing. (ATOW 2016/12/02)
+   */
+  initForm() {
+    let t = this;
+
+    t.$form = $("#" + t.getFormId());
+    t.$form.submit(function(event) {
+      event.preventDefault();
+
+      if (t.submitFunc) {
+        t.submitFunc();
+      }
+    });
+  }
+
+  /**
+   * Additional cleanup: Unbinds from this command's details form and deletes
+   * this.submitFunc.
+   */
+  close () {
+    let t = this;
+
+    delete t.$form.submit;
+    delete t.submitFunc;
+
+    super.close();
+  }
+}
+
 export class InfoDetailsCommand extends DetailsCommandBase {
   constructor(ibScape, d) {
     const cmdName = "info";
@@ -245,30 +296,10 @@ export class QueryDetailsCommand extends DetailsCommandBase {
   }
 }
 
-export class ForkDetailsCommand extends DetailsCommandBase {
+export class ForkDetailsCommand extends FormDetailsCommandBase {
   constructor(ibScape, d) {
     const cmdName = "fork";
     super(cmdName, ibScape, d);
-
-    let t = this;
-
-    t.$form = $("#ib-fork-details-form");
-    t.$form.submit(function(event) {
-      event.preventDefault();
-
-      if (t.submitFunc) {
-        t.submitFunc();
-      }
-    })
-  }
-
-  close () {
-    let t = this;
-
-    delete t.$form.submit;
-    delete t.submitFunc;
-
-    super.close();
   }
 
   init() {
@@ -279,20 +310,15 @@ export class ForkDetailsCommand extends DetailsCommandBase {
 
     $("#fork_form_data_dest_ib").val(t.d.ibGibJson.ib).focus();
 
-    // debugger;
-
-    if (t.submitFunc) {
-      delete t.submitFunc;
-    }
-    // $form.submit(function(event) {
     t.submitFunc = () => {
       console.log("fork cmd submitFunc");
 
-      let form = document.getElementById("ib-fork-details-form");
+      let formId = t.getFormId();
+      let form = document.getElementById(t.getFormId());
       if (form.checkValidity()) {
         console.log("form is valid");
         t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ null, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "\u29c2", /*startPos*/ {x: t.d.x, y: t.d.y});
-
+        t.ibScape.setBusy(t.virtualNode);
         let channel = t.ibScape.ibGibSocketAndChannels.primaryChannel;
         let msg = t.getMessage();
         let response = channel.push(msg.metadata.name, msg)
@@ -304,6 +330,7 @@ export class ForkDetailsCommand extends DetailsCommandBase {
             } else {
               console.error("ForkDetailsCommand: Unknown msg response from channel.");
             }
+            t.ibScape.clearBusy(t.virtualNode);
           });
       } else {
         console.log("form is invalid");
@@ -329,8 +356,48 @@ export class ForkDetailsCommand extends DetailsCommandBase {
       }
     };
   }
+}
 
-  // exec() {
-  //   super.exec();
-  // }
+export class CommentDetailsCommand extends FormDetailsCommandBase {
+  constructor(ibScape, d) {
+    const cmdName = "comment";
+    super(cmdName, ibScape, d);
+  }
+
+  init() {
+    d3.select("#comment_form_data_src_ib_gib")
+      .attr("value", t.d.ibGib);
+
+    $("#comment_form_data_text").val("").focus();
+
+    t.submitFunc = () => {
+      console.log("fork cmd submitFunc");
+
+      let formId = t.getFormId();
+      let form = document.getElementById(t.getFormId());
+      if (form.checkValidity()) {
+        console.log("form is valid");
+        t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ null, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "\u29c2", /*startPos*/ {x: t.d.x, y: t.d.y});
+        t.ibScape.setBusy(t.virtualNode);
+
+        let channel = t.ibScape.ibGibSocketAndChannels.primaryChannel;
+        let msg = t.getMessage();
+        let response = channel.push(msg.metadata.name, msg)
+          .receive("ok", (msg) => {
+            if (msg && msg.data && msg.data.forked_ib_gib) {
+              let forkedIbGib = msg.data.forked_ib_gib;
+              t.virtualNode.ibGib = forkedIbGib;
+              t.ibScape.zapVirtualNode(t.virtualNode);
+            } else {
+              console.error("ForkDetailsCommand: Unknown msg response from channel.");
+            }
+            t.ibScape.clearBusy(t.virtualNode);
+          });
+      } else {
+        console.log("form is invalid");
+      }
+
+      t.close();
+    };
+  }
 }

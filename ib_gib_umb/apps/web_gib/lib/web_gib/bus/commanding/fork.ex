@@ -65,6 +65,8 @@ defmodule WebGib.Bus.Commanding.Fork do
   end
 
   defp exec_impl(identity_ib_gibs, src_ib_gib, dest_ib) do
+    # mimic process latency
+    Process.sleep(5000)
     with(
       {:ok, src} <- IbGib.Expression.Supervisor.start_expression(src_ib_gib),
       {:ok, forked_pid} <-

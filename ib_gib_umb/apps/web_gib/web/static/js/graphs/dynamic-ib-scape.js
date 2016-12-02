@@ -274,9 +274,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   zapVirtualNode(virtualNode, nestedLevelsToZap) {
     let t = this;
 
-    if (!virtualNode.virtualId) {
+    if (!virtualNode.virtualId || virtualNode.busy) {
       return;
     }
+
+    t.setBusy(virtualNode);
 
     t.animateNodeBorder(/*d*/ virtualNode, /*nodeShape*/ null);
 
@@ -284,6 +286,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       case "cmd":
         // execute the command
         t.commandMgr.exec(virtualNode.cmdTarget, virtualNode.cmd);
+        t.clearBusy(virtualNode);
         break;
 
       case "ibGib":
@@ -306,11 +309,13 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
           t.addDefaultVirtualNodes(virtualNode);
           t.addSpecializedVirtualNodes(virtualNode);
+          t.clearBusy(virtualNode);
         });
         break;
 
       case "rel8n":
         // expand the rel8n for the associated ibGib
+        t.clearBusy(virtualNode);
         break;
 
       default:
@@ -603,7 +608,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         t.addCmdVirtualNode(d, "huh", fadeTimeoutMs),
         t.addCmdVirtualNode(d, "query", fadeTimeoutMs),
         t.addCmdVirtualNode(d, "fork", fadeTimeoutMs),
-        t.addCmdVirtualNode(d, "identemail", fadeTimeoutMs),
+        // t.addCmdVirtualNode(d, "identemail", fadeTimeoutMs),
       ];
     } else {
       if (d.ibGibJson) {

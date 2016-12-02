@@ -482,20 +482,15 @@ export class DynamicD3ForceGraph {
     // If we're dragging, then cancel any long press. The distance thing is to
     // avoid jitter of a person's finger/mouse when long pressing.
     let dist = Math.sqrt(Math.pow(t.x0 - d.fx, 2) + Math.pow(t.y0 - d.fy, 2));
-    console.log(`dist: ${dist}`)
+    // console.log(`dist: ${dist}`)
     if (dist > 50) {
-      // alert(`dist: ${dist}`)
       t.dragging = true;
       if (t.longPressTimeout) {
-        // console.log("clearing long timeout in dragged event")
-        // t.mouseDownCounter = 0;
         clearTimeout(t.longPressTimeout);
         delete t.longPressTimeout;
       }
 
       delete t.lastMouseDownTime;
-      // t.x0 = null;
-      // t.y0 = null;
     }
   }
   handleDragEnded(d) {
@@ -1075,5 +1070,27 @@ export class DynamicD3ForceGraph {
       .transition(transition)
       .attr("stroke", d => t.getNodeBorderStroke(nodeShape.data()))
       .attr("stroke-width", t.getNodeBorderStrokeWidth(nodeShape.data()));
+  }
+
+  setBusy(d) {
+    let t = this;
+
+    if (d.busy) {
+      return;
+    } else {
+      d.busy = true;
+      d.busyInterval = setInterval(() => {
+        if (d.busy) {
+          t.animateNodeBorder(d, /*nodeShape*/ null);
+        }
+      }, 1000);
+    }
+  }
+  clearBusy(d) {
+    if (d.busy) { delete d.busy; }
+    if (d.busyInterval) {
+      clearInterval(d.busyInterval);
+      delete d.busyInterval;
+    }
   }
 }

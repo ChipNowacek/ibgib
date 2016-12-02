@@ -35,6 +35,9 @@ export class IbGibCommandMgr {
       case "fork":
         t.ibScape.currentCmd = t.getCommand_Fork(dIbGib);
         break;
+      case "comment":
+        t.ibScape.currentCmd = t.getCommand_Comment(dIbGib);
+        break;
       default:
         console.error(`unknown cmdName: ${cmdName}`);
     }
@@ -190,6 +193,9 @@ export class IbGibCommandMgr {
   }
   getCommand_Fork(dIbGib) {
     return new commands.ForkDetailsCommand(this.ibScape, dIbGib);
+  }
+  getCommand_Comment(dIbGib) {
+    return new commands.CommentDetailsCommand(this.ibScape, dIbGib);
   }
   execRefresh(dIbGib) {
     location.href = `/ibgib/${dIbGib.ibgib}?latest=true`
