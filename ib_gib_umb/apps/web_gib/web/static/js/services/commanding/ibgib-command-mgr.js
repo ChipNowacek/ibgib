@@ -71,7 +71,10 @@ export class IbGibCommandMgr {
     //   t.execDownload(dIbGib);
     // }
 
-    if (t.ibScape.currentCmd) { t.ibScape.currentCmd.exec(); }
+    if (t.ibScape.currentCmd) {
+      t.ibScape.currentCmd.exec();
+      t.ibScape.clearSelectedNode();
+    }
   }
   execView(dIbGib) {
     this.ibScape.toggleExpandNode(dIbGib);

@@ -833,6 +833,24 @@ export class DynamicD3ForceGraph {
       t.updateChildrenYo(/*onlyChildrenSharingData*/ true);
     }
   }
+  /** Untested. I ended up not using this...but keeping it here for now */
+  swap(existingNode, newNode, updateParentOrChild) {
+    let t = this;
+
+    debugger;
+    // find links to existing node
+    let linksA = t.graphData.links
+      .filter(l => l.source.id === existingNode.id)
+      .map(l => { return {source: newNode.id, target: l.target.id}; });
+    let linksB = t.graphData.links
+      .filter(l => l.target.id === existingNode.id)
+      .map(l => { return {source: l.source.id, target: newNode.id}; });
+    let newLinks = linksA.concat(linksB);
+
+    // remove the old node and add the new one with the adjusted links.
+    t.remove(existingNode, updateParentOrChild);
+    t.add([newNode], [newLinks], updateParentOrChild);
+  }
   addChildGraph(child, shareDataReference) {
     let t = this;
     t.children.push(child);

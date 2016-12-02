@@ -236,7 +236,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     let links = srcNode ? [{ source: srcNode, target: virtualNode }] : [];
     t.add([virtualNode], links, /*updateParentOrChild*/ true);
 
-    t.animateNodeBorder(/*d*/ srcNode, /*nodeShape*/ null);
+    if (srcNode) { t.animateNodeBorder(/*d*/ srcNode, /*nodeShape*/ null); }
     t.animateNodeBorder(/*d*/ virtualNode, /*nodeShape*/ null);
 
     if (type !== "cmd" && autoZap) {

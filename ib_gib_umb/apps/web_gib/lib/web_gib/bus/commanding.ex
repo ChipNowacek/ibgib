@@ -5,9 +5,13 @@ defmodule WebGib.Bus.Commanding do
   (Naming things is hard oy)
   """
 
+  require Logger
+
   alias IbGib.Transform.Plan.Factory, as: PlanFactory
   import IbGib.Expression
   import IbGib.Helper
+  import WebGib.Validate
+  use IbGib.Constants, :ib_gib
 
   # fork command
   def handle_cmd("fork" = cmd_name,
@@ -38,14 +42,16 @@ defmodule WebGib.Bus.Commanding do
                  %{assigns:
                    %{ib_identity_ib_gibs: identity_ib_gibs}
                  } = socket) do
-    _ = Logger.debug("yoooo" |> ExChalk.blue |> ExChalk.bg_white)
+    _ = Logger.debug("yoooo.\nsrc_ib_gib: #{src_ib_gib}" |> ExChalk.blue |> ExChalk.bg_white)
     with(
-      {:dest_ib, true}      <- validate_input(:dest_ib, dest_ib),
-      {:src_ib_gib, true}   <- validate_input(:src_ib_gib, src_ib_gib),
-      {:ok, forked_ib_gib}  <- fork_impl(identity_ib_gibs, dest_ib, src_ib_gib),
+      {:dest_ib, true} <-
+        validate_input(:dest_ib, dest_ib, "Invalid destination ib."),
+      {:src_ib_gib, true} <-
+        validate_input(:src_ib_gib, src_ib_gib, "Invalid source ibGib", :ib_gib),
+      {:ok, forked_ib_gib}  <- fork_impl(identity_ib_gibs, src_ib_gib, dest_ib),
       {:ok, reply_msg} <- get_reply_msg("fork", forked_ib_gib)
     ) do
-      {:reply, reply_msg, socket}
+      {:reply, {:ok, reply_msg}, socket}
     else
       # {:dest_ib, error} ->
       #   handle_cmd_error(:dest_ib, "Invalid destination ib", msg, socket)
@@ -54,7 +60,7 @@ defmodule WebGib.Bus.Commanding do
       # {:error, reason} ->
       #   handle_cmd_error(:error, inspect reason, msg, socket)
       error ->
-        handle_cmd_error(:error, inspect error, msg, socket)
+        handle_cmd_error(:error, inspect(error), msg, socket)
     end
   end
 
@@ -73,11 +79,13 @@ defmodule WebGib.Bus.Commanding do
   end
 
   defp get_reply_msg("fork", forked_ib_gib) do
-    %{
-      "data" => %{
-        "forked_ib_gib" => "forked_ib_gib"
+    reply_msg =
+      %{
+        "data" => %{
+          "forked_ib_gib" => forked_ib_gib
+        }
       }
-    }
+    {:ok, reply_msg}
   end
 
   # ------------------------------------------------------------------------
@@ -105,7 +113,24 @@ defmodule WebGib.Bus.Commanding do
 
   # Convenience wrapper that wraps validate call for use in `with` statement
   # error pattern matching.
+  # Example:
+  # If valid, will return e.g. {:dest_ib, true}
+  # Invalid, will return e.g. {:error, emsg}
+  # Not thrilled, but it's very slow going right now :-/ (should refactor)
   defp validate_input(name, value, emsg) do
-    {name, validate(name, value)}
+    if validate(name, value) do
+      {name, true}
+    else
+      {:error, emsg}
+    end
   end
+
+  defp validate_input(name, value, emsg, validate_type) do
+    if validate(validate_type, value) do
+      {name, true}
+    else
+      {:error, emsg}
+    end
+  end
+
 end

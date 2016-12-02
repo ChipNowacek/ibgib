@@ -1,10 +1,8 @@
 defmodule WebGib.IbGibView do
   use WebGib.Web, :view
 
-  import WebGib.Web.Components.Login
-  import WebGib.Web.Components.IbCircle1
-  import WebGib.Web.Components.IbLine1
-  import WebGib.Web.Components.IbScape
+  # require WebGib.Web.Components.Login
+  require WebGib.Web.Components.IbScape
 
   template :show do
     div [class: "ib-height-100"] do

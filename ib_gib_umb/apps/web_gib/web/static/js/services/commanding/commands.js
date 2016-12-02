@@ -249,6 +249,26 @@ export class ForkDetailsCommand extends DetailsCommandBase {
   constructor(ibScape, d) {
     const cmdName = "fork";
     super(cmdName, ibScape, d);
+
+    let t = this;
+
+    t.$form = $("#ib-fork-details-form");
+    t.$form.submit(function(event) {
+      event.preventDefault();
+
+      if (t.submitFunc) {
+        t.submitFunc();
+      }
+    })
+  }
+
+  close () {
+    let t = this;
+
+    delete t.$form.submit;
+    delete t.submitFunc;
+
+    super.close();
   }
 
   init() {
@@ -259,28 +279,39 @@ export class ForkDetailsCommand extends DetailsCommandBase {
 
     $("#fork_form_data_dest_ib").val(t.d.ibGibJson.ib).focus();
 
-    $("#ib-fork-details-form").submit(function(event) {
-      event.preventDefault();
-      console.log("submit clicked");
+    // debugger;
+
+    if (t.submitFunc) {
+      delete t.submitFunc;
+    }
+    // $form.submit(function(event) {
+    t.submitFunc = () => {
+      console.log("fork cmd submitFunc");
 
       let form = document.getElementById("ib-fork-details-form");
       if (form.checkValidity()) {
         console.log("form is valid");
-        t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ t.d, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "\u29c2");
+        t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ null, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "\u29c2");
+        // t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ t.d, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "\u29c2");
 
         let channel = t.ibScape.ibGibSocketAndChannels.primaryChannel;
-        // debugger;
         let msg = t.getMessage();
         let response = channel.push(msg.metadata.name, msg)
           .receive("ok", (msg) => {
-            let { metadata } = msg;
-            let { virtualIds } = metadata;
-
+            if (msg && msg.data && msg.data.forked_ib_gib) {
+              let forkedIbGib = msg.data.forked_ib_gib;
+              t.virtualNode.ibGib = forkedIbGib;
+              t.ibScape.zapVirtualNode(t.virtualNode);
+            } else {
+              console.error("ForkDetailsCommand: Unknown msg response from channel.");
+            }
           });
       } else {
         console.log("form is invalid");
       }
-    });
+
+      t.close();
+    };
   }
 
   getMessage() {
@@ -300,7 +331,7 @@ export class ForkDetailsCommand extends DetailsCommandBase {
     };
   }
 
-  exec() {
-    super.exec();
-  }
+  // exec() {
+  //   super.exec();
+  // }
 }

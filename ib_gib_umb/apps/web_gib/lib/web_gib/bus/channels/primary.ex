@@ -10,6 +10,8 @@ defmodule WebGib.Bus.Channels.Primary do
   import IbGib.Helper
   import WebGib.Validate
 
+  intercept ["user_cmd", "user_cmd2"]
+
   def join("primary:" <> agg_id_hash, message, socket) do
     _ = Logger.debug("identity:#{agg_id_hash}.\nmessage: #{inspect message}\nsocket: #{inspect socket}" |> ExChalk.black |> ExChalk.green)
     {:ok, socket}
