@@ -66,7 +66,8 @@ defmodule WebGib.Bus.Commanding.Fork do
 
   defp exec_impl(identity_ib_gibs, src_ib_gib, dest_ib) do
     # mimic process latency
-    Process.sleep(5000)
+    Process.sleep(2000)
+    _ = Logger.warn("mimicking process latency...do not leave in production!" |> ExChalk.bg_yellow |> ExChalk.red)
     with(
       {:ok, src} <- IbGib.Expression.Supervisor.start_expression(src_ib_gib),
       {:ok, forked_pid} <-

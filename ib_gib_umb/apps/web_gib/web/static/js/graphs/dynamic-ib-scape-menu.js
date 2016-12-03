@@ -124,13 +124,6 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
   close() {
     let t = this;
 
-    // if (t.menuArea) { d3.select("#ib-d3-graph-menu-area").remove();
-    //   delete t.menuArea;
-    // }
-    // if (t.svgGroup) { d3.select("#d3menuvis").remove();
-    //   delete t.svgGroup;
-    // }
-
     if (t.currentDetails) { t.currentDetails.close(); delete t.currentDetails; }
 
     if (t.ibScape) { delete t.ibScape; }

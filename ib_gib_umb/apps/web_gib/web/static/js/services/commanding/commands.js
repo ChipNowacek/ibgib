@@ -146,26 +146,88 @@ export class FormDetailsCommandBase extends DetailsCommandBase {
     let t = this;
 
     t.$form = $("#" + t.getFormId());
-    t.$form.submit(function(event) {
+    t.$form.submit((event) => {
+      // Does not submit via POST
       event.preventDefault();
 
-      if (t.submitFunc) {
-        t.submitFunc();
-      }
+      // Perform our own submit function
+      t.submitFunc();
     });
   }
 
   /**
-   * Additional cleanup: Unbinds from this command's details form and deletes
-   * this.submitFunc.
+   * Additional cleanup: Unbinds from this command's details form.
    */
   close () {
-    let t = this;
-
-    delete t.$form.submit;
-    delete t.submitFunc;
+    this.$form.unbind('submit');
 
     super.close();
+  }
+
+  /**
+   * Default implementation is for a command that will produce a single virtual
+   * node that will be busy while the message is sent to the server via the
+   * channel.
+   */
+  submitFunc() {
+    let t = this;
+    console.log(`${t.cmdName} cmd submitFunc`);
+
+    let formId = t.getFormId();
+    let form = document.getElementById(t.getFormId());
+    if (form.checkValidity()) {
+      console.log("form is valid");
+      t.addVirtualNode();
+      t.ibScape.setBusy(t.virtualNode);
+      let channel = t.ibScape.ibGibSocketAndChannels.primaryChannel;
+      let msg = t.getMessage();
+      let response = channel.push(msg.metadata.name, msg)
+        .receive("ok", (msg) => {
+          t.ibScape.clearBusy(t.virtualNode);
+          if (t.handleSubmitResponse) {
+            t.handleSubmitResponse(msg);
+          }
+        })
+        .receive("error", (msg) => {
+          console.error(`Command errored. Msg: ${JSON.stringify(msg)}`);
+          t.ibScape.clearBusy(t.virtualNode);
+          t.virtualNode.type = "error";
+          t.virtualNode.errorMsg = JSON.stringify(msg);
+          t.ibScape.zapVirtualNode(t.virtualNode);
+        });
+    } else {
+      console.log("form is invalid");
+    }
+
+    t.close();
+  }
+
+  addVirtualNode() {
+    let t = this;
+    t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ t.d, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "\u29c2", /*startPos*/ {x: t.d.x, y: t.d.y});
+  }
+
+  getMessage() {
+    let t = this;
+
+    return {
+      data: t.getMessageData(),
+      metadata: t.getMessageMetadata()
+    };
+  }
+
+  getMessageData() {
+    throw Error("getMessageData must be implemented.");
+  }
+
+  getMessageMetadata() {
+    let t = this;
+
+    return {
+      name: t.cmdName,
+      type: "cmd",
+      local_time: new Date()
+    };
   }
 }
 
@@ -309,52 +371,33 @@ export class ForkDetailsCommand extends FormDetailsCommandBase {
       .attr("value", t.d.ibGib);
 
     $("#fork_form_data_dest_ib").val(t.d.ibGibJson.ib).focus();
-
-    t.submitFunc = () => {
-      console.log("fork cmd submitFunc");
-
-      let formId = t.getFormId();
-      let form = document.getElementById(t.getFormId());
-      if (form.checkValidity()) {
-        console.log("form is valid");
-        t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ null, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "\u29c2", /*startPos*/ {x: t.d.x, y: t.d.y});
-        t.ibScape.setBusy(t.virtualNode);
-        let channel = t.ibScape.ibGibSocketAndChannels.primaryChannel;
-        let msg = t.getMessage();
-        let response = channel.push(msg.metadata.name, msg)
-          .receive("ok", (msg) => {
-            if (msg && msg.data && msg.data.forked_ib_gib) {
-              let forkedIbGib = msg.data.forked_ib_gib;
-              t.virtualNode.ibGib = forkedIbGib;
-              t.ibScape.zapVirtualNode(t.virtualNode);
-            } else {
-              console.error("ForkDetailsCommand: Unknown msg response from channel.");
-            }
-            t.ibScape.clearBusy(t.virtualNode);
-          });
-      } else {
-        console.log("form is invalid");
-      }
-
-      t.close();
-    };
   }
 
-  getMessage() {
+  addVirtualNode() {
+    let t = this;
+    t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ null, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "\u29c2", /*startPos*/ {x: t.d.x, y: t.d.y});
+  }
+
+  getMessageData() {
     let t = this;
 
     return {
-      data: {
-        virtual_id: t.virtualNode.virtualId,
-        src_ib_gib: t.d.ibGib,
-        dest_ib: $("#fork_form_data_dest_ib").val()
-      },
-      metadata: {
-        name: t.cmdName,
-        type: "cmd",
-        local_time: new Date()
-      }
+      virtual_id: t.virtualNode.virtualId,
+      src_ib_gib: t.d.ibGib,
+      dest_ib: $("#fork_form_data_dest_ib").val()
     };
+  }
+
+  handleSubmitResponse(msg) {
+    let t = this;
+
+    if (msg && msg.data && msg.data.forked_ib_gib) {
+      let forkedIbGib = msg.data.forked_ib_gib;
+      t.virtualNode.ibGib = forkedIbGib;
+      t.ibScape.zapVirtualNode(t.virtualNode);
+    } else {
+      console.error("ForkDetailsCommand: Unknown msg response from channel.");
+    }
   }
 }
 
@@ -365,39 +408,34 @@ export class CommentDetailsCommand extends FormDetailsCommandBase {
   }
 
   init() {
+    let t = this;
+
     d3.select("#comment_form_data_src_ib_gib")
       .attr("value", t.d.ibGib);
 
     $("#comment_form_data_text").val("").focus();
+  }
 
-    t.submitFunc = () => {
-      console.log("fork cmd submitFunc");
+  getMessageData() {
+    let t = this;
 
-      let formId = t.getFormId();
-      let form = document.getElementById(t.getFormId());
-      if (form.checkValidity()) {
-        console.log("form is valid");
-        t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ null, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "\u29c2", /*startPos*/ {x: t.d.x, y: t.d.y});
-        t.ibScape.setBusy(t.virtualNode);
-
-        let channel = t.ibScape.ibGibSocketAndChannels.primaryChannel;
-        let msg = t.getMessage();
-        let response = channel.push(msg.metadata.name, msg)
-          .receive("ok", (msg) => {
-            if (msg && msg.data && msg.data.forked_ib_gib) {
-              let forkedIbGib = msg.data.forked_ib_gib;
-              t.virtualNode.ibGib = forkedIbGib;
-              t.ibScape.zapVirtualNode(t.virtualNode);
-            } else {
-              console.error("ForkDetailsCommand: Unknown msg response from channel.");
-            }
-            t.ibScape.clearBusy(t.virtualNode);
-          });
-      } else {
-        console.log("form is invalid");
-      }
-
-      t.close();
+    return {
+      virtual_id: t.virtualNode.virtualId,
+      src_ib_gib: t.d.ibGib,
+      comment_text: $("#comment_form_data_text").val()
     };
+  }
+
+  handleSubmitResponse(msg) {
+    let t = this;
+    console.warn(`yoooooooooooo ${typeof(t)}`);
+
+    if (msg && msg.data && msg.data.comment_ib_gib) {
+      let commentIbGib = msg.data.comment_ib_gib;
+      t.virtualNode.ibGib = commentIbGib;
+      t.ibScape.zapVirtualNode(t.virtualNode);
+    } else {
+      console.error(`${typeof(t)}: Unknown msg response from channel.`);
+    }
   }
 }

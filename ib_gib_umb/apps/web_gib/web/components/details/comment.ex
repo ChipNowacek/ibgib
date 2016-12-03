@@ -19,7 +19,7 @@ defmodule WebGib.Web.Components.Details.Comment do
     # Comment details
     # This is shown when the user presses the comment button on an ibGib.
     div [id: "ib-comment-details", class: "ib-details-off"] do
-      form [action: "/ibgib/comment", method: "post"] do
+      form [id: "ib-comment-details-form", action: "/ibgib/comment", method: "post"] do
         input [id: "comment_form_data_src_ib_gib", name: "comment_form_data[src_ib_gib]",type: "hidden", value: ""]
         input [name: "_utf8", type: "hidden", value: "✓"]
         p "Comment: "

@@ -318,6 +318,24 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         t.clearBusy(virtualNode);
         break;
 
+      case "error":
+        let links = t.graphData.links.filter(l => l.source.id === virtualNode.id || l.target.id === virtualNode.id);
+
+        if (virtualNode.notified) {
+          // The user's already been notified, so remove the node.
+          t.remove(virtualNode);
+        } else {
+          // Notify the user that something went wrong, re-add node to update
+          // the label/tooltip.
+          alert(virtualNode.errorMsg);
+          virtualNode.notified = true;
+          t.remove(virtualNode);
+          t.add([virtualNode], links, /*updateParentOrChild*/ true);
+        }
+
+        t.clearBusy(virtualNode);
+        break;
+
       default:
         console.warn(`zapVirtualNode: Unknown node type: ${virtualNode.type}`);
     }
@@ -364,6 +382,19 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
   }
 
+  getNodeShape(d) {
+    if (d.ibGibJson && d.ibGibJson.data && d.ibGibJson.data.shape) {
+      if (d.ibGibJson.data.shape === "circle") {
+        return "circle";
+      } else if (d.ibGibJson.data.shape === "rect") {
+        return "rect";
+      } else {
+        return super.getNodeShape(d);
+      }
+    } else {
+      return super.getNodeShape(d);
+    }
+  }
   getNodeShapeRadius(d) {
     let multiplier = d3Scales[d.cat] || d3Scales["default"];
     let result = d3CircleRadius * multiplier;
@@ -435,10 +466,19 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     return result;
   }
   getNodeLabelText(d) {
-    // debugger;
     if (d.type === "ibGib" && d.ibGibJson) {
-      if (d.ibGibJson.data && d.ibGibJson.data.label) {
-        return d.ibGibJson.data.label;
+      if (d.ibGibJson && d.ibGibJson.data) {
+        if (d.ibGibJson.data.render &&
+            d.ibGibJson.data.render === "text" &&
+            d.ibGibJson.data.text) {
+          return d.ibGibJson.data.text;
+        } else if (d.ibGibJson.data.label) {
+          return d.ibGibJson.data.label;
+        } else if (d.ibGib === "ib^gib") {
+          return "\u29c2";
+        } else {
+          return d.ibGibJson.ib;
+        }
       } else if (d.ibGib === "ib^gib") {
         return "\u29c2";
       } else {
@@ -448,6 +488,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       return "\u26a1";
     } else if (d.type === "cmd" && d.cmd) {
       return d.cmd.icon;
+    } else if (d.type === "error") {
+      return "\u26a0";
     } else {
       return d.id;
     }
@@ -463,6 +505,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       return "Virtual ibGib. Click to zap with some juice \u26a1!";
     } else if (d.type === "cmd" && d.cmd) {
       return d.cmd.description;
+    } else if (d.type === "error") {
+      return "There was an error...noooooooooo 😱";
     } else {
       return d.id;
     }
@@ -617,6 +661,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
             t.addCmdVirtualNode(d, "huh", fadeTimeoutMs),
             t.addCmdVirtualNode(d, "help", fadeTimeoutMs),
             t.addCmdVirtualNode(d, "fork", fadeTimeoutMs),
+            t.addCmdVirtualNode(d, "comment", fadeTimeoutMs),
           ];
         } else {
           return [];
