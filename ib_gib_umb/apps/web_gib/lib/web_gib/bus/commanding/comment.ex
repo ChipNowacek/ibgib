@@ -8,6 +8,7 @@ defmodule WebGib.Bus.Commanding.Comment do
   require Logger
 
   alias IbGib.Transform.Plan.Factory, as: PlanFactory
+  alias WebGib.Bus.Channels.Event, as: EventChannel
   import IbGib.Expression
   import IbGib.Helper
   import WebGib.Bus.Commanding.Helper
@@ -35,6 +36,10 @@ defmodule WebGib.Bus.Commanding.Comment do
       # Execute
       {:ok, {comment_ib_gib, new_src_ib_gib}} <-
         exec_impl(identity_ib_gibs, src_ib_gib, comment_text),
+
+      # Broadcast updated src_ib_gib
+      _ <-
+        EventChannel.broadcast_ib_gib_update(src_ib_gib, new_src_ib_gib),
 
       # Reply
       {:ok, reply_msg} <- get_reply_msg(comment_ib_gib, new_src_ib_gib)
@@ -104,7 +109,6 @@ defmodule WebGib.Bus.Commanding.Comment do
 
   defp get_ib_gibs(comment, new_src) do
     with(
-      # Get the ib^gibs
       {:ok, comment_info} <- get_info(comment),
       {:ok, comment_ib_gib} <- get_ib_gib(comment_info),
       {:ok, new_src_info} <- get_info(new_src),

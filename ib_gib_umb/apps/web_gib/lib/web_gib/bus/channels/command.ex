@@ -1,6 +1,8 @@
 defmodule WebGib.Bus.Channels.Command do
   @moduledoc """
-  Primary channel ATOW (2016/12/01) that operates per aggregate identity (user).
+  Channel used for **commands** sent from the client to the server.
+
+  ATOW (2016/12/03) that operates per device + aggregate identity (user).
   """
 
   use Phoenix.Channel
