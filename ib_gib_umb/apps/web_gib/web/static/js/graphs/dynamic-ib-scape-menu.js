@@ -5,7 +5,7 @@ import { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales,
 import { DynamicD3ForceGraph } from './dynamic-d3-force-graph';
 
 import * as commands from '../services/commanding/commands';
-import { IbGibCommandMgr } from '../services/commanding/ibgib-command-mgr';
+import { CommandManager } from '../services/commanding/command-manager';
 import * as ibHelper from '../services/ibgib-helper';
 
 export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
@@ -63,7 +63,7 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
     t.config = $.extend({}, defaults, config || {});
 
     t.ibScape = ibScape;
-    t.commandMgr = new IbGibCommandMgr(t.ibScape);
+    t.commandMgr = t.ibScape.commandMgr;
   }
 
   init() {

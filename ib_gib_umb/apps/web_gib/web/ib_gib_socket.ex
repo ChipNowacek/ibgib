@@ -6,7 +6,8 @@ defmodule WebGib.IbGibSocket do
 
   ## Channels
   # This is where we match a server-side Channel module to the route.
-  channel "primary:*", WebGib.Bus.Channels.Primary
+  channel "command:*", WebGib.Bus.Channels.Command
+  channel "event:*", WebGib.Bus.Channels.Event
 
   ## Transports
   transport :websocket, Phoenix.Transports.WebSocket

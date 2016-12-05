@@ -5,18 +5,18 @@ import { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales,
 import { DynamicD3ForceGraph } from './dynamic-d3-force-graph';
 import { DynamicIbScapeMenu } from './dynamic-ib-scape-menu';
 import * as ibHelper from '../services/ibgib-helper';
-import { IbGibCommandMgr } from '../services/commanding/ibgib-command-mgr';
+import { CommandManager } from '../services/commanding/command-manager';
 
 export class DynamicIbScape extends DynamicD3ForceGraph {
-  constructor(graphDiv, svgId, config, baseJsonPath, ibGibCache, ibGibImageProvider, sourceIbGib, ibGibSocketAndChannels) {
+  constructor(graphDiv, svgId, config, baseJsonPath, ibGibCache, ibGibImageProvider, sourceIbGib, ibGibSocketManager) {
     super(graphDiv, svgId, {});
     let t = this;
 
     t.baseJsonPath = baseJsonPath;
     t.ibGibCache = ibGibCache;
     t.ibGibImageProvider = ibGibImageProvider;
-    t.commandMgr = new IbGibCommandMgr(t);
-    t.ibGibSocketAndChannels = ibGibSocketAndChannels;
+    t.ibGibSocketManager = ibGibSocketManager;
+    t.commandMgr = new CommandManager(t, ibGibSocketManager);
 
     let defaults = {
       background: {
@@ -63,6 +63,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     let t = this;
 
     console.log("init");
+    t.commandMgr.init();
 
     t.initNoScrollHtmlAndBody();
     t.initCloseDetails();
@@ -739,5 +740,4 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         .style("opacity", d => t.getNodeShapeOpacity(d));
     }
   }
-
 }

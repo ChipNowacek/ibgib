@@ -89,13 +89,12 @@ defmodule WebGib.Bus.Commanding.Comment do
       {:ok, comment} <-
         comment_gib |> fork(identity_ib_gibs, "comment"),
       state <- %{
-        "text" => comment_text,
-        "render" => "text",
-        "shape" => "rect"
-      },
+                  "text" => comment_text,
+                  "render" => "text",
+                  "shape" => "rect"
+                },
       {:ok, comment} <- comment |> mut8(identity_ib_gibs, state),
-      {:ok, comment} <-
-        comment |> rel8(src, identity_ib_gibs, ["comment_on"])
+      {:ok, comment} <- comment |> rel8(src, identity_ib_gibs, ["comment_on"])
     ) do
       {:ok, comment}
     else

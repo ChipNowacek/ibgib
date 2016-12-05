@@ -179,22 +179,20 @@ export class FormDetailsCommandBase extends DetailsCommandBase {
       console.log("form is valid");
       t.addVirtualNode();
       t.ibScape.setBusy(t.virtualNode);
-      let channel = t.ibScape.ibGibSocketAndChannels.primaryChannel;
+
       let msg = t.getMessage();
-      let response = channel.push(msg.metadata.name, msg)
-        .receive("ok", (msg) => {
-          t.ibScape.clearBusy(t.virtualNode);
-          if (t.handleSubmitResponse) {
-            t.handleSubmitResponse(msg);
-          }
-        })
-        .receive("error", (msg) => {
-          console.error(`Command errored. Msg: ${JSON.stringify(msg)}`);
-          t.ibScape.clearBusy(t.virtualNode);
-          t.virtualNode.type = "error";
-          t.virtualNode.errorMsg = JSON.stringify(msg);
-          t.ibScape.zapVirtualNode(t.virtualNode);
-        });
+      t.ibScape.commandMgr.bus.send(msg, (successMsg) => {
+        t.ibScape.clearBusy(t.virtualNode);
+        if (t.handleSubmitResponse) {
+          t.handleSubmitResponse(successMsg);
+        }
+      }, (errorMsg) => {
+        console.error(`Command errored. Msg: ${JSON.stringify(errorMsg)}`);
+        t.ibScape.clearBusy(t.virtualNode);
+        t.virtualNode.type = "error";
+        t.virtualNode.errorMsg = JSON.stringify(errorMsg);
+        t.ibScape.zapVirtualNode(t.virtualNode);
+      });
     } else {
       console.log("form is invalid");
     }

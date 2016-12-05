@@ -1,4 +1,4 @@
-defmodule WebGib.Bus.Channels.Primary do
+defmodule WebGib.Bus.Channels.Command do
   @moduledoc """
   Primary channel ATOW (2016/12/01) that operates per aggregate identity (user).
   """
@@ -10,9 +10,9 @@ defmodule WebGib.Bus.Channels.Primary do
   import IbGib.Helper
   import WebGib.Validate
 
-  intercept ["user_cmd", "user_cmd2"]
+  # intercept ["user_cmd", "user_cmd2"]
 
-  def join("primary:" <> agg_id_hash, message, socket) do
+  def join("command:" <> agg_id_hash, message, socket) do
     _ = Logger.debug("identity:#{agg_id_hash}.\nmessage: #{inspect message}\nsocket: #{inspect socket}" |> ExChalk.black |> ExChalk.green)
     {:ok, socket}
   end
@@ -54,21 +54,21 @@ defmodule WebGib.Bus.Channels.Primary do
     Commanding.handle_cmd(msg_name, data, metadata, msg, socket)
   end
 
-  @doc """
-  http://www.phoenixframework.org/docs/channels
-
-  > broadcast!/3 will notify all joined clients on this socket's topic and invoke their handle_out/3 callbacks. handle_out/3 isn't a required callback, but it allows us to customize and filter broadcasts before they reach each client. By default, handle_out/3 is implemented for us and simply pushes the message on to the client, just like our definition. We included it here because hooking into outgoing events allows for powerful message customization and filtering. Let's see how.
-  """
-  def handle_out("user_cmd", payload, socket) do
-    _ = Logger.debug("out user_cmd.\npayload: #{inspect payload}\nsocket: #{inspect socket}" |> ExChalk.black |> ExChalk.green)
-
-    push socket, "user_cmd", payload
-    {:noreply, socket}
-  end
-  def handle_out("user_cmd2", payload, socket) do
-    _ = Logger.debug("out user_cmd2 yoooo.\npayload: #{inspect payload}\nsocket: #{inspect socket}" |> ExChalk.black |> ExChalk.green)
-
-    push socket, "user_cmd2", payload
-    {:noreply, socket}
-  end
+  # @doc """
+  # http://www.phoenixframework.org/docs/channels
+  #
+  # > broadcast!/3 will notify all joined clients on this socket's topic and invoke their handle_out/3 callbacks. handle_out/3 isn't a required callback, but it allows us to customize and filter broadcasts before they reach each client. By default, handle_out/3 is implemented for us and simply pushes the message on to the client, just like our definition. We included it here because hooking into outgoing events allows for powerful message customization and filtering. Let's see how.
+  # """
+  # def handle_out("user_cmd", payload, socket) do
+  #   _ = Logger.debug("out user_cmd.\npayload: #{inspect payload}\nsocket: #{inspect socket}" |> ExChalk.black |> ExChalk.green)
+  #
+  #   push socket, "user_cmd", payload
+  #   {:noreply, socket}
+  # end
+  # def handle_out("user_cmd2", payload, socket) do
+  #   _ = Logger.debug("out user_cmd2 yoooo.\npayload: #{inspect payload}\nsocket: #{inspect socket}" |> ExChalk.black |> ExChalk.green)
+  #
+  #   push socket, "user_cmd2", payload
+  #   {:noreply, socket}
+  # end
 end

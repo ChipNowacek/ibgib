@@ -1,11 +1,25 @@
 import * as d3 from 'd3';
 
 import * as commands from './commands';
+import { CommandBus } from './command-bus';
 // import * as ibHelper from '../services/ibgib-helper';
 
-export class IbGibCommandMgr {
-  constructor(ibScape) {
-    this.ibScape = ibScape;
+export class CommandManager {
+  constructor(ibScape, ibGibSocketManager) {
+    let t = this;
+
+    t.ibScape = ibScape;
+    t.ibGibSocketManager = ibGibSocketManager;
+    t.bus = new CommandBus(ibGibSocketManager.socket);
+  }
+
+  init() {
+    this.bus.connect();
+  }
+
+  destroy() {
+    let t = this;
+    if (t.bus) { t.bus.disconnect(); delete t.bus; }
   }
 
   exec(dIbGib, dCommand) {
@@ -41,6 +55,7 @@ export class IbGibCommandMgr {
       default:
         console.error(`unknown cmdName: ${cmdName}`);
     }
+
     //
     // if ((cmdName === "view" || cmdName === "hide")) {
     //   t.execView(dIbGib)
@@ -249,6 +264,4 @@ export class IbGibCommandMgr {
 
     $("#download_form_submit_btn").focus();
   }
-
-
 }
