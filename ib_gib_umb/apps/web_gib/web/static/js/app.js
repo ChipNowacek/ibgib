@@ -32,6 +32,7 @@ import { DynamicD3ForceGraph2 } from "./graphs/dynamic-d3-force-graph2";
 import { IbGibCache } from "./services/ibgib-cache";
 import { IbGibImageProvider } from "./services/ibgib-image-provider";
 import { IbGibSocketManager } from "./services/ibgib-socket-manager";
+import { IbGibEventBus } from "./services/ibgib-event-bus";
 
 class App {
 
@@ -47,6 +48,7 @@ class App {
         document.getElementsByName("ib_agg_identity_hash")[0].content;
       let ibGibSocket = new IbGibSocketManager(ibIdentityToken, ibAggregateIdentityHash);
       ibGibSocket.connect();
+      let ibGibEventBus = new IbGibEventBus(ibGibSocket.socket);
 
       // // I'm not sure if these are really useful anymore.
       // let query = divIbGibData.getAttribute("data-metaqueryibgib");
@@ -68,7 +70,7 @@ class App {
       // let data = baseD3JsonPath + ibGib;
       // this.ibScape.update(data);
 
-      this.ibScape = new DynamicIbScape(graphDiv, "mainIbScapeSvg", /*config*/ null, baseJsonPath, ibGibCache, ibGibImageProvider, ibGib, ibGibSocket);
+      this.ibScape = new DynamicIbScape(graphDiv, "mainIbScapeSvg", /*config*/ null, baseJsonPath, ibGibCache, ibGibImageProvider, ibGib, ibGibSocket, ibGibEventBus);
       // this.ibScape.init();
       this.ibScape.toggleFullScreen();
 

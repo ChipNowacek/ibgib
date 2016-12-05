@@ -8,7 +8,7 @@ import * as ibHelper from '../services/ibgib-helper';
 import { CommandManager } from '../services/commanding/command-manager';
 
 export class DynamicIbScape extends DynamicD3ForceGraph {
-  constructor(graphDiv, svgId, config, baseJsonPath, ibGibCache, ibGibImageProvider, sourceIbGib, ibGibSocketManager) {
+  constructor(graphDiv, svgId, config, baseJsonPath, ibGibCache, ibGibImageProvider, sourceIbGib, ibGibSocketManager, ibGibEventBus) {
     super(graphDiv, svgId, {});
     let t = this;
 
@@ -16,6 +16,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.ibGibCache = ibGibCache;
     t.ibGibImageProvider = ibGibImageProvider;
     t.ibGibSocketManager = ibGibSocketManager;
+    t.ibGibEventBus = ibGibEventBus;
     t.commandMgr = new CommandManager(t, ibGibSocketManager);
 
     let defaults = {
@@ -272,7 +273,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     return virtualNode;
   }
 
-  zapVirtualNode(virtualNode, nestedLevelsToZap) {
+  zapVirtualNode(virtualNode, skipShowVirtualNodes) {
     let t = this;
 
     if (!virtualNode.virtualId || virtualNode.busy) {
@@ -303,14 +304,33 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
           delete virtualNode.virtualId;
 
-          let links = t.graphData.links.filter(l => l.source.id === virtualNode.id || l.target.id === virtualNode.id);
+          // let links = t.graphData.links.filter(l => l.source.id === virtualNode.id || l.target.id === virtualNode.id);
+          //
+          // t.remove(virtualNode);
+          // t.add([virtualNode], links, /*updateParentOrChild*/ true);
+          t.swap(virtualNode, virtualNode, /*updateParentOrChild*/ true);
 
-          t.remove(virtualNode);
-          t.add([virtualNode], links, /*updateParentOrChild*/ true);
+          if (virtualNode.ibGib !== "ib^gib") {
+            t.ibGibEventBus.connect(virtualNode.ibGib, updateMsg => {
+              console.log(`updateMsg:\n${JSON.stringify(updateMsg)}`)
 
-          t.addDefaultVirtualNodes(virtualNode);
-          t.addSpecializedVirtualNodes(virtualNode);
+              if (updateMsg && updateMsg.data && updateMsg.data.old_ib_gib === virtualNode.ibGib && updateMsg.data.new_ib_gib) {
+                t.ibGibEventBus.disconnect(virtualNode.ibGib);
+                t.updateIbGib(virtualNode, updateMsg.data.new_ib_gib);
+              } else {
+                console.warn(`Unused updateMsg(?): ${JSON.stringify(updateMsg)}`);
+              }
+            });
+          }
+
+          if (skipShowVirtualNodes) {
+            // need to refactor...oy
+          } else {
+            t.addDefaultVirtualNodes(virtualNode);
+            t.addSpecializedVirtualNodes(virtualNode);
+          }
           t.clearBusy(virtualNode);
+          t.animateNodeBorder(virtualNode, /*nodeShape*/ null);
         });
         break;
 
@@ -340,6 +360,17 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       default:
         console.warn(`zapVirtualNode: Unknown node type: ${virtualNode.type}`);
     }
+  }
+
+  updateIbGib(node, newIbGib) {
+    let t = this;
+
+    node.ibGib = newIbGib;
+
+    t.swap(node, node, /*updateParentOrChild*/ true);
+    node.virtualId = ibHelper.getRandomString();
+    t.zapVirtualNode(node, /*skipShowVirtualNodes*/ true);
+    t.animateNodeBorder(node, /*nodeShape*/ null);
   }
 
   updateRender(node) {
