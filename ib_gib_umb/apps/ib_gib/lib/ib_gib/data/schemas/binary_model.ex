@@ -9,7 +9,6 @@ defmodule IbGib.Data.Schemas.BinaryModel do
 
   use Ecto.Schema
   import Ecto.Changeset
-  alias IbGib.Data.Schemas.ValidateHelper
 
 
   schema "binaries" do

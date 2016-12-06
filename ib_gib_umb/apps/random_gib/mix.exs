@@ -9,7 +9,7 @@ defmodule RandomGib.Mixfile do
   @ibgib_repo_url "https://github.com/ibgib/ibgib"
   @random_gib_url "https://github.com/ibgib/ibgib/tree/master/ib_gib_umb/apps/random_gib"
 
-  def project do
+  def project() do
     [app: :random_gib,
      version: @version,
 
@@ -22,10 +22,10 @@ defmodule RandomGib.Mixfile do
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
 
-     deps: deps,
+     deps: deps(),
 
      # Hex
-     package: hex_package,
+     package: hex_package(),
      description: @description,
    ]
   end
@@ -33,7 +33,7 @@ defmodule RandomGib.Mixfile do
   # Configuration for the OTP application
   #
   # Type "mix help compile.app" for more information
-  def application do
+  def application() do
     [applications: [:logger]
      ]
     #  mod: {RandomGib, []}]
@@ -52,14 +52,14 @@ defmodule RandomGib.Mixfile do
   #   {:myapp, in_umbrella: true}
   #
   # Type "mix help deps" for more examples and options
-  defp deps do
+  defp deps() do
     [
       {:ex_doc, ">= 0.0.0", only: :dev},
       {:credo, "~> 0.4", only: [:dev, :test]}
     ]
   end
 
-  def hex_package do
+  def hex_package() do
     [maintainers: ["Bill Raiford", "ibgib@ibgib.com"],
      licenses: ["MIT"],
      links: %{

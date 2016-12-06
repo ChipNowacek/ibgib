@@ -5,7 +5,6 @@ defmodule IbGib.Expression.BasicsTest do
   that out.
   """
 
-
   use ExUnit.Case
   require Logger
 

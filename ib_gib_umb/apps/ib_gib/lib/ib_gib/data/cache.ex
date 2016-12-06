@@ -8,7 +8,6 @@ defmodule IbGib.Data.Cache do
   require Logger
 
   @srv_name IbGib.Data.Cache
-  @cache_table_name IbGib.Data.Cache
 
   # ----------------------------------------------------------------------------
   # Constructors

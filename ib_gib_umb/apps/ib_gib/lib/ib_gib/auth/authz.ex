@@ -33,7 +33,7 @@ defmodule IbGib.Auth.Authz do
 
   alias IbGib.{Helper, UnauthorizedError}
 
-  import IbGib.Macros
+  # import IbGib.Macros
 
   use IbGib.Constants, :ib_gib
   use IbGib.Constants, :error_msgs
@@ -153,7 +153,7 @@ defmodule IbGib.Auth.Authz do
 
       # I don't know how this would get here, but would be a no-no.
       true ->
-        emsg = emsg_invalid_authorization(expected = "email, session, or ibgib", "unknown")
+        emsg = emsg_invalid_authorization(_expected = "email, session, or ibgib", "unknown")
         Logger.error emsg
         {:error, emsg}
     end
@@ -161,7 +161,7 @@ defmodule IbGib.Auth.Authz do
 
   # Raises `UnauthorizedError` if unauthorized.
   defp ensure_tier_authorized(auth_tier, a_rel8ns, b_rel8ns)
-  defp ensure_tier_authorized(:ibgib, a_rel8ns, b_rel8ns) do
+  defp ensure_tier_authorized(:ibgib, _a_rel8ns, _b_rel8ns) do
     # At this point, we have already determined that both have identity.
     # So it is authorized.
     {:ok, :ok}

@@ -181,7 +181,7 @@ defmodule IbGib.Expression do
   require Logger
   use GenServer
 
-  alias IbGib.{Helper, UnauthorizedError, Auth.Authz}
+  alias IbGib.{Helper, Auth.Authz}
   alias IbGib.Transform.Factory, as: TransformFactory
   alias IbGib.Transform.Mut8.Factory, as: Mut8Factory
   alias IbGib.Transform.Plan.Helper, as: PlanHelper
@@ -241,7 +241,7 @@ defmodule IbGib.Expression do
         {"query", "gib"} -> init_default(:query)
         _ -> IbGib.Data.load!(ib, gib)
       end
-    register_result = IbGib.Expression.Registry.register(Helper.get_ib_gib!(ib, gib), self)
+    register_result = IbGib.Expression.Registry.register(Helper.get_ib_gib!(ib, gib), self())
     if register_result == :ok do
       {:ok, :ok} = set_life_timeout(:load)
       {:ok, %{:info => info}}
@@ -260,7 +260,7 @@ defmodule IbGib.Expression do
       with(
         {:ok, %{:info => this_info} = state} <- apply_query(a, b),
         {:ok, this_ib_gib} <- Helper.get_ib_gib(this_info),
-        :ok <- IbGib.Expression.Registry.register(this_ib_gib, self),
+        :ok <- IbGib.Expression.Registry.register(this_ib_gib, self()),
         {:ok, :ok} <- set_life_timeout(:query)
       ) do
         {:ok, state}
@@ -518,14 +518,14 @@ defmodule IbGib.Expression do
          cond do
            key === remove_key ->
              _ = Logger.debug "remove_key. {key, value}: {#{key}, #{value}}"
-             acc = Map.drop(acc, [value])
+             _acc = Map.drop(acc, [value])
 
            key === rename_key ->
              _ = Logger.debug "rename_key. {key, value}: {#{key}, #{value}}"
              [old_key_name, new_key_name] = String.split(value, @rename_operator)
              _ = Logger.debug "old_key_name: #{old_key_name}, new: #{new_key_name}"
              data_value = a_data |> Map.get(old_key_name)
-             acc =
+             _acc =
                acc
                |> Map.drop([old_key_name])
                |> Map.put(new_key_name, data_value)
@@ -847,7 +847,7 @@ defmodule IbGib.Expression do
       #  also there will be a new "final" plan with additional information that
       #  will not be rel8d to this)
       {:ok, :ok} <- IbGib.Data.save(this_info),
-      :ok <- IbGib.Expression.Registry.register(this_ib_gib, self),
+      :ok <- IbGib.Expression.Registry.register(this_ib_gib, self()),
       # -----------------------
       {:ok, {final_ib_gib, final_state}} <-
         on_complete_express_iteration(identity_ib_gibs,
@@ -1829,7 +1829,7 @@ defmodule IbGib.Expression do
       _ = Logger.debug "instancing #{@identity_ib_gib}"
       instance_impl([@bootstrap_identity_ib_gib], dest_ib, opts, state)
     else
-      {:error, emsg_only_instance_bootstrap_identity_from_identity_gib}
+      {:error, emsg_only_instance_bootstrap_identity_from_identity_gib()}
     end
   end
   defp instance_impl(identity_ib_gibs, dest_ib, opts, state) do

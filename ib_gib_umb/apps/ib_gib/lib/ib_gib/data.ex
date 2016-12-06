@@ -154,9 +154,9 @@ defmodule IbGib.Data do
         if binary_data_hash == binary_id do
           {:ok, binary_info[:binary_data]}
         else
-          {:error, emsg_hash_mismatch}
+          {:error, emsg_hash_mismatch()}
         end
-      {:error, :not_found} -> {:error, emsg_not_found}
+      {:error, :not_found} -> {:error, emsg_not_found()}
       {:error, reason} -> {:error, reason}
     end
   end
@@ -321,7 +321,7 @@ defmodule IbGib.Data do
 
         {"with", "ib"} ->
           _ = Logger.debug "with ib. where: #{where}. search_term: #{search_term}"
-          regex = ""
+          # regex = ""
           query
           |> where(fragment("? IN (SELECT substring( jsonb_array_elements_text(rel8ns -> ?) FROM '^[^^]+'))", ^search_term, ^where))
 

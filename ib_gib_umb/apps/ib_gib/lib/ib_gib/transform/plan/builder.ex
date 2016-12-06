@@ -240,7 +240,7 @@ defmodule IbGib.Transform.Plan.Builder do
   Adds a `mut8` step to the plan.
 
   If this is called with `new_data` being either nil or an empty map, then
-  this will simply return the plan as-is. 
+  this will simply return the plan as-is.
 
   Returns {:ok, plan} | {:error, reason}
   """
@@ -259,11 +259,11 @@ defmodule IbGib.Transform.Plan.Builder do
               }
             )
   end
-  def add_mut8(plan, name, new_data)
+  def add_mut8(plan, _name, new_data)
     when is_nil(new_data) do
     plan
   end
-  def add_mut8(plan, name, new_data)
+  def add_mut8(plan, _name, new_data)
     when is_map(new_data) and map_size(new_data) === 0 do
     plan
   end
@@ -310,7 +310,7 @@ defmodule IbGib.Transform.Plan.Builder do
     if is_needed do
       # I'm both prepending and appending for visual purposes. When querying,
       # I only need to search for: where gib `LIKE` "#{gib_stamp}%"
-      gib = stamp_gib!(gib)
+      _gib = stamp_gib!(gib)
     else
       gib
     end

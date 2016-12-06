@@ -97,29 +97,51 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
             is_bitstring(key) and key_length > 0 and key_length <= @max_id_length
 
           if key_valid? do
-            value_valid? =
-              cond do
-                is_nil(value) ->
-                  # add the key_length to the acc and continue
-                  {:cont, acc + key_length}
+            cond do
+              is_nil(value) ->
+                # add the key_length to the acc and continue
+                {:cont, acc + key_length}
 
-                is_bitstring(value) ->
-                  # Add the key_length and value_length to the acc
-                  # then check to see if we've gotten too big for our britches.
-                  value_length = value |> String.length
-                  new_running_size = acc + key_length + value_length
-                  if new_running_size <= max_size do
-                    _ = Logger.debug "new_running_size: #{new_running_size}, max_size: #{max_size}"
-                    {:cont, new_running_size}
-                  else
-                    # not valid - too big
-                    {:halt, -1}
-                  end
+              is_bitstring(value) ->
+                # Add the key_length and value_length to the acc
+                # then check to see if we've gotten too big for our britches.
+                value_length = value |> String.length
+                new_running_size = acc + key_length + value_length
+                if new_running_size <= max_size do
+                  _ = Logger.debug "new_running_size: #{new_running_size}, max_size: #{max_size}"
+                  {:cont, new_running_size}
+                else
+                  # not valid - too big
+                  {:halt, -1}
+                end
 
-                is_map(value) ->
-                  # Call the get_map_size recursively, passing in our current
-                  # acc value as the starting point.
-                  new_running_size = get_map_size(value, acc + key_length, max_size)
+              is_map(value) ->
+                # Call the get_map_size recursively, passing in our current
+                # acc value as the starting point.
+                new_running_size = get_map_size(value, acc + key_length, max_size)
+                if new_running_size === -1 do
+                  # Internal map has put us over the top
+                  {:halt, -1}
+                else
+                  {:cont, new_running_size}
+                end
+
+              is_list(value) ->
+                new_running_size =
+                  Enum.reduce_while(value, acc + key_length, fn(list_item, list_acc) ->
+                    # Must be a list of bitstrings or maps
+                    cond do
+                      is_nil(list_item) ->
+                        {:cont, list_acc}
+                      is_bitstring(list_item) ->
+                        {:cont, list_acc + String.length(list_item)}
+                      is_map(list_item) ->
+                        # call recursively with our list_acc running_size
+                        {:cont, get_map_size(list_item, list_acc, max_size)}
+                      true ->
+                        {:halt, -1}
+                    end
+                  end)
                   if new_running_size === -1 do
                     # Internal map has put us over the top
                     {:halt, -1}
@@ -127,34 +149,11 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
                     {:cont, new_running_size}
                   end
 
-                is_list(value) ->
-                  new_running_size =
-                    Enum.reduce_while(value, acc + key_length, fn(list_item, list_acc) ->
-                      # Must be a list of bitstrings or maps
-                      cond do
-                        is_nil(list_item) ->
-                          {:cont, list_acc}
-                        is_bitstring(list_item) ->
-                          {:cont, list_acc + String.length(list_item)}
-                        is_map(list_item) ->
-                          # call recursively with our list_acc running_size
-                          {:cont, get_map_size(list_item, list_acc, max_size)}
-                        true ->
-                          {:halt, -1}
-                      end
-                    end)
-                    if new_running_size === -1 do
-                      # Internal map has put us over the top
-                      {:halt, -1}
-                    else
-                      {:cont, new_running_size}
-                    end
-
-                true ->
-                  # not valid - value is not a map, string, or nil
-                  _ = Logger.warn "invalid value. Is not a map, string, or nil. value: #{inspect value}"
-                  {:halt, -1}
-              end
+              true ->
+                # not valid - value is not a map, string, or nil
+                _ = Logger.warn "invalid value. Is not a map, string, or nil. value: #{inspect value}"
+                {:halt, -1}
+            end
           else
             # key invalid
             _ = Logger.warn "invalid key: #{inspect key, [pretty: true]}"
@@ -200,14 +199,14 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
     false
   end
 
-  def invalid_id_length_msg, do: emsg_invalid_id_length
-  def invalid_unknown_msg, do: emsg_invalid_unknown_src_maybe
+  def invalid_id_length_msg, do: emsg_invalid_id_length()
+  def invalid_unknown_msg, do: emsg_invalid_unknown_src_maybe()
 
   def do_validate_change(:rel8ns, src) do
     if map_of_ib_gib_arrays?(:rel8ns, src) do
       []
     else
-      [rel8ns: emsg_invalid_relations]
+      [rel8ns: emsg_invalid_relations()]
     end
   end
   def do_validate_change(:data, src) do
@@ -215,7 +214,7 @@ defmodule IbGib.Data.Schemas.ValidateHelper do
       []
     else
       _ = Logger.error "whaaa. src: #{inspect src, [pretty: true]}"
-      [data: emsg_invalid_data]
+      [data: emsg_invalid_data()]
     end
   end
   def do_validate_change(field, src) do

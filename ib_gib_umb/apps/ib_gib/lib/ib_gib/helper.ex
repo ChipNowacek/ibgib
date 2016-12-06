@@ -53,15 +53,15 @@ defmodule IbGib.Helper do
       {:ok, "some id^some hash ABCDEFGHI123"}
 
       # Disable logging for these error doctests.
-      iex> Logger.disable(self)
+      iex> Logger.disable(self())
       ...> {result, _} = IbGib.Helper.get_ib_gib(:not_a_bitstring, "bitstring here")
-      ...> Logger.enable(self)
+      ...> Logger.enable(self())
       ...> result
       :error
 
-      iex> Logger.disable(self)
+      iex> Logger.disable(self())
       ...> {result, _} = IbGib.Helper.get_ib_gib("bitstring here", :not_a_bitstring)
-      ...> Logger.enable(self)
+      ...> Logger.enable(self())
       ...> result
       :error
   """
@@ -107,9 +107,9 @@ defmodule IbGib.Helper do
       {:ok, {"some id", "some hash ABCDEFGHI123"}}
 
       # Disable logging for these error doctests.
-      iex> Logger.disable(self)
+      iex> Logger.disable(self())
       ...> {result, _} = IbGib.Helper.separate_ib_gib(:not_a_bitstring)
-      ...> Logger.enable(self)
+      ...> Logger.enable(self())
       ...> result
       :error
   """
@@ -404,15 +404,15 @@ defmodule IbGib.Helper do
     iex> IbGib.Helper.gib_stamped?("someGIB")
     false
 
-    iex> Logger.disable(self)
+    iex> Logger.disable(self())
     ...> result = IbGib.Helper.gib_stamped?("")
-    ...> Logger.enable(self)
+    ...> Logger.enable(self())
     ...> result
     false
 
-    iex> Logger.disable(self)
+    iex> Logger.disable(self())
     ...> result = IbGib.Helper.gib_stamped?(%{"not" => "a bitstring"})
-    ...> Logger.enable(self)
+    ...> Logger.enable(self())
     ...> result
     false
   """
@@ -549,7 +549,7 @@ defmodule IbGib.Helper do
     {:ok, agg_hash}
   end
   def get_aggregate_id_hash(unknown_arg) do
-    emsg = "#{emsg_invalid_identity_ib_gibs} #{emsg_invalid_args([unknown_arg])}"
+    emsg = "#{emsg_invalid_identity_ib_gibs()} #{emsg_invalid_args([unknown_arg])}"
     _ = Logger.error(emsg)
     {:error, emsg}
   end

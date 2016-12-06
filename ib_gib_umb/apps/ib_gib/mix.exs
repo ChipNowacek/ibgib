@@ -6,7 +6,7 @@ defmodule IbGib.Mixfile do
 
   use Mix.Project
 
-  def project do
+  def project() do
     [app: :ib_gib,
      version: "0.1.1",
      build_path: "../../_build",
@@ -16,14 +16,14 @@ defmodule IbGib.Mixfile do
      elixir: "~> 1.2",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
-     deps: deps,
-     aliases: aliases]
+     deps: deps(),
+     aliases: aliases()]
   end
 
   # Configuration for the OTP application
   #
   # Type "mix help compile.app" for more information
-  def application do
+  def application() do
     # [applications: [:postgrex, :ecto, :logger, :random_gib],
     [applications: [:postgrex, :ecto, :logger, :random_gib, :poison, :ok],
      mod: {IbGib, []}]
@@ -42,7 +42,7 @@ defmodule IbGib.Mixfile do
   #   {:myapp, in_umbrella: true}
   #
   # Type "mix help deps" for more examples and options
-  defp deps do
+  defp deps() do
     [
       {:postgrex, ">= 0.0.0"},
       {:ecto, ">= 2.0.2"}, # frozen at this point because ecto migrate fails at 2.0.4
@@ -55,7 +55,7 @@ defmodule IbGib.Mixfile do
     ]
   end
 
-  defp aliases do
+  defp aliases() do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate"],
       "ecto.seed":  ["run priv/repo/seeds.exs"],

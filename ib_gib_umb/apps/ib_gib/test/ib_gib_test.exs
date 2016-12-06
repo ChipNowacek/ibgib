@@ -4,7 +4,7 @@ defmodule IbGibTest do
 
   This is also where I've imported doctests.
   """
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   require Logger
 
   use IbGib.Constants, :ib_gib

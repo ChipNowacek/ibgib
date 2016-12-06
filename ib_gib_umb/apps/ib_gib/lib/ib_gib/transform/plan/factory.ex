@@ -15,7 +15,7 @@ defmodule IbGib.Transform.Plan.Factory do
   import OK, only: :macros
 
   alias IbGib.Transform.Plan.Builder, as: PB
-  import IbGib.Helper
+  # import IbGib.Helper
   use IbGib.Constants, :ib_gib
 
   # ----------------------------------------------------------------------------
@@ -32,7 +32,7 @@ defmodule IbGib.Transform.Plan.Factory do
     {:ok, identity_ib_gibs}
     ~>> PB.plan("[src]", opts)
     ~>> PB.add_fork("fork1", dest_ib)
-    ~>> PB.yo
+    ~>> PB.yo()
   end
 
   @doc """
@@ -45,7 +45,7 @@ defmodule IbGib.Transform.Plan.Factory do
     {:ok, identity_ib_gibs}
     ~>> PB.plan("[src]", opts)
     ~>> PB.add_mut8("mut81", new_data)
-    ~>> PB.yo
+    ~>> PB.yo()
   end
 
   @doc """
@@ -58,7 +58,7 @@ defmodule IbGib.Transform.Plan.Factory do
     {:ok, identity_ib_gibs}
     ~>> PB.plan("[src]", opts)
     ~>> PB.add_rel8("rel81", other_ib_gib, rel8ns)
-    ~>> PB.yo
+    ~>> PB.yo()
   end
 
   # ----------------------------------------------------------------------------
@@ -77,7 +77,7 @@ defmodule IbGib.Transform.Plan.Factory do
     ~>> PB.plan("[src]", opts)
     ~>> PB.add_fork("fork1", dest_ib)
     ~>> PB.add_rel8("rel8_2_src", "[plan.src]", ["instance_of"])
-    ~>> PB.yo
+    ~>> PB.yo()
   end
 
   # @doc """
@@ -98,6 +98,6 @@ defmodule IbGib.Transform.Plan.Factory do
   #   ~>> PB.add_fork("fork1", dest_ib)
   #   ~>> PB.add_rel8("rel8_2_src", "[plan.src]", ["instance_of"])
   #   ~>> PB.add_rel8("rel8_2_target", add_target, rel8ns)
-  #   ~>> PB.yo
+  #   ~>> PB.yo()
   # end
 end
