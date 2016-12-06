@@ -1,7 +1,7 @@
 defmodule IbGibUmb.Mixfile do
   use Mix.Project
 
-  def project do
+  def project() do
     [apps_path: "apps",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
@@ -20,7 +20,7 @@ defmodule IbGibUmb.Mixfile do
   #
   # Dependencies listed here are available only for this project
   # and cannot be accessed from applications inside the apps folder
-  defp deps do
+  defp deps() do
     [{:distillery, "~> 0.10"}]
   end
 end
