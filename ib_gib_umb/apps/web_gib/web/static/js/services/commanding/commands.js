@@ -119,8 +119,7 @@ export class DetailsCommandBase extends CommandBase {
 }
 
 /**
- * For commands that have a details page that is a form.
- * Basically looks for the form
+ * For commands that have a details page that is a <form>.
  */
 export class FormDetailsCommandBase extends DetailsCommandBase {
   constructor(cmdName, ibScape, d) {
@@ -435,5 +434,20 @@ export class CommentDetailsCommand extends FormDetailsCommandBase {
     } else {
       console.error(`${typeof(t)}: Unknown msg response from channel.`);
     }
+  }
+}
+
+export class GotoCommand extends CommandBase {
+  constructor(ibScape, d) {
+    const cmdName = "goto";
+    super(cmdName, ibScape, d);
+  }
+
+  exec() {
+    super.exec();
+
+    let t = this;
+
+    t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.d.ibGib, /*srcNode*/ null, /*shape*/ t.d.shape, /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "\u29c2", /*startPos*/ {x: t.d.x, y: t.d.y});
   }
 }

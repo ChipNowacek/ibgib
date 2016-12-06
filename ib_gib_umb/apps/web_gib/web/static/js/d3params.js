@@ -10,13 +10,13 @@ let d3LinkDistances = {
 }
 
 let d3Scales = {
-  "rel8n": 1.5,
-  "dna": 1,
-  "ancestor": 1,
-  "past": 2,
-  // "ib": 5,
-  "source": 5,
+  "cmd": 1.5,
+  "virtual": 1,
+  "text": 5,
+  "image": 5,
+  "source": 8,
   "ibGib": 4,
+  "rel8n": 1.5,
   "result": 2,
   // "rel8d": 3,
   "ib^gib": 3,
@@ -284,6 +284,7 @@ let d3Rel8nIcons = {
   "instance": "\uf107",
   "result": "\uf1c0",
   "verse": "\uf30c",
+  "ib^gib": "\u29c2"
 };
 
 export { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3DefaultCollapsed, d3RequireExpandLevel2, d3MenuCommands, d3Rel8nIcons };

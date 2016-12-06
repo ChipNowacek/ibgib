@@ -548,7 +548,7 @@ export class DynamicD3ForceGraph {
     }
   }
   handleNodeMouseover(d) {
-    console.log(`d.id: ${d.id}`);
+    // console.log(`d.id: ${d.id}`);
   }
   handleNodeContextMenu(d) {
     let t = this;
@@ -926,7 +926,13 @@ export class DynamicD3ForceGraph {
   getUniqueId(id, prefix, suffix) {
     let result = this.svgId;
     if (prefix) { result += `_${prefix}`; }
-    if (id) { result += `_${id}`; }
+    if (id) {
+      if (id.replace) {
+        result += `_${id.replace("^", "-")}`;
+      } else {
+        result += `_${id}`; 
+      }
+    }
     if (suffix) { result += `_${suffix}`; }
     return result;
   }
@@ -960,7 +966,13 @@ export class DynamicD3ForceGraph {
   getForceCollide() {
     return d3.forceCollide(d => this.getForceCollideDistance(d));
   }
-  getForceCollideDistance(d) { return this.getNodeShapeRadius(d); }
+  getForceCollideDistance(d) {
+    let radius = this.getNodeShapeRadius(d);
+    // 1.4142 is square root of 2
+    let result = d.shape && d.shape === "rect" ? radius * 1.4142 : radius;
+
+    return result;
+  }
   getForceCenter() { return d3.forceCenter(this.center.x, this.center.y); }
 
   // Nodes functions

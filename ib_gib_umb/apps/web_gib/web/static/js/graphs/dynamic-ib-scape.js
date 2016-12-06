@@ -292,51 +292,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         break;
 
       case "ibGib":
-        t.clearFadeTimeout(virtualNode);
-
-        // let ibGibAlreadyLoaded = !!virtualNode.ibGibJson;
-
-        t.getIbGibJson(virtualNode.ibGib, ibGibJson => {
-          console.log(`got json: ${JSON.stringify(ibGibJson)}`);
-          virtualNode.ibGibJson = ibGibJson;
-
-          t.updateRender(virtualNode);
-
-          delete virtualNode.virtualId;
-
-          // let links = t.graphData.links.filter(l => l.source.id === virtualNode.id || l.target.id === virtualNode.id);
-          //
-          // t.remove(virtualNode);
-          // t.add([virtualNode], links, /*updateParentOrChild*/ true);
-          t.swap(virtualNode, virtualNode, /*updateParentOrChild*/ true);
-
-          if (virtualNode.ibGib !== "ib^gib") {
-            t.ibGibEventBus.connect(virtualNode.ibGib, updateMsg => {
-              console.log(`updateMsg:\n${JSON.stringify(updateMsg)}`)
-
-              if (updateMsg && updateMsg.data && updateMsg.data.old_ib_gib === virtualNode.ibGib && updateMsg.data.new_ib_gib) {
-                t.ibGibEventBus.disconnect(virtualNode.ibGib);
-                t.updateIbGib(virtualNode, updateMsg.data.new_ib_gib);
-              } else {
-                console.warn(`Unused updateMsg(?): ${JSON.stringify(updateMsg)}`);
-              }
-            });
-          }
-
-          if (skipShowVirtualNodes) {
-            // need to refactor...oy
-          } else {
-            t.addDefaultVirtualNodes(virtualNode);
-            t.addSpecializedVirtualNodes(virtualNode);
-          }
-          t.clearBusy(virtualNode);
-          t.animateNodeBorder(virtualNode, /*nodeShape*/ null);
-        });
+        t.zapVirtualIbGibNode(virtualNode, skipShowVirtualNodes);
         break;
 
       case "rel8n":
-        // expand the rel8n for the associated ibGib
-        t.clearBusy(virtualNode);
+        t.zapVirtualRel8nNode(virtualNode);
         break;
 
       case "error":
@@ -359,6 +319,131 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
       default:
         console.warn(`zapVirtualNode: Unknown node type: ${virtualNode.type}`);
+    }
+  }
+  zapVirtualIbGibNode(virtualNode, skipShowVirtualNodes) {
+    let t = this;
+
+    t.clearFadeTimeout(virtualNode);
+
+    t.getIbGibJson(virtualNode.ibGib, ibGibJson => {
+      console.log(`got json: ${JSON.stringify(ibGibJson)}`);
+      virtualNode.ibGibJson = ibGibJson;
+
+      t.updateRender(virtualNode);
+
+      delete virtualNode.virtualId;
+
+      t.swap(virtualNode, virtualNode, /*updateParentOrChild*/ true);
+
+      if (virtualNode.ibGib !== "ib^gib") {
+        t.ibGibEventBus.connect(virtualNode.ibGib, updateMsg => {
+          t.handleEventBusUpdateMsg(virtualNode.ibGib, updateMsg);
+        });
+      }
+
+      if (!skipShowVirtualNodes) {
+        t.addDefaultVirtualNodes(virtualNode);
+        t.addSpecializedVirtualNodes(virtualNode);
+      }
+
+
+      t.clearBusy(virtualNode);
+      t.animateNodeBorder(virtualNode, /*nodeShape*/ null);
+    });
+  }
+  zapVirtualRel8nNode(virtualNode) {
+    let t = this;
+
+    debugger;
+    t.clearBusy(virtualNode);
+  }
+
+  /** Toggles the expand/collapse level for the node, showing/hiding rel8ns */
+  toggleExpandCollapseLevel(node) {
+    let t = this;
+    node.expandLevel = node.expandLevel || 0;
+
+    if (node.ibGib !== "ib^gib") {
+      switch (node.expandLevel) {
+        case 0:
+          node.expandLevel = 1;
+          t.addSpiffyRel8ns(node);
+          t.addDefaultVirtualNodes(node);
+          break;
+        case 1:
+          t.addBoringRel8ns(node);
+          t.addDefaultVirtualNodes(node);
+          node.expandLevel = 2;
+          break;
+        default:
+          t.removeAllRel8ns(node);
+          node.expandLevel = 0;
+      }
+    }
+  }
+  /**
+   * Adds "important" rel8ns that are not collapsed by default.
+   * For example, adds "comment", "pic", etc. rel8ns, but not "dna", "past"
+   */
+  addSpiffyRel8ns(node) {
+    let t = this;
+
+    // Don't add for root node.
+    if (node.ibGib === "ib^gib") { return; }
+
+    let fadeTimeoutMs = 0;
+    Object.keys(node.ibGibJson.rel8ns)
+      .filter(rel8n => !d3DefaultCollapsed.includes(rel8n))
+      .forEach(rel8n => {
+        t.addRel8nVirtualNode(node, rel8n, fadeTimeoutMs);
+      });
+  }
+  /**
+   * Adds "boring" rel8ns that are not collapsed by default.
+   * For example, adds "dna", "past", etc., but not "comment", "pic"
+   */
+  addBoringRel8ns(node) {
+    let t = this;
+
+    // Don't add for root node.
+    if (node.ibGib === "ib^gib") { return; }
+
+    let fadeTimeoutMs = 5000;
+    Object.keys(node.ibGibJson.rel8ns)
+      .filter(rel8n => d3DefaultCollapsed.includes(rel8n))
+      .forEach(rel8n => {
+        t.addRel8nVirtualNode(node, rel8n, fadeTimeoutMs);
+      });
+  }
+  removeAllRel8ns(node) {
+    let t = this;
+
+    // Don't remove for root node.
+    if (node.ibGib === "ib^gib") { return; }
+
+    let directChildNodes =
+      t.graphData.links
+        .filter(l => l.source.id === node.id)
+        .map(l => l.target)
+        .forEach(childNode => {
+          t.removeAllRel8ns(childNode);
+          t.remove(childNode, /*updateParentOrChild*/ true);
+        });
+  }
+
+  handleEventBusUpdateMsg(ibGib, updateMsg) {
+    let t = this;
+    console.log(`updateMsg:\n${JSON.stringify(updateMsg)}`)
+
+    if (updateMsg && updateMsg.data && updateMsg.data.old_ib_gib === ibGib && updateMsg.data.new_ib_gib) {
+
+      t.ibGibEventBus.disconnect(ibGib);
+      t.graphData.nodes
+        .filter(n => n.ibGib === ibGib)
+        .forEach(n => t.updateIbGib(n, updateMsg.data.new_ib_gib));
+    } else {
+      console.warn(`Unused updateMsg(?): ${JSON.stringify(updateMsg)}`);
     }
   }
 
@@ -428,9 +513,44 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
   }
   getNodeShapeRadius(d) {
-    let multiplier = d3Scales[d.cat] || d3Scales["default"];
-    let result = d3CircleRadius * multiplier;
-    return result;
+    let t = this;
+    let multiplier;
+
+    switch (d.type) {
+      case "ibGib":
+        if (d.virtualId) {
+          multiplier = d3Scales["virtual"];
+        } else {
+          multiplier = t.getIbGibMultiplier(d);
+        }
+        break;
+
+      case "cmd":
+        multiplier = d3Scales["cmd"];
+        break;
+
+      default:
+        multiplier = d3Scales["default"];
+    }
+
+    return d3CircleRadius * multiplier;
+  }
+  getIbGibMultiplier(d) {
+    let t = this;
+    if (d.ibGibJson) {
+      if (d.ibGibJson.data && d.ibGibJson.data.render) {
+        return d3Scales[d.ibGibJson.data.render] || d3Scales["default"];
+      } else if (d.ibGib === t.sourceIbGib) {
+        return d3Scales["source"];
+      } else if (d.ibGib === "ib^gib") {
+        return d3Scales["ib^gib"];
+      } else {
+        return d3Scales[d.ibGibJson.ib] || d3Scales["default"];
+      }
+    } else {
+      console.warn("getIbGibMultiplier assumes d.ibGibJson is truthy...");
+      return d3Scales["default"];
+    }
   }
   getNodeShapeFill(d) {
     let color;
@@ -479,24 +599,24 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     return 1;
     // return d.virtualId ? 0.9 : 1;
   }
-  getNodeShapeRadius(d) {
-    let t = this;
-    let multiplier = d3Scales["default"];
-
-    if (d.ibGib === t.sourceIbGib) {
-      multiplier = d3Scales["source"];
-    } else if (d.ibGib === "ib^gib") {
-      multiplier = d3Scales["ib^gib"]
-    } else {
-      let { ib } = ibHelper.getIbAndGib(t.sourceIbGib);
-      multiplier = d3Scales[ib] || multiplier;
-    }
-
-    let result = d3CircleRadius * multiplier;
-    if (isNaN(result)) { debugger; }
-
-    return result;
-  }
+  // getNodeShapeRadius(d) {
+  //   let t = this;
+  //   let multiplier = d3Scales["default"];
+  //
+  //   if (d.ibGib === t.sourceIbGib) {
+  //     multiplier = d3Scales["source"];
+  //   } else if (d.ibGib === "ib^gib") {
+  //     multiplier = d3Scales["ib^gib"]
+  //   } else {
+  //     let { ib } = ibHelper.getIbAndGib(t.sourceIbGib);
+  //     multiplier = d3Scales[ib] || multiplier;
+  //   }
+  //
+  //   let result = d3CircleRadius * multiplier;
+  //   if (isNaN(result)) { debugger; }
+  //
+  //   return result;
+  // }
   getNodeLabelText(d) {
     if (d.type === "ibGib" && d.ibGibJson) {
       if (d.ibGibJson && d.ibGibJson.data) {
@@ -544,6 +664,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
   }
 
+  getForceCollideDistance(d) {
+    return super.getForceCollideDistance(d) * 1.1;
+  }
   selectNode(d) {
     let t = this;
 
@@ -586,7 +709,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.clearSelectedNode();
 
     if (t.currentCmd) {
-      t.currentCmd.close();
+      if (t.currentCmd.close) { t.currentCmd.close(); }
       delete t.currentCmd;
     }
 
@@ -603,7 +726,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     if (d.virtualId) {
       t.zapVirtualNode(d);
     } else {
-      t.showDefaultVirtualNodes(d);
+      t.toggleExpandCollapseLevel(d);
     }
   }
   handleNodeLongClicked(d) {
@@ -634,19 +757,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     } else {
       super.handleNodeRawMouseDown(d);
     }
-  }
-
-  showDefaultVirtualNodes(d) {
-    let t = this;
-    t.addDefaultVirtualNodes(d);
-    // if (d.defaultVirtualNodes && d.defaultVirtualNodes) {
-    //   d.defaultVirtualNodes.forEach(virtualNode => {
-    //     t.remove(virtualNode, /*updateParentOrChild*/ true)
-    //   });
-    //   delete d.defaultVirtualNodes;
-    // } else {
-      // d.defaultVirtualNodes = t.addDefaultVirtualNodes(d);
-    // }
   }
 
   addSpecializedVirtualNodes(d) {
@@ -727,6 +837,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     let title = rel8nName in d3Rel8nIcons ? d3Rel8nIcons[rel8nName] : "";
     let node = t.addVirtualNode(t.getUniqueId(`${dSrc.id}_${rel8nName}`), /*type*/ "rel8n", `rel8n^gib`, /*srcNode*/ dSrc, "circle", /*autoZap*/ false, fadeTimeoutMs, /*cmd*/ null, title, /*label*/ rel8nName, /*startPos*/ {x: dSrc.x, y: dSrc.y});
+    node.rel8nSrc = dSrc;
   }
 
   openMenu(d) {
