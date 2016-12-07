@@ -2,15 +2,15 @@ import * as ibHelper from '../ibgib-helper';
 import { Socket } from "phoenix";
 
 export class CommandBus {
-  constructor(socket) {
+  constructor(ibGibSocketManager) {
     let t = this;
 
-    t.socket = socket;
+    t.socket = ibGibSocketManager.socket;
     // We add a random identifier for this device for handling the same
     // identity on multiple devices.
     t.channelSubtopic = ibHelper.getRandomString() +
                         "_" +
-                        t.socket.ibAggregateIdentityHash;
+                        ibGibSocketManager.ibAggregateIdentityHash;
   }
 
   connect() {
@@ -27,7 +27,7 @@ export class CommandBus {
     let t = this;
 
     // Now that you are connected, you can join channels with a topic:
-    t.channel = t.socket.channel(`command:${t.channelSubTopic}`, {});
+    t.channel = t.socket.channel(`command:${t.channelSubtopic}`, {});
 
     // setInterval(() => {
     //   let now = new Date();

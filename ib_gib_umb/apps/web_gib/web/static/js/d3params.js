@@ -12,14 +12,14 @@ let d3LinkDistances = {
 let d3Scales = {
   "cmd": 1.5,
   "virtual": 1,
-  "text": 5,
-  "image": 5,
-  "source": 8,
-  "ibGib": 4,
-  "rel8n": 1.5,
+  "text": 4,
+  "image": 4,
+  "source": 5,
+  "ibGib": 1.5,
+  "rel8n": 2,
   "result": 2,
   // "rel8d": 3,
-  "ib^gib": 3,
+  "ib^gib": 2,
   "pic": 3,
   "link": 3,
   "result": 3,
@@ -47,7 +47,7 @@ let d3Colors = {
   "huh": "#EBFF0F",
   "help": "#EBFF0F",
   "query": "#C7FF4F",
-  "default": "#AEA6E3",
+  "default": "#8EFAD3",
 
   "imageBorder": "#3CAA71",
   "textBorder": "#8F26A3",
@@ -55,7 +55,7 @@ let d3Colors = {
   "defaultBorder": "#ED6DCD"
 };
 
-var d3DefaultCollapsed = [
+var d3BoringRel8ns = [
   "ancestor",
   "past",
   "dna",
@@ -264,15 +264,15 @@ var d3MenuCommands = [
     "description": "Zaps virtual ibGib with some juice \u26a1",
     "color": "yellow"
   },
-  // {
-  //   "id": "menu-addibgib",
-  //   "name": "addibgib",
-  //   "text": "Add ibGib",
-  //   // http://www.alt-codes.net/plus-sign-symbols
-  //   "icon": "\u29c2",
-  //   "description": "Creates and adds a new ibGib \u29c2.",
-  //   "color": "#C7FF4F"
-  // },
+  {
+    "id": "menu-add",
+    "name": "add",
+    "text": "Add ibGib",
+    // http://www.alt-codes.net/plus-sign-symbols
+    "icon": "\uf067",
+    "description": "Creates and adds a new ibGib with a given rel8n.",
+    "color": "#C7FF4F"
+  }
 ];
 
 let d3Rel8nIcons = {
@@ -284,7 +284,18 @@ let d3Rel8nIcons = {
   "instance": "\uf107",
   "result": "\uf1c0",
   "verse": "\uf30c",
-  "ib^gib": "\u29c2"
+  // "ib^gib": "\u29c2",
+  "ib^gib": "\u221e",
+  "dna": "➿"
 };
 
-export { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3DefaultCollapsed, d3RequireExpandLevel2, d3MenuCommands, d3Rel8nIcons };
+// Addable rel8ns are rel8ns that can be added to any ibGib. For example,
+// any ibGib can be commented on, even if there are no existing comment rel8ns.
+// So the "comment" rel8n should always show up with at least an "add" virtual
+// command.
+var d3AddableRel8ns = [
+  "comment",
+  // "pic",
+]
+
+export { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3BoringRel8ns, d3RequireExpandLevel2, d3MenuCommands, d3Rel8nIcons, d3AddableRel8ns };

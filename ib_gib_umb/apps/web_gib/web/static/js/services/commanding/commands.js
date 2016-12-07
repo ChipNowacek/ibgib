@@ -201,7 +201,7 @@ export class FormDetailsCommandBase extends DetailsCommandBase {
 
   addVirtualNode() {
     let t = this;
-    t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ t.d, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "\u29c2", /*startPos*/ {x: t.d.x, y: t.d.y});
+    t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ t.d, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "\uf10c", /*startPos*/ {x: t.d.x, y: t.d.y});
   }
 
   getMessage() {
@@ -372,7 +372,7 @@ export class ForkDetailsCommand extends FormDetailsCommandBase {
 
   addVirtualNode() {
     let t = this;
-    t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ null, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "\u29c2", /*startPos*/ {x: t.d.x, y: t.d.y});
+    t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ null, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "\uf10c", /*startPos*/ {x: t.d.x, y: t.d.y});
   }
 
   getMessageData() {
@@ -391,6 +391,7 @@ export class ForkDetailsCommand extends FormDetailsCommandBase {
     if (msg && msg.data && msg.data.forked_ib_gib) {
       let forkedIbGib = msg.data.forked_ib_gib;
       t.virtualNode.ibGib = forkedIbGib;
+      t.virtualNode.isSource = true;
       t.ibScape.zapVirtualNode(t.virtualNode);
     } else {
       console.error("ForkDetailsCommand: Unknown msg response from channel.");
@@ -416,9 +417,10 @@ export class CommentDetailsCommand extends FormDetailsCommandBase {
   getMessageData() {
     let t = this;
 
+
     return {
       virtual_id: t.virtualNode.virtualId,
-      src_ib_gib: t.d.ibGib,
+      src_ib_gib: t.d.type === "rel8n" ? t.d.rel8nSrc.ibGib : t.d.ibGib,
       comment_text: $("#comment_form_data_text").val()
     };
   }
@@ -448,6 +450,6 @@ export class GotoCommand extends CommandBase {
 
     let t = this;
 
-    t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.d.ibGib, /*srcNode*/ null, /*shape*/ t.d.shape, /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "\u29c2", /*startPos*/ {x: t.d.x, y: t.d.y});
+    t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.d.ibGib, /*srcNode*/ null, /*shape*/ t.d.shape, /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "\uf10c", /*startPos*/ {x: t.d.x, y: t.d.y});
   }
 }

@@ -14,8 +14,11 @@ defmodule WebGib.Bus.Channels.Command do
 
   # intercept ["user_cmd", "user_cmd2"]
 
+  def join("command:undefined", message, socket) do
+    {:error, %{reason: "undefined identity"}}
+  end
   def join("command:" <> agg_id_hash, message, socket) do
-    _ = Logger.debug("identity:#{agg_id_hash}.\nmessage: #{inspect message}\nsocket: #{inspect socket}" |> ExChalk.black |> ExChalk.green)
+    _ = Logger.debug("command:#{agg_id_hash}.\nmessage: #{inspect message}\nsocket: #{inspect socket}" |> ExChalk.black |> ExChalk.green)
     {:ok, socket}
   end
   def join(topic, message, socket) do

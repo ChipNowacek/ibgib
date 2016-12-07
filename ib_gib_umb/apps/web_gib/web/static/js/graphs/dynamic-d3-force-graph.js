@@ -483,7 +483,7 @@ export class DynamicD3ForceGraph {
     // avoid jitter of a person's finger/mouse when long pressing.
     let dist = Math.sqrt(Math.pow(t.x0 - d.fx, 2) + Math.pow(t.y0 - d.fy, 2));
     // console.log(`dist: ${dist}`)
-    if (dist > 50) {
+    if (dist > 25) {
       t.dragging = true;
       if (t.longPressTimeout) {
         clearTimeout(t.longPressTimeout);
@@ -491,6 +491,7 @@ export class DynamicD3ForceGraph {
       }
 
       delete t.lastMouseDownTime;
+      delete t.mouseDownCounter;
     }
   }
   handleDragEnded(d) {
@@ -508,6 +509,8 @@ export class DynamicD3ForceGraph {
     }
 
     delete t.dragging;
+
+    let dist = Math.sqrt(Math.pow(t.x0 - d.fx, 2) + Math.pow(t.y0 - d.fy, 2));
 
     d.fx = undefined;
     d.fy = undefined;
@@ -930,7 +933,7 @@ export class DynamicD3ForceGraph {
       if (id.replace) {
         result += `_${id.replace("^", "-")}`;
       } else {
-        result += `_${id}`; 
+        result += `_${id}`;
       }
     }
     if (suffix) { result += `_${suffix}`; }
@@ -991,8 +994,6 @@ export class DynamicD3ForceGraph {
   getNodeRenderType(d) { return d.render ? d.render : "default"; }
   getNodeShapeId(d) {
     if (!d || !d.id) {
-      // debugger;
-      // console.log("getNodeShapeId(d): d is null")
       return null;
     }
     return this.getUniqueId(d.id, /*prefix*/ "shape");

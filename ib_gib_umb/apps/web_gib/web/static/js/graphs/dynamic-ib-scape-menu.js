@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import * as d3text from 'd3-textwrap';
 
-import { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3DefaultCollapsed, d3RequireExpandLevel2, d3MenuCommands } from '../d3params';
+import { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3BoringRel8ns, d3RequireExpandLevel2, d3MenuCommands } from '../d3params';
 import { DynamicD3ForceGraph } from './dynamic-d3-force-graph';
 
 import * as commands from '../services/commanding/commands';
