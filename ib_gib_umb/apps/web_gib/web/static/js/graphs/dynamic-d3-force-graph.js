@@ -512,6 +512,9 @@ export class DynamicD3ForceGraph {
 
     let dist = Math.sqrt(Math.pow(t.x0 - d.fx, 2) + Math.pow(t.y0 - d.fy, 2));
 
+    d.x = d.fx;
+    d.y = d.fy;
+
     d.fx = undefined;
     d.fy = undefined;
 

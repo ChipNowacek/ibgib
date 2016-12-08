@@ -12,9 +12,9 @@ let d3LinkDistances = {
 let d3Scales = {
   "cmd": 1.5,
   "virtual": 1,
-  "text": 4,
-  "image": 4,
-  "source": 5,
+  "text": 3,
+  "image": 3,
+  "source": 4,
   "ibGib": 1.5,
   "rel8n": 2,
   "result": 2,

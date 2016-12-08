@@ -56,11 +56,6 @@ defmodule WebGib.Bus.Commanding.Comment do
   end
 
   defp exec_impl(identity_ib_gibs, src_ib_gib, comment_text) do
-    # mimic process latency
-    Process.sleep(2000)
-    _ = Logger.warn("mimicking process latency...do not leave in production!" |> ExChalk.bg_yellow |> ExChalk.red)
-    _ = Logger.warn("mimicking process latency...do not leave in production!" |> ExChalk.bg_yellow |> ExChalk.red)
-    _ = Logger.warn("mimicking process latency...do not leave in production!" |> ExChalk.bg_yellow |> ExChalk.red)
     with(
       {:ok, {src, comment_gib}} <- prepare(src_ib_gib),
       {:ok, comment} <-

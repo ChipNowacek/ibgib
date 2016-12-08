@@ -35,7 +35,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         chargeStrength: 35,
         chargeDistanceMin: 10,
         chargeDistanceMax: 10000,
-        linkDistance: 175,
+        linkDistance: 125,
         linkDistance_Src_Rel8n: 25,
       },
       node: {
@@ -98,7 +98,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     d3.select(t.graphDiv)
       .selectAll("[name=ib-scape-details-close-btn]")
       .on("click", () => {
-        if (t.currentCmd) { t.currentCmd.close(); }
+        if (t.currentCmd) {
+          debugger;
+
+          t.currentCmd.close();
+        }
       });
   }
 
@@ -280,7 +284,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         .attr("opacity", 0.1);
 
       virtualNode.fadeTimer = setTimeout(() => {
-        t.removeVirtualNode(virtualNode);
+        t.removeVirtualNode(virtualNode, /*keepInGraph*/ false);
       }, fadeTimeoutMs);
     }
 
@@ -417,11 +421,12 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       node.expandLevel = 0;
     }
 
-    t.removeVirtualCmdNodes();
 
     if (node.ibGib === "ib^gib") {
+      t.removeVirtualCmdNodes();
       t.addCmdVirtualNodes_Default(node);
     } else if (node.type === "ibGib") {
+      t.removeVirtualCmdNodes();
       t.toggleExpandCollapseLevel_IbGib(node);
     } else if (node.type === "rel8n") {
       t.toggleExpandCollapseLevel_Rel8n(node);
@@ -429,7 +434,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       console.warn("unknown node type for toggle expand collapse");
     }
   }
-  toggleExpandCollapseLevel_IbGib(node) { let t = this;
+  toggleExpandCollapseLevel_IbGib(node) {
+    let t = this;
     switch (node.expandLevel) {
       case 0:
         node.expandLevel = 1;
@@ -451,22 +457,15 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     if (d3AddableRel8ns.includes(rel8nNode.rel8nName) && t.getChildrenCount_Cmds(rel8nNode) === 0) {
       t.addCmdVirtualNode(rel8nNode, "add", t.config.other.cmdFadeTimeoutMs_Specialized);
-    }
-    else {
+    } else {
       switch (rel8nNode.expandLevel) {
         case 0:
           let { rel8nName, rel8nSrc } = rel8nNode;
-
-          let srcRel8ns = rel8nSrc.ibGibJson.rel8ns[rel8nName] || []
+          let srcRel8ns = rel8nSrc.ibGibJson.rel8ns[rel8nName] || [];
           srcRel8ns
             .forEach(rel8dIbGib => {
               t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ rel8dIbGib, /*srcNode*/ rel8nNode, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y});
             });
-
-          // if (d3AddableRel8ns.includes(rel8nName)) {
-          //   t.addCmdVirtualNode(rel8nNode, "add", t.config.other.cmdFadeTimeoutMs_Specialized);
-          // }
-
           rel8nNode.expandLevel = 1;
           break;
 
@@ -810,12 +809,30 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
   }
 
+  moveRootToClickPos(event) {
+    let t = this;
+    let root = t.addRoot();
+
+    // t.freezeNodes(100);
+    root.x = event.x;
+    root.y = event.y;
+    root.fx = event.x;
+    root.fy = event.y;
+    t.swap(root, root, /*updateParentOrChild*/ true);
+  }
+
   handleBackgroundClicked() {
     let t = this;
-    t.clearSelectedNode();
+    if (t.selectedNode) {
+      t.clearSelectedNode();
+    } else {
+      t.moveRootToClickPos(d3.event);
+    }
 
     if (t.currentCmd) {
-      if (t.currentCmd.close) { t.currentCmd.close(); }
+      if (t.currentCmd.close) {
+        t.currentCmd.close();
+      }
       delete t.currentCmd;
     }
 
@@ -829,12 +846,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     t.animateNodeBorder(d, /*nodeShape*/ null);
 
-    d.fx = d.x;
-    d.fy = d.y;
-    setTimeout(() => {
-      delete d.fx;
-      delete d.fy;
-    }, 1000);
+    t.freezeNodes(500);
     if (d.virtualId) {
       t.zapVirtualNode(d);
     } else {

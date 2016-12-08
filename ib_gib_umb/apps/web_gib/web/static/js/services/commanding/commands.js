@@ -76,6 +76,8 @@ export class DetailsCommandBase extends CommandBase {
         .attr("class", "ib-details-off");
       delete t.detailsView;
     }
+
+    if (t.ibScape.currentCmd) { delete t.ibScape.currentCmd; }
   }
 
   init() {
