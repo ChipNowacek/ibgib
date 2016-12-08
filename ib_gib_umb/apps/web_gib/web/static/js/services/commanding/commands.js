@@ -300,7 +300,7 @@ export class HelpDetailsCommand extends DetailsCommandBase {
           // do nothing
       }
     } else if (t.d.ibGib === "ib^gib") {
-      text = `This is the root ibGib.`;
+      text = `This is the root ibGib. Click anywhere in empty space to bring it up.`;
     } else {
       let ib = t.d.ibGibJson.ib;
       switch (ib) {

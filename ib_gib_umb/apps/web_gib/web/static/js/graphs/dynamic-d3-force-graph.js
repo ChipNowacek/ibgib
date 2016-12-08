@@ -175,7 +175,7 @@ export class DynamicD3ForceGraph {
 
     t.svgGroup = t.svg
         .append('svg:g')
-          .attr("id", "svgGroup");
+          .attr("id", t.getUniqueId("svgGroup"));
   }
   initGraphLinksGroup() {
     let t = this;
@@ -454,6 +454,7 @@ export class DynamicD3ForceGraph {
 
   handleDragStarted(d) {
     let t = this;
+    console.log("drag started")
 
     if (!d3.event.active) {
       t.simulation.alphaTarget(0.1).restart();
@@ -463,7 +464,14 @@ export class DynamicD3ForceGraph {
       }
     }
 
+
     // Fixes the position of the node to the event (mouse/touch pos)
+    if (d.fx || d.fy) {
+      d.fixedBeforeDragStarted = true;
+    } else {
+      delete d.fixedBeforeDragStarted;
+    }
+
     d.fx = d.x;
     d.fy = d.y;
 
@@ -496,10 +504,10 @@ export class DynamicD3ForceGraph {
   }
   handleDragEnded(d) {
     let t = this;
+    console.log("handleDragEnded")
 
     t.handleNodeRawMouseUp(d);
 
-    // console.log("handleDragEnded")
     if (!d3.event.active) {
       t.simulation.alphaTarget(0);
       t.children.filter(child => child.shareDataReference).forEach(child => child.simulation.alphaTarget(0));
@@ -515,8 +523,11 @@ export class DynamicD3ForceGraph {
     d.x = d.fx;
     d.y = d.fy;
 
-    d.fx = undefined;
-    d.fy = undefined;
+    if (!d.fixedBeforeDragStarted) {
+      console.log("clearing d.fx and d.fy")
+      d.fx = undefined;
+      d.fy = undefined;
+    }
 
     t.x0 = null;
     t.y0 = null;

@@ -31,7 +31,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         longPressMs: 750
       },
       simulation: {
-        velocityDecay: 0.55,
+        velocityDecay: 0.75,
         chargeStrength: 35,
         chargeDistanceMin: 10,
         chargeDistanceMax: 10000,
@@ -56,11 +56,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         }
       },
       other: {
+        rootFadeTimeoutMs: 10000,
         cmdFadeTimeoutMs_Default: 4000,
         cmdFadeTimeoutMs_Specialized: 10000,
         rel8nFadeTimeoutMs_Boring: 4000,
         rel8nFadeTimeoutMs_Spiffy: 0,
-
       }
     }
     t.config = $.extend({}, defaults, config || {});
@@ -78,6 +78,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.initNoScrollHtmlAndBody();
     t.initCloseDetails();
     t.initResize();
+    t.rootPos = {x: t.center.x, y: t.center.y};
     let root = t.addRoot();
     t.addSourceIbGib(root);
   }
@@ -99,8 +100,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       .selectAll("[name=ib-scape-details-close-btn]")
       .on("click", () => {
         if (t.currentCmd) {
-          debugger;
-
           t.currentCmd.close();
         }
       });
@@ -138,35 +137,76 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   /** Adds the root */
   addRoot() {
     let t = this;
+    console.log("addRoot");
+
     let rootNode = t.getRoot();
+    if (rootNode) {
+      t.rootPos.x = rootNode.x;
+      t.rootPos.y = rootNode.y;
 
-    // Only add the root if doesn't already exist.
-    if (!rootNode) {
-      let rootId = t.getUniqueId("root"),
-          rootType = "ibGib",
-          rootIbGib = "ib^gib",
-          rootShape = "circle",
-          autoZap = false,
-          fadeTimeoutMs = 3000,
-          rootPulseMs = 2000;
-
-      if (t.sourceIbGib && t.sourceIbGib !== "ib^gib") {
-        fadeTimeoutMs = 0;
-        autoZap = true;
-
-        // we have a source ibGib, so don't blink the root
-        rootNode = t.addVirtualNode(rootId, rootType, rootIbGib, /*srcNode*/ null, rootShape, autoZap, fadeTimeoutMs, /*cmd*/ null, /*title*/ null, /*label*/ null, /*startPos*/ null);
-      } else {
-        // we have NO source ibGib, so blink the root for new users.
-        rootNode = t.addVirtualNode(rootId, rootType, rootIbGib, /*srcNode*/ null, rootShape, autoZap, fadeTimeoutMs, /*cmd*/ null, /*title*/ null, /*label*/ null, /*startPos*/ null);
-
-        rootNode.isSource = true;
-
-        // Call recursively. If it was succesfully added and subsequently
-        // zapped by the user, then we won't be at this point.
-        setTimeout(() => t.addRoot(), fadeTimeoutMs + rootPulseMs);
+      t.clearFadeTimeout(rootNode);
+      if (rootNode.fadeTimer) {
+        clearTimeout(rootNode.fadeTimer);
+        delete rootNode.fadeTimer;
       }
+
+      t.remove(rootNode)
     }
+
+    let nonRootNodeCount = t.graphData.nodes.length;
+
+    let rootId = t.getUniqueId("root"),
+        rootType = "ibGib",
+        rootIbGib = "ib^gib",
+        rootShape = "circle";
+
+    let autoZap,
+        fadeTimeoutMs,
+        rootPulseMs;
+
+    if (nonRootNodeCount === 0) {
+      // There are no nodes, so pulse the root and don't auto zap it.
+      // This lets any new users learn about clicking and zapping.
+      autoZap = false;
+      fadeTimeoutMs = 3000;
+      rootPulseMs = 3000;
+    } else {
+      // There are other nodes, so don't pulse the root, just let it fade.
+      autoZap = true;
+      fadeTimeoutMs = t.config.other.rootFadeTimeoutMs;
+      rootPulseMs = 0;
+    }
+
+    rootNode = t.addVirtualNode(rootId, rootType, rootIbGib, /*srcNode*/ null, rootShape, autoZap, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ null, /*label*/ null, /*startPos*/ null);
+
+    if (!t.sourceIbGib || t.sourceIbGib === "ib^gib") {
+      rootNode.isSource = true;
+    }
+
+    rootNode.isRoot = true;
+
+    rootNode.x = t.rootPos.x;
+    rootNode.y = t.rootPos.y;
+
+    if (rootPulseMs) {
+      // Call recursively. If it was succesfully added and subsequently
+      // zapped by the user, then we won't be at this point.
+      clearTimeout(t.rootPulseTimer);
+      t.rootPulseTimer = setTimeout(() => {
+        console.log("readding root");
+        t.addRoot();
+      }, fadeTimeoutMs + rootPulseMs);
+    }
+    //
+    // if (t.sourceIbGib && t.sourceIbGib !== "ib^gib") {
+    //   fadeTimeoutMs = 0;
+    //   autoZap = true;
+    //
+    //   // we have a source ibGib, so don't blink the root
+    //   rootNode = t.addVirtualNode(rootId, rootType, rootIbGib, /*srcNode*/ null, rootShape, autoZap, fadeTimeoutMs, /*cmd*/ null, /*title*/ null, /*label*/ null, /*startPos*/ null);
+    // } else {
+    //   // we have NO source ibGib, so blink the root for new users.
+    // }
 
     return rootNode;
   }
@@ -267,37 +307,36 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     if (type !== "cmd" && autoZap) {
       t.zapVirtualNode(virtualNode);
     } else if (fadeTimeoutMs) {
-      let nodeShape = d3.select("#" + virtualNode.id);
-
-      var transition =
-        d3.transition()
-          .duration(fadeTimeoutMs)
-          .ease(d3.easeLinear);
-
-      console.log("fading out...");
-
-      let o = nodeShape.attr("opacity");
-
-      nodeShape
-        .attr("opacity", 1)
-        .transition(transition)
-        .attr("opacity", 0.1);
-
-      virtualNode.fadeTimer = setTimeout(() => {
-        t.removeVirtualNode(virtualNode, /*keepInGraph*/ false);
-      }, fadeTimeoutMs);
+      t.fadeOutNode(virtualNode, fadeTimeoutMs);
     }
 
     return virtualNode;
+  }
+  fadeOutNode(node, fadeTimeoutMs) {
+    let t = this;
+    console.log("fading out...");
+
+    t.clearFadeTimeout(node);
+
+    let transition =
+      d3.transition()
+        .duration(fadeTimeoutMs)
+        .ease(d3.easeLinear);
+
+    d3.select("#" + node.id)
+      .attr("opacity", 1)
+      .transition(transition)
+      .attr("opacity", 0.1);
+
+    node.fadeTimer = setTimeout(() => {
+      t.removeVirtualNode(node, /*keepInGraph*/ false);
+    }, fadeTimeoutMs);
   }
   removeVirtualNode(node, keepInGraph) {
     let t = this;
     delete t.virtualNodes[node.id];
 
-    if (node.fadeTimer) {
-      clearTimeout(node.fadeTimer);
-      delete node.fadeTimer;
-    }
+    t.clearFadeTimeout(node);
 
     if (!keepInGraph) {
       if (t.graphData.nodes.some(n => n.id === node.id)) {
@@ -318,20 +357,29 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   freezeNodes(durationMs) {
     let t = this;
     t.graphData.nodes.forEach(n => {
-      n.fx = n.x;
-      n.fy = n.y;
+      if (!n.fx && !n.fy) {
+        n.fx = n.x;
+        n.fy = n.y;
+        n.frozen = true;
+      }
     });
 
     setTimeout(() => {
       t.graphData.nodes.forEach(n => {
-        delete n.fx;
-        delete n.fy;
+        if (n.frozen) {
+          delete n.fx;
+          delete n.fy;
+          delete n.fixedBeforeFreeze;
+          delete n.frozen;
+        }
       });
     }, durationMs);
   }
 
   zapVirtualNode(virtualNode) {
     let t = this;
+
+    t.clearFadeTimeout(virtualNode);
 
     if (!virtualNode.virtualId || virtualNode.busy) {
       return;
@@ -381,6 +429,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     let t = this;
 
     t.clearFadeTimeout(node);
+
+    if (t.rootPulseTimer) {
+      clearTimeout(t.rootPulseTimer);
+      delete t.rootPulseTimer;
+    }
 
     t.getIbGibJson(node.ibGib, ibGibJson => {
       console.log(`got json: ${JSON.stringify(ibGibJson)}`);
@@ -574,18 +627,17 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
   }
 
-  clearFadeTimeout(virtualNode) {
+  clearFadeTimeout(node) {
     let t = this;
 
-    let nodeShape = d3.select("#" + t.getNodeShapeId(virtualNode.id));
-    nodeShape
+    if (node.fadeTimer) {
+      clearTimeout(node.fadeTimer);
+      delete node.fadeTimer;
+    }
+
+    d3.select("#" + t.getNodeShapeId(node.id))
       .attr("opacity", d => t.getNodeShapeOpacity(d))
       .transition(); // resets/"removes" the fade transition
-
-    if (virtualNode.fadeTimer) {
-      clearTimeout(virtualNode.fadeTimer);
-      delete virtualNode.fadeTimer;
-    }
   }
 
   getIbGibJson(ibgib, callback) {
@@ -760,6 +812,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
   }
 
+  /** Overridden to remove the center force. Much more tolerable this way. */
+  getForceCenter() { return null; }
   getForceLinkDistance(l) {
     let t = this;
     if (l.source.type === "rel8n") {
@@ -811,22 +865,61 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
   moveRootToClickPos(event) {
     let t = this;
-    let root = t.addRoot();
 
-    // t.freezeNodes(100);
-    root.x = event.x;
-    root.y = event.y;
-    root.fx = event.x;
-    root.fy = event.y;
+    let root = t.getRoot();
+    if (root) { t.clearFadeTimeout(root); }
+
+    root = t.addRoot();
+
+    let transform = ibHelper.parseTransformString(t.svgGroup.attr("transform"));
+
+    let trans =
+      d3.transition()
+        .duration(75)
+        .ease(d3.easeLinear);
+
+    root.x = (event.x - transform.translateX) / transform.scaleX;
+    root.y = (event.y - transform.translateY) / transform.scaleY;
+    root.fx = root.x;
+    root.fy = root.y;
+    t.rootPos.x = root.x;
+    t.rootPos.y = root.y;
     t.swap(root, root, /*updateParentOrChild*/ true);
+
+    t.animateNodeBorder(root, /*nodeShape*/ null);
   }
 
+  handleDragged(d) {
+    super.handleDragged(d);
+    let t = this;
+    if (d.isRoot) {
+
+      console.log("dragging root")
+      t.rootPos.x = d.x;
+      t.rootPos.y = d.y;
+
+      if (d.fadeTimer) {
+        console.log("clearing root fade timer");
+        clearTimeout(d.fadeTimer);
+        delete d.fadeTimer;
+      }
+    }
+  }
+  handleDragEnded(d) {
+    let t = this;
+    super.handleDragEnded(d);
+    if (d.isRoot) {
+      t.fadeOutNode(d, t.config.other.rootFadeTimeoutMs);
+    }
+  }
   handleBackgroundClicked() {
     let t = this;
     if (t.selectedNode) {
       t.clearSelectedNode();
     } else {
+      t.removeVirtualCmdNodes();
       t.moveRootToClickPos(d3.event);
+      t.fadeOutNode(t.getRoot(), t.config.other.rootFadeTimeoutMs);
     }
 
     if (t.currentCmd) {
@@ -846,7 +939,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     t.animateNodeBorder(d, /*nodeShape*/ null);
 
-    t.freezeNodes(500);
+    // t.freezeNodes(500);
     if (d.virtualId) {
       t.zapVirtualNode(d);
     } else {
