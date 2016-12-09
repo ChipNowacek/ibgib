@@ -285,9 +285,12 @@ let d3Rel8nIcons = {
   "result": "\uf1c0",
   "verse": "\uf30c",
   // "ib^gib": "\u29c2",
-  "ib^gib": "\u221e",
+  "ib^gib": d3RootUnicodeChar,
   "dna": "➿"
 };
+
+var d3RootUnicodeChar = "\uf10c";
+// var d3RootUnicodeChar = "\u2723";
 
 // Addable rel8ns are rel8ns that can be added to any ibGib. For example,
 // any ibGib can be commented on, even if there are no existing comment rel8ns.
@@ -298,4 +301,4 @@ var d3AddableRel8ns = [
   // "pic",
 ]
 
-export { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3BoringRel8ns, d3RequireExpandLevel2, d3MenuCommands, d3Rel8nIcons, d3AddableRel8ns };
+export { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3BoringRel8ns, d3RequireExpandLevel2, d3MenuCommands, d3Rel8nIcons, d3RootUnicodeChar, d3AddableRel8ns };

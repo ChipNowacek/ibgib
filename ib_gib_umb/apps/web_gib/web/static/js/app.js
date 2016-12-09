@@ -70,7 +70,7 @@ class App {
       // let data = baseD3JsonPath + ibGib;
       // this.ibScape.update(data);
 
-      this.ibScape = new DynamicIbScape(graphDiv, "mainIbScapeSvg", /*config*/ null, baseJsonPath, ibGibCache, ibGibImageProvider, ibGib, ibGibSocket, ibGibEventBus);
+      this.ibScape = new DynamicIbScape(graphDiv, "mainIbScapeSvg", /*config*/ null, baseJsonPath, ibGibCache, ibGibImageProvider, ibGib, ibGibSocket, ibGibEventBus, /*isPrimaryIbScape*/ true);
       // this.ibScape.init();
       this.ibScape.toggleFullScreen();
 

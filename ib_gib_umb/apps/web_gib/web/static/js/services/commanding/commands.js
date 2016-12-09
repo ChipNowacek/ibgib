@@ -1,5 +1,6 @@
 import * as d3 from 'd3';
 import * as ibHelper from '../ibgib-helper';
+import { d3RootUnicodeChar } from '../../d3params';
 
 
 export class CommandBase {
@@ -203,7 +204,7 @@ export class FormDetailsCommandBase extends DetailsCommandBase {
 
   addVirtualNode() {
     let t = this;
-    t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ t.d, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "\uf10c", /*startPos*/ {x: t.d.x, y: t.d.y});
+    t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ t.d, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ d3RootUnicodeChar, /*startPos*/ {x: t.d.x, y: t.d.y});
   }
 
   getMessage() {
@@ -374,7 +375,7 @@ export class ForkDetailsCommand extends FormDetailsCommandBase {
 
   addVirtualNode() {
     let t = this;
-    t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ null, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "\uf10c", /*startPos*/ {x: t.d.x, y: t.d.y});
+    t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ null, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ d3RootUnicodeChar, /*startPos*/ {x: t.d.x, y: t.d.y});
   }
 
   getMessageData() {
@@ -452,6 +453,6 @@ export class GotoCommand extends CommandBase {
 
     let t = this;
 
-    t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.d.ibGib, /*srcNode*/ null, /*shape*/ t.d.shape, /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "\uf10c", /*startPos*/ {x: t.d.x, y: t.d.y});
+    t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.d.ibGib, /*srcNode*/ null, /*shape*/ t.d.shape, /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ d3RootUnicodeChar, /*startPos*/ {x: t.d.x, y: t.d.y});
   }
 }

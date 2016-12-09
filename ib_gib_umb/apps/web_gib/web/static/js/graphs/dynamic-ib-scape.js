@@ -1,14 +1,20 @@
 import * as d3 from 'd3';
 
-import { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3BoringRel8ns, d3RequireExpandLevel2, d3MenuCommands, d3Rel8nIcons, d3AddableRel8ns } from '../d3params';
+import { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3BoringRel8ns, d3RequireExpandLevel2, d3MenuCommands, d3Rel8nIcons, d3RootUnicodeChar, d3AddableRel8ns } from '../d3params';
 
 import { DynamicD3ForceGraph } from './dynamic-d3-force-graph';
 import { DynamicIbScapeMenu } from './dynamic-ib-scape-menu';
 import * as ibHelper from '../services/ibgib-helper';
 import { CommandManager } from '../services/commanding/command-manager';
 
+/**
+ * This is the ibGib d3 graph that contains all the stuff for our IbGib data
+ * interaction. So on the client side, this is the big enchilada.
+ *
+ *
+ */
 export class DynamicIbScape extends DynamicD3ForceGraph {
-  constructor(graphDiv, svgId, config, baseJsonPath, ibGibCache, ibGibImageProvider, sourceIbGib, ibGibSocketManager, ibGibEventBus) {
+  constructor(graphDiv, svgId, config, baseJsonPath, ibGibCache, ibGibImageProvider, sourceIbGib, ibGibSocketManager, ibGibEventBus, isPrimaryIbScape) {
     super(graphDiv, svgId, {});
     let t = this;
 
@@ -19,6 +25,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.ibGibEventBus = ibGibEventBus;
     t.commandMgr = new CommandManager(t, ibGibSocketManager);
     t.virtualNodes = {};
+    t.isPrimaryIbScape = isPrimaryIbScape;
 
     let defaults = {
       background: {
@@ -65,7 +72,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
     t.config = $.extend({}, defaults, config || {});
 
-    t.sourceIbGib = sourceIbGib || "ib^gib";
+    t.contextIbGib = sourceIbGib || "ib^gib";
   }
 
   init() {
@@ -78,11 +85,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.initNoScrollHtmlAndBody();
     t.initCloseDetails();
     t.initResize();
-    t.rootPos = {x: t.center.x, y: t.center.y};
-    let root = t.addRoot();
-    t.addSourceIbGib(root);
+    t.initRoot();
+    t.initContext();
   }
-
   initNoScrollHtmlAndBody() {
     d3.select("html")
       .style("overflow-x", "hidden")
@@ -93,7 +98,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       .style("overflow-y", "hidden")
       .style("position", "relative");
   }
-
   initCloseDetails() {
     let t = this;
     d3.select(t.graphDiv)
@@ -104,7 +108,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         }
       });
   }
-
   initResize() {
     let t = this;
 
@@ -121,54 +124,56 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     }
   }
-
-  getRoot() {
+  initRoot() {
+    let t = this;
+    t.rootPos = {x: t.center.x, y: t.center.y};
+    t.addRootNode();
+  }
+  initContext() {
     let t = this;
 
-    if (t.graphData && t.graphData.nodes && t.graphData.nodes.length > 0) {
-      let rootId = t.getUniqueId("root");
-      let rootArray = t.graphData.nodes.filter(n => n.id === rootId);
-      return rootArray.length === 1 ? rootArray[0] : null;
-    } else {
-      return null;
+    t.addContextNode();
+
+    window.onpopstate = (event) => {
+      console.warn("pop state triggered");
+      // debugger;
     }
+
+    let obj1 = { yo: "yoooo" }
+    let obj2 = { yo: "yoooo" }
+    history.pushState(obj1, "unused title", "comment^gib");
+    history.pushState(obj2, "unused title", "pic^gib");
+    window.history.back();
   }
 
   /** Adds the root */
-  addRoot() {
+  addRootNode() {
     let t = this;
-    console.log("addRoot");
+    console.log("addRootNode");
 
-    let rootNode = t.getRoot();
-    if (rootNode) {
-      t.rootPos.x = rootNode.x;
-      t.rootPos.y = rootNode.y;
+    // Remove existing rootNode (if exists)
+    if (t.rootNode) {
+      t.rootPos.x = t.rootNode.x;
+      t.rootPos.y = t.rootNode.y;
 
-      t.clearFadeTimeout(rootNode);
-      if (rootNode.fadeTimer) {
-        clearTimeout(rootNode.fadeTimer);
-        delete rootNode.fadeTimer;
-      }
-
-      t.remove(rootNode)
+      t.clearFadeTimeout(t.rootNode);
+      t.remove(t.rootNode);
     }
 
+    // Setup the rootNode params based on environment.
     let nonRootNodeCount = t.graphData.nodes.length;
-
     let rootId = t.getUniqueId("root"),
         rootType = "ibGib",
         rootIbGib = "ib^gib",
         rootShape = "circle";
-
     let autoZap,
         fadeTimeoutMs,
         rootPulseMs;
-
     if (nonRootNodeCount === 0) {
       // There are no nodes, so pulse the root and don't auto zap it.
       // This lets any new users learn about clicking and zapping.
       autoZap = false;
-      fadeTimeoutMs = 3000;
+      fadeTimeoutMs = 5000;
       rootPulseMs = 3000;
     } else {
       // There are other nodes, so don't pulse the root, just let it fade.
@@ -177,60 +182,43 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       rootPulseMs = 0;
     }
 
-    rootNode = t.addVirtualNode(rootId, rootType, rootIbGib, /*srcNode*/ null, rootShape, autoZap, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ null, /*label*/ null, /*startPos*/ null);
+    // Add the rootNode
+    t.rootNode = t.addVirtualNode(rootId, rootType, rootIbGib, /*srcNode*/ null, rootShape, autoZap, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ null, /*label*/ null, /*startPos*/ null);
 
-    if (!t.sourceIbGib || t.sourceIbGib === "ib^gib") {
-      rootNode.isSource = true;
+    if (!t.contextIbGib || t.contextIbGib === "ib^gib") {
+      t.rootNode.isSource = true;
     }
+    t.rootNode.isRoot = true;
+    // Restore the rootNode's position if we were replacing an existing one.
+    t.rootNode.x = t.rootPos.x;
+    t.rootNode.y = t.rootPos.y;
 
-    rootNode.isRoot = true;
-
-    rootNode.x = t.rootPos.x;
-    rootNode.y = t.rootPos.y;
-
+    // Pulse if applicable (see above)
     if (rootPulseMs) {
       // Call recursively. If it was succesfully added and subsequently
       // zapped by the user, then we won't be at this point.
       clearTimeout(t.rootPulseTimer);
-      t.rootPulseTimer = setTimeout(() => {
-        console.log("readding root");
-        t.addRoot();
-      }, fadeTimeoutMs + rootPulseMs);
+      t.rootPulseTimer =
+        setTimeout(() => t.addRootNode(), fadeTimeoutMs + rootPulseMs);
     }
-    //
-    // if (t.sourceIbGib && t.sourceIbGib !== "ib^gib") {
-    //   fadeTimeoutMs = 0;
-    //   autoZap = true;
-    //
-    //   // we have a source ibGib, so don't blink the root
-    //   rootNode = t.addVirtualNode(rootId, rootType, rootIbGib, /*srcNode*/ null, rootShape, autoZap, fadeTimeoutMs, /*cmd*/ null, /*title*/ null, /*label*/ null, /*startPos*/ null);
-    // } else {
-    //   // we have NO source ibGib, so blink the root for new users.
-    // }
-
-    return rootNode;
   }
 
-  addSourceIbGib(root) {
+  addContextNode() {
     let t = this;
 
-    if (t.sourceIbGib && t.sourceIbGib !== "ib^gib") {
-      let { ib } = ibHelper.getIbAndGib(t.sourceIbGib),
+    if (t.contextIbGib && t.contextIbGib !== "ib^gib") {
+      let { ib } = ibHelper.getIbAndGib(t.contextIbGib),
           srcId = t.getUniqueId("src"),
           srcType = "ibGib",
           srcShape = t.getNodeShapeFromIb(ib),
           autoZap = true,
           fadeTimeoutMs = 0;
 
-      // I'm overloading the term "source" here. the "sourceIbGib"
-      // is the current ibGib that is the source for the whole graph.
-      // The "srcNode" is with regards to the link added to the graphData,
-      // and since we're linking the sourceIbGib to the root, it is the root
-      // in this case.
-      let node = t.addVirtualNode(srcId, srcType, t.sourceIbGib, /*srcNode*/ root, srcShape, autoZap, fadeTimeoutMs, /*cmd*/ null, /*title*/ null, /*label*/ null, /*startPos*/ {x: root.x, y: root.y});
-      node.isSource = true;
+      t.contextNode = t.addVirtualNode(srcId, srcType, t.contextIbGib, /*srcNode*/ t.rootNode, srcShape, autoZap, fadeTimeoutMs, /*cmd*/ null, /*title*/ null, /*label*/ null, /*startPos*/ {x: t.rootNode.x, y: t.rootNode.y});
+      // t.contextNode.isSource = true;
+      t.contextNode.isContext = true;
     } else {
-      console.warn(`no source ibGib. (t.sourceIbGib is ${t.sourceIbGib})`);
+      console.warn(`No contextNode set. (t.contextIbGib is ${t.contextIbGib})`);
     }
   }
 
@@ -598,7 +586,14 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       t.ibGibEventBus.disconnect(ibGib);
       t.graphData.nodes
         .filter(n => n.ibGib === ibGib)
-        .forEach(n => t.updateIbGib(n, updateMsg.data.new_ib_gib));
+        .forEach(n => {
+          if (ibGib === t.contextIbGib) {
+            debugger;
+          } else {
+            t.updateIbGib(n, updateMsg.data.new_ib_gib);
+          }
+        });
+
     } else {
       console.warn(`Unused updateMsg(?): ${JSON.stringify(updateMsg)}`);
     }
@@ -704,7 +699,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     if (d.ibGibJson) {
       if (d.ibGibJson.data && d.ibGibJson.data.render) {
         return d3Scales[d.ibGibJson.data.render] || d3Scales["default"];
-      } else if (d.ibGib === t.sourceIbGib) {
+      } else if (d.ibGib === t.contextIbGib) {
         return d3Scales["source"];
       } else if (d.ibGib === "ib^gib") {
         return d3Scales["ib^gib"];
@@ -773,12 +768,12 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         } else if (d.ibGibJson.data.label) {
           return d.ibGibJson.data.label;
         } else if (d.ibGib === "ib^gib") {
-          return "\uf10c";
+          return d3RootUnicodeChar;
         } else {
           return d.ibGibJson.ib;
         }
       } else if (d.ibGib === "ib^gib") {
-        return "\uf10c";
+        return d3RootUnicodeChar;
       } else {
         return d.ibGibJson.ib;
       }
@@ -866,10 +861,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   moveRootToClickPos(event) {
     let t = this;
 
-    let root = t.getRoot();
-    if (root) { t.clearFadeTimeout(root); }
+    if (t.rootNode) { t.clearFadeTimeout(t.rootNode); }
 
-    root = t.addRoot();
+    t.addRootNode();
 
     let transform = ibHelper.parseTransformString(t.svgGroup.attr("transform"));
 
@@ -878,31 +872,24 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         .duration(75)
         .ease(d3.easeLinear);
 
-    root.x = (event.x - transform.translateX) / transform.scaleX;
-    root.y = (event.y - transform.translateY) / transform.scaleY;
-    root.fx = root.x;
-    root.fy = root.y;
-    t.rootPos.x = root.x;
-    t.rootPos.y = root.y;
-    t.swap(root, root, /*updateParentOrChild*/ true);
+    t.rootNode.x = (event.x - transform.translateX) / transform.scaleX;
+    t.rootNode.y = (event.y - transform.translateY) / transform.scaleY;
+    t.rootNode.fx = t.rootNode.x;
+    t.rootNode.fy = t.rootNode.y;
+    t.rootPos.x = t.rootNode.x;
+    t.rootPos.y = t.rootNode.y;
+    t.swap(t.rootNode, t.rootNode, /*updateParentOrChild*/ true);
 
-    t.animateNodeBorder(root, /*nodeShape*/ null);
+    t.animateNodeBorder(t.rootNode, /*nodeShape*/ null);
   }
 
   handleDragged(d) {
     super.handleDragged(d);
     let t = this;
     if (d.isRoot) {
-
-      console.log("dragging root")
       t.rootPos.x = d.x;
       t.rootPos.y = d.y;
-
-      if (d.fadeTimer) {
-        console.log("clearing root fade timer");
-        clearTimeout(d.fadeTimer);
-        delete d.fadeTimer;
-      }
+      t.clearFadeTimeout(d);
     }
   }
   handleDragEnded(d) {
@@ -919,7 +906,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     } else {
       t.removeVirtualCmdNodes();
       t.moveRootToClickPos(d3.event);
-      t.fadeOutNode(t.getRoot(), t.config.other.rootFadeTimeoutMs);
+      t.fadeOutNode(t.rootNode, t.config.other.rootFadeTimeoutMs);
     }
 
     if (t.currentCmd) {
