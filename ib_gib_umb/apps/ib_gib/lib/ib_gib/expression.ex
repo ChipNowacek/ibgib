@@ -878,7 +878,8 @@ defmodule IbGib.Expression do
     _ = Logger.debug "plan: #{inspect plan}\nstate: #{inspect state}"
 
     with(
-      identity_ib_gibs <- plan["identities"],
+      {:has_identities, identity_ib_gibs} when identity_ib_gibs != nil <-
+        {:has_identities, plan[:data]["identities"]},
       info <- state[:info],
       {ib, gib} <- {info[:ib], info[:gib]},
       {:ok, ib_gib} <- Helper.get_ib_gib(ib, gib),
@@ -893,6 +894,7 @@ defmodule IbGib.Expression do
     ) do
       {:ok, new_pid}
     else
+      {:has_identities, nil} -> {:error, "Plan contains no identities."}
       error -> Helper.default_handle_error(error)
     end
   end
