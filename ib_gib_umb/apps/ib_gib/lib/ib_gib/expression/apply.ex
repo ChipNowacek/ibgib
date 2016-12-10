@@ -293,9 +293,9 @@ defmodule IbGib.Expression.Apply do
       |> Enum.filter(fn(r_name) -> !String.starts_with?(r_name, "-") end)
     rel8n_names_to_remove =
       rel8n_names
-      |> Enum.filter(fn(r_name) ->
-           String.starts_with?(r_name, "-") and !Enum.member?(@invalid_unrel8_rel8ns, r_name)
-         end)
+      |> Enum.filter(&(String.starts_with?(&1, "-")))
+      |> Enum.map(&(String.trim_leading(&1, "-")))
+      # |> Enum.filter(&(!Enum.member?(@invalid_unrel8_rel8ns, &1)))
 
     # Execute the add/remove on the `this_info` map
     this_info =
