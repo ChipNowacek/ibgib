@@ -133,6 +133,71 @@ defmodule IbGib.Expression.BasicsTest do
   end
 
   @tag :capture_log
+  test "rel8, remove rel8, single rel8n" do
+    {:ok, root} = Expression.Supervisor.start_expression()
+
+    a_ib = "a ib here"
+    {:ok, a} = root |> Expression.fork(@test_identities_1, a_ib)
+
+    b_ib = "b Yoooo"
+    {:ok, b} = root |> Expression.fork(@test_identities_1, b_ib)
+    b_ib_gib = b |> Expression.get_info! |> Helper.get_ib_gib!
+
+    test_rel8ns = ["rel8d"]
+    a_rel8d = a |> Expression.rel8!(b, @test_identities_1, test_rel8ns, @default_transform_options)
+    a_rel8d_info = a_rel8d |> Expression.get_info!
+
+    test_rel8ns
+    |> Enum.each(fn(test_rel8n) ->
+         assert Map.has_key?(a_rel8d_info[:rel8ns], test_rel8n)
+         assert Enum.member?(a_rel8d_info[:rel8ns][test_rel8n], b_ib_gib)
+       end)
+
+    _ = Logger.debug "a_rel8d_info:\n#{inspect a_rel8d_info, pretty: true}"
+
+    test_unrel8ns = ["-rel8d"]
+    a_unrel8d = a |> Expression.rel8!(b, @test_identities_1, test_unrel8ns, @default_transform_options)
+    a_unrel8d_info = a_unrel8d |> Expression.get_info!
+
+    _ = Logger.debug("a_rel8d_info: #{inspect a_rel8d_info}" |> ExChalk.red |> ExChalk.bg_green)
+    _ = Logger.debug("a_unrel8d_info: #{inspect a_unrel8d_info}" |> ExChalk.red |> ExChalk.bg_blue)
+    assert !Map.has_key?(a_unrel8d_info[:rel8ns], "rel8d")
+  end
+
+  # @tag :capture_log
+  # test "rel8, try remove root from ancestor, should fail" do
+  #   {:ok, root} = Expression.Supervisor.start_expression()
+  #
+  #   a_ib = "a ib here"
+  #   {:ok, a} = root |> Expression.fork(@test_identities_1, a_ib)
+  #
+  #   b_ib = "b Yoooo"
+  #   {:ok, b} = root |> Expression.fork(@test_identities_1, b_ib)
+  #   b_ib_gib = b |> Expression.get_info! |> Helper.get_ib_gib!
+  #
+  #   test_rel8ns = ["rel8d"]
+  #   a_rel8d = a |> Expression.rel8!(b, @test_identities_1, test_rel8ns, @default_transform_options)
+  #   a_rel8d_info = a_rel8d |> Expression.get_info!
+  #
+  #   test_rel8ns
+  #   |> Enum.each(fn(test_rel8n) ->
+  #        assert Map.has_key?(a_rel8d_info[:rel8ns], test_rel8n)
+  #        assert Enum.member?(a_rel8d_info[:rel8ns][test_rel8n], b_ib_gib)
+  #      end)
+  #
+  #   _ = Logger.debug "a_rel8d_info:\n#{inspect a_rel8d_info, pretty: true}"
+  #
+  #   test_unrel8ns = ["-ancestor"]
+  #   a_unrel8d = a |> Expression.rel8!(b, @test_identities_1, test_unrel8ns, @default_transform_options)
+  #   a_unrel8d_info = a_unrel8d |> Expression.get_info!
+  #
+  #   _ = Logger.debug("a_rel8d_info: #{inspect a_rel8d_info}" |> ExChalk.red |> ExChalk.bg_green)
+  #   _ = Logger.debug("a_unrel8d_info: #{inspect a_unrel8d_info}" |> ExChalk.red |> ExChalk.bg_blue)
+  #   assert Map.has_key?(a_unrel8d_info[:rel8ns], "ancestor")
+  #   assert Enum.member?(a_unrel8d_info[:rel8ns]["ancestor"], @root_ib_gib)
+  # end
+
+  @tag :capture_log
   test "create text" do
     # Randomized to keep unit tests from overlapping.
     text = "text_#{RandomGib.Get.some_letters(5)}"

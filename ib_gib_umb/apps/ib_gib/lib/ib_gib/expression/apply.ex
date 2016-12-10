@@ -7,11 +7,7 @@ defmodule IbGib.Expression.Apply do
   require Logger
 
   alias IbGib.{Auth.Authz, Expression, Helper}
-  # alias IbGib.Expression.{Apply, PlanExpresser}
-  alias IbGib.Transform.Factory, as: TransformFactory
   alias IbGib.Transform.Mut8.Factory, as: Mut8Factory
-  alias IbGib.Transform.Plan.Helper, as: PlanHelper
-  alias IbGib.Transform.Plan.Factory, as: PlanFactory
 
   import IbGib.Macros
   import IbGib.Expression.ExpressionHelper
@@ -276,11 +272,14 @@ defmodule IbGib.Expression.Apply do
       |> add_rel8n("dna", b)
       |> add_rel8n("identity", b_identities)
 
-    # Add the rel8ns
+    # Add/Remove the rel8ns
+    # If the rel8n starts with a minus (-), then we're removing the rel8n.
+
     # This is the ib_gib to which we will rel8.
     other_ib_gib = b[:data]["other_ib_gib"]
     rel8n_names = b[:data]["rel8ns"]
 
+    # Set empty/nil rel8ns to defaults
     rel8n_names =
       case rel8n_names do
         nil -> @default_rel8ns
@@ -289,8 +288,20 @@ defmodule IbGib.Expression.Apply do
       end
     _ = Logger.debug "rel8n_names: #{inspect rel8n_names}"
 
+    rel8n_names_to_add =
+      rel8n_names
+      |> Enum.filter(fn(r_name) -> !String.starts_with?(r_name, "-") end)
+    rel8n_names_to_remove =
+      rel8n_names
+      |> Enum.filter(fn(r_name) ->
+           String.starts_with?(r_name, "-") and !Enum.member?(@invalid_unrel8_rel8ns, r_name)
+         end)
+
+    # Execute the add/remove on the `this_info` map
     this_info =
-      this_info |> add_rel8ns(rel8n_names, other_ib_gib)
+      this_info
+      |> add_rel8ns(rel8n_names_to_add, other_ib_gib)
+      |> remove_rel8ns(rel8n_names_to_remove, other_ib_gib)
 
     this_rel8ns = this_info[:rel8ns]
     _ = Logger.debug "New rel8ns. this_rel8ns: #{inspect this_rel8ns}"

@@ -6,18 +6,13 @@ defmodule IbGib.Expression.PlanExpresser do
   "public" functions though.
   """
 
-  import Enum
   require Logger
 
-  alias IbGib.{Auth.Authz, Expression, Helper}
+  alias IbGib.{Expression, Helper}
   alias IbGib.Expression.Apply
   alias IbGib.Transform.Factory, as: TransformFactory
-  alias IbGib.Transform.Mut8.Factory, as: Mut8Factory
   alias IbGib.Transform.Plan.Helper, as: PlanHelper
-  alias IbGib.Transform.Plan.Factory, as: PlanFactory
 
-  import IbGib.Macros
-  # import IbGib.Expression
   import IbGib.Expression.ExpressionHelper
 
   use IbGib.Constants, :ib_gib

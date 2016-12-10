@@ -8,18 +8,11 @@ defmodule IbGib.Expression.ExpressionHelper do
   import Enum
   require Logger
 
-  alias IbGib.{Auth.Authz, Expression, Helper}
-  alias IbGib.Transform.Factory, as: TransformFactory
-  alias IbGib.Transform.Mut8.Factory, as: Mut8Factory
-  alias IbGib.Transform.Plan.Helper, as: PlanHelper
-  alias IbGib.Transform.Plan.Factory, as: PlanFactory
+  alias IbGib.Helper
 
-  # import IbGib.Macros
-
-  # use IbGib.Constants, :ib_gib
-  # use IbGib.Constants, :error_msgs
-
-  def add_rel8ns(this_info, rel8n_names, other_ib_gib) do
+  def add_rel8ns(this_info, rel8n_names, other_ib_gib)
+  def add_rel8ns(this_info, rel8n_names, other_ib_gib)
+    when length(rel8n_names) > 0 do
     # Create the new rel8ns. For each rel8n name that we are adding, we need
     # to check if that rel8n name itself already exists. If it does, then we
     # need to check if other_ib_gib doesn't already exist in it. If it does,
@@ -49,6 +42,57 @@ defmodule IbGib.Expression.ExpressionHelper do
     # Overwrite the existing rel8ns with new_rel8ns.
     Map.put(this_info, :rel8ns, new_rel8ns)
   end
+  def add_rel8ns(this_info, rel8n_names, other_ib_gib) do
+    # rel8n_names is empty list (or invalid)
+    this_info
+  end
+
+  def remove_rel8ns(this_info, rel8n_names, other_ib_gib)
+  def remove_rel8ns(this_info, rel8n_names, other_ib_gib)
+    when length(rel8n_names) > 0 do
+      _ = Logger.warn("yoooooooooooooooooooooooooooooo what up?")
+      _ = Logger.debug("this_info:#{inspect this_info}" |> ExChalk.bg_blue |> ExChalk.red)
+      _ = Logger.debug("rel8n_names:#{inspect rel8n_names}" |> ExChalk.bg_blue |> ExChalk.red)
+    # For each rel8n name that we are removing, we need
+    # to check if that rel8n name exists. If it does, then we
+    # need to check if other_ib_gib exists in it. If it does, then remove it.
+    # If it doesn't, then log and continue
+    # If it was the last rel8n (besides the root), then remove the rel8n itself.
+    new_rel8ns =
+      rel8n_names
+      |> Enum.reduce(this_info[:rel8ns], fn(rel8n, acc) ->
+           if Map.has_key?(acc, rel8n) do
+              if Enum.member?(acc[rel8n], other_ib_gib) do
+                # The rel8n exists with the other_ib_gib, so remove it
+                new_rel8n_list = acc[rel8n] -- [other_ib_gib]
+                contains_root? = Enum.member?(new_rel8n_list, @root_ib_gib)
+                if Enum.empty?(new_rel8n_list) do
+                  # There are no other rel8d ib_gib via this rel8n
+                  acc = Map.delete(acc, rel8n)
+                else
+                  # There are still other ib_gib rel8d via this rel8n
+                  acc = Map.put(acc, rel8n, new_rel8n_list)
+                end
+              else
+                # The rel8n doesn't exist, so log and skip
+                _ = Logger.warn "Tried to remove rel8n (#{rel8n}) to other_ib_gib (#{other_ib_gib}). Rel8n exists, but not to that ib_gib."
+                acc
+              end
+           else
+             # The rel8n doesn't exist, so log and skip
+             _ = Logger.warn "Tried to remove rel8n (#{rel8n}) that doesn't exist in the ib_gib"
+             acc
+           end
+         end)
+
+    # Overwrite the existing rel8ns with new_rel8ns.
+    Map.put(this_info, :rel8ns, new_rel8ns)
+  end
+  def remove_rel8ns(this_info, rel8n_names, other_ib_gib) do
+    # rel8n_names is empty list (or invalid)
+    this_info
+  end
+
 
   # `a` is the ib_gib info map with a key `:rel8ns` which is itself a map
   # in the form of "relation_name" => [ib^gib1, ib^gib2, ...ib^gibn]. This
