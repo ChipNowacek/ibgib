@@ -89,10 +89,9 @@ defmodule WebGib.IbGibController do
         {:error, reason} ->
           emsg = "Could not get latest ib_gib. ib_or_ib_gib: #{ib_or_ib_gib}"
           _ = Logger.error("#{emsg}\n#{inspect reason}")
-          conn =
-            conn
-            |> put_flash(:error, gettext("Could not get the latest ibGib"))
-            |> redirect(to: "/ibgib/#{@root_ib_gib}")
+          conn
+          |> put_flash(:error, gettext("Could not get the latest ibGib"))
+          |> redirect(to: "/ibgib/#{@root_ib_gib}")
       end
     end
   end
@@ -188,10 +187,10 @@ defmodule WebGib.IbGibController do
   defp build_query_opts_latest(identity_ib_gibs, ib_gib) do
     non_root_identities = Enum.filter(identity_ib_gibs, &(&1 != @root_ib_gib))
 
-    do_query
+    do_query()
     |> where_rel8ns("identity", "withany", "ibgib", non_root_identities)
     |> where_rel8ns("past", "withany", "ibgib", [ib_gib])
-    |> most_recent_only
+    |> most_recent_only()
   end
 
   defp extract_result_ib_gib(src_ib_gib, query_result_info) do
@@ -287,8 +286,8 @@ defmodule WebGib.IbGibController do
   defp convert_to_d3(info) do
     ib_node_ibgib = get_ib_gib!(info)
     {ib_node_ib, ib_node_gib} = separate_ib_gib!(ib_node_ibgib)
-    ib_gib_node = %{"id" => "ib#{@delim}gib", "name" => "ib", "cat" => "ibGib", "ibgib" => "ib#{@delim}gib", "js_id" => get_js_id}
-    ib_node = %{"id" => ib_node_ibgib, "name" => ib_node_ib, "cat" => "ib", "ibgib" => ib_node_ibgib, "js_id" => get_js_id, "ib" => ib_node_ib, "gib" => ib_node_gib, "render" => get_render(ib_node_ibgib, ib_node_ib, ib_node_gib)}
+    ib_gib_node = %{"id" => "ib#{@delim}gib", "name" => "ib", "cat" => "ibGib", "ibgib" => "ib#{@delim}gib", "js_id" => get_js_id()}
+    ib_node = %{"id" => ib_node_ibgib, "name" => ib_node_ib, "cat" => "ib", "ibgib" => ib_node_ibgib, "js_id" => get_js_id(), "ib" => ib_node_ib, "gib" => ib_node_gib, "render" => get_render(ib_node_ibgib, ib_node_ib, ib_node_gib)}
 
     nodes = [ib_gib_node, ib_node]
 
@@ -329,7 +328,7 @@ defmodule WebGib.IbGibController do
   end
 
   defp create_rel8n_group_node_and_link(rel8n, ib_node) do
-    rel8n_node = %{"id" => rel8n, "name" => rel8n, "cat" => "rel8n", "js_id" => get_js_id}
+    rel8n_node = %{"id" => rel8n, "name" => rel8n, "cat" => "rel8n", "js_id" => get_js_id()}
     # {"source": "Champtercier", "target": "Myriel", "value": 1},
     rel8n_link = %{"source" => ib_node["id"], "target" => rel8n, "value" => 1}
     result = {rel8n_node, rel8n_link}
@@ -347,7 +346,7 @@ defmodule WebGib.IbGibController do
       "name" => ib,
       "cat" => rel8n,
       "ibgib" => "#{ibgib}",
-      "js_id" => get_js_id,
+      "js_id" => get_js_id(),
       "ib" => ib,
       "gib" => gib,
       "render" => get_render(ibgib, ib, gib)
@@ -489,7 +488,7 @@ defmodule WebGib.IbGibController do
         {src_ib, _gib} = separate_ib_gib!(src_ib_gib)
         src_ib
       else
-        new_id
+        new_id()
       end
     new_form_data = Map.put(form_data, "dest_ib", dest_ib)
     new_params = Map.put(params, "fork_form_data", new_form_data)
@@ -572,7 +571,7 @@ defmodule WebGib.IbGibController do
   defp fork_impl(conn, root, src_ib_gib, dest_ib)
     when is_bitstring(src_ib_gib) and is_bitstring(dest_ib) and
          src_ib_gib !== "" and (dest_ib === "" or is_nil(dest_ib)) do
-      fork_impl(conn, root, src_ib_gib, new_id)
+      fork_impl(conn, root, src_ib_gib, new_id())
   end
 
   # ----------------------------------------------------------------------------
@@ -1260,7 +1259,7 @@ defmodule WebGib.IbGibController do
 
     # All queries (currently) look only within the current user's identities.
     query_opts =
-      do_query
+      do_query()
       |> where_rel8ns("identity", "withany", "ibgib", non_root_identities)
 
     _ = Logger.debug("query_opts: #{inspect query_opts}" |> ExChalk.bg_green |> ExChalk.black)
@@ -1293,7 +1292,7 @@ defmodule WebGib.IbGibController do
     latest = query_params["latest"] != nil
     query_opts =
       if latest do
-        query_opts |> most_recent_only
+        query_opts |> most_recent_only()
       else
         query_opts
       end

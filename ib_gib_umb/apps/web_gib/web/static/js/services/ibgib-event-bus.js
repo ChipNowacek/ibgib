@@ -17,8 +17,10 @@ export class IbGibEventBus {
       let channel;
       let existingInfos = t.channelInfos.filter(channelInfo => channelInfo.ibGib === ibGib);
       if (existingInfos.length === 0) {
+        console.log(`connecting to ibGib channel: ${ibGib}`)
         channel = t.initChannel(ibGib, handleUpdateFunc);
       } else {
+        console.log(`already connected to ibGib channel: ${ibGib}`)
         channel = existingInfos[0].channel;
       }
 
@@ -67,6 +69,7 @@ export class IbGibEventBus {
           let onlyChannelInfo = existingInfos[0];
           let indexOnly = t.channelInfos.indexOf(onlyChannelInfo);
           t.channelInfos.splice(indexOnly, 1);
+          console.log(`disconnecting from ibGib channel: ${ibGib}`)
           onlyChannelInfo.channel.leave();
           break;
         default:

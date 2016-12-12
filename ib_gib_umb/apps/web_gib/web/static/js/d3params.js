@@ -10,6 +10,8 @@ let d3LinkDistances = {
 }
 
 let d3Scales = {
+  "context": 7,
+  "root": 3,
   "cmd": 1.5,
   "virtual": 1,
   "text": 3,
@@ -18,7 +20,6 @@ let d3Scales = {
   "ibGib": 1.5,
   "rel8n": 2,
   "result": 2,
-  // "rel8d": 3,
   "ib^gib": 2,
   "pic": 3,
   "link": 3,
@@ -28,14 +29,12 @@ let d3Scales = {
 };
 
 let d3Colors = {
-  // "rel8n": "#C3ECFA",
   "dna": "#C5DADE",
   "ancestor": "lightgray",
   "past": "#A9CBD6",
   "ib": "#F2EC41",
   "ibGib": "#76963e",
   "result": "#86CC6C",
-  // "rel8d": "#FFDFAB",
   "ib^gib": "#73BFAE",
   "comment": "#CCF26B",
   "text": "#CCF26B",
@@ -60,7 +59,6 @@ var d3BoringRel8ns = [
   "past",
   "dna",
   "query",
-  // "rel8d",
   "ib^gib",
   "identity"
 ];
@@ -70,7 +68,6 @@ var d3RequireExpandLevel2 = [
   "past",
   "dna",
   "query",
-  // "rel8d",
   "ib^gib",
   "identity"
 ];

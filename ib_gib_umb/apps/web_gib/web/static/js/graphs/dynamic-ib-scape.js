@@ -39,7 +39,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       },
       simulation: {
         velocityDecay: 0.75,
-        chargeStrength: 35,
+        chargeStrength: 135,
         chargeDistanceMin: 10,
         chargeDistanceMax: 10000,
         linkDistance: 125,
@@ -137,13 +137,19 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     window.onpopstate = (event) => {
       console.warn("pop state triggered");
       // debugger;
+      delete t.contextNode.ibGibJson;
+      t.contextNode.ibGib = window.location.pathname.substring(6).replace("%5E", "^");
+      t.getIbGibJson(t.contextNode.ibGib, ibGibJson => {
+        t.contextNode.ibGibJson = ibGibJson;
+        t.syncContextChildren();
+      });
     }
 
-    let obj1 = { yo: "yoooo" }
-    let obj2 = { yo: "yoooo" }
-    history.pushState(obj1, "unused title", "comment^gib");
-    history.pushState(obj2, "unused title", "pic^gib");
-    window.history.back();
+    // let obj1 = { yo: "yoooo" }
+    // let obj2 = { yo: "yoooo" }
+    // history.pushState(obj1, "unused title", "comment^gib");
+    // history.pushState(obj2, "unused title", "pic^gib");
+    // window.history.back();
   }
 
   /** Adds the root */
@@ -214,11 +220,138 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           autoZap = true,
           fadeTimeoutMs = 0;
 
-      t.contextNode = t.addVirtualNode(srcId, srcType, t.contextIbGib, /*srcNode*/ t.rootNode, srcShape, autoZap, fadeTimeoutMs, /*cmd*/ null, /*title*/ null, /*label*/ null, /*startPos*/ {x: t.rootNode.x, y: t.rootNode.y});
-      // t.contextNode.isSource = true;
+      t.contextNode = t.addVirtualNode(srcId, srcType, t.contextIbGib, /*srcNode*/ null, srcShape, autoZap, fadeTimeoutMs, /*cmd*/ null, /*title*/ null, /*label*/ null, /*startPos*/ {x: t.rootNode.x, y: t.rootNode.y});
       t.contextNode.isContext = true;
+
+      t.syncContextChildren();
     } else {
       console.warn(`No contextNode set. (t.contextIbGib is ${t.contextIbGib})`);
+    }
+  }
+
+  syncContextChildren() {
+    let t = this;
+    t.setBusy(t.contextNode);
+    t.getIbGibJson(t.contextNode.ibGib, ibGibJson => {
+      console.log(`got context's json: ${JSON.stringify(ibGibJson)}`);
+      t.contextNode.ibGibJson = ibGibJson;
+      try {
+        // Prune vestigial rel8nNodes first, because they will not be covered
+        // in iterating the current rel8ns (next).
+        let rel8nNames = Object.keys(ibGibJson.rel8ns);
+        let rel8nNodes = t.pruneRel8nNodes(t.contextNode, rel8nNames);
+
+        // Iterate rel8ns
+        rel8nNames
+          .forEach(rel8nName => {
+            let rel8nIbGibs = ibGibJson.rel8ns[rel8nName];
+            if (rel8nName === "ib^gib") {
+              t.syncContextSourceNodes(rel8nIbGibs);
+            }
+
+            t.syncContextRel8nNode(rel8nName, rel8nNodes, rel8nIbGibs);
+          });
+
+        // If we've just gone back in history and there are no rel8ns via
+        // ib^gib, then we should sync with an empty array.
+        if (!rel8nNames.includes("ib^gib")) {
+          t.syncContextSourceNodes(/*rel8nIbGibs*/ []);
+        }
+
+      } catch (e) {
+        console.error(`error syncing context children: ${e}`)
+      } finally {
+        t.clearBusy(t.contextNode);
+      }
+    });
+  }
+
+  pruneRel8nNodes(node, rel8nNames) {
+    let t = this;
+    t.getChildren(node)
+      .filter(n => n.type === "rel8n")
+      .filter(n => !rel8nNames.includes(n.rel8nName))
+      .forEach(n => t.remove(n));
+
+    return t.getChildren(node).filter(n => n.type === "rel8n");
+  }
+
+  /**
+   * The source nodes are the ib^gib/ib rel8ns to this.contextNode.
+   * These appear as "free-floating" ibGib source nodes, not connected to a
+   * rel8n node.
+   */
+  syncContextSourceNodes(ibGibs) {
+    let t = this;
+    let sourceNodes =
+      t.graphData.nodes.filter(n => n.isSource && n.id !== t.contextNode.id && !n.isRoot);
+
+    // not optimized :scream:
+
+    // prune
+    sourceNodes
+      .filter(sourceNode => !ibGibs.includes(sourceNode.ibGib))
+      .forEach(nodeNotFound => t.removeNodeAndChildren(nodeNotFound));
+
+    // add
+    ibGibs
+      .filter(ibGib => !sourceNodes.some(sn => sn.ibGib === ibGib))
+      .forEach(ibGib => {
+        t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ ibGib, /*srcNode*/ null, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: t.contextNode.x, y: t.contextNode.y});
+        if (ibGib !== "ib^gib") {
+          t.ibGibEventBus.connect(ibGib, updateMsg => {
+            t.handleEventBusUpdateMsg(ibGib, updateMsg);
+          });
+        }
+      });
+  }
+
+  removeNodeAndChildren(node) {
+    let t = this;
+    let children = t.getChildren(node);
+    children.forEach(child => t.removeNodeAndChildren(child));
+    t.remove(node, /*updateParentOrChild*/ true);
+  }
+
+  /**
+   * Each rel8n of this.contextNode that is not ib^gib or ib will have a
+   * rel8n node that other ibGibs will be connected to.
+   */
+  syncContextRel8nNode(rel8nName, rel8nNodes, ibGibs) {
+    let t = this;
+    // Be sure that there is a rel8n node.
+    let rel8nNode = rel8nNodes.filter(n => n.rel8nName === rel8nName);
+
+    if (rel8nNode) {
+      // rel8nNode exists. If expanded, ensure children are up-to-date.
+      // debugger;
+      let children = t.getChildren(rel8nNode);
+      if (children.length > 0) {
+        // prune
+        children
+          .filter(child => !ibGibs.includes(child.ibGib))
+          .forEach(nodeNotFound => t.removeNodeAndChildren(nodeNotFound));
+
+        // add
+        ibGibs
+          .filter(ibGib => !children.some(child => child.ibGib === ibGib))
+          .forEach(ibGib => {
+            t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ ibGib, /*srcNode*/ rel8nNode, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y});
+          });
+      }
+    } else {
+      // rel8nNode does not yet exist.
+      // do nothing?
+
+      // let fadeTimeoutMs =
+      //   d3BoringRel8ns.includes(rel8nName) ?
+      //   t.config.other.rel8nFadeTimeoutMs_Boring :
+      //   t.config.other.rel8nFadeTimeoutMs_Spiffy;
+      // Object.keys(node.ibGibJson.rel8ns)
+      //   .filter(rel8n => !d3BoringRel8ns.includes(rel8n))
+      //   .forEach(rel8n => {
+      //     t.addRel8nVirtualNode(t.contextNode, rel8nName, /*fadeTimeoutMs*/ 0);
+      //   });
     }
   }
 
@@ -287,7 +420,12 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     let links = srcNode ? [{ source: srcNode, target: virtualNode }] : [];
     t.add([virtualNode], links, /*updateParentOrChild*/ true);
 
-    if (srcNode) { t.animateNodeBorder(/*d*/ srcNode, /*nodeShape*/ null); }
+    if (srcNode) {
+      t.animateNodeBorder(/*d*/ srcNode, /*nodeShape*/ null);
+    } else {
+      virtualNode.isSource = true;
+    }
+
     t.animateNodeBorder(/*d*/ virtualNode, /*nodeShape*/ null);
 
     t.virtualNodes[virtualNode.id] = virtualNode;
@@ -495,25 +633,37 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   }
   toggleExpandCollapseLevel_Rel8n(rel8nNode) {
     let t = this;
+    t.removeVirtualCmdNodes();
 
-    if (d3AddableRel8ns.includes(rel8nNode.rel8nName) && t.getChildrenCount_Cmds(rel8nNode) === 0) {
-      t.addCmdVirtualNode(rel8nNode, "add", t.config.other.cmdFadeTimeoutMs_Specialized);
-    } else {
-      switch (rel8nNode.expandLevel) {
-        case 0:
-          let { rel8nName, rel8nSrc } = rel8nNode;
-          let srcRel8ns = rel8nSrc.ibGibJson.rel8ns[rel8nName] || [];
-          srcRel8ns
-            .forEach(rel8dIbGib => {
-              t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ rel8dIbGib, /*srcNode*/ rel8nNode, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y});
-            });
-          rel8nNode.expandLevel = 1;
-          break;
+    switch (rel8nNode.expandLevel) {
+      case 0:
+        if (d3AddableRel8ns.includes(rel8nNode.rel8nName)) {
+          t.addCmdVirtualNode(rel8nNode, "add", t.config.other.cmdFadeTimeoutMs_Specialized);
+          rel8nNode.showingAdd = true;
+          if (rel8nNode.toggleExpandTimer) {
+            clearTimeout(rel8nNode.toggleExpandTimer);
+          }
+          rel8nNode.toggleExpandTimer = setTimeout(() => {
+            console.log("clearing rel8nNode.showingAdd")
+            delete rel8nNode.showingAdd;
+          }, t.config.other.cmdFadeTimeoutMs_Specialized);
+        }
+        let { rel8nName, rel8nSrc } = rel8nNode;
+        let srcRel8ns = rel8nSrc.ibGibJson.rel8ns[rel8nName] || [];
+        srcRel8ns
+          .forEach(rel8dIbGib => {
+            t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ rel8dIbGib, /*srcNode*/ rel8nNode, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y});
+          });
+        rel8nNode.expandLevel = 1;
+        break;
 
-        default:
+      default:
+        if (d3AddableRel8ns.includes(rel8nNode.rel8nName) && !rel8nNode.showingAdd) {
+          t.addCmdVirtualNode(rel8nNode, "add", t.config.other.cmdFadeTimeoutMs_Specialized);
+        } else {
           t.removeAllRel8ns(rel8nNode);
           rel8nNode.expandLevel = 0;
-      }
+        }
     }
   }
   /**
@@ -581,19 +731,17 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     let t = this;
     console.log(`updateMsg:\n${JSON.stringify(updateMsg)}`)
 
-    if (updateMsg && updateMsg.data && updateMsg.data.old_ib_gib === ibGib && updateMsg.data.new_ib_gib) {
-
+    if (updateMsg && updateMsg.data &&
+        updateMsg.data.old_ib_gib === ibGib &&
+        updateMsg.data.new_ib_gib) {
       t.ibGibEventBus.disconnect(ibGib);
       t.graphData.nodes
         .filter(n => n.ibGib === ibGib)
         .forEach(n => {
-          if (ibGib === t.contextIbGib) {
-            debugger;
-          } else {
-            t.updateIbGib(n, updateMsg.data.new_ib_gib);
-          }
+          console.log(`updating ibGib node`)
+          t.clearBusy(n);
+          t.updateIbGib(n, updateMsg.data.new_ib_gib);
         });
-
     } else {
       console.warn(`Unused updateMsg(?): ${JSON.stringify(updateMsg)}`);
     }
@@ -607,7 +755,22 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.swap(node, node, /*updateParentOrChild*/ true);
     node.virtualId = ibHelper.getRandomString();
     t.zapVirtualNode(node);
+
+    if (node.isContext) {
+      // update URL
+      history.pushState({ibGib: node.ibGib, ibGibJson: node.ibGibJson}, "_", newIbGib);
+      t.syncContextChildren();
+      // t.updateContextChildren(node);
+    }
+
     t.animateNodeBorder(node, /*nodeShape*/ null);
+  }
+
+  updateContextChildren(node) {
+    debugger;
+
+    // I'm stubbing this because an update to the context may mean making
+    // children appear/disappear.
   }
 
   updateRender(node) {
@@ -669,10 +832,14 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     switch (d.type) {
       case "ibGib":
-        if (d.isSource) {
+        if (d.isContext) {
+          multiplier = d3Scales["context"];
+        } else if (d.isSource) {
           multiplier = d3Scales["source"];
+        } else if (d.isRoot) {
+          multiplier = d3Scales["root"];
         } else if (d.virtualId && d.ibGib === "ib^gib") {
-          multiplier = d3Scales["ibGib"]
+          multiplier = d3Scales["ib^gib"]
         } else if (d.virtualId) {
           multiplier = d3Scales["virtual"];
         } else {
@@ -1091,10 +1258,12 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     return t.graphData.links
       .filter(l => l.source.id === node.id && l.target.type === "rel8n");
   }
-  getChildrenCount_All(node) {
+  getChildren(node) {
     let t = this;
     return t.graphData.links
-      .filter(l => l.source.id === node.id)
-      .length;
+      .filter(l => l.source.id === node.id);
+  }
+  getChildrenCount_All(node) {
+    return this.getChildren(node).length;
   }
 }

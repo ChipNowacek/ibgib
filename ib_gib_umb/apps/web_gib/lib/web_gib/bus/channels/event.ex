@@ -80,7 +80,8 @@ defmodule WebGib.Bus.Channels.Event do
     # doesn't even exist.
     broadcast_result =
       WebGib.Endpoint.broadcast("event:" <> old_ib_gib, msg_name, msg)
-    Logger.debug("broadcast_result:\n#{inspect broadcast_result}" |> ExChalk.bg_cyan |> ExChalk.yellow)
+    Logger.debug("broadcast_result:\n#{inspect broadcast_result}" |> ExChalk.bg_cyan |> ExChalk.black)
+    Logger.debug("old_ib_gib:\n#{old_ib_gib}\nmsg: #{inspect msg}" |> ExChalk.bg_cyan |> ExChalk.black)
 
     {:ok, :ok}
   end

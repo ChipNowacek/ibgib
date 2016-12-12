@@ -13,7 +13,6 @@ export class CommandBase {
   }
 
   exec() {
-    // do nothing by default
     // this.ibScape.closeMenu();
     if (this.ibScape.menu) { this.ibScape.menu.hide(); }
   }
@@ -381,9 +380,13 @@ export class ForkDetailsCommand extends FormDetailsCommandBase {
   getMessageData() {
     let t = this;
 
+    let contextIbGib =
+      t.ibScape.contextNode ? t.ibScape.contextNode.ibGib : "ib^gib";
+
     return {
       virtual_id: t.virtualNode.virtualId,
       src_ib_gib: t.d.ibGib,
+      context_ib_gib: contextIbGib,
       dest_ib: $("#fork_form_data_dest_ib").val()
     };
   }
@@ -394,7 +397,6 @@ export class ForkDetailsCommand extends FormDetailsCommandBase {
     if (msg && msg.data && msg.data.forked_ib_gib) {
       let forkedIbGib = msg.data.forked_ib_gib;
       t.virtualNode.ibGib = forkedIbGib;
-      t.virtualNode.isSource = true;
       t.ibScape.zapVirtualNode(t.virtualNode);
     } else {
       console.error("ForkDetailsCommand: Unknown msg response from channel.");
@@ -420,7 +422,6 @@ export class CommentDetailsCommand extends FormDetailsCommandBase {
   getMessageData() {
     let t = this;
 
-
     return {
       virtual_id: t.virtualNode.virtualId,
       src_ib_gib: t.d.type === "rel8n" ? t.d.rel8nSrc.ibGib : t.d.ibGib,
@@ -430,7 +431,6 @@ export class CommentDetailsCommand extends FormDetailsCommandBase {
 
   handleSubmitResponse(msg) {
     let t = this;
-    console.warn(`yoooooooooooo ${typeof(t)}`);
 
     if (msg && msg.data && msg.data.comment_ib_gib) {
       let commentIbGib = msg.data.comment_ib_gib;
@@ -454,5 +454,135 @@ export class GotoCommand extends CommandBase {
     let t = this;
 
     t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.d.ibGib, /*srcNode*/ null, /*shape*/ t.d.shape, /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ d3RootUnicodeChar, /*startPos*/ {x: t.d.x, y: t.d.y});
+  }
+}
+
+export class RefreshCommand extends CommandBase {
+  constructor(ibScape, d) {
+    const cmdName = "refresh";
+    super(cmdName, ibScape, d);
+  }
+
+  exec() {
+    super.exec();
+
+    let t = this;
+    console.log(`${t.cmdName} cmd exec`);
+
+    t.ibScape.setBusy(t.d);
+
+    let msg = t.getMessage();
+    t.ibScape.commandMgr.bus.send(msg, (successMsg) => {
+      t.handleSubmitResponse(successMsg);
+    }, (errorMsg) => {
+      console.error(`${t.cmdName} command errored. Msg: ${JSON.stringify(errorMsg)}`);
+      t.ibScape.clearBusy(t.d);
+      t.virtualNode.type = "error";
+      t.virtualNode.errorMsg = JSON.stringify(errorMsg);
+      t.ibScape.zapVirtualNode(t.virtualNode);
+    });
+  }
+
+  getMessage() {
+    let t = this;
+
+    return {
+      data: t.getMessageData(),
+      metadata: t.getMessageMetadata()
+    };
+  }
+
+  getMessageData() {
+    let t = this;
+
+    return {
+      src_ib_gib: t.d.ibGib
+    };
+  }
+
+  getMessageMetadata() {
+    let t = this;
+
+    return {
+      name: t.cmdName,
+      type: "cmd",
+      local_time: new Date()
+    };
+  }
+
+  handleSubmitResponse(msg) {
+    let t = this;
+    console.warn(`yooooo ${typeof(t)}`);
+
+    if (msg && msg.data && msg.data.most_recent_ib_gib && msg.data.most_recent_ib_gib === t.d.ibGib) {
+      // Already up-to-date
+      t.ibScape.clearBusy(t.d);
+    } else {
+      // new version available. That will come down the event bus and
+      // clear the busy at that point.
+      console.warn(`${typeof(t)}: There's a new version available...should come down event bus...(if hasn't already done so)`);
+    }
+  }
+}
+
+/**
+ * I'm creating this not to use as a menu command, rather to call from the
+ * IbGibIbScapeBackgroundRefresher. So this class breaks some conventions used
+ * currently in other of the command classes: Doesn't hide the menu for one.
+ * Probably others...
+ */
+export class BatchRefreshCommand extends CommandBase {
+  constructor(ibScape, d, successCallback, errorCallback) {
+    const cmdName = "batch-refresh";
+    super(cmdName, ibScape, d);
+
+    let t = this;
+    t.successCallback = successCallback;
+    t.errorCallback = errorCallback;
+  }
+
+  exec() {
+    // Does NOT call super.exec() because this command is different. See class
+    // documentation for details.
+    // super.exec();
+
+    let t = this;
+    console.log(`${t.cmdName} cmd exec`);
+
+    let msg = t.getMessage();
+    t.ibScape.commandMgr.bus.send(msg, (successMsg) => {
+      if (t.successCallback) { t.successCallback(successMsg); }
+    }, (errorMsg) => {
+      console.error(`${t.cmdName} command errored. Msg: ${JSON.stringify(errorMsg)}`);
+      if (t.errorCallback) { t.errorCallback(errorMsg); }
+    });
+  }
+
+  getMessage() {
+    let t = this;
+
+    return {
+      data: t.getMessageData(),
+      metadata: t.getMessageMetadata()
+    };
+  }
+
+  getMessageData() {
+    let t = this;
+
+    return {
+      ib_gibs: t.d.ibGibs
+    };
+  }
+
+  getMessageMetadata() {
+    let t = this;
+
+    return {
+      name: t.cmdName,
+      type: "cmd",
+      count: t.d.ibGibs.length,
+      local_time: new Date()
+    };
   }
 }
