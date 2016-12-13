@@ -533,7 +533,7 @@ export class RefreshCommand extends CommandBase {
  */
 export class BatchRefreshCommand extends CommandBase {
   constructor(ibScape, d, successCallback, errorCallback) {
-    const cmdName = "batch-refresh";
+    const cmdName = "batchrefresh";
     super(cmdName, ibScape, d);
 
     let t = this;

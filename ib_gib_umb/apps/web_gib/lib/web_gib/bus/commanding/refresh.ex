@@ -32,8 +32,10 @@ defmodule WebGib.Bus.Commanding.Refresh do
 
       latest_is_different <- src_ib_gib !== latest_ib_gib,
 
-      # Broadcast updated src_ib_gib if different
-      _ <- (if latest_is_different, do: EventChannel.broadcast_ib_gib_update(src_ib_gib, latest_ib_gib), else: :ok),
+      # Broadcast latest_ib_gib if different
+      _ <- (if latest_is_different,
+            do: EventChannel.broadcast_ib_gib_update(src_ib_gib, latest_ib_gib),
+            else: :ok),
 
       # Reply
       {:ok, reply_msg} <- get_reply_msg(latest_is_different)
@@ -52,20 +54,23 @@ defmodule WebGib.Bus.Commanding.Refresh do
   defp exec_impl(identity_ib_gibs, src_ib_gib) do
     with(
       # We will query off of the current identity
-      {:ok, src} <- IbGib.Expression.Supervisor.start_expression(Enum.at(identity_ib_gibs, 0)),
+      {:ok, current_identity} <- IbGib.Expression.Supervisor.start_expression(Enum.at(identity_ib_gibs, 0)),
 
       # Our search for the latest version must be using the credentials of
       # **that** ibgib's identities, i.e. in that timeline.
-      {:ok, src_process} <-
+      {:ok, src_ib_gib_process} <-
         IbGib.Expression.Supervisor.start_expression(src_ib_gib),
-      {:ok, src_info} <- src_process |> get_info(),
-      {:ok, src_identity_ib_gibs} <- get_ib_gib_identity_ib_gibs(src_info),
+      {:ok, src_ib_gib_info} <- src_ib_gib_process |> get_info(),
+      {:ok, src_ib_gib_identity_ib_gibs} <-
+        get_ib_gib_identity_ib_gibs(src_ib_gib_info),
 
       # Build the query options
-      query_opts <- build_query_opts_latest(src_identity_ib_gibs, src_ib_gib),
+      query_opts <-
+        build_query_opts_latest(src_ib_gib_identity_ib_gibs, src_ib_gib),
 
       # Execute the query itself, which creates the query_result ib_gib
-      {:ok, query_result} <- src |> query(identity_ib_gibs, query_opts),
+      {:ok, query_result} <-
+        current_identity |> query(identity_ib_gibs, query_opts),
 
         # Return the query_result result ib^gib
       {:ok, query_result_info} <- query_result |> get_info(),

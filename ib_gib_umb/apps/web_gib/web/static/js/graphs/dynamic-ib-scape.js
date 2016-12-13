@@ -6,6 +6,7 @@ import { DynamicD3ForceGraph } from './dynamic-d3-force-graph';
 import { DynamicIbScapeMenu } from './dynamic-ib-scape-menu';
 import * as ibHelper from '../services/ibgib-helper';
 import { CommandManager } from '../services/commanding/command-manager';
+import { IbGibIbScapeBackgroundRefresher } from '../services/ibgib-ib-scape-background-refresher';
 
 /**
  * This is the ibGib d3 graph that contains all the stuff for our IbGib data
@@ -86,6 +87,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.initCloseDetails();
     t.initResize();
     t.initRoot();
+    t.initBackgroundRefresher();
     t.initContext();
   }
   initNoScrollHtmlAndBody() {
@@ -145,11 +147,50 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       });
     }
 
-    // let obj1 = { yo: "yoooo" }
-    // let obj2 = { yo: "yoooo" }
-    // history.pushState(obj1, "unused title", "comment^gib");
-    // history.pushState(obj2, "unused title", "pic^gib");
-    // window.history.back();
+    t.backgroundRefresher.exec([t.contextNode.ibGib], successMsg => {
+      // now we can refresh the source nodes.
+      t.getIbGibJson(t.contextNode.ibGib, ibGibJson => {
+        let ibGibsToRefresh =
+          Object.keys(ibGibJson.rel8ns)
+            .filter(rel8nName => !d3BoringRel8ns.includes(rel8nName))
+            .map(rel8nName => ibGibJson.rel8ns[rel8nName])
+            .reduce((acc, rel8nIbGibs) => {
+              rel8nIbGibs.forEach(rel8nIbGib => {
+                if (!acc.includes(rel8nIbGib) && rel8nIbGib !== "ib^gib") {
+                  acc.push(rel8nIbGib)
+                }
+              });
+              return acc;
+            }, []);
+        console.log(`Initial source node ibGibs to refresh: ${JSON.stringify(ibGibsToRefresh)}`);
+        t.backgroundRefresher.exec(ibGibsToRefresh, successMsg => {
+          console.log(`Initial refresh source nodes complete. successMsg: ${JSON.stringify(successMsg)}`);
+        }, errorMsg => {
+          console.error(`Error on initial refresh source nodes: ${JSON.stringify(errorMsg)}`);
+        });
+      });
+    },
+    errorMsg => {
+      console.error("Error on context node initial refresh.")
+    });
+  }
+  initBackgroundRefresher() {
+    let t = this;
+    t.backgroundRefresher = new IbGibIbScapeBackgroundRefresher(t);
+
+    t.backgroundRefresher
+      .start(
+        successMsg => {
+          if (successMsg && successMsg.data && successMsg.data.latest_ib_gibs) {
+            console.log(`Background refresher found newer ibGibs. latest_ib_gibs:  ${JSON.stringify(successMsg.data.latest_ib_gibs)}`);
+          }
+        },
+        errorMsg => {
+          console.error(`Error background refresher: ${JSON.stringify(errorMsg)}`);
+        },
+        /*intervalMs*/ 5000);
+        // It checks on this interval, but does not necessarily execute if there
+        // are no ibGibs in the queue.
   }
 
   /** Adds the root */

@@ -84,6 +84,13 @@ defmodule WebGib.Validate do
     _ = Logger.debug("valid?: #{false}" |> ExChalk.bg_red)
     false
   end
+  def validate(:ib_gibs, ib_gibs) when is_list(ib_gibs) and length(ib_gibs) > 0 do
+    Enum.all?(ib_gibs, &(validate(:ib_gib, &1)))
+  end
+  def validate(:ib_gibs, ib_gibs) do
+    _ = Logger.warn "Invalid ib_gibs. Must be a non-empty list of ib_gibs."
+    false
+  end
   def validate(:query_params, query_params) do
     _ = Logger.debug "validating query_params: #{inspect query_params}"
     valid? =

@@ -5,7 +5,7 @@ import { BatchRefreshCommand } from './commanding/commands';
  * refresh commands for multiple ibGibs (batch). Executes on set intervalMs,
  * but also can execute immediately.
  * Can be started/stopped/paused/resumed. To send immediately, call `execute`.
- * To defer, use `queue`.
+ * To defer, use `enqueue`.
  */
 export class IbGibIbScapeBackgroundRefresher {
   constructor(ibScape) {
@@ -38,12 +38,14 @@ export class IbGibIbScapeBackgroundRefresher {
     }, t.intervalMs);
   }
 
-  /** Stops the refresh poll. Deletes the internal queue. */
+  /** Stops the refresh poll. Deletes the internal queue and callbacks. */
   stop() {
     let t = this;
     t.pause();
     delete t.queue;
     t.queue = [];
+    delete t.successCallback;
+    delete t.errorCallback;
   }
 
   /** Clears the internal poll, but retains the internal queue. */
@@ -76,6 +78,7 @@ export class IbGibIbScapeBackgroundRefresher {
    */
   exec(ibGibs, successCallback, errorCallback) {
     let t = this;
+    console.log("BackgroundRefresher.exec")
 
     if (ibGibs && ibGibs.length && ibGibs.length > 0) {
       let d = { ibGibs: ibGibs };
@@ -94,7 +97,7 @@ export class IbGibIbScapeBackgroundRefresher {
    * Any newer versions found will come down the event bus as normal, one at a
    * time.
    */
-  queue(ibGibs) {
-    this.queue.concat(ibGibs);
+  enqueue(ibGibs) {
+    this.queue = this.queue.concat(ibGibs);
   }
 }
