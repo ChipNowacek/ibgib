@@ -158,7 +158,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         t.getIbGibJson(t.contextNode.ibGib, ibGibJson => {
           let ibGibsToRefresh =
             Object.keys(ibGibJson.rel8ns)
-              .filter(rel8nName => !d3BoringRel8ns.includes(rel8nName))
+              .filter(rel8nName => rel8nName === "ib^gib" || !d3BoringRel8ns.includes(rel8nName))
               .map(rel8nName => ibGibJson.rel8ns[rel8nName])
               .reduce((acc, rel8nIbGibs) => {
                 rel8nIbGibs.forEach(rel8nIbGib => {
