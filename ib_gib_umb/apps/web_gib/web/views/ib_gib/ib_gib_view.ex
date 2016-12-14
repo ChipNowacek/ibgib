@@ -41,7 +41,7 @@ defmodule WebGib.IbGibView do
             div [class: "ib-tooltip"] do
               button [type: "submit"] do
                 span [class: "ib-center-glyph glyphicon glyphicon-flash ib-green"]
-                span [class: "ib-tooltiptext"], do: gettext("Wah wah wah...")
+              # span [class: "ib-tooltiptext"], do: gettext("Wah wah wah...")
               end
             end
           end

@@ -147,32 +147,41 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       });
     }
 
-    t.backgroundRefresher.exec([t.contextNode.ibGib], successMsg => {
-      // now we can refresh the source nodes.
-      t.getIbGibJson(t.contextNode.ibGib, ibGibJson => {
-        let ibGibsToRefresh =
-          Object.keys(ibGibJson.rel8ns)
-            .filter(rel8nName => !d3BoringRel8ns.includes(rel8nName))
-            .map(rel8nName => ibGibJson.rel8ns[rel8nName])
-            .reduce((acc, rel8nIbGibs) => {
-              rel8nIbGibs.forEach(rel8nIbGib => {
-                if (!acc.includes(rel8nIbGib) && rel8nIbGib !== "ib^gib") {
-                  acc.push(rel8nIbGib)
-                }
-              });
-              return acc;
-            }, []);
-        console.log(`Initial source node ibGibs to refresh: ${JSON.stringify(ibGibsToRefresh)}`);
-        t.backgroundRefresher.exec(ibGibsToRefresh, successMsg => {
-          console.log(`Initial refresh source nodes complete. successMsg: ${JSON.stringify(successMsg)}`);
-        }, errorMsg => {
-          console.error(`Error on initial refresh source nodes: ${JSON.stringify(errorMsg)}`);
+    t.refreshContextNode();
+  }
+  refreshContextNode() {
+    let t = this;
+
+    if (t.contextNode) {
+      t.backgroundRefresher.exec([t.contextNode.ibGib], successMsg => {
+        // now we can refresh the source nodes.
+        t.getIbGibJson(t.contextNode.ibGib, ibGibJson => {
+          let ibGibsToRefresh =
+            Object.keys(ibGibJson.rel8ns)
+              .filter(rel8nName => !d3BoringRel8ns.includes(rel8nName))
+              .map(rel8nName => ibGibJson.rel8ns[rel8nName])
+              .reduce((acc, rel8nIbGibs) => {
+                rel8nIbGibs.forEach(rel8nIbGib => {
+                  if (!acc.includes(rel8nIbGib) && rel8nIbGib !== "ib^gib") {
+                    acc.push(rel8nIbGib)
+                  }
+                });
+                return acc;
+              }, []);
+          console.log(`Initial source node ibGibs to refresh: ${JSON.stringify(ibGibsToRefresh)}`);
+          if (ibGibsToRefresh.length > 0) {
+            t.backgroundRefresher.exec(ibGibsToRefresh, successMsg => {
+              console.log(`Initial refresh source nodes complete. successMsg: ${JSON.stringify(successMsg)}`);
+            }, errorMsg => {
+              console.error(`Error on initial refresh source nodes: ${JSON.stringify(errorMsg)}`);
+            });
+          }
         });
+      },
+      errorMsg => {
+        console.error("Error on context node initial refresh.")
       });
-    },
-    errorMsg => {
-      console.error("Error on context node initial refresh.")
-    });
+    }
   }
   initBackgroundRefresher() {
     let t = this;
@@ -338,9 +347,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     ibGibs
       .filter(ibGib => !sourceNodes.some(sn => sn.ibGib === ibGib))
       .forEach(ibGib => {
-        t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ ibGib, /*srcNode*/ null, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: t.contextNode.x, y: t.contextNode.y});
+        let newNode = t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ ibGib, /*srcNode*/ null, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: t.contextNode.x, y: t.contextNode.y});
         if (ibGib !== "ib^gib") {
-          t.ibGibEventBus.connect(ibGib, updateMsg => {
+          t.ibGibEventBus.connect(newNode.id, ibGib, updateMsg => {
+            // need to change this to a more generic handler if we add other
+            // messages besides update.
             t.handleEventBusUpdateMsg(ibGib, updateMsg);
           });
         }
@@ -507,9 +518,24 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     if (!keepInGraph) {
       if (t.graphData.nodes.some(n => n.id === node.id)) {
-        t.remove(node, /*updateParentOrChild*/ true);
+        t.removeNodeAndChildren(node);
+        // t.remove(node, /*updateParentOrChild*/ true);
       }
     }
+  }
+  removeAllVirtualNodes() {
+    let t = this;
+
+    let toRemove = Object.keys(t.virtualNodes).map(nodeId => t.virtualNodes[nodeId]);
+    toRemove
+      .forEach(node => {
+        if (node.fadeTimer) {
+          clearTimeout(node.fadeTimer);
+          delete node.fadeTimer;
+        }
+      // virtual nodes aren't supposed to have children, but shotgunning here.
+        t.removeNodeAndChildren(node);
+      })
   }
   removeVirtualCmdNodes() {
     let t = this;
@@ -613,7 +639,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       t.swap(node, node, /*updateParentOrChild*/ true);
 
       if (node.ibGib !== "ib^gib") {
-        t.ibGibEventBus.connect(node.ibGib, updateMsg => {
+        t.ibGibEventBus.connect(node.id, node.ibGib, updateMsg => {
+          // need to change this to a more generic handler if we add other
+          // messages besides update.
           t.handleEventBusUpdateMsg(node.ibGib, updateMsg);
         });
       }
@@ -641,12 +669,13 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       node.expandLevel = 0;
     }
 
-
     if (node.ibGib === "ib^gib") {
-      t.removeVirtualCmdNodes();
+      t.removeAllVirtualNodes();
+      // t.removeVirtualCmdNodes();
       t.addCmdVirtualNodes_Default(node);
     } else if (node.type === "ibGib") {
-      t.removeVirtualCmdNodes();
+      t.removeAllVirtualNodes();
+      // t.removeVirtualCmdNodes();
       t.toggleExpandCollapseLevel_IbGib(node);
     } else if (node.type === "rel8n") {
       t.toggleExpandCollapseLevel_Rel8n(node);
@@ -674,7 +703,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   }
   toggleExpandCollapseLevel_Rel8n(rel8nNode) {
     let t = this;
-    t.removeVirtualCmdNodes();
+    // t.removeVirtualCmdNodes();
+    t.removeAllVirtualNodes();
 
     switch (rel8nNode.expandLevel) {
       case 0:
@@ -745,7 +775,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     Object.keys(node.ibGibJson.rel8ns)
       .filter(rel8n => d3BoringRel8ns.includes(rel8n))
       .forEach(rel8n => {
-        t.addRel8nVirtualNode(node, rel8n, fadeTimeoutMs);
+        // Don't add the ib^gib rel8n for the context node, because these
+        // children are shown in the environment as free-floating ibGib.
+        if (!(node.isContext && rel8n === "ib^gib")) {
+          t.addRel8nVirtualNode(node, rel8n, fadeTimeoutMs);
+        }
       });
   }
   removeAllRel8ns(node) {
@@ -775,13 +809,13 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     if (updateMsg && updateMsg.data &&
         updateMsg.data.old_ib_gib === ibGib &&
         updateMsg.data.new_ib_gib) {
-      t.ibGibEventBus.disconnect(ibGib);
       t.graphData.nodes
         .filter(n => n.ibGib === ibGib)
         .forEach(n => {
           console.log(`updating ibGib node`)
           t.clearBusy(n);
           t.updateIbGib(n, updateMsg.data.new_ib_gib);
+          t.ibGibEventBus.disconnect(ibGib);
         });
     } else {
       console.warn(`Unused updateMsg(?): ${JSON.stringify(updateMsg)}`);
@@ -801,17 +835,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       // update URL
       history.pushState({ibGib: node.ibGib, ibGibJson: node.ibGibJson}, "_", newIbGib);
       t.syncContextChildren();
-      // t.updateContextChildren(node);
     }
 
     t.animateNodeBorder(node, /*nodeShape*/ null);
-  }
-
-  updateContextChildren(node) {
-    debugger;
-
-    // I'm stubbing this because an update to the context may mean making
-    // children appear/disappear.
   }
 
   updateRender(node) {
@@ -926,16 +952,14 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       case "ibGib":
         let index;
 
-        if (d.ibGib === "ib^gib") {
+        if (d.isContext) {
+          index = "context";
+        } else if (d.ibGib === "ib^gib") {
           index = "ibGib";
         } else if (d.render && d.render === "text") {
           index = "text";
         } else if (d.render && d.render === "image") {
           index = "image";
-        } else if (d.type === "cmd" && d.cmd) {
-
-        } else if (d.type === "rel8n") {
-          index = d.name;
         } else {
           index = d.id;
         }
@@ -1112,7 +1136,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     if (t.selectedNode) {
       t.clearSelectedNode();
     } else {
-      t.removeVirtualCmdNodes();
+      t.removeAllVirtualNodes();
+      // t.removeVirtualCmdNodes();
       t.moveRootToClickPos(d3.event);
       t.fadeOutNode(t.rootNode, t.config.other.rootFadeTimeoutMs);
     }

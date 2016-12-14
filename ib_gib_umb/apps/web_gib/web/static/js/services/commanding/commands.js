@@ -370,6 +370,11 @@ export class ForkDetailsCommand extends FormDetailsCommandBase {
       .attr("value", t.d.ibGib);
 
     $("#fork_form_data_dest_ib").val(t.d.ibGibJson.ib).focus();
+
+    // Slight hack to remove the fork cmd button that seems to be sticking
+    // around when forking. Probably happens with other commands, but I'm
+    // noticing it with this. :nose:
+    t.ibScape.removeVirtualCmdNodes();
   }
 
   addVirtualNode() {
@@ -396,8 +401,16 @@ export class ForkDetailsCommand extends FormDetailsCommandBase {
 
     if (msg && msg.data && msg.data.forked_ib_gib) {
       let forkedIbGib = msg.data.forked_ib_gib;
-      t.virtualNode.ibGib = forkedIbGib;
-      t.ibScape.zapVirtualNode(t.virtualNode);
+      if (t.ibScape.contextIbGib === "ib^gib") {
+        // If we've just forked on an ibScape that has no context (the
+        // contextIbGib is the root), then we will actually navigate to the
+        // new fork
+        location.href = `/ibgib/${msg.data.forked_ib_gib}`;
+      } else {
+        // Our ibScape already has a context, so just zap the virtual node.
+        t.virtualNode.ibGib = forkedIbGib;
+        t.ibScape.zapVirtualNode(t.virtualNode);
+      }
     } else {
       console.error("ForkDetailsCommand: Unknown msg response from channel.");
     }
@@ -450,10 +463,9 @@ export class GotoCommand extends CommandBase {
 
   exec() {
     super.exec();
-
     let t = this;
 
-    t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.d.ibGib, /*srcNode*/ null, /*shape*/ t.d.shape, /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ d3RootUnicodeChar, /*startPos*/ {x: t.d.x, y: t.d.y});
+    location.href = `/ibgib/${t.d.ibGib}`
   }
 }
 

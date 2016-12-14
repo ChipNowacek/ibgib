@@ -558,7 +558,11 @@ export class DynamicD3ForceGraph {
       // Translate the node groups
       t.graphNodesData
           .attr("transform", d => {
-              return 'translate(' + [d.x, d.y] + ')';
+              if (d) {
+                return 'translate(' + [d.x, d.y] + ')';
+              } else {
+                console.error(`d is falsy in d3 force graph handleTicked (?)`);
+              }
           });
     } catch (e) {
       console.log("errored tick")

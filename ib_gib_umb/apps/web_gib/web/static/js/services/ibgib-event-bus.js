@@ -6,38 +6,62 @@ export class IbGibEventBus {
     let t = this;
 
     t.socket = socket;
-    t.channelInfos = [];
+    t.connectionInfos = [];
   }
 
-  connect(ibGib, handleUpdateFunc) {
+  /**
+   * Creates a new connection info for the given `ibGib`.
+   * When a msg is published on the bus for the given `ibGib`, then all
+   * `handleMsgFunc` are called that are subscribed to that `ibGib`.
+   *
+   * The `connectionId` is used for uniquely identifying the subscriber.
+   * If connectionId already exists, then does NOT create a new connection and
+   * reuses the existing one.
+   */
+  connect(connectionId, ibGib, handleMsgFunc) {
     let t = this;
 
-    if (ibGib) {
+    if (ibGib && handleMsgFunc) {
+      // If connectionId already exists, then return immediately.
+      if (t.connectionInfos.some(info => info.connId === connectionId)) {
+        console.warn(`Already connected with id ${connectionId} to ibGib ${ibGib}. handleMsgFunc is ignored (should be connecting with a different connectionId if truly a different connection.)`);
+
+        return -1;
+      }
+
       // Search existing infos for same ibGib. Reuse channel if exists.
       let channel;
-      let existingInfos = t.channelInfos.filter(channelInfo => channelInfo.ibGib === ibGib);
+      let existingInfos =
+        t.connectionInfos.filter(info => info.ibGib === ibGib);
       if (existingInfos.length === 0) {
         console.log(`connecting to ibGib channel: ${ibGib}`)
-        channel = t.initChannel(ibGib, handleUpdateFunc);
+        channel = t.initChannel(ibGib);
       } else {
         console.log(`already connected to ibGib channel: ${ibGib}`)
         channel = existingInfos[0].channel;
       }
 
-      // Create the channel info
-      let channelInfo = {
+      // Create the connection info
+      let connectionInfo = {
+        connectionId: connectionId || ibHelper.getRandomString(),
         ibGib: ibGib,
-        channel: channel
+        channel: channel,
+        handler: handleMsgFunc
       }
 
-      // duplicates ok, this effectively does reference counting
-      t.channelInfos.push(channelInfo);
+      // Duplicates ok. Only one channel created (ref counted).
+      t.connectionInfos.push(connectionInfo);
+
+      return connectionInfo.connectionId;
     } else {
-      console.error(`EventBus.connect requires a valid ibGib`);
+      // No ibGib given.
+      console.error(`EventBus.connect requires a valid ibGib and handleMsgFunc.`);
+      return -1;
     }
   }
 
-  initChannel(ibGib, handleUpdateFunc) {
+  /** Creates and joins a channel for the given ibGib. */
+  initChannel(ibGib) {
     let t = this;
 
     let topic = `event:${ibGib}`;
@@ -47,49 +71,87 @@ export class IbGibEventBus {
       .receive("ok", resp => { console.log(`Joined event bus channel successfully. topic: ${topic}`, resp) })
       .receive("error", resp => { console.error(`Unable to join event bus channel. topic: ${topic}. resp: ${JSON.stringify(resp)}`, resp) })
 
-    channel.on("update", msg => { handleUpdateFunc(msg); });
+    // Can I do channel.on("*", msg)? Need to check after this is working again.
+    channel.on("update", msg => {
+      t.connectionInfos
+        .filter(info => info.ibGib === ibGib)
+        .forEach(info => info.handler(msg));
+    });
 
     return channel;
   }
 
-  disconnect(ibGib) {
+  /**
+   * Reference counted leaving channels for given `connectionId`.
+   *
+   * If when disconnecting `connectionId` there are no more references to the
+   * associated `ibGib`, then will leave the phoenix channel proper.
+   *
+   * If `connectionId` is not given, then this will leave ALL channels and
+   * clear out all connection infos.
+   */
+  disconnect(connectionId) {
     let t = this;
 
-    if (ibGib) {
-      // disconnect from a single ibGib channel. If it's the only one we're
-      // currently connected to, then leave the channel. Otherwise, we're
-      // essentially decrementing a reference count.
-      let existingInfos = t.channelInfos.filter(channelInfo => channelInfo.ibGib === ibGib);
-      switch (existingInfos.length) {
-        case 0:
-          console.error(`EventBus.disconnect(${ibGib}) called, but not currently connected to this ibGib channel.`);
-          break;
-        case 1:
-          // disconnecting the only ref to channel, so splice and leave.
-          let onlyChannelInfo = existingInfos[0];
-          let indexOnly = t.channelInfos.indexOf(onlyChannelInfo);
-          t.channelInfos.splice(indexOnly, 1);
-          console.log(`disconnecting from ibGib channel: ${ibGib}`)
-          onlyChannelInfo.channel.leave();
-          break;
-        default:
-          // multiple refs to channel, so just splice one off and continue.
-          let firstChannelInfo = existingInfos[0];
-          let indexFirst = t.channelInfos.indexOf(firstChannelInfo);
-          t.channelInfos.splice(indexFirst, 1);
-          break;
+    if (connectionId) {
+      let connectionInfo = t.connectionInfos.filter(info => info.connectionId === connectionId);
+
+      // If we don't have a corresponding info, then log & immediately return.
+      if (!connectionInfo) {
+        console.error(`EventBus.disconnect(${connectionId}) called, but no connections associated to this id.`);
+        return;
+      }
+
+      // Go ahead and splice off the connectionInfo.
+      let indexToRemove = t.connectionInfos.indexOf(connectionInfo);
+      t.connectionInfos.splice(indexToRemove, 1);
+
+      // Check for other existingInfos to determine if we leave the channel.
+      // Only leave the channel if this connectionId is the last reference.
+      let existingInfos = t.connectionInfos.filter(info => info.ibGib === connectionInfo.ibGib);
+      if (existingInfos.length === 0) {
+        console.log(`Disconnecting connectionId ${connectionId}. Leaving channel for ibGib: ${onlyChannelInfo.ibGib}`);
+        onlyChannelInfo.channel.leave();
       }
     } else {
       // disconnect from all channels.
       let uniqueChannels = {};
-      t.channelInfos.forEach(info => {
+      t.connectionInfos.forEach(info => {
         uniqueChannels[info.ibGib] = info.channel;
       });
       uniqueChannels.forEach(channel => {
         channel.leave();
       });
 
-      t.channelInfos = [];
+      t.connectionInfos = [];
+    }
+  }
+
+  /**
+   * I want to publish on the event bus from the local client for use in a
+   * cache.
+   * This is similar to `WebGib.Bus.Channels.Event.broadcast_ib_gib_update/2`
+   * in event.ex file.
+   */
+  broadcastIbGibUpdate_LocallyOnly(oldIbGib, newIbGib) {
+    let t = this;
+
+    let connectionInfos = t.connectionInfos.filter(info => info.ibGib === oldIbGib);
+
+    if (connectionInfos.length > 0) {
+      let msg = {
+        data: {
+          old_ib_gib: oldIbGib,
+          new_ib_gib: newIbGib
+        },
+        metadata: {
+          name: "update",
+          src: "client",
+          timestamp: Date.now()
+        }
+      }
+
+      connectionInfos.forEach(info => info.handler(msg));
     }
   }
 }

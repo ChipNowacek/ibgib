@@ -73,6 +73,7 @@ defmodule WebGib.Bus.Channels.Event do
       },
       "metadata" => %{
         "name" => msg_name,
+        "src" => "server",
         "timestamp" => "#{:erlang.system_time(:milli_seconds)}"
       }
     }

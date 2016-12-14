@@ -10,7 +10,7 @@ let d3LinkDistances = {
 }
 
 let d3Scales = {
-  "context": 7,
+  "context": 5,
   "root": 3,
   "cmd": 1.5,
   "virtual": 1,
@@ -18,7 +18,7 @@ let d3Scales = {
   "image": 3,
   "source": 4,
   "ibGib": 1.5,
-  "rel8n": 2,
+  "rel8n": 1.5,
   "result": 2,
   "ib^gib": 2,
   "pic": 3,
@@ -29,6 +29,7 @@ let d3Scales = {
 };
 
 let d3Colors = {
+  "context": "#F2EC41",
   "dna": "#C5DADE",
   "ancestor": "lightgray",
   "past": "#A9CBD6",
@@ -210,7 +211,7 @@ var d3MenuCommands = [
     "name": "goto",
     "text": "Goto",
     "icon": "\uf0a6",
-    "description": "The Goto button will navigate you to the selected ibGib",
+    "description": "The goto button will navigate you to the selected ibGib. ",
     "color": "#C7FF4F"
   },
   {
