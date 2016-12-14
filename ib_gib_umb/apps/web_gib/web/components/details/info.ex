@@ -26,7 +26,7 @@ defmodule WebGib.Web.Components.Details.Info do
         # div [class: "ib-tooltip"] do
         #   button [type: "submit", disabled: true, hidden: true] do
         #     span [class: "ib-center-glyph glyphicon glyphicon-floppy-disk ib-green"]
-        #     span [class: "ib-tooltiptext"], do: gettext("Save it :-O")
+        #   # span [class: "ib-tooltiptext"], do: gettext("Save it :-O")
         #   end
         # end
       end

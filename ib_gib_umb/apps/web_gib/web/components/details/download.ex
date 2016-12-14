@@ -33,7 +33,7 @@ defmodule WebGib.Web.Components.Details.Download do
       div [class: "ib-tooltip download_form_submit_btn_div"] do
         a [id: "download_form_submit_btn", href: "#", download: "not set"] do
           span [class: "ib-center-glyph glyphicon glyphicon-cloud-download ib-green"]
-          span [class: "ib-tooltiptext"], do: gettext("Download")
+        # span [class: "ib-tooltiptext"], do: gettext("Download")
         end
       end
     end

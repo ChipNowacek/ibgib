@@ -50,7 +50,7 @@ defmodule WebGib.Web.Components.Details.IdentEmail do
         div [class: "ib-tooltip"] do
           button [type: "submit"] do
             span [class: "ib-center-glyph glyphicon glyphicon-envelope ib-green"]
-            span [class: "ib-tooltiptext"], do: gettext("Send Login Email")
+          # span [class: "ib-tooltiptext"], do: gettext("Send Login Email")
           end
         end
       end

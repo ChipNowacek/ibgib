@@ -32,7 +32,7 @@ defmodule WebGib.Web.Components.Details.Fork do
         div [class: "ib-tooltip"] do
           button [type: "submit"] do
             span [class: "ib-center-glyph glyphicon glyphicon-flash ib-green"]
-            span [class: "ib-tooltiptext"], do: gettext("Forket about it 4-)")
+            # span [class: "ib-tooltiptext"], do: gettext("Forket about it 4-)")
           end
         end
       end

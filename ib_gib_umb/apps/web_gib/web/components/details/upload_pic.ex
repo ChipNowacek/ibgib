@@ -28,7 +28,7 @@ defmodule WebGib.Web.Components.Details.UploadPic do
           div [class: "ib-tooltip"] do
             button [type: "submit"] do
               span [class: "ib-center-glyph glyphicon glyphicon-cloud-upload ib-green"]
-              span [class: "ib-tooltiptext"], do: gettext("Upload picture")
+            # span [class: "ib-tooltiptext"], do: gettext("Upload picture")
             end
           end
         end

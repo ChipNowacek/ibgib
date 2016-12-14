@@ -169,7 +169,7 @@ defmodule WebGib.Web.Components.Details.Query do
         div [class: "ib-tooltip download_form_submit_btn_div"] do
           button [type: "submit"] do
             span [class: "ib-center-glyph glyphicon glyphicon-search ib-green"]
-            span [class: "ib-tooltiptext"], do: gettext("Go Spurs Go!")
+          # span [class: "ib-tooltiptext"], do: gettext("Go Spurs Go!")
           end
         end
       end

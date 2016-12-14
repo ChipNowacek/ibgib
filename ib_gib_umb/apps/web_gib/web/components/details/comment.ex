@@ -28,7 +28,7 @@ defmodule WebGib.Web.Components.Details.Comment do
         div [class: "ib-tooltip"] do
           button [type: "submit"] do
             span [class: "ib-center-glyph glyphicon glyphicon-comment ib-green"]
-            span [class: "ib-tooltiptext"], do: gettext("Submit comment")
+          # span [class: "ib-tooltiptext"], do: gettext("Submit comment")
           end
         end
       end

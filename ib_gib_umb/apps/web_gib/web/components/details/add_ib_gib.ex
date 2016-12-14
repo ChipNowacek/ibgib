@@ -32,7 +32,7 @@
 #         div [class: "ib-tooltip"] do
 #           button [type: "submit"] do
 #             span [class: "ib-center-glyph glyphicon glyphicon-flash ib-green"]
-#             span [class: "ib-tooltiptext"], do: gettext("Go 8-)")
+#           # span [class: "ib-tooltiptext"], do: gettext("Go 8-)")
 #           end
 #         end
 #       end
