@@ -1,6 +1,8 @@
 defmodule WebGib.PageView do
   use WebGib.Web, :view
 
+  require WebGib.Web.Components.Login
+
   # component :simple_list do
   #   items = for c <- @__content__, do: li c
   #   ul items
