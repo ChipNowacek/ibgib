@@ -64,7 +64,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         }
       },
       other: {
-        rootFadeTimeoutMs: 10000,
+        rootFadeTimeoutMs: 7000,
         cmdFadeTimeoutMs_Default: 4000,
         cmdFadeTimeoutMs_Specialized: 10000,
         rel8nFadeTimeoutMs_Boring: 4000,

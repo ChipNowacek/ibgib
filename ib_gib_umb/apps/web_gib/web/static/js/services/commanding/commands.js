@@ -524,15 +524,17 @@ export class RefreshCommand extends CommandBase {
 
   handleSubmitResponse(msg) {
     let t = this;
-    console.warn(`yooooo ${typeof(t)}`);
 
-    if (msg && msg.data && msg.data.most_recent_ib_gib && msg.data.most_recent_ib_gib === t.d.ibGib) {
-      // Already up-to-date
-      t.ibScape.clearBusy(t.d);
+    if (msg && msg.data) {
+      if (msg.data.latest_is_different) {
+        console.warn(`${typeof(t)}: There's a new version available...should come down event bus...(if hasn't already done so)`);
+        // new one available, don't clear busy.
+      } else {
+        // already up-to-date
+        t.ibScape.clearBusy(t.d);
+      }
     } else {
-      // new version available. That will come down the event bus and
-      // clear the busy at that point.
-      console.warn(`${typeof(t)}: There's a new version available...should come down event bus...(if hasn't already done so)`);
+      console.error("RefreshCommand.handleSubmitResponse: No msg data(?)");
     }
   }
 }
