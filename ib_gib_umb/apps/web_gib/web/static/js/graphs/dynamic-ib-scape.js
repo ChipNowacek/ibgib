@@ -64,7 +64,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         }
       },
       other: {
-        rootFadeTimeoutMs: 7000,
+        rootFadeTimeoutMs: 7777,
+        rootFadeTimeoutMs_Fast: 777,
         cmdFadeTimeoutMs_Default: 4000,
         cmdFadeTimeoutMs_Specialized: 10000,
         rel8nFadeTimeoutMs_Boring: 4000,
@@ -704,7 +705,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         break;
       case 1:
         t.addBoringRel8ns(node);
-        t.addCmdVirtualNodes_Default(node);
+        // t.addCmdVirtualNodes_Default(node);
         node.expandLevel = 2;
         break;
       default:
@@ -1167,8 +1168,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     console.log(`node clicked: ${JSON.stringify(d)}`);
 
     t.clearSelectedNode();
-
     t.animateNodeBorder(d, /*nodeShape*/ null);
+    if (!d.isRoot) { t.fadeOutNode(t.rootNode, t.config.other.rootFadeTimeoutMs_Fast); }
 
     // t.freezeNodes(500);
     if (d.virtualId) {
@@ -1176,11 +1177,20 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     } else {
       t.toggleExpandCollapseLevel(d);
     }
+
+
   }
   handleNodeLongClicked(d) {
     let t = this;
-    t.clearSelectedNode();
-    t.selectNode(d);
+    if (d.virtualId) {
+      t.commandMgr.exec(d, d3MenuCommands.filter(c => c.name === "huh")[0]);
+      // t.zapVirtualNode(d);
+    } else if (d.type === "ibGib") {
+      t.clearSelectedNode();
+      t.selectNode(d);
+    } else if (d.type === "rel8n") {
+      t.toggleExpandCollapseLevel_Rel8n(d);
+    }
   }
   handleResize() {
     let t = this;

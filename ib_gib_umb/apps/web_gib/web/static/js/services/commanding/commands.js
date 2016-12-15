@@ -337,6 +337,123 @@ export class HelpDetailsCommand extends DetailsCommandBase {
   }
 }
 
+export class HuhDetailsCommand extends DetailsCommandBase {
+  constructor(ibScape, d) {
+    const cmdName = "huh";
+    super(cmdName, ibScape, d);
+  }
+
+  init() {
+    let t = this;
+
+    console.log("initializing help...");
+    t.huhDiv =
+      t.detailsView
+        .append("div")
+        .style("height", "100%")
+        .style("width", "100%");
+
+    if (t.d.virtualId) {
+      switch (t.d.type) {
+        case "cmd":
+          t.addCmdHuh();
+          break;
+        case "ibGib":
+          t.addVirtualIbGibHuh();
+          break;
+        case "rel8n":
+          t.addRel8nHuh();
+        default:
+          console.error(`Unknown node type: ${JSON.stringify(t.d)}`);
+      }
+    }
+
+    if (t.d.isContext) {
+      t.addContextHuh();
+    }
+
+    if (t.d.isRoot) {
+      t.addRootHuh();
+    } else {
+      t.addIbGibHuh();
+    }
+  }
+
+  addCmdHuh() {
+    let t = this;
+    t.huhDiv
+      .append("h2")
+      .text("Command")
+    t.huhDiv
+      .append("p")
+      .text("So all of these circles and squares (and lines)...they're all ibGib.")
+      .append("p")
+      .text("This one you've just clicked on is a _command_ node. Commands are how you get to affect other ibGib.")
+
+    let cmd = d3MenuCommands[`menu-${t.cmdName}`];
+    if (cmd) {
+      t.huhDiv
+        .append("h3")
+        .text("Name")
+        .append("p")
+        .text(cmd.text)
+        .append("h3")
+        .text("Icon")
+        .append("p")
+        .text(cmd.icon)
+    }
+  }
+
+  addVirtualIbGibHuh() {
+    let t = this;
+    t.huhDiv
+      .append("h2")
+      .text("Virtual ibGib")
+    t.huhDiv
+      .append("p")
+      .text("yo this is some virtual help text")
+  }
+  addRel8nHuh() {
+    let t = this;
+    t.huhDiv
+      .append("h2")
+      .text("Rel8n")
+    t.huhDiv
+      .append("p")
+      .text("yo this is some rel8n help text")
+  }
+  addRootHuh() {
+    let t = this;
+    t.huhDiv
+      .append("h2")
+      .text("Root")
+    t.huhDiv
+      .append("p")
+      .text("yo this is some root help text")
+  }
+  addContextHuh() {
+    let t = this;
+    t.huhDiv
+      .append("h2")
+      .text("Context")
+    t.huhDiv
+      .append("p")
+      .text("yo this is some context help text")
+  }
+  addIbGibHuh() {
+    let t = this;
+    t.huhDiv
+      .append("p")
+      .text("yo this is some ibgib help text")
+  }
+
+  close() {
+    let t = this;
+    t.huhDiv.remove();
+    super.close();
+  }
+}
+
 export class QueryDetailsCommand extends DetailsCommandBase {
   constructor(ibScape, d) {
     const cmdName = "query";

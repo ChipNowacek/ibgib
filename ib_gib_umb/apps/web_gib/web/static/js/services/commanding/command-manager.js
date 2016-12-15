@@ -52,7 +52,7 @@ export class CommandManager {
         t.ibScape.currentCmd = t.getCommand_Help(dIbGib);
         break;
       case "huh":
-        t.ibScape.currentCmd = t.getCommand_Help(dIbGib);
+        t.ibScape.currentCmd = t.getCommand_Huh(dIbGib);
         break;
       case "fork":
         t.ibScape.currentCmd = t.getCommand_Fork(dIbGib);
@@ -176,6 +176,9 @@ export class CommandManager {
   }
   getCommand_Help(dIbGib) {
     return new commands.HelpDetailsCommand(this.ibScape, dIbGib);
+  }
+  getCommand_Huh(dIbGib) {
+    return new commands.HuhDetailsCommand(this.ibScape, dIbGib);
   }
   getCommand_Query(dIbGib) {
     return new commands.QueryDetailsCommand(this.ibScape, dIbGib);
