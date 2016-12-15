@@ -13,6 +13,9 @@ export class IbGibIbScapeBackgroundRefresher {
     t.ibScape = ibScape;
     t.queue = [];
   }
+  destroy() {
+    this.stop();
+  }
 
   /** Starts the refresh poll. Checks internal queue for refreshing. */
   start(successCallback, errorCallback, intervalMs) {
@@ -46,6 +49,10 @@ export class IbGibIbScapeBackgroundRefresher {
     t.queue = [];
     delete t.successCallback;
     delete t.errorCallback;
+    if (t.pollInterval) {
+      clearInterval(t.pollInterval);
+      delete t.pollInterval;
+    }
   }
 
   /** Clears the internal poll, but retains the internal queue. */

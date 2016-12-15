@@ -75,6 +75,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     t.contextIbGib = sourceIbGib || "ib^gib";
   }
+  destroy() {
+    let t = this;
+    if (t.backgroundRefresher) { t.backgroundRefresher.destroy(); }
+    super.destroy();
+  }
 
   init() {
     super.init();
@@ -185,6 +190,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   }
   initBackgroundRefresher() {
     let t = this;
+    // only init if we don't already have a refresher.
+    if (t.backgroundRefresher) { return; }
+
     t.backgroundRefresher = new IbGibIbScapeBackgroundRefresher(t);
 
     t.backgroundRefresher
@@ -261,6 +269,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
   addContextNode() {
     let t = this;
+
+    // If already exists, immediately return.
+    if (t.contextNode) { return; }
 
     if (t.contextIbGib && t.contextIbGib !== "ib^gib") {
       let { ib } = ibHelper.getIbAndGib(t.contextIbGib),
