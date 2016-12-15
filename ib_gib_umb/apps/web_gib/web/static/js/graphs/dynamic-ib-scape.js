@@ -1338,7 +1338,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   getChildren(node) {
     let t = this;
     return t.graphData.links
-      .filter(l => l.source.id === node.id);
+      .filter(l => l.source.id === node.id)
+      .map(l => l.target);
   }
   getChildrenCount_All(node) {
     return this.getChildren(node).length;
