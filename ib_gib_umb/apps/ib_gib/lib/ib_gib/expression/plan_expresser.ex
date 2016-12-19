@@ -72,7 +72,6 @@ defmodule IbGib.Expression.PlanExpresser do
                                       this_info,
                                       concrete_plan_info)
     ) do
-      # log_yo(:debug, "6\nfinal_ib_gib: #{final_ib_gib}\nfinal_state:\n#{inspect final_state, pretty: true}")
       {:ok, {final_ib_gib, final_state}}
     else
       {:error, reason} ->
@@ -104,7 +103,6 @@ defmodule IbGib.Expression.PlanExpresser do
         # At this point the "next" step is the one we've just executed.
         {:ok, {next_step, next_step_index}} <- get_next_step(plan_info),
         new_next_step <- Map.put(next_step, "out", this_ib_gib),
-        # {:ok, :ok} <-
         new_steps <-
           List.replace_at(plan_info[:data]["steps"],
                           next_step_index - 1,
@@ -121,7 +119,6 @@ defmodule IbGib.Expression.PlanExpresser do
                       new_plan_info[:rel8ns],
                       new_plan_info[:data]),
         new_plan_info <- Map.put(new_plan_info, :gib, new_plan_gib),
-        # {:ok, :ok} <-
         {:ok, :ok} <- IbGib.Data.save(new_plan_info),
 
         {:ok, new_plan_ib_gib} <- Helper.get_ib_gib(new_plan_info),
@@ -511,12 +508,7 @@ defmodule IbGib.Expression.PlanExpresser do
 
     # Add variables available from previously completed steps and return
     steps = b_info[:data]["steps"]
-    steps =
-      if is_list(steps) do
-        steps
-      else
-        [steps]
-      end
+    steps = if is_list(steps), do: steps, else: [steps]
     _ = Logger.debug "steps:\n#{inspect steps, [pretty: true]}"
 
     completed_steps =
@@ -535,7 +527,11 @@ defmodule IbGib.Expression.PlanExpresser do
              name = step["name"]
              acc
              |> Map.put("[#{name}.ibgib]", step["ibgib"])
-             |> Map.put("[#{name}.arg]", step["arg"])
+            #  I'm commenting out "arg" because it's not being used, plus right
+            # now all plans are in the form of an unfold or like a |> pipe
+            # operation in elixir. They take the result of the previous step.
+            # So "arg" is always the previous step's "out", which _is_ being set. (But I don't think it's actually used yet.)
+            #  |> Map.put("[#{name}.arg]", step["arg"])
              |> Map.put("[#{name}.out]", step["out"])
            end)
       else

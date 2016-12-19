@@ -209,6 +209,7 @@ export class DynamicD3ForceGraph {
     t.simulation =
         d3.forceSimulation()
           .velocityDecay(t.getVelocityDecay())
+          .alphaTarget(0.1)
           .force("link", t.getForceLink())
           .force("charge", t.getForceCharge())
           .force("collide", t.getForceCollide())
@@ -558,11 +559,24 @@ export class DynamicD3ForceGraph {
       // Translate the node groups
       t.graphNodesData
           .attr("transform", d => {
-              if (d) {
-                return 'translate(' + [d.x, d.y] + ')';
-              } else {
-                console.error(`d is falsy in d3 force graph handleTicked (?)`);
-              }
+            let x = d.x;
+            let y = d.y;
+            if (isNaN(x) || isNaN(y)) {
+              // x = d.x;
+              // y = d.y;
+              x = 0;
+              y = 0;
+              // debugger;
+            }
+            return 'translate(' + [x, y] + ')';
+            // if (isNaN(d.fx)) { delete d.fx; delete d.fy; }
+            //   if (d && !isNaN(d.x)) {
+            //     return 'translate(' + [d.x, d.y] + ')';
+            //   } else {
+            //     debugger;
+            //     console.error(`d is falsy in d3 force graph handleTicked (?)`);
+            //     return 'translate(' + [d.x, d.y] + ')';
+            //   }
           });
     } catch (e) {
       console.log("errored tick")

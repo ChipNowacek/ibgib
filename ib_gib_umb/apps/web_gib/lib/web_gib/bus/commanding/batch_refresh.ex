@@ -27,7 +27,7 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
       {:ok, latest_ib_gibs} <- exec_impl(identity_ib_gibs, ib_gibs),
 
       # Broadcast any newer ib_gib versions found (if any)
-      {:ok, :ok} <- broadcast_if_newer(latest_ib_gibs),
+      {:ok, :ok} <- broadcast_if_necessary(latest_ib_gibs),
 
       # Reply
       {:ok, reply_msg} <- get_reply_msg(latest_ib_gibs)
@@ -65,14 +65,15 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
     end
   end
 
-  defp broadcast_if_newer(latest_ib_gibs)
+  defp broadcast_if_necessary(latest_ib_gibs)
     when is_map(latest_ib_gibs) and map_size(latest_ib_gibs) > 0 do
+    # Broadcast any newer ib_gib versions found (if any)
     Enum.each(latest_ib_gibs, fn({old_ib_gib, latest_ib_gib}) ->
       _ = EventChannel.broadcast_ib_gib_update(old_ib_gib, latest_ib_gib)
     end)
     {:ok, :ok}
   end
-  defp broadcast_if_newer(_latest_ib_gibs) do
+  defp broadcast_if_necessary(_latest_ib_gibs) do
     # nothing is newer, so nothing to broadcast
     {:ok, :ok}
   end

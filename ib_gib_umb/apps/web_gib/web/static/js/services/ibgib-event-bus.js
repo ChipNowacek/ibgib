@@ -37,7 +37,7 @@ export class IbGibEventBus {
         console.log(`connecting to ibGib channel: ${ibGib}`)
         channel = t.initChannel(ibGib);
       } else {
-        console.log(`already connected to ibGib channel: ${ibGib}`)
+        // console.log(`already connected to ibGib channel: ${ibGib}`)
         channel = existingInfos[0].channel;
       }
 
@@ -49,7 +49,6 @@ export class IbGibEventBus {
         handler: handleMsgFunc
       }
 
-      // Duplicates ok. Only one channel created (ref counted).
       t.connectionInfos.push(connectionInfo);
 
       return connectionInfo.connectionId;
@@ -94,7 +93,7 @@ export class IbGibEventBus {
     let t = this;
 
     if (connectionId) {
-      let connectionInfo = t.connectionInfos.filter(info => info.connectionId === connectionId);
+      let connectionInfo = t.connectionInfos.filter(info => info.connectionId === connectionId)[0];
 
       // If we don't have a corresponding info, then log & immediately return.
       if (!connectionInfo) {
@@ -110,8 +109,12 @@ export class IbGibEventBus {
       // Only leave the channel if this connectionId is the last reference.
       let existingInfos = t.connectionInfos.filter(info => info.ibGib === connectionInfo.ibGib);
       if (existingInfos.length === 0) {
-        console.log(`Disconnecting connectionId ${connectionId}. Leaving channel for ibGib: ${onlyChannelInfo.ibGib}`);
-        onlyChannelInfo.channel.leave();
+        if (connectionInfo) {
+          console.log(`Disconnecting connectionId ${connectionId}. Leaving channel for ibGib: ${connectionInfo.ibGib}`);
+          connectionInfo.channel.leave();
+        } else {
+          debugger;
+        }
       }
     } else {
       // disconnect from all channels.

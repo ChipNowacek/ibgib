@@ -29,10 +29,11 @@ defmodule WebGib.Bus.Channels.Event do
   channels, i.e. no authorization required.
   """
 
-  use Phoenix.Channel
   require Logger
+  use Phoenix.Channel
 
-  import IbGib.Helper
+  import IbGib.{Expression, Helper, Macros}
+  use IbGib.Constants, :error_msgs
 
   # intercept ["user_cmd", "user_cmd2"]
 
@@ -64,10 +65,73 @@ defmodule WebGib.Bus.Channels.Event do
   end
 
 
+  @doc """
+  Creates an update msg and broadcasts it on the event bus.
+
+  This will first get the "first" ib^gib corresponding to the given `old_ib_gib`
+  timeline, i.e. the first (non-root) ib^gib in the "past" rel8n.
+
+  For example, let's pretend that we have A^XYZ which is the 500th mut8n
+  of the A timeline since it was first forked. In order for other references
+  to each step in its history, we would have to broadcast 499 different update
+  msgs to let each one know that there is an update. Obviously this is no good.
+  So we just get the first A^123 (or whatever the gib hash is) and broadcast
+  on that channel. This way, we don't have to subscribe to the event bus for
+  every single ib^gib to get its changes, we just have to subscribe to its
+  first ib^gib. We also don't have to unsubscribe and resubscribe every time
+  that there is a change.
+  """
   def broadcast_ib_gib_update(old_ib_gib, new_ib_gib) do
+    with(
+      {:ok, first_ib_gib} <- get_first_ib_gib(old_ib_gib),
+      {:ok, {msg_name, msg}} <- get_broadcast_msg(first_ib_gib, old_ib_gib, new_ib_gib),
+      # Not interested if the broadcast errors. It is possible that the topic
+      # doesn't even exist (no one is signed up to hear it).
+      _ <-
+        WebGib.Endpoint.broadcast("event:" <> first_ib_gib, msg_name, msg)
+    ) do
+      {:ok, :ok}
+    else
+      error -> default_handle_error(error)
+    end
+  end
+
+  # Should use a cache eventually for this, probably using Elixir's Registry.
+  # But this would be an at-scale issue.
+  defp get_first_ib_gib(old_ib_gib) when is_bitstring(old_ib_gib) do
+    with(
+      {:ok, expr} <- IbGib.Expression.Supervisor.start_expression(old_ib_gib),
+      {:ok, info} <- expr |> get_info(),
+      {:ok, first_ib_gib} <-
+        extract_first_ib_gib(old_ib_gib, info[:rel8ns]["past"])
+    ) do
+      {:ok, first_ib_gib}
+    else
+      error -> default_handle_error(error)
+    end
+  end
+
+  defp extract_first_ib_gib(old_ib_gib, past)
+    when is_list(past) and length(past) > 1 do
+    # root is at position 0, so first ib^gib is at position 1
+    {:ok, Enum.at(past, 1)}
+  end
+  defp extract_first_ib_gib(old_ib_gib, past)
+    when is_list(past) do
+    {:ok, old_ib_gib}
+  end
+  defp extract_first_ib_gib(old_ib_gib, past) do
+    invalid_args([old_ib_gib, past])
+  end
+
+  defp get_broadcast_msg(first_ib_gib, old_ib_gib, new_ib_gib)
+    when is_bitstring(first_ib_gib) and first_ib_gib !== "" and
+         is_bitstring(old_ib_gib) and old_ib_gib !== "" and
+         is_bitstring(new_ib_gib) and new_ib_gib !== "" do
     msg_name = "update"
     msg = %{
       "data" => %{
+        "first_ib_gib" => first_ib_gib,
         "old_ib_gib" => old_ib_gib,
         "new_ib_gib" => new_ib_gib,
       },
@@ -77,15 +141,12 @@ defmodule WebGib.Bus.Channels.Event do
         "timestamp" => "#{:erlang.system_time(:milli_seconds)}"
       }
     }
-    # I don't care if the broadcast errors. It is possible that the topic
-    # doesn't even exist.
-    broadcast_result =
-      WebGib.Endpoint.broadcast("event:" <> old_ib_gib, msg_name, msg)
-    Logger.debug("broadcast_result:\n#{inspect broadcast_result}" |> ExChalk.bg_cyan |> ExChalk.black)
-    Logger.debug("old_ib_gib:\n#{old_ib_gib}\nmsg: #{inspect msg}" |> ExChalk.bg_cyan |> ExChalk.black)
-
-    {:ok, :ok}
+    {:ok, {msg_name, msg}}
   end
+  defp get_broadcast_msg(first_ib_gib, old_ib_gib, new_ib_gib) do
+    invalid_args([first_ib_gib, old_ib_gib, new_ib_gib])
+  end
+
   # @doc """
   # http://www.phoenixframework.org/docs/channels
   #

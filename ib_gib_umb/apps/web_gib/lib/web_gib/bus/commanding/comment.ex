@@ -9,6 +9,7 @@ defmodule WebGib.Bus.Commanding.Comment do
 
   alias IbGib.Transform.Plan.Factory, as: PlanFactory
   alias WebGib.Bus.Channels.Event, as: EventChannel
+  alias IbGib.Auth.Authz
   import IbGib.Expression
   import IbGib.Helper
   import WebGib.Bus.Commanding.Helper
@@ -34,15 +35,14 @@ defmodule WebGib.Bus.Commanding.Comment do
                        "Cannot comment on the root"),
 
       # Execute
-      {:ok, {comment_ib_gib, new_src_ib_gib}} <-
+      {:ok, {comment_ib_gib, new_src_ib_gib_or_nil}} <-
         exec_impl(identity_ib_gibs, src_ib_gib, comment_text),
 
-      # Broadcast updated src_ib_gib
-      _ <-
-        EventChannel.broadcast_ib_gib_update(src_ib_gib, new_src_ib_gib),
+      # Broadcast updated src_ib_gib if there is a new one
+      {:ok, :ok} <- broadcast_if_necessary(src_ib_gib, new_src_ib_gib_or_nil),
 
       # Reply
-      {:ok, reply_msg} <- get_reply_msg(comment_ib_gib, new_src_ib_gib)
+      {:ok, reply_msg} <- get_reply_msg(comment_ib_gib, new_src_ib_gib_or_nil)
     ) do
       {:reply, {:ok, reply_msg}, socket}
     else
@@ -60,13 +60,41 @@ defmodule WebGib.Bus.Commanding.Comment do
       {:ok, {src, comment_gib}} <- prepare(src_ib_gib),
       {:ok, comment} <-
         create_comment(identity_ib_gibs, src, comment_gib, comment_text),
-      # Auto-Relate the comment on the source
-      # Here may be where we have to get clever for user interaction, i.e.
-      # if the commenter is not the owner of the src.
-      {:ok, new_src} <- src |> rel8(comment, identity_ib_gibs, ["comment"]),
-      {:ok, {comment_ib_gib, new_src_ib_gib}} <- get_ib_gibs(comment, new_src)
+      {:ok, new_src_or_nil} <- rel8_to_src_if_authorized(src, comment, identity_ib_gibs),
+      {:ok, {comment_ib_gib, new_src_ib_gib_or_nil}} <- get_ib_gibs(comment, new_src_or_nil)
     ) do
-      {:ok, {comment_ib_gib, new_src_ib_gib}}
+      {:ok, {comment_ib_gib, new_src_ib_gib_or_nil}}
+    else
+      error -> default_handle_error(error)
+    end
+  end
+
+  # Auto-Relate the comment on the source
+  # Here may be where we have to get clever for user interaction, i.e.
+  # if the commenter is not the owner of the src.
+  # So the plan is to do this relate if authorized, i.e. if the current user
+  # doing the commenting is the owner of the thing being commented upon.
+  # If it isn't authorized, then an external mechanism will be responsible
+  # for displaying others' comments to the user.
+  defp rel8_to_src_if_authorized(src, comment, identity_ib_gibs) do
+    # {:ok, new_src} <- src |> rel8(comment, identity_ib_gibs, ["comment"]),
+    with(
+      {:ok, src_info} <- src |> get_info(),
+      {authz_result, _} <- Authz.authorize_apply_b(:rel8, src_info[:rel8ns], identity_ib_gibs),
+      {:ok, new_src_or_nil} <-
+        (
+          if authz_result === :ok do
+            _ = Logger.debug("authz is ok. commenter is authorized to rel8 to the src." |> ExChalk.yellow |> ExChalk.bg_blue)
+            src |> rel8(comment, identity_ib_gibs, ["comment"])
+          else
+            _ = Logger.debug("authz is NOT ok. commenter is NOT authorized to rel8 to the src." |> ExChalk.yellow |> ExChalk.bg_red)
+            # Not authorized, so this is a user commenting on someone else's
+            # ibGib
+            {:ok, nil}
+          end
+        )
+    ) do
+      {:ok, new_src_or_nil}
     else
       error -> default_handle_error(error)
     end
@@ -106,12 +134,24 @@ defmodule WebGib.Bus.Commanding.Comment do
     with(
       {:ok, comment_info} <- get_info(comment),
       {:ok, comment_ib_gib} <- get_ib_gib(comment_info),
-      {:ok, new_src_info} <- get_info(new_src),
-      {:ok, new_src_ib_gib} <- get_ib_gib(new_src_info)
+
+      {:ok, new_src_info} <-
+        (if new_src, do: get_info(new_src), else: {:ok, nil}),
+      {:ok, new_src_ib_gib} <-
+        (if new_src, do: get_ib_gib(new_src_info), else: {:ok, nil})
     ) do
       {:ok, {comment_ib_gib, new_src_ib_gib}}
     else
       error -> default_handle_error(error)
+    end
+  end
+
+  defp broadcast_if_necessary(src_ib_gib, new_src_ib_gib_or_nil) do
+    if new_src_ib_gib_or_nil do
+      EventChannel.broadcast_ib_gib_update(src_ib_gib, new_src_ib_gib_or_nil)
+      {:ok, :ok}
+    else
+      {:ok, :ok}
     end
   end
 

@@ -38,7 +38,7 @@ let d3Colors = {
   "result": "#86CC6C",
   "ib^gib": "#73BFAE",
   "comment": "#CCF26B",
-  "text": "#CCF26B",
+  "text": "#A7D169",
   "name": "#FFDFAB",
   "pic": "#DDEDD3",
   "image": "#DDEDD3",

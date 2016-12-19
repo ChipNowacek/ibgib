@@ -49,7 +49,7 @@ defmodule IbGib.Expression.Apply do
     _ = Logger.debug "a[:rel8ns]: #{inspect a[:rel8ns]}"
 
     # First authorize
-    b_identities = Authz.authorize_apply_b(:fork, a[:rel8ns], b[:rel8ns])
+    b_identities = Authz.authorize_apply_b!(:fork, a[:rel8ns], b[:rel8ns])
 
     fork_data = b[:data]
 
@@ -110,7 +110,7 @@ defmodule IbGib.Expression.Apply do
     _ = Logger.debug "a[:rel8ns]: #{inspect a[:rel8ns]}"
 
     # First authorize
-    b_identities = Authz.authorize_apply_b(:mut8, a[:rel8ns], b[:rel8ns])
+    b_identities = Authz.authorize_apply_b!(:mut8, a[:rel8ns], b[:rel8ns])
 
     # We're going to borrow `a` as our own info for the new thing. We're just
     # going to change its `gib`, and `relations`, and its `data` since it's
@@ -239,7 +239,7 @@ defmodule IbGib.Expression.Apply do
     _ = Logger.debug "a[:rel8ns]: #{inspect a[:rel8ns]}"
 
     # First authorize
-    b_identities = Authz.authorize_apply_b(:rel8, a[:rel8ns], b[:rel8ns])
+    b_identities = Authz.authorize_apply_b!(:rel8, a[:rel8ns], b[:rel8ns])
 
     # Make sure that we are the correct src_ib_gib. Fail fast if we aren't,
     # since we're within a new process attempting to init.
@@ -325,7 +325,7 @@ defmodule IbGib.Expression.Apply do
 
   def apply_query(a, b) do
     _ = Logger.debug "a: #{inspect a}\nb: #{inspect b}"
-    b_identities = Authz.authorize_apply_b(:query, a[:rel8ns], b[:rel8ns])
+    b_identities = Authz.authorize_apply_b!(:query, a[:rel8ns], b[:rel8ns])
 
     query_options = b[:data]["options"]
     result = IbGib.Data.query(query_options)

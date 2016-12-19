@@ -2,7 +2,14 @@ import * as d3 from 'd3';
 import * as ibHelper from '../ibgib-helper';
 import { d3RootUnicodeChar } from '../../d3params';
 
+// Most (_but not all_) commands are related to menu commands (in `d3params.js`)
 
+// TIP: Code-fold this page to see a list of all of the available commands.
+
+/**
+ * Base class for all commands.
+ * Has a name, relates to an ibScape and datum, and can exec.
+ */
 export class CommandBase {
   constructor(cmdName, ibScape, d) {
     let t = this;
@@ -13,7 +20,6 @@ export class CommandBase {
   }
 
   exec() {
-    // this.ibScape.closeMenu();
     if (this.ibScape.menu) { this.ibScape.menu.hide(); }
   }
 }
@@ -28,8 +34,6 @@ export class CommandBase {
  * `ib-fork-details`.
  *
  * Details views are shown when a user executes a command on an ibGib.
- *
- * TIP: Code-fold this page to see a list of all of the available details.
  */
 export class DetailsCommandBase extends CommandBase {
   constructor(cmdName, ibScape, d) {
@@ -230,6 +234,33 @@ export class FormDetailsCommandBase extends DetailsCommandBase {
   }
 }
 
+/**
+ * Base class containing behavior for details pages that add html tags to a
+ * container htmlDiv, e.g. showing help with header and p tags.
+ */
+export class HtmlDetailsCommandBase extends DetailsCommandBase {
+  constructor(cmdName, ibScape, d) {
+    super(cmdName, ibScape, d);
+  }
+
+  init() {
+    let t = this;
+    console.log("initializing htmlDiv...");
+    t.htmlDiv =
+      t.detailsView
+        .append("div")
+        .style("height", "100%")
+        .style("width", "100%");
+  }
+
+  close() {
+    let t = this;
+    t.htmlDiv.remove();
+    console.log("htmlDiv removed.")
+    super.close();
+  }
+}
+
 export class InfoDetailsCommand extends DetailsCommandBase {
   constructor(ibScape, d) {
     const cmdName = "info";
@@ -238,7 +269,6 @@ export class InfoDetailsCommand extends DetailsCommandBase {
 
   init() {
     let t = this;
-
 
     d3.select("#info_form_data_src_ib_gib")
       .attr("value", t.d.ibGib);
@@ -337,54 +367,48 @@ export class HelpDetailsCommand extends DetailsCommandBase {
   }
 }
 
-export class HuhDetailsCommand extends DetailsCommandBase {
+export class HuhDetailsCommand extends HtmlDetailsCommandBase {
   constructor(ibScape, d) {
     const cmdName = "huh";
     super(cmdName, ibScape, d);
   }
 
   init() {
+    super.init();
     let t = this;
-
-    console.log("initializing help...");
-    t.huhDiv =
-      t.detailsView
-        .append("div")
-        .style("height", "100%")
-        .style("width", "100%");
 
     if (t.d.virtualId) {
       switch (t.d.type) {
         case "cmd":
-          t.addCmdHuh();
+          t.addCmdHtml();
           break;
         case "ibGib":
-          t.addVirtualIbGibHuh();
+          t.addVirtualIbGibHtml();
           break;
         case "rel8n":
-          t.addRel8nHuh();
+          t.addRel8nHtml();
         default:
           console.error(`Unknown node type: ${JSON.stringify(t.d)}`);
       }
     }
 
     if (t.d.isContext) {
-      t.addContextHuh();
+      t.addContextHtml();
     }
 
     if (t.d.isRoot) {
-      t.addRootHuh();
+      t.addRootHtml();
     } else {
-      t.addIbGibHuh();
+      t.addIbGibHtml();
     }
   }
 
-  addCmdHuh() {
+  addCmdHtml() {
     let t = this;
-    t.huhDiv
+    t.htmlDiv
       .append("h2")
       .text("Command")
-    t.huhDiv
+    t.htmlDiv
       .append("p")
       .text("So all of these circles and squares (and lines)...they're all ibGib.")
       .append("p")
@@ -392,7 +416,7 @@ export class HuhDetailsCommand extends DetailsCommandBase {
 
     let cmd = d3MenuCommands[`menu-${t.cmdName}`];
     if (cmd) {
-      t.huhDiv
+      t.htmlDiv
         .append("h3")
         .text("Name")
         .append("p")
@@ -404,53 +428,47 @@ export class HuhDetailsCommand extends DetailsCommandBase {
     }
   }
 
-  addVirtualIbGibHuh() {
+  addVirtualIbGibHtml() {
     let t = this;
-    t.huhDiv
+    t.htmlDiv
       .append("h2")
       .text("Virtual ibGib")
-    t.huhDiv
+    t.htmlDiv
       .append("p")
       .text("yo this is some virtual help text")
   }
-  addRel8nHuh() {
+  addRel8nHtml() {
     let t = this;
-    t.huhDiv
+    t.htmlDiv
       .append("h2")
       .text("Rel8n")
-    t.huhDiv
+    t.htmlDiv
       .append("p")
       .text("yo this is some rel8n help text")
   }
-  addRootHuh() {
+  addRootHtml() {
     let t = this;
-    t.huhDiv
+    t.htmlDiv
       .append("h2")
       .text("Root")
-    t.huhDiv
+    t.htmlDiv
       .append("p")
       .text("yo this is some root help text")
   }
-  addContextHuh() {
+  addContextHtml() {
     let t = this;
-    t.huhDiv
+    t.htmlDiv
       .append("h2")
       .text("Context")
-    t.huhDiv
+    t.htmlDiv
       .append("p")
       .text("yo this is some context help text")
   }
-  addIbGibHuh() {
+  addIbGibHtml() {
     let t = this;
-    t.huhDiv
+    t.htmlDiv
       .append("p")
       .text("yo this is some ibgib help text")
-  }
-
-  close() {
-    let t = this;
-    t.huhDiv.remove();
-    super.close();
   }
 }
 
@@ -563,6 +581,14 @@ export class CommentDetailsCommand extends FormDetailsCommandBase {
     let t = this;
 
     if (msg && msg.data && msg.data.comment_ib_gib) {
+      if (!msg.data.new_src_ib_gib) {
+        // the src was not updated, so this is a user commenting on someone
+        // else's ibGib. So a comment was created and was rel8d to the src,
+        // but the src has not been inversely rel8d to the comment.
+        debugger;
+        t.virtualNode.isImplied = true;
+      }
+
       let commentIbGib = msg.data.comment_ib_gib;
       t.virtualNode.ibGib = commentIbGib;
       t.ibScape.zapVirtualNode(t.virtualNode);

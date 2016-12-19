@@ -144,7 +144,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     window.onpopstate = (event) => {
       console.warn("pop state triggered");
-      // debugger;
       delete t.contextNode.ibGibJson;
       t.contextNode.ibGib = window.location.pathname.substring(6).replace("%5E", "^");
       t.getIbGibJson(t.contextNode.ibGib, ibGibJson => {
@@ -356,18 +355,17 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       .forEach(nodeNotFound => t.removeNodeAndChildren(nodeNotFound));
 
     // add
-    ibGibs
-      .filter(ibGib => !sourceNodes.some(sn => sn.ibGib === ibGib))
+    let newIbGibs =
+      ibGibs.filter(ibGib => !sourceNodes.some(sn => sn.ibGib === ibGib));
+
+    newIbGibs
       .forEach(ibGib => {
-        let newNode = t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ ibGib, /*srcNode*/ null, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: t.contextNode.x, y: t.contextNode.y});
-        if (ibGib !== "ib^gib") {
-          t.ibGibEventBus.connect(newNode.id, ibGib, updateMsg => {
-            // need to change this to a more generic handler if we add other
-            // messages besides update.
-            t.handleEventBusUpdateMsg(ibGib, updateMsg);
-          });
-        }
+        t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ ibGib, /*srcNode*/ null, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: t.contextNode.x, y: t.contextNode.y});
       });
+
+    t.backgroundRefresher.exec(newIbGibs,
+      successMsg => console.log("syncContextSourceNodes: refresh newIbGibs succeeded."),
+      errorMsg => console.error(`syncContextSourceNodes: refresh newIbGibs failed. Error: ${JSON.stringify(errorMsg)}`));
   }
 
   removeNodeAndChildren(node) {
@@ -388,7 +386,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     if (rel8nNode) {
       // rel8nNode exists. If expanded, ensure children are up-to-date.
-      // debugger;
       let children = t.getChildren(rel8nNode);
       if (children.length > 0) {
         // prune
@@ -651,10 +648,12 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       t.swap(node, node, /*updateParentOrChild*/ true);
 
       if (node.ibGib !== "ib^gib") {
-        t.ibGibEventBus.connect(node.id, node.ibGib, updateMsg => {
+        let firstIbGib = ibHelper.getFirstIbGib(ibGibJson);
+
+        t.ibGibEventBus.connect(/*connectionId*/ node.id, firstIbGib, updateMsg => {
           // need to change this to a more generic handler if we add other
           // messages besides update.
-          t.handleEventBusUpdateMsg(node.ibGib, updateMsg);
+          t.handleEventBusUpdateMsg(firstIbGib, node.ibGib, updateMsg);
         });
       }
 
@@ -814,20 +813,29 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         });
   }
 
-  handleEventBusUpdateMsg(ibGib, updateMsg) {
+  handleEventBusUpdateMsg(firstIbGib, ibGib, updateMsg) {
     let t = this;
     console.log(`updateMsg:\n${JSON.stringify(updateMsg)}`)
 
     if (updateMsg && updateMsg.data &&
-        updateMsg.data.old_ib_gib === ibGib &&
+        updateMsg.data.first_ib_gib === firstIbGib &&
         updateMsg.data.new_ib_gib) {
       t.graphData.nodes
         .filter(n => n.ibGib === ibGib)
         .forEach(n => {
           console.log(`updating ibGib node`)
           t.clearBusy(n);
-          t.updateIbGib(n, updateMsg.data.new_ib_gib);
-          t.ibGibEventBus.disconnect(ibGib);
+          // ibGib in the "past" rel8n will be paused, because we don't want to
+          // update those, rather we want to keep them at that particular frame
+          // in time. There may be other use cases for pausing (e.g. user
+          // pauses the ibGib for whatever reason, or possibly when we navigate
+          // to an ibGib in the past rel8n).
+          if (n.isPaused) {
+            console.log(`updateMsg received, but node ${n.id} is paused.`);
+          } else {
+            t.updateIbGib(n, updateMsg.data.new_ib_gib);
+          }
+          // t.ibGibEventBus.disconnect(n.id);
         });
     } else {
       console.warn(`Unused updateMsg(?): ${JSON.stringify(updateMsg)}`);
@@ -996,7 +1004,13 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     return color;
   }
   getNodeBorderStrokeDashArray(d) {
-    return d.virtualId ? "16,8,16" : null;
+    if (d.virtualId) {
+      return "16,8,16";
+    } else if (d.isImplied) {
+      return "7,7,7";
+    } else {
+      return null;
+    }
   }
   getNodeShapeOpacity(d) {
     return 1;
@@ -1116,8 +1130,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         .duration(75)
         .ease(d3.easeLinear);
 
-    t.rootNode.x = (event.x - transform.translateX) / transform.scaleX;
-    t.rootNode.y = (event.y - transform.translateY) / transform.scaleY;
+    t.rootNode.x = (event.clientX - transform.translateX) / transform.scaleX;
+    t.rootNode.y = (event.clientY - transform.translateY) / transform.scaleY;
     t.rootNode.fx = t.rootNode.x;
     t.rootNode.fy = t.rootNode.y;
     t.rootPos.x = t.rootNode.x;

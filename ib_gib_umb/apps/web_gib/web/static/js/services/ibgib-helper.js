@@ -11,6 +11,15 @@ export function getIbAndGib(ibGib) {
   }
 }
 
+export function getFirstIbGib(ibGibJson) {
+  let past = ibGibJson.rel8ns.past;
+  if (past && past.length > 0) {
+    return past.length === 1 ? "ib^gib" : past[1];
+  } else {
+    console.error("ibGibJson has no past.");
+    return "ib^gib";
+  }
+}
 
 export function getDataText(ibGibJson) {
   return (ibGibJson && ibGibJson.data && ibGibJson.data.text) ?
