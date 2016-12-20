@@ -129,7 +129,7 @@ defmodule WebGib.Bus.Commanding.Comment do
 
       {:ok, src_temporal_junction} <- get_temporal_junction(src),
       {:ok, comment} <-
-        comment |> rel8(src_temporal_junction, identity_ib_gibs, ["comment_in_timeline"]),
+        comment |> rel8(src_temporal_junction, identity_ib_gibs, ["adjunct_to"]),
     ) do
       {:ok, comment}
     else
