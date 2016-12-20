@@ -112,6 +112,9 @@ defmodule WebGib.Bus.Commanding.Comment do
     end
   end
 
+  # Creates the comment, rel8ng it to both src and src_temporal_junction.
+  # Back to the Future to the rescue...again!
+  # See `IbGib.Helper.get_temporal_junction/1` for more info.
   defp create_comment(identity_ib_gibs, src, comment_gib, comment_text) do
     with(
       {:ok, comment} <-
@@ -122,7 +125,11 @@ defmodule WebGib.Bus.Commanding.Comment do
                   "shape" => "rect"
                 },
       {:ok, comment} <- comment |> mut8(identity_ib_gibs, state),
-      {:ok, comment} <- comment |> rel8(src, identity_ib_gibs, ["comment_on"])
+      {:ok, comment} <- comment |> rel8(src, identity_ib_gibs, ["comment_on"]),
+
+      {:ok, src_temporal_junction} <- get_temporal_junction(src),
+      {:ok, comment} <-
+        comment |> rel8(src_temporal_junction, identity_ib_gibs, ["comment_in_timeline"]),
     ) do
       {:ok, comment}
     else

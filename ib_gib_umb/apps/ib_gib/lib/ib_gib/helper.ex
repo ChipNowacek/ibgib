@@ -553,4 +553,57 @@ defmodule IbGib.Helper do
     _ = Logger.error(emsg)
     {:error, emsg}
   end
+
+  @doc """
+  From [Back to the Future II on IMDB](http://www.imdb.com/title/tt0096874/quotes?item=qt0426637)
+  > Marty McFly: That's right, Doc. November 12, 1955.
+  > Doc: Unbelievable, that old Biff could have chosen that particular date. It could mean that that point in time inherently contains some sort of cosmic significance. Almost as if it were the temporal junction point for the entire space-time continuum. On the other hand, it could just be an amazing coincidence.
+
+  This returns the first (non-root) ib^gib in the given `ib_gib`'s past.
+  This seems to be a useful thing, defining the start of a timeline, i.e. the
+  ib_gib's "birthday".
+
+  Think of child records/tables in a relational database. These records are
+  joined to the parent record via the parent's id/seq value. Well this id/seq
+  value is like the "initial" id/seq value in that record's existence. But with
+  relational databases, there is not a "complete" history kept throughout the
+  lifetime of the thing unless there is an audit trail. If there _is_ an audit
+  trail, then those audit id/seq values are somewhat like the ib^gib pointers.
+
+  So the initial id/seq still ends up being the starting point - the
+  "temporal junction point" where you have to travel back to in order to
+  reference the entire timeline.
+
+  ## Use Case
+
+  I'm creating this specifically for "implied" ibGib rel8ns, which are 1-way
+  rel8ns that are rel8d _to_ an ibGib but are not directly rel8d _on_ an ibGib.
+  So I'm going to "tag" the ibGib at the precise ib^gib pointer in time where
+  the comment occurs, **as well as tagging the temporal junction point**. This
+  way, when I go to look up "Hey, give me the implied ibGibs related to some
+  given ibGib", I know to look at the temporal junction point instead of
+  searching for any possible ib^gib in its "past". (Yes, I have actually been
+  coding this entire "past" querying and it is ludicrously ugly.)
+  """
+  def get_temporal_junction(ib_gib)
+  def get_temporal_junction(ib_gib_pid) when is_pid(ib_gib_pid) do
+    case IbGib.Expression.get_info(ib_gib_pid) do
+      {:ok, info} -> get_temporal_junction(info)
+      error -> default_handle_error(error)
+    end
+  end
+  def get_temporal_junction(ib_gib_info) when is_map(ib_gib_info) do
+    past = ib_gib_info[:rel8ns]["past"]
+    if Enum.count(past) > 1 do
+      # position 0 is root, position 1 is the temporal junction
+      {:ok, Enum.at(past, 1)}
+    else
+      # There is no past, so the given `ib_gib_info` itself _is_ the temporal
+      # junction. So get the info's ib^gib
+      get_ib_gib(ib_gib_info)
+    end
+  end
+  def get_temporal_junction(ib_gib) do
+    invalid_args(ib_gib)
+  end
 end

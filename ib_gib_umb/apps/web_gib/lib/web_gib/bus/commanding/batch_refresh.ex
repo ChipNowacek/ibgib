@@ -71,7 +71,7 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
       {:ok, :ok} <- broadcast_if_necessary(:implied, implied_ib_gibs),
 
       # Reply
-      {:ok, reply_msg} <- get_reply_msg(latest_ib_gibs)
+      {:ok, reply_msg} <- get_reply_msg(latest_ib_gibs, implied_ib_gibs)
     ) do
       {:reply, {:ok, reply_msg}, socket}
     else
@@ -100,7 +100,7 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
       {:ok, latest_ib_gibs} <-
         get_latest_ib_gibs(identity_ib_gibs, identity, ib_gibs),
       {:ok, implied_ib_gibs} <-
-        get_implied_ib_gibs(identity_ib_gibs, identity, ib_gibs)
+        get_implied_ib_gibs(identity_ib_gibs, identity, ib_gibs, ["comment_on", "pic_of"])
     ) do
       {:ok, {latest_ib_gibs, implied_ib_gibs}}
     else
@@ -159,7 +159,7 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
       # Return the query_result result ib^gib
       {:ok, query_result_info} <- query_result |> get_info(),
       {:ok, result_ib_gib} <-
-        extract_result_ib_gib(ib_gib, query_result_info)
+        extract_result_ib_gib(:latest, ib_gib, query_result_info)
     ) do
       {:ok, result_ib_gib}
     else
@@ -168,13 +168,15 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
   end
 
   # Gets "implied" ib^gibs, meaning ib^gibs that have a 1-way rel8n with the
-  # given `ib_gibs`.
-  defp get_implied_ib_gibs(identity_ib_gibs, identity, ib_gibs) do
+  # given `ib_gibs`. The `rel8ns` parameter is for determining which rel8ns to
+  # look for.
+  defp get_implied_ib_gibs(identity_ib_gibs, identity, ib_gibs, rel8ns) do
     implied_ib_gibs_or_error =
       ib_gibs
       |> Enum.uniq()
       |> Enum.reduce_while(%{}, fn(ib_gib, acc) ->
-           case get_implied(identity_ib_gibs, identity, ib_gib) do
+           case get_implied(identity_ib_gibs, identity, ib_gib, rel8ns) do
+            #  implied_ib_gibs should be a map of rel8n => ib_gibs
              {:ok, implied_ib_gibs} when map_size(implied_ib_gibs) === 0 ->
                {:cont, acc}
 
@@ -195,7 +197,7 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
     end
   end
 
-  defp get_implied(identity_ib_gibs, query_src, ib_gib) do
+  defp get_implied(identity_ib_gibs, query_src, ib_gib, rel8ns) do
     with(
       {:ok, ib_gib_process} <-
         IbGib.Expression.Supervisor.start_expression(ib_gib),
@@ -204,20 +206,68 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
         get_ib_gib_identity_ib_gibs(ib_gib_info),
 
       # Build the query options
+      # query_opts_map is a map in shape of %{rel8n => query}
       query_opts <-
-        build_query_opts_implied(ib_gib_identity_ib_gibs, ib_gib, ib_gib_info),
+        build_query_opts_implied(ib_gib_identity_ib_gibs, ib_gib, ib_gib_info, rel8ns),
 
-      # Execute the query itself, which creates the query_result ib_gib
-      {:ok, query_result} <- query_src |> query(identity_ib_gibs, query_opts),
+      # Execute queries, which create the query_result ib_gib per rel8n
+      # query_results is a map in shape of %{rel8n => query_result}
+      {:ok, query_results} <-
+        execute_queries_implied(identity_ib_gibs, query_src, query_opts),
 
       # Return the query_result result ib^gib
-      {:ok, query_result_info} <- query_result |> get_info(),
-      {:ok, result_ib_gib} <-
-        extract_result_ib_gib(ib_gib, query_result_info)
+      {:ok, query_result_infos} <-
+        Enum.map(query_results, fn({qr_rel8n, query_result}) ->
+          {qr_rel8n, query_result |> get_info!()}
+        end),
+
+      # implied_ib_gibs should be a map of rel8n => ib_gibs
+      # Ugly, I know, but this is already a freaking hack and I'm not getting
+      # paid for this, and it is (and I am) going nowhere anyway, so no big. :)~
+      implied_ib_gibs <-
+        (
+          Enum.map(query_result_infos, fn({qri_rel8n, query_result_info}) ->
+            {qri_rel8n, extract_result_ib_gib(:implied, ib_gib, query_result_info)}
+          end)
+          # now is a map of rel8n => ib_gibs, but some ib_gibs may be empty
+          # so prune them into a new map
+          |> Enum.reduce(%{}, fn({rel8n_yo, rel8n_ib_gibs}, acc) ->
+               if Enum.count(rel8n_ib_gibs) > 0 do
+                 Map.put(acc, rel8n_yo, rel8n_ib_gibs)
+               else
+                 acc
+               end
+             end)
+        )
     ) do
-      {:ok, result_ib_gib}
+      {:ok, implied_ib_gibs}
     else
       error -> default_handle_error(error)
+    end
+  end
+
+  defp execute_queries_implied(identity_ib_gibs, query_src, query_opts_map) do
+    # Can parallelize here, but doing sync for now.
+    # query_opts_map is a map in shape of %{rel8n => query}
+    query_results =
+      Enum.reduce_while(query_opts_map, %{}, fn({rel8n, query_opts}, acc) ->
+
+        case query_src |> query(identity_ib_gibs, query_opts) do
+          {:ok, query_result} ->
+            {:cont, Map.put(acc, rel8n, query_result)}
+
+          error ->
+            {:halt, error}
+        end
+
+      end)
+
+    if is_map(query_results) do
+      # result is a map in shape of %{rel8n => query_result}
+      {:ok, query_results}
+    else
+      # Will already be :error tuple
+      query_results
     end
   end
 
@@ -239,7 +289,7 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
     |> most_recent_only()
   end
 
-  defp build_query_opts_implied(identity_ib_gibs, ib_gib, ib_gib_info) do
+  defp build_query_opts_implied(identity_ib_gibs, ib_gib, ib_gib_info, rel8ns) do
     # Initial query
     query = do_query()
 
@@ -254,16 +304,26 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
     # Related to anywhere in the given `ib_gib`'s past.
     non_root_past_ib_gibs =
       Enum.filter(ib_gib_info[:rel8ns]["past"], &(&1 !== @root_ib_gib))
+
+    # We're going to be searching for the ib_gib and any past ib_gib in its
+    # timeline.
+    query_ib_gibs = non_root_past_ib_gibs ++ [ib_gib]
+
+    # Create a map in shape of %{rel8n => query}
     query =
-      query
-      |> where_rel8ns("comment_on", "withany", "ibgib", non_root_past_ib_gibs)
-      |> where_rel8ns("pic_of", "withany", "ibgib", non_root_past_ib_gibs)
+      rel8ns
+      |> Enum.reduce(%{}, fn(rel8n, acc) ->
+           rel8n_query =
+             query
+             |> where_rel8ns(rel8n, "withany", "ibgib", query_ib_gibs)
+           Map.put(acc, rel8n, rel8n_query)
+         end)
 
     # I'm just explicitly saying I'm returning the query here.
     query
   end
 
-  defp extract_result_ib_gib(src_ib_gib, query_result_info) do
+  defp extract_result_ib_gib(:latest, src_ib_gib, query_result_info) do
     result_data = query_result_info[:rel8ns]["result"]
     result_count = Enum.count(result_data)
     case result_count do
@@ -282,6 +342,26 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
     end
   end
 
+  defp extract_result_ib_gib(:implied, ib_gib, query_result_info) do
+    result_data = query_result_info[:rel8ns]["result"]
+    result_count = Enum.count(result_data)
+    case result_count do
+      0 ->
+        # 0 results is unexpected. Should at least return the root (1 result)
+        _ = Logger.error "unknown result count: #{result_count}"
+        {:ok, []}
+
+      1 ->
+        # Not found (1 result is root)
+        {:ok, []}
+
+      _ ->
+        # At least one non-root result found
+        [_root, implied_ib_gibs] = result_data
+        {:ok, implied_ib_gibs}
+    end
+  end
+
   defp broadcast_if_necessary(:latest, latest_ib_gibs)
     when is_map(latest_ib_gibs) and map_size(latest_ib_gibs) > 0 do
     # Broadcast any newer ib_gib versions found (if any)
@@ -297,10 +377,13 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
   defp broadcast_if_necessary(:implied, implied_ib_gibs)
     when is_map(implied_ib_gibs) and map_size(implied_ib_gibs) > 0 do
     # In the form of %{"ib^gib1" => %{"rel8n1" => ["implied^1", "implied^2"]}}
-    Enum.each(implied_ib_gibs, fn({ib_gib, implied_rel8ns}) ->
-      impl this here thing yo
-      _ = EventChannel.broadcast_ib_gib_implications(ib_gib, implied_rel8ns)
-    end)
+
+    # Enum.each(implied_ib_gibs, fn({ib_gib, implied_rel8ns}) ->
+    #
+    #
+    #   impl this here thing yo
+    #   _ = EventChannel.broadcast_ib_gib_implications(ib_gib, implied_rel8ns)
+    # end)
     {:ok, :ok}
   end
   defp broadcast_if_necessary(:implied, _implied_ib_gibs) do
@@ -309,10 +392,14 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
   end
 
   defp get_reply_msg(latest_ib_gibs, implied_ib_gibs) do
+    # If there aren't any implied ib_gibs, then nil it. (null on js side) f***!
+    implied_ib_gibs =
+      if map_size(implied_ib_gibs) > 0, do: implied_ib_gibs, else: nil
+
     reply_msg =
       %{
         "data" => %{
-          "latest_ib_gibs" => latest_ib_gibs
+          "latest_ib_gibs" => latest_ib_gibs,
           "implied_ib_gibs" => implied_ib_gibs
         }
       }
