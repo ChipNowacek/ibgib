@@ -21,6 +21,9 @@ export class IbGibEventBus {
   connect(connectionId, ibGib, handleMsgFunc) {
     let t = this;
 
+    if (ibGib === "ib^gib") {
+      debugger;
+    }
     if (ibGib && handleMsgFunc) {
       // If connectionId already exists, then return immediately.
       if (t.connectionInfos.some(info => info.connId === connectionId)) {
@@ -70,14 +73,17 @@ export class IbGibEventBus {
       .receive("ok", resp => { console.log(`Joined event bus channel successfully. topic: ${topic}`, resp) })
       .receive("error", resp => { console.error(`Unable to join event bus channel. topic: ${topic}. resp: ${JSON.stringify(resp)}`, resp) })
 
-    // Can I do channel.on("*", msg)? Need to check after this is working again.
-    channel.on("update", msg => {
-      t.connectionInfos
-        .filter(info => info.ibGib === ibGib)
-        .forEach(info => info.handler(msg));
-    });
+    channel.on("update", msg => t.handleMsg(ibGib, msg));
+    channel.on("adjuncts", msg => t.handleMsg(ibGib, msg));
 
     return channel;
+  }
+
+  handleMsg(ibGib, msg) {
+    let t = this;
+    t.connectionInfos
+      .filter(info => info.ibGib === ibGib)
+      .forEach(info => info.handler(msg));
   }
 
   /**

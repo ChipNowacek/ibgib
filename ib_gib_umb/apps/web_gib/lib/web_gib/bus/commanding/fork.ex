@@ -58,7 +58,7 @@ defmodule WebGib.Bus.Commanding.Fork do
 
       # Broadcast updated src_ib_gib if different
       _ <- (if context_ib_gib !== new_context_ib_gib,
-            do: EventChannel.broadcast_ib_gib_update(context_ib_gib, new_context_ib_gib),
+            do: EventChannel.broadcast_ib_gib_event(:update, {context_ib_gib, new_context_ib_gib}),
             else: :ok),
 
       # Reply

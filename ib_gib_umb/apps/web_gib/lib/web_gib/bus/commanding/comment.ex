@@ -57,13 +57,37 @@ defmodule WebGib.Bus.Commanding.Comment do
 
   defp exec_impl(identity_ib_gibs, src_ib_gib, comment_text) do
     with(
+      # Get the src and comment_gib to use
       {:ok, {src, comment_gib}} <- prepare(src_ib_gib),
+
+      # Create the bare comment itself
       {:ok, comment} <-
         create_comment(identity_ib_gibs, src, comment_gib, comment_text),
+
+      # If authorized, rel8 the comment directly to the src
       {:ok, new_src_or_nil} <- rel8_to_src_if_authorized(src, comment, identity_ib_gibs),
+
+      # If above is not authorized (new_src_or_nil is nil), then create a 1-way
+      # adjunct rel8n on the comment to the src.
+      {:ok, comment} <-
+        rel8_adjunct_if_necessary(new_src_or_nil, identity_ib_gibs, src, comment),
+
       {:ok, {comment_ib_gib, new_src_ib_gib_or_nil}} <- get_ib_gibs(comment, new_src_or_nil)
     ) do
       {:ok, {comment_ib_gib, new_src_ib_gib_or_nil}}
+    else
+      error -> default_handle_error(error)
+    end
+  end
+
+  # Minor helper function
+  defp prepare(src_ib_gib) do
+    with(
+      {:ok, src} <- IbGib.Expression.Supervisor.start_expression(src_ib_gib),
+      {:ok, comment_gib} <-
+        IbGib.Expression.Supervisor.start_expression("comment#{@delim}gib")
+    ) do
+      {:ok, {src, comment_gib}}
     else
       error -> default_handle_error(error)
     end
@@ -100,21 +124,41 @@ defmodule WebGib.Bus.Commanding.Comment do
     end
   end
 
-  defp prepare(src_ib_gib) do
+  defp rel8_adjunct_if_necessary(nil, identity_ib_gibs, src, comment) do
+    _ = Logger.debug("rel8_adjunct necessary. new_src is nil." |> ExChalk.bg_cyan |> ExChalk.black)
+    # adjunct IS needed, because new_src is nil. The reasoning here is
+    # that we don't have a new_src (it's nil), so the user was NOT authorized
+    # to rel8 **directly** to the src, so we DO need an _adjunct_ rel8n.
     with(
-      {:ok, src} <- IbGib.Expression.Supervisor.start_expression(src_ib_gib),
-      {:ok, comment_gib} <-
-        IbGib.Expression.Supervisor.start_expression("comment#{@delim}gib")
+      # We're going to mut8 an adjunct_rel8n of "comment_on".
+      # It's useful to do this before the adjunct rel8 itself.
+      {:ok, comment} <-
+        comment |> mut8(identity_ib_gibs, %{"adjunct_rel8n" => "comment_on"}),
+
+      # Back to the Future to the rescue...again!
+      # See `IbGib.Helper.get_temporal_junction_ib_gib/1` for more info.
+      {:ok, src_temp_junc_ib_gib} <- get_temporal_junction_ib_gib(src),
+      {:ok, src_temporal_junction} <-
+        IbGib.Expression.Supervisor.start_expression(src_temp_junc_ib_gib),
+
+      # Execute the actual adjunct rel8.
+      {:ok, comment} <-
+        comment |> rel8(src_temporal_junction, identity_ib_gibs, ["adjunct_to"])
     ) do
-      {:ok, {src, comment_gib}}
+      {:ok, comment}
     else
       error -> default_handle_error(error)
     end
   end
+  defp rel8_adjunct_if_necessary(_new_src, _identity_ib_gibs, _src, comment) do
+    _ = Logger.debug("rel8_adjunct NOT necessary. new_src is NOT nil." |> ExChalk.bg_cyan |> ExChalk.black)
+    # adjunct not needed, because new_src was not nil. The reasoning here is
+    # that we have a new_src only if we WERE authorized to rel8 comment to src
+    # **directly**, so we do NOT need an _adjunct_ rel8n.
+    {:ok, comment}
+  end
 
-  # Creates the comment, rel8ng it to both src and src_temporal_junction.
-  # Back to the Future to the rescue...again!
-  # See `IbGib.Helper.get_temporal_junction/1` for more info.
+  # Creates the comment, only rel8ng it to src via comment_on rel8n.
   defp create_comment(identity_ib_gibs, src, comment_gib, comment_text) do
     with(
       {:ok, comment} <-
@@ -125,11 +169,7 @@ defmodule WebGib.Bus.Commanding.Comment do
                   "shape" => "rect"
                 },
       {:ok, comment} <- comment |> mut8(identity_ib_gibs, state),
-      {:ok, comment} <- comment |> rel8(src, identity_ib_gibs, ["comment_on"]),
-
-      {:ok, src_temporal_junction} <- get_temporal_junction(src),
-      {:ok, comment} <-
-        comment |> rel8(src_temporal_junction, identity_ib_gibs, ["adjunct_to"]),
+      {:ok, comment} <- comment |> rel8(src, identity_ib_gibs, ["comment_on"])
     ) do
       {:ok, comment}
     else
@@ -155,7 +195,7 @@ defmodule WebGib.Bus.Commanding.Comment do
 
   defp broadcast_if_necessary(src_ib_gib, new_src_ib_gib_or_nil) do
     if new_src_ib_gib_or_nil do
-      EventChannel.broadcast_ib_gib_update(src_ib_gib, new_src_ib_gib_or_nil)
+      EventChannel.broadcast_ib_gib_event(:update, {src_ib_gib, new_src_ib_gib_or_nil})
       {:ok, :ok}
     else
       {:ok, :ok}

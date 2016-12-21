@@ -585,14 +585,14 @@ defmodule IbGib.Helper do
   searching for any possible ib^gib in its "past". (Yes, I have actually been
   coding this entire "past" querying and it is ludicrously ugly.)
   """
-  def get_temporal_junction(ib_gib)
-  def get_temporal_junction(ib_gib_pid) when is_pid(ib_gib_pid) do
+  def get_temporal_junction_ib_gib(ib_gib)
+  def get_temporal_junction_ib_gib(ib_gib_pid) when is_pid(ib_gib_pid) do
     case IbGib.Expression.get_info(ib_gib_pid) do
-      {:ok, info} -> get_temporal_junction(info)
+      {:ok, info} -> get_temporal_junction_ib_gib(info)
       error -> default_handle_error(error)
     end
   end
-  def get_temporal_junction(ib_gib_info) when is_map(ib_gib_info) do
+  def get_temporal_junction_ib_gib(ib_gib_info) when is_map(ib_gib_info) do
     past = ib_gib_info[:rel8ns]["past"]
     if Enum.count(past) > 1 do
       # position 0 is root, position 1 is the temporal junction
@@ -603,7 +603,7 @@ defmodule IbGib.Helper do
       get_ib_gib(ib_gib_info)
     end
   end
-  def get_temporal_junction(ib_gib) do
+  def get_temporal_junction_ib_gib(ib_gib) do
     invalid_args(ib_gib)
   end
 end

@@ -13,6 +13,7 @@ export class IbGibCache {
   constructor(latestExpiryMs) {
     let t = this;
     t.naiveCache = {};
+    t.adjunctNaiveCache = {};
     t.updateEventMsgInfos = {};
     t.latestExpiryMs = latestExpiryMs;
   }
@@ -67,5 +68,19 @@ export class IbGibCache {
   getLatest(ibGib) {
     let info = this.updateEventMsgInfos[ibGib];
     return info ? info.newIbGib : "";
+  }
+
+  addAdjunct(ibGib, adjunctIbGib) {
+    let existingAdjunctIbGibs = t.adjunctNaiveCache[ibGib] || [];
+
+    if (!existingAdjunctIbGibs.includes(adjunctIbGib)) {
+      existingAdjunctIbGibs.push(adjunctIbGib);
+    }
+
+    t.adjunctNaiveCache[ibGib] = existingAdjunctIbGibs;
+  }
+
+  getAdjunctIbGibs(ibGib) {
+    return t.adjunctNaiveCache[ibGib];
   }
 }

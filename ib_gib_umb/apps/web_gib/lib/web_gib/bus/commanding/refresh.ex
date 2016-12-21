@@ -34,7 +34,7 @@ defmodule WebGib.Bus.Commanding.Refresh do
 
       # Broadcast latest_ib_gib if different
       _ <- (if latest_is_different,
-            do: EventChannel.broadcast_ib_gib_update(src_ib_gib, latest_ib_gib),
+            do: EventChannel.broadcast_ib_gib_event(:update, {src_ib_gib, latest_ib_gib}),
             else: :ok),
 
       # Reply

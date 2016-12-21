@@ -71,7 +71,8 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
       {:ok, :ok} <- broadcast_if_necessary(:adjunct, adjunct_ib_gibs),
 
       # Reply
-      {:ok, reply_msg} <- get_reply_msg(latest_ib_gibs, adjunct_ib_gibs)
+      {:ok, reply_msg} <- get_reply_msg(latest_ib_gibs, adjunct_ib_gibs),
+      _ <- Logger.debug("reply_msg yah: #{inspect reply_msg}" |> ExChalk.bg_blue |> ExChalk.white)
     ) do
       {:reply, {:ok, reply_msg}, socket}
     else
@@ -181,6 +182,7 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
                {:cont, acc}
 
              {:ok, adjunct_ib_gibs} ->
+               _ = Logger.debug("wookie adjunct_ib_gibs: #{inspect adjunct_ib_gibs}" |> ExChalk.bg_blue |> ExChalk.white)
                {:cont, Map.put(acc, ib_gib, adjunct_ib_gibs)}
 
              {:error, reason} ->
@@ -190,6 +192,7 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
 
     if is_map(adjunct_ib_gibs_or_error) do
       # is a map of ib_gib => adjunct ib_gib (or empty, which is fine)
+      _ = Logger.debug("adjunct_ib_gibs_or_error: #{inspect adjunct_ib_gibs_or_error, pretty: true}" |> ExChalk.bg_blue |> ExChalk.white |> ExChalk.italic)
       {:ok, adjunct_ib_gibs_or_error}
     else
       # is an error (reason)
@@ -199,12 +202,12 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
 
   defp get_adjuncts(identity_ib_gibs, query_src, ib_gib) do
     with(
+      # Get the temporal junction for the given ib_gib
       {:ok, ib_gib_process} <-
         IbGib.Expression.Supervisor.start_expression(ib_gib),
       {:ok, ib_gib_info} <- ib_gib_process |> get_info(),
-      {:ok, ib_gib_identity_ib_gibs} <-
-        get_ib_gib_identity_ib_gibs(ib_gib_info),
-      {:ok, temporal_junction_ib_gib} <- get_temporal_junction(ib_gib_info),
+      {:ok, temporal_junction_ib_gib} <-
+        get_temporal_junction_ib_gib(ib_gib_info),
 
       # Build the query options
       query_opts <- build_query_opts_adjunct(temporal_junction_ib_gib),
@@ -215,6 +218,7 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
       # Return the query_result result (non-root) ib^gibs, if any
       # Returns {:ok, nil} if none found
       {:ok, query_result_info} <- query_result |> get_info(),
+      _ <- Logger.debug("query_result_info: #{inspect query_result_info}" |> ExChalk.bg_blue |> ExChalk.white),
       {:ok, adjunct_ib_gibs} <- extract_adjunct_ib_gibs(query_result_info)
     ) do
       {:ok, adjunct_ib_gibs}
@@ -280,7 +284,8 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
 
       _ ->
         # At least one non-root result found
-        [_root, adjunct_ib_gibs] = result_data
+        [_root | adjunct_ib_gibs] = result_data
+        _ = Logger.debug("lookie2 adjunct_ib_gibs: #{inspect adjunct_ib_gibs}" |> ExChalk.bg_blue |> ExChalk.white)
         {:ok, adjunct_ib_gibs}
     end
   end
@@ -289,7 +294,7 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
     when is_map(latest_ib_gibs) and map_size(latest_ib_gibs) > 0 do
     # Broadcast any newer ib_gib versions found (if any)
     Enum.each(latest_ib_gibs, fn({old_ib_gib, latest_ib_gib}) ->
-      _ = EventChannel.broadcast_ib_gib_update(old_ib_gib, latest_ib_gib)
+      _ = EventChannel.broadcast_ib_gib_event(:update, {old_ib_gib, latest_ib_gib})
     end)
     {:ok, :ok}
   end
@@ -297,19 +302,16 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
     # nothing is newer, so nothing to broadcast
     {:ok, :ok}
   end
-  defp broadcast_if_necessary(:adjunct, adjunct_ib_gibs)
-    when is_map(adjunct_ib_gibs) and map_size(adjunct_ib_gibs) > 0 do
-    # In the form of %{"ib^gib1" => %{"rel8n1" => ["adjunct^1", "adjunct^2"]}}
+  defp broadcast_if_necessary(:adjunct, ib_gib_adjunct_map)
+    when is_map(ib_gib_adjunct_map) and map_size(ib_gib_adjunct_map) > 0 do
+    # In the form of %{"ib^gib1" => ["comment^123", "pic^456", ...]}}
 
-    # Enum.each(adjunct_ib_gibs, fn({ib_gib, adjunct_rel8ns}) ->
-    #
-    #
-    #   impl this here thing yo
-    #   _ = EventChannel.broadcast_ib_gib_implications(ib_gib, adjunct_rel8ns)
-    # end)
+    Enum.each(ib_gib_adjunct_map, fn({ib_gib, adjunct_ib_gibs}) ->
+      _ = EventChannel.broadcast_ib_gib_event(:adjuncts, {ib_gib, adjunct_ib_gibs})
+    end)
     {:ok, :ok}
   end
-  defp broadcast_if_necessary(:adjunct, _adjunct_ib_gibs) do
+  defp broadcast_if_necessary(:adjunct, _ib_gib_adjunct_map) do
     # no adjunct ib^gibs, so nothing to broadcast
     {:ok, :ok}
   end
@@ -326,6 +328,8 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
           "adjunct_ib_gibs" => adjunct_ib_gibs
         }
       }
+
+    _ = Logger.debug("reply_msg huh: #{inspect reply_msg}" |> ExChalk.bg_blue |> ExChalk.white |> ExChalk.italic)
     {:ok, reply_msg}
   end
 end

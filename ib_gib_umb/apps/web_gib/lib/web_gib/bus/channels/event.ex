@@ -81,14 +81,33 @@ defmodule WebGib.Bus.Channels.Event do
   first ib^gib. We also don't have to unsubscribe and resubscribe every time
   that there is a change.
   """
-  def broadcast_ib_gib_update(old_ib_gib, new_ib_gib) do
+  def broadcast_ib_gib_event(:update = msg_type,
+                             {old_ib_gib, new_ib_gib} = msg_info) do
     with(
       {:ok, first_ib_gib} <- get_first_ib_gib(old_ib_gib),
-      {:ok, {msg_name, msg}} <- get_broadcast_msg(first_ib_gib, old_ib_gib, new_ib_gib),
+      {:ok, msg} <- get_broadcast_msg(msg_type, {first_ib_gib, old_ib_gib, new_ib_gib}),
       # Not interested if the broadcast errors. It is possible that the topic
       # doesn't even exist (no one is signed up to hear it).
       _ <-
-        WebGib.Endpoint.broadcast("event:" <> first_ib_gib, msg_name, msg)
+        WebGib.Endpoint.broadcast("event:" <> first_ib_gib, Atom.to_string(msg_type), msg)
+    ) do
+      {:ok, :ok}
+    else
+      error -> default_handle_error(error)
+    end
+  end
+
+  def broadcast_ib_gib_event(:adjuncts = msg_type,
+                             {ib_gib, adjunct_ib_gibs} = msg_info) do
+    with(
+      # first_ib_gib _should_ be redundant, as the incoming ib_gib should be
+      # the temporal junction point.
+      {:ok, first_ib_gib} <- get_first_ib_gib(ib_gib),
+      {:ok, msg} <- get_broadcast_msg(msg_type, {first_ib_gib, adjunct_ib_gibs}),
+      # Not interested if the broadcast errors. It is possible that the topic
+      # doesn't even exist (no one is signed up to hear it).
+      _ <-
+        WebGib.Endpoint.broadcast("event:" <> first_ib_gib, Atom.to_string(msg_type), msg)
     ) do
       {:ok, :ok}
     else
@@ -124,11 +143,10 @@ defmodule WebGib.Bus.Channels.Event do
     invalid_args([old_ib_gib, past])
   end
 
-  defp get_broadcast_msg(first_ib_gib, old_ib_gib, new_ib_gib)
+  defp get_broadcast_msg(:update = msg_type, {first_ib_gib, old_ib_gib, new_ib_gib} = _msg_info)
     when is_bitstring(first_ib_gib) and first_ib_gib !== "" and
          is_bitstring(old_ib_gib) and old_ib_gib !== "" and
          is_bitstring(new_ib_gib) and new_ib_gib !== "" do
-    msg_name = "update"
     msg = %{
       "data" => %{
         "first_ib_gib" => first_ib_gib,
@@ -136,17 +154,32 @@ defmodule WebGib.Bus.Channels.Event do
         "new_ib_gib" => new_ib_gib,
       },
       "metadata" => %{
-        "name" => msg_name,
+        "name" => Atom.to_string(msg_type),
         "src" => "server",
         "timestamp" => "#{:erlang.system_time(:milli_seconds)}"
       }
     }
-    {:ok, {msg_name, msg}}
+    {:ok, msg}
   end
-  defp get_broadcast_msg(first_ib_gib, old_ib_gib, new_ib_gib) do
-    invalid_args([first_ib_gib, old_ib_gib, new_ib_gib])
+  defp get_broadcast_msg(:adjuncts = msg_type,
+                         {ib_gib, adjunct_ib_gibs} = msg_info)
+    when is_list(adjunct_ib_gibs) and length(adjunct_ib_gibs) > 0 do
+    msg = %{
+      "data" => %{
+        "ib_gib" => ib_gib,
+        "adjunct_ib_gibs" => adjunct_ib_gibs
+      },
+      "metadata" => %{
+        "name" => Atom.to_string(msg_type),
+        "src" => "server",
+        "timestamp" => "#{:erlang.system_time(:milli_seconds)}"
+      }
+    }
+    {:ok, msg}
   end
-
+  defp get_broadcast_msg(msg_type, msg_info) do
+    invalid_args([msg_type, msg_info])
+  end
   # @doc """
   # http://www.phoenixframework.org/docs/channels
   #

@@ -25,6 +25,8 @@ defmodule WebGib.Bus.Commanding do
     Refresh.handle_cmd(data, metadata, msg, socket)
   end
   defp handle_cmd_impl("batchrefresh", data,  metadata, msg, socket) do
-    BatchRefresh.handle_cmd(data, metadata, msg, socket)
+    result = BatchRefresh.handle_cmd(data, metadata, msg, socket)
+    _ = Logger.debug("handle cmd result: #{inspect result}" |> ExChalk.bg_blue |> ExChalk.white)
+    result
   end
 end

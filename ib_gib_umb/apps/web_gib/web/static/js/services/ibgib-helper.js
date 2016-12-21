@@ -11,14 +11,14 @@ export function getIbAndGib(ibGib) {
   }
 }
 
-export function getFirstIbGib(ibGibJson) {
+/**
+ * Returns the first non-root ib^gib in the given ibGibJson past.
+ * If there are no previous ib^gib in the past besides the root ib^gib, then
+ * this returns
+ */
+export function getTemporalJunctionIbGib(ibGibJson) {
   let past = ibGibJson.rel8ns.past;
-  if (past && past.length > 0) {
-    return past.length === 1 ? "ib^gib" : past[1];
-  } else {
-    console.error("ibGibJson has no past.");
-    return "ib^gib";
-  }
+  return past.length > 1 ? past[1] : getFull_ibGib(ibGibJson);
 }
 
 export function getDataText(ibGibJson) {

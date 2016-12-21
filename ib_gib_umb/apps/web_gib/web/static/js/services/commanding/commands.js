@@ -586,7 +586,7 @@ export class CommentDetailsCommand extends FormDetailsCommandBase {
         // else's ibGib. So a comment was created and was rel8d to the src,
         // but the src has not been inversely rel8d to the comment.
         debugger;
-        t.virtualNode.isImplied = true;
+        t.virtualNode.isAdjunct = true;
       }
 
       let commentIbGib = msg.data.comment_ib_gib;
@@ -708,7 +708,9 @@ export class BatchRefreshCommand extends CommandBase {
 
     let msg = t.getMessage();
     t.ibScape.commandMgr.bus.send(msg, (successMsg) => {
-      if (t.successCallback) { t.successCallback(successMsg); }
+      if (t.successCallback) {
+         t.successCallback(successMsg);
+       }
     }, (errorMsg) => {
       console.error(`${t.cmdName} command errored. Msg: ${JSON.stringify(errorMsg)}`);
       if (t.errorCallback) { t.errorCallback(errorMsg); }
