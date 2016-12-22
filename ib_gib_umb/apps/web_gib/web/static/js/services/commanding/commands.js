@@ -585,8 +585,9 @@ export class CommentDetailsCommand extends FormDetailsCommandBase {
         // the src was not updated, so this is a user commenting on someone
         // else's ibGib. So a comment was created and was rel8d to the src,
         // but the src has not been inversely rel8d to the comment.
-        debugger;
         t.virtualNode.isAdjunct = true;
+        // fire off a refresh command as a temporary hack
+        t.ibScape.backgroundRefresher.enqueue([t.d.rel8nSrc.ibGib]);
       }
 
       let commentIbGib = msg.data.comment_ib_gib;

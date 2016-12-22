@@ -1,7 +1,9 @@
+/** Extracts the full ib + gib from the ibGibJson info. */
 export function getFull_ibGib(ibGibJson) {
   return ibGibJson.ib + "^" + ibGibJson.gib;
 }
 
+/** Separates the ib and gib in a javascript object { ib: x, gib: y} */
 export function getIbAndGib(ibGib) {
   if (ibGib) {
     let [ib, gib] = ibGib.split("^");
@@ -21,17 +23,20 @@ export function getTemporalJunctionIbGib(ibGibJson) {
   return past.length > 1 ? past[1] : getFull_ibGib(ibGibJson);
 }
 
+/** For safe access to ibGibJson.data.text */
 export function getDataText(ibGibJson) {
   return (ibGibJson && ibGibJson.data && ibGibJson.data.text) ?
       ibGibJson.data.text :
       null;
 }
 
+/** Just gets a random string which is actually just a number. */
 export function getRandomString() {
   return Math.trunc(Math.random() * 10000000).toString();
 }
 
 /**
+ * Cargo culting this so I don't have to parse the transform string manually.
  * Big thanks to SO and @altocumulus for this one at
  * http://stackoverflow.com/questions/38224875/replacing-d3-transform-in-d3-v4
  * and @LarsKotthoff at

@@ -335,9 +335,65 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
   syncAdjuncts(tempJuncIbGib) {
     let t = this;
+
+    let adjunctInfos = t.ibGibCache.getAdjunctInfos(tempJuncIbGib);
+
     if (tempJuncIbGib === t.contextNode.tempJuncIbGib) {
-      t.syncContextAdjuncts();
+      t.syncContextAdjuncts(adjunctInfos);
     }
+
+    // iterate through all rel8n nodes. Skip past, ancestor, and dna rel8ns.
+    // If the rel8nSrc.tempJuncIbGib has an adjunct and it's the right rel8n,
+    // then add it
+    let prunedAdjunctIbGibs = t.pruneAdjuncts(tempJuncIbGib);
+
+    t.graphData.nodes
+      .filter(n => n.type === "rel8n" &&
+                   !n.virtualId &&
+                   !["past", "ancestor"].includes(n.rel8nName))
+      .forEach(rel8nNode => {
+        let src = rel8nNode.rel8nSrc;
+        let children = t.getChildren(rel8nNode);
+        adjunctInfos
+          .filter(info => !prunedAdjunctIbGibs.includes(info.adjunctIbGib))
+          .filter(info => info.tempJuncIbGib === src.tempJuncIbGib)
+          .filter(info => {
+            return !children.map(c => c.ibGib).includes(info.adjunctIbGib);
+          })
+          .forEach(info => {
+            t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ info.adjunctIbGib, /*srcNode*/ rel8nNode, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y}, /*isAdjunct*/ true);
+          });
+      });
+  }
+
+  /**
+   * Prunes the non-source rel8nNodes of adjunct nodes that have been
+   * assimilated directly to their corrsponding target nodes.
+   */
+  pruneAdjuncts(tempJuncIbGib) {
+    let t = this;
+    let prunedAdjunctIbGibs = [];
+    t.graphData.nodes
+      .filter(n => n.tempJuncIbGib === tempJuncIbGib)
+      .forEach(n => {
+        // Get the nodes adjunctNodes
+        t.getChildren(n)
+          .filter(n => n.isAdjunct)
+          .forEach(adjunctNode => {
+            // For each adjunctNode, check to see if it's been assimilated
+            // directly on node n. If it has, then it's no longer an adjunct,
+            // but rather a directly rel8d node.
+            if (Object.keys(n.ibGibJson.rel8ns)
+                  .map(key => n.ibGibJson.rel8ns[key])
+                  .some(rel8nIbGibs => rel8nIbGibs.includes(adjunctNode.ibGib))) {
+              adjunctNode.isAdjunct = false;
+              t.swap(adjunctNode, adjunctNode, /*updateParentOrChild*/ true);
+              prunedAdjunctIbGibs.push(adjunctNode.ibGib);
+            }
+          });
+      });
+
+    return prunedAdjunctIbGibs;
   }
 
   /**
@@ -345,14 +401,13 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
    * the context, because it behaves differently than other ibGib nodes.
    *
    * Note: Right now to simplify things, we're pretending that adjuncts do not
-   * change (i.e. the user doesn't edit their comment).
+   * change i.e. the user doesn't edit their comment. Worst case is that
+   * multiple adjuncts show up that are different frames of the same ibGib.
    */
-  syncContextAdjuncts() {
+  syncContextAdjuncts(adjunctInfos) {
     let t = this;
     let contextIbGibJson = t.contextNode.ibGibJson;
     if (!contextIbGibJson) { console.warn("no contextIbGibJson. this is assumed to be populated at this point."); }
-
-    let adjunctInfos = t.ibGibCache.getAdjunctInfos(t.contextNode.tempJuncIbGib);
 
     if (adjunctInfos && adjunctInfos.length > 0) {
       // If the adjunct ibGib has been "assimilated" into the user's scene
@@ -381,7 +436,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       adjunctInfos
         .filter(info => !adjunctSourceNodes.some(sn => sn.ibGib === info.adjunctIbGib))
         .forEach(info => {
-          let newNode = t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ info.adjunctIbGib, /*srcNode*/ null, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: t.contextNode.x, y: t.contextNode.y}, /*isAdjunct*/ true);
+          t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ info.adjunctIbGib, /*srcNode*/ null, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: t.contextNode.x, y: t.contextNode.y}, /*isAdjunct*/ true);
         });
     }
   }
@@ -709,6 +764,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.getIbGibJson(node.ibGib, ibGibJson => {
       console.log(`got json: ${JSON.stringify(ibGibJson)}`);
       node.ibGibJson = ibGibJson;
+      node.tempJuncIbGib = ibHelper.getTemporalJunctionIbGib(ibGibJson);
 
       t.updateRender(node);
 
@@ -812,17 +868,20 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           .forEach(rel8dIbGib => {
             t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ rel8dIbGib, /*srcNode*/ rel8nNode, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y}, /*isAdjunct*/ false);
           });
+        t.syncAdjuncts(rel8nNode.rel8nSrc.tempJuncIbGib);
         rel8nNode.expandLevel = 1;
         break;
 
       default:
         if (d3AddableRel8ns.includes(rel8nNode.rel8nName) && !rel8nNode.showingAdd) {
           t.addCmdVirtualNode(rel8nNode, "add", t.config.other.cmdFadeTimeoutMs_Specialized);
+          t.syncAdjuncts(rel8nNode.rel8nSrc.tempJuncIbGib);
         } else {
           t.removeAllRel8ns(rel8nNode);
           rel8nNode.expandLevel = 0;
         }
     }
+
   }
   /**
    * Adds "important" rel8ns that are not collapsed by default.
@@ -1108,6 +1167,15 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
 
     return color;
+  }
+  getNodeBorderStroke(d) {
+    // for some reason this doesn't work. It should, but it doesn't.
+    // completely dumbfounded on this one. The animateNodeBorder call is
+    // calling this but it just doesn't work. If I take out the
+    // animateNodeBorder code, then it displays properly. Probably some obscure
+    // d3 bug or something.
+    // return d.isAdjunct ? "pink" : super.getNodeBorderStroke(d);
+    return super.getNodeBorderStroke(d);
   }
   getNodeBorderStrokeDashArray(d) {
     if (d.virtualId) {

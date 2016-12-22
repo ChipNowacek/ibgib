@@ -31,6 +31,7 @@ export class IbGibIbScapeBackgroundRefresher {
           t.busy = true;
           try {
             t.exec(t.queue, t.successCallback, t.errorCallback);
+            t.queue = [];
           } catch (e) {
             console.error(`refresh error: ${e}`);
           } finally {
