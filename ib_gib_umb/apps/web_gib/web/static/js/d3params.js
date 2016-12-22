@@ -307,7 +307,8 @@ let d3Rel8nIcons = {
   "verse": "\uf30c",
   // "ib^gib": "\u29c2",
   "ib^gib": d3RootUnicodeChar,
-  "dna": "➿"
+  "dna": "➿",
+  "adjunct": "\uf01c" // Font awesome inbox, unicode one is -> 📥
 };
 
 var d3RootUnicodeChar = "\uf10c";

@@ -70,17 +70,35 @@ export class IbGibCache {
     return info ? info.newIbGib : "";
   }
 
-  addAdjunct(ibGib, adjunctIbGib) {
-    let existingAdjunctIbGibs = t.adjunctNaiveCache[ibGib] || [];
+  addAdjunctInfo(tempJuncIbGib, ibGib, adjunctIbGib, adjunctIbGibJson) {
+    let t = this;
+    tempJuncIbGib = tempJuncIbGib || ibHelper.getTemporalJunctionIbGib(ibGib);
 
-    if (!existingAdjunctIbGibs.includes(adjunctIbGib)) {
-      existingAdjunctIbGibs.push(adjunctIbGib);
-    }
+    // adjunctInfo is considered immutable, since currently we
+    // assume an adjunct is only related to a single ibGib. So make this
+    // idempotent.
+    let adjunctInfo =
+      t.adjunctNaiveCache[adjunctIbGib] || {
+        adjunctIbGib: adjunctIbGib,
+        ibGib: ibGib,
+        tempJuncIbGib: tempJuncIbGib,
+        adjunctIbGibJson: adjunctIbGibJson,
+        adjunctRel8n: adjunctIbGibJson.data.adjunct_rel8n,
 
-    t.adjunctNaiveCache[ibGib] = existingAdjunctIbGibs;
+        // should be the same as tempJuncIbGib
+        adjunctToTemporalJunction: adjunctIbGibJson.rel8ns.adjunct_to[0],
+
+        adjunctRel8nTarget: adjunctIbGibJson.rel8ns[adjunctIbGibJson.data.adjunct_rel8n][0]
+      };
+
+    t.adjunctNaiveCache[adjunctIbGib] = adjunctInfo;
   }
 
-  getAdjunctIbGibs(ibGib) {
-    return t.adjunctNaiveCache[ibGib];
+  getAdjunctInfos(tempJuncIbGib) {
+    let t = this;
+
+    return Object.keys(t.adjunctNaiveCache)
+      .map(key => t.adjunctNaiveCache[key])
+      .filter(adjunctInfo => adjunctInfo.tempJuncIbGib === tempJuncIbGib);
   }
 }

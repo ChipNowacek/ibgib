@@ -124,6 +124,9 @@ defmodule WebGib.Bus.Commanding.Comment do
     end
   end
 
+
+  # When doing pic, I should move this function into an
+  # `IbGib.Expression.Adjunct` module (or whatever) and generalize it.
   defp rel8_adjunct_if_necessary(nil, identity_ib_gibs, src, comment) do
     _ = Logger.debug("rel8_adjunct necessary. new_src is nil." |> ExChalk.bg_cyan |> ExChalk.black)
     # adjunct IS needed, because new_src is nil. The reasoning here is
@@ -133,7 +136,18 @@ defmodule WebGib.Bus.Commanding.Comment do
       # We're going to mut8 an adjunct_rel8n of "comment_on".
       # It's useful to do this before the adjunct rel8 itself.
       {:ok, comment} <-
-        comment |> mut8(identity_ib_gibs, %{"adjunct_rel8n" => "comment_on"}),
+        comment |> mut8(identity_ib_gibs, %{
+          # adjunct_rel8n is what the rel8n from the adjunct to the target is
+          # So this says that our adjunct comment has a rel8n "comment_on"
+          # that points to the target.
+          "adjunct_rel8n" => "comment_on",
+
+          # This is the inverse rel8n from the target to the adjunct.
+          # So this is saying "If we assimilate the adjunct to the target,
+          # this is the rel8n that it should be under (in addition to the
+          # 'ib^gib' rel8n)."
+          "adjunct_target_rel8n" => "comment"
+        }),
 
       # Back to the Future to the rescue...again!
       # See `IbGib.Helper.get_temporal_junction_ib_gib/1` for more info.
