@@ -52,72 +52,7 @@ defmodule WebGib.Bus.Commanding.Refresh do
   end
 
   defp exec_impl(identity_ib_gibs, src_ib_gib) do
-    with(
-      # We will query off of the current identity
-      {:ok, current_identity} <- IbGib.Expression.Supervisor.start_expression(Enum.at(identity_ib_gibs, 0)),
-
-      # Our search for the latest version must be using the credentials of
-      # **that** ibgib's identities, i.e. in that timeline.
-      {:ok, src_ib_gib_process} <-
-        IbGib.Expression.Supervisor.start_expression(src_ib_gib),
-      {:ok, src_ib_gib_info} <- src_ib_gib_process |> get_info(),
-      {:ok, src_ib_gib_identity_ib_gibs} <-
-        get_ib_gib_identity_ib_gibs(src_ib_gib_info),
-
-      # Build the query options
-      query_opts <-
-        build_query_opts_latest(src_ib_gib_identity_ib_gibs, src_ib_gib),
-
-      # Execute the query itself, which creates the query_result ib_gib
-      {:ok, query_result} <-
-        current_identity |> query(identity_ib_gibs, query_opts),
-
-        # Return the query_result result ib^gib
-      {:ok, query_result_info} <- query_result |> get_info(),
-      {:ok, result_ib_gib} <-
-        extract_result_ib_gib(src_ib_gib, query_result_info)
-    ) do
-      {:ok, result_ib_gib}
-    else
-      error -> default_handle_error(error)
-    end
-  end
-
-  defp get_ib_gib_identity_ib_gibs(ib_gib_info) do
-    _ = Logger.debug("ib_gib_info:\n#{inspect ib_gib_info}" |> ExChalk.magenta)
-    rel8ns = ib_gib_info[:rel8ns]
-    _ = Logger.debug("rel8ns:\n#{inspect rel8ns}" |> ExChalk.magenta)
-    identities = rel8ns["identity"]
-    _ = Logger.debug("identities:\n#{inspect identities}" |> ExChalk.magenta)
-    {:ok, identities}
-  end
-
-  defp build_query_opts_latest(identity_ib_gibs, ib_gib) do
-    non_root_identities = Enum.filter(identity_ib_gibs, &(&1 != @root_ib_gib))
-
-    do_query()
-    |> where_rel8ns("identity", "withany", "ibgib", non_root_identities)
-    |> where_rel8ns("past", "withany", "ibgib", [ib_gib])
-    |> most_recent_only()
-  end
-
-  defp extract_result_ib_gib(src_ib_gib, query_result_info) do
-    result_data = query_result_info[:rel8ns]["result"]
-    result_count = Enum.count(result_data)
-    case result_count do
-      1 ->
-        # Not found (1 result is root), so the "latest" is the one that we're
-        # search off of (has no past)
-        {:ok, src_ib_gib}
-
-      2 ->
-        # First is always root, so get second
-        {:ok, Enum.at(result_data, 1)}
-
-      _ ->
-        _ = Logger.error "unknown result count: #{result_count}"
-        {:ok, @root_ib_gib}
-    end
+    IbGib.Common.get_latest_ib_gib(identity_ib_gibs, src_ib_gib)
   end
 
   defp get_reply_msg(latest_is_different) do

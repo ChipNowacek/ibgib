@@ -64,7 +64,10 @@ export class CommandManager {
         t.ibScape.currentCmd = t.getCommand_Goto(dIbGib);
         break;
       case "refresh":
-      t.ibScape.currentCmd = t.getCommand_Refresh(dIbGib);
+        t.ibScape.currentCmd = t.getCommand_Refresh(dIbGib);
+        break;
+      case "allow":
+        t.ibScape.currentCmd = t.getCommand_Allow(dIbGib);
         break;
       default:
         console.error(`unknown cmdName: ${cmdName}`);
@@ -191,6 +194,9 @@ export class CommandManager {
   }
   getCommand_Refresh(dIbGib) {
     return new commands.RefreshCommand(this.ibScape, dIbGib);
+  }
+  getCommand_Allow(dIbGib) {
+    return new commands.AllowCommand(this.ibScape, dIbGib);
   }
   execRefresh(dIbGib) {
     location.href = `/ibgib/${dIbGib.ibgib}?latest=true`

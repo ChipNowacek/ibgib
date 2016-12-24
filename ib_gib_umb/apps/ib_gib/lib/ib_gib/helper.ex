@@ -586,6 +586,12 @@ defmodule IbGib.Helper do
   coding this entire "past" querying and it is ludicrously ugly.)
   """
   def get_temporal_junction_ib_gib(ib_gib)
+  def get_temporal_junction_ib_gib(ib_gib) when is_bitstring(ib_gib) do
+    case IbGib.Expression.Supervisor.start_expression(ib_gib) do
+      {:ok, ib_gib_pid} -> get_temporal_junction_ib_gib(ib_gib_pid)
+      error -> default_handle_error(error)
+    end
+  end
   def get_temporal_junction_ib_gib(ib_gib_pid) when is_pid(ib_gib_pid) do
     case IbGib.Expression.get_info(ib_gib_pid) do
       {:ok, info} -> get_temporal_junction_ib_gib(info)

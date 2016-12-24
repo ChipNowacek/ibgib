@@ -140,6 +140,13 @@ defmodule WebGib.Validate do
     # none given is fine
     true
   end
-
-
+  def validate(:adjunct_rel8n, nil) do
+    # can't be nil
+    false
+  end
+  def validate(:adjunct_rel8n, adjunct_rel8n) do
+    # adjunct_rel8n cannot be "past", "history", etc.
+    # i.e. we can't "attach" any ibGib to these rel8ns.
+    !Enum.member?(@invalid_adjunct_rel8ns, adjunct_rel8n)
+  end
 end

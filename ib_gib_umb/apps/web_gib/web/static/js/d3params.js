@@ -293,6 +293,24 @@ var d3MenuCommands = [
     "icon": "\uf067",
     "description": "Creates and adds a new ibGib with a given rel8n.",
     "color": "#C7FF4F"
+  },
+  {
+    "id": "menu-allow",
+    "name": "allow",
+    "text": "Allow",
+    // http://www.fileformat.info/info/unicode/char/2713/index.htm
+    "icon": "\u2713", // ✓ (check mark)
+    "description": "Allow an ibGib that has been created by someone else to be directly rel8d to your ibGib.",
+    "color": "#C7FF4F",
+    "huh": [
+      `When someone comments or adds a picture to an ibGib that **you** own, you have to accept it in order for it to be directly related to your ibGib.`,
+      ` `,
+      `When you accept an ibGib, this doesn't necessarily mean that you like or even agree with the comment. It's just saying "Ok, let's incorporate this into my ibGib so everyone can see when they come to this ibGib." However you choose to accept or reject ibGib is completely up to you.`,
+      ` `,
+      `If the content is inappropriate, especially if it is illegal, you should NOT accept it; rather, you should flag it as inappropriate.`,
+      ` `,
+      `If you want, you can comment on the ibGib that you are rejecting before actually rejecting it. This way, whoever posted it in the first place can see your reasoning/response to it.`,
+    ]
   }
 ];
 

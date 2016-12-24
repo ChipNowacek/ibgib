@@ -995,7 +995,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     console.log(`msg:\n${JSON.stringify(msg)}`)
 
     if (msg && msg.data &&
-        msg.data.first_ib_gib === tempJuncIbGib &&
+        // possibly redundant (unnecessary)
+        msg.metadata.temp_junc_ib_gib === tempJuncIbGib &&
         msg.data.new_ib_gib) {
       t.graphData.nodes
         .filter(n => n.ibGib === ibGib)
@@ -1017,6 +1018,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           }
         });
     } else {
+      debugger;
       console.warn(`Unused msg(?): ${JSON.stringify(msg)}`);
     }
   }
@@ -1024,7 +1026,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   handleEventBusMsg_Adjuncts(tempJuncIbGib, ibGib, msg) {
     let t = this;
     console.log(`msg:\n${JSON.stringify(msg)}`)
-    if (msg && msg.data && msg.data.ib_gib === tempJuncIbGib) {
+    if (msg && msg.data && msg.metadata.temp_junc_ib_gib === tempJuncIbGib) {
       let adjunctIbGibs =
         msg.data.adjunct_ib_gibs
           .filter(adjunctIbGib => {
@@ -1514,8 +1516,17 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     const fadeTimeoutMs = t.config.other.cmdFadeTimeoutMs_Default;
 
-    if (d.ibGib === "ib^gib") {
-      return [
+    let result;
+
+    if (d.isAdjunct) {
+      result = [
+        t.addCmdVirtualNode(d, "help", /*fadeTimeoutMs*/ 0),
+        t.addCmdVirtualNode(d, "huh", /*fadeTimeoutMs*/ 0),
+        t.addCmdVirtualNode(d, "allow", /*fadeTimeoutMs*/ 0)
+      ]
+      result.push()
+    } else if (d.ibGib === "ib^gib") {
+      result = [
         t.addCmdVirtualNode(d, "huh", fadeTimeoutMs),
         t.addCmdVirtualNode(d, "help", fadeTimeoutMs),
         t.addCmdVirtualNode(d, "query", fadeTimeoutMs),
@@ -1523,7 +1534,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       ];
     } else {
       if (d.ibGibJson) {
-        return [
+        result = [
           t.addCmdVirtualNode(d, "huh", fadeTimeoutMs),
           t.addCmdVirtualNode(d, "help", fadeTimeoutMs),
           t.addCmdVirtualNode(d, "fork", fadeTimeoutMs),
@@ -1532,9 +1543,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         // not a loaded ibGibJson, so no virtual nodes to add.
         // So we are assuming this is a virtual node itself.
         if (!d.virtualId) { console.warn("addCmdVirtualNodes_Default on non-virtual node without ibGibJson"); }
-        return [];
+        result = [];
       }
     }
+
   }
   addCmdVirtualNode(dSrc, cmdName, fadeTimeoutMs) {
     let t = this;
@@ -1551,11 +1563,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     node.rel8nSrc = dSrc;
 
     return node;
-  }
-  addAdjunctVirtualNode(adjunctIbGibJson, dSrc) {
-    let adjunctRel8n = adjunctIbGibJson.data.adjunct_rel8n;
-    let srcIbGib = adjunctIbGibJson.data.rel8ns[adjunctRel8n];
-    debugger;
   }
   /**
    * Adds "important" rel8ns that are not collapsed by default.

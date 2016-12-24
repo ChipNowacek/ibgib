@@ -84,7 +84,7 @@ export class IbGibCache {
         tempJuncIbGib: tempJuncIbGib,
         adjunctIbGibJson: adjunctIbGibJson,
         adjunctRel8n: adjunctIbGibJson.data.adjunct_rel8n,
-
+        adjunctTargetRel8n: adjunctIbGibJson.data.adjunct_target_rel8n,
         // should be the same as tempJuncIbGib
         adjunctToTemporalJunction: adjunctIbGibJson.rel8ns.adjunct_to[0],
 

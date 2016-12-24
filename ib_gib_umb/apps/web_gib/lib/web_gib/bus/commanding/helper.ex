@@ -62,5 +62,4 @@ defmodule WebGib.Bus.Commanding.Helper do
       {:error, emsg}
     end
   end
-
 end

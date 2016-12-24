@@ -683,6 +683,82 @@ export class RefreshCommand extends CommandBase {
   }
 }
 
+/** Allow an adjunct ibGib to be rel8d directly to its target ibGib. */
+export class AllowCommand extends CommandBase {
+  constructor(ibScape, d) {
+    const cmdName = "allow";
+    super(cmdName, ibScape, d);
+  }
+
+  exec() {
+    super.exec();
+
+    let t = this;
+    console.log(`${t.cmdName} cmd exec`);
+
+    t.ibScape.setBusy(t.d);
+    debugger;
+
+    let msg = t.getMessage();
+    t.ibScape.commandMgr.bus.send(msg, (successMsg) => {
+      debugger;
+      t.handleSubmitResponse(successMsg);
+    }, (errorMsg) => {
+      debugger;
+      console.error(`${t.cmdName} command errored. Msg: ${JSON.stringify(errorMsg)}`);
+      t.ibScape.clearBusy(t.d);
+      t.virtualNode.type = "error";
+      t.virtualNode.errorMsg = JSON.stringify(errorMsg);
+      t.ibScape.zapVirtualNode(t.virtualNode);
+    });
+  }
+
+  getMessage() {
+    let t = this;
+
+    return {
+      data: t.getMessageData(),
+      metadata: t.getMessageMetadata()
+    };
+  }
+
+  getMessageData() {
+    let t = this;
+
+    return {
+      adjunct_ib_gib: t.d.ibGib
+    };
+  }
+
+  getMessageMetadata() {
+    let t = this;
+
+    return {
+      name: t.cmdName,
+      type: "cmd",
+      local_time: new Date()
+    };
+  }
+
+  handleSubmitResponse(msg) {
+    let t = this;
+
+    debugger;
+    // if (msg && msg.data) {
+    //   if (msg.data.latest_is_different) {
+    //     console.warn(`${typeof(t)}: There's a new version available...should come down event bus...(if hasn't already done so)`);
+    //     // new one available, don't clear busy.
+    //   } else {
+    //     // already up-to-date
+    //     t.ibScape.clearBusy(t.d);
+    //   }
+    // } else {
+    //   console.error("RefreshCommand.handleSubmitResponse: No msg data(?)");
+    // }
+  }
+}
+
+
 /**
  * I'm creating this not to use as a menu command, rather to call from the
  * IbGibIbScapeBackgroundRefresher. So this class breaks some conventions used

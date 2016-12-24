@@ -3,11 +3,14 @@ defmodule WebGib.Bus.Commanding do
   Command-related code for the bus being implemented on Phoenix channels.
 
   (Naming things is hard oy)
+
+  Could probably simplify this with a macro, but typing it out is easy and it
+  gives me time to chug on things in the brain.
   """
 
   require Logger
 
-  alias WebGib.Bus.Commanding.{Fork, Comment, Refresh, BatchRefresh}
+  alias WebGib.Bus.Commanding.{Fork, Comment, Refresh, BatchRefresh, Allow}
 
   def handle_cmd(cmd_name, data, metadata, msg, socket) do
     _ = Logger.debug("cmd_name: #{cmd_name}\ndata: #{inspect data}\nmetadata: #{inspect metadata}\nmsg: #{inspect msg}\nsocket: #{inspect socket}" |> ExChalk.bg_cyan |> ExChalk.red)
@@ -25,8 +28,9 @@ defmodule WebGib.Bus.Commanding do
     Refresh.handle_cmd(data, metadata, msg, socket)
   end
   defp handle_cmd_impl("batchrefresh", data,  metadata, msg, socket) do
-    result = BatchRefresh.handle_cmd(data, metadata, msg, socket)
-    _ = Logger.debug("handle cmd result: #{inspect result}" |> ExChalk.bg_blue |> ExChalk.white)
-    result
+    BatchRefresh.handle_cmd(data, metadata, msg, socket)
+  end
+  defp handle_cmd_impl("allow", data,  metadata, msg, socket) do
+    Allow.handle_cmd(data, metadata, msg, socket)
   end
 end
