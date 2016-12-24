@@ -10,8 +10,7 @@ defmodule WebGib.Bus.Commanding.Allow do
   alias IbGib.Transform.Plan.Factory, as: PlanFactory
   alias WebGib.Bus.Channels.Event, as: EventChannel
   alias IbGib.Auth.Authz
-  import IbGib.Expression
-  import IbGib.Helper
+  import IbGib.{Expression, Helper}
   import WebGib.Bus.Commanding.Helper
   use IbGib.Constants, :ib_gib
 
@@ -103,10 +102,13 @@ defmodule WebGib.Bus.Commanding.Allow do
       target_ib_gib <- Enum.at(adjunct_info[:rel8ns][adjunct_rel8n], 0),
 
       # We can't just attach the adjunct to the target_ib_gib exactly, since it
-      # may have changed. And we don't want to attach to the latest of the
-      # temporal junction point, because the branches may have split. So we get
-      # the latest starting with the target_ib_gib timeline.
-      {:ok, latest_target_ib_gib} <- IbGib.Common.get_latest_ib_gib(identity_ib_gibs, target_ib_gib),
+      # may have changed. In case the branches have split, we get the temporal
+      # junction point of the ibGib and get the latest from that. This will
+      # ensure that we are working on a single timeline (even if it messes
+      # things up a bit). I don't really know and am just groping here.
+      {:ok, temp_junc_ib_gib} <- get_temporal_junction_ib_gib(target_ib_gib),
+
+      {:ok, latest_target_ib_gib} <- IbGib.Common.get_latest_ib_gib(identity_ib_gibs, temp_junc_ib_gib),
       {:ok, target} <-
         IbGib.Expression.Supervisor.start_expression(target_ib_gib)
     ) do

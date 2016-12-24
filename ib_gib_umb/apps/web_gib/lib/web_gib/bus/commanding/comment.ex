@@ -3,6 +3,23 @@ defmodule WebGib.Bus.Commanding.Comment do
   Command-related code for the bus being implemented on Phoenix channels.
 
   (Naming things is hard oy)
+
+  ## Why Comment on Latest Src - Reducing Branching Timelines
+
+  When we do a comment on a src, we get the latest version of the src first
+  and comment on _that_ src. This is to help reduce the possibility of
+  accidental branching timelines.
+
+  See
+  https://github.com/ibgib/ibgib/commit/4111df50e0c0c4530ae59163bb5c8edcca39cb37
+
+  When we move to a more distributed architecture, this will need to be
+  re-visited, because the most recent version would possibly differ, unless
+  we use a sharding approach, perhaps based on the temporal junction point of
+  an ibGib? Probably this would be best, or perhaps a sharding approach on the
+  given user identities. Either way, we need to have a single data store that
+  tracks a given timeline, otherwise branching timelines for a single ibGib
+  will abound.
   """
 
   require Logger
@@ -57,22 +74,26 @@ defmodule WebGib.Bus.Commanding.Comment do
 
   defp exec_impl(identity_ib_gibs, src_ib_gib, comment_text) do
     with(
-      # Get the src and comment_gib to use
-      {:ok, {src, comment_gib}} <- prepare(src_ib_gib),
+      # Get the **latest** src and a reference to base comment_gib to instance.
+      # See notes in module doc (`WebGib.Bus.Commanding.Comment`) for more info.
+      {:ok, {latest_src, comment_gib}} <- prepare(identity_ib_gibs, src_ib_gib),
 
       # Create the bare comment itself
       {:ok, comment} <-
-        create_comment(identity_ib_gibs, src, comment_gib, comment_text),
+        create_comment(identity_ib_gibs, latest_src, comment_gib, comment_text),
 
       # If authorized, rel8 the comment directly to the src
-      {:ok, new_src_or_nil} <- rel8_to_src_if_authorized(src, comment, identity_ib_gibs),
+      {:ok, new_src_or_nil} <-
+        rel8_to_src_if_authorized(latest_src, comment, identity_ib_gibs),
 
       # If above is not authorized (new_src_or_nil is nil), then create a 1-way
       # adjunct rel8n on the comment to the src.
       {:ok, comment} <-
-        rel8_adjunct_if_necessary(new_src_or_nil, identity_ib_gibs, src, comment),
+        rel8_adjunct_if_necessary(new_src_or_nil, identity_ib_gibs, latest_src, comment),
 
-      {:ok, {comment_ib_gib, new_src_ib_gib_or_nil}} <- get_ib_gibs(comment, new_src_or_nil)
+      # Get the corresponding ib^gibs to return
+      {:ok, {comment_ib_gib, new_src_ib_gib_or_nil}} <-
+        get_ib_gibs(comment, new_src_or_nil)
     ) do
       {:ok, {comment_ib_gib, new_src_ib_gib_or_nil}}
     else
@@ -80,14 +101,37 @@ defmodule WebGib.Bus.Commanding.Comment do
     end
   end
 
-  # Minor helper function
-  defp prepare(src_ib_gib) do
+  defp prepare(identity_ib_gibs, src_ib_gib) do
     with(
-      {:ok, src} <- IbGib.Expression.Supervisor.start_expression(src_ib_gib),
+      {:ok, latest_src_ib_gib} <-
+        IbGib.Common.get_latest_ib_gib(identity_ib_gibs, src_ib_gib),
+      {:ok, latest_src} <-
+        IbGib.Expression.Supervisor.start_expression(latest_src_ib_gib),
+
       {:ok, comment_gib} <-
         IbGib.Expression.Supervisor.start_expression("comment#{@delim}gib")
     ) do
-      {:ok, {src, comment_gib}}
+      {:ok, {latest_src, comment_gib}}
+    else
+      error -> default_handle_error(error)
+    end
+  end
+
+  # Creates the comment, only rel8ng it to src via comment_on rel8n.
+  defp create_comment(identity_ib_gibs, latest_src, comment_gib, comment_text) do
+    with(
+      {:ok, comment} <-
+        comment_gib |> fork(identity_ib_gibs, "comment"),
+      state <- %{
+                  "text" => comment_text,
+                  "render" => "text",
+                  "shape" => "rect"
+                },
+      {:ok, comment} <- comment |> mut8(identity_ib_gibs, state),
+      {:ok, comment} <-
+        comment |> rel8(latest_src, identity_ib_gibs, ["comment_on"])
+    ) do
+      {:ok, comment}
     else
       error -> default_handle_error(error)
     end
@@ -123,7 +167,6 @@ defmodule WebGib.Bus.Commanding.Comment do
       error -> default_handle_error(error)
     end
   end
-
 
   # When doing pic, I should move this function into an
   # `IbGib.Expression.Adjunct` module (or whatever) and generalize it.
@@ -170,25 +213,6 @@ defmodule WebGib.Bus.Commanding.Comment do
     # that we have a new_src only if we WERE authorized to rel8 comment to src
     # **directly**, so we do NOT need an _adjunct_ rel8n.
     {:ok, comment}
-  end
-
-  # Creates the comment, only rel8ng it to src via comment_on rel8n.
-  defp create_comment(identity_ib_gibs, src, comment_gib, comment_text) do
-    with(
-      {:ok, comment} <-
-        comment_gib |> fork(identity_ib_gibs, "comment"),
-      state <- %{
-                  "text" => comment_text,
-                  "render" => "text",
-                  "shape" => "rect"
-                },
-      {:ok, comment} <- comment |> mut8(identity_ib_gibs, state),
-      {:ok, comment} <- comment |> rel8(src, identity_ib_gibs, ["comment_on"])
-    ) do
-      {:ok, comment}
-    else
-      error -> default_handle_error(error)
-    end
   end
 
   defp get_ib_gibs(comment, new_src) do

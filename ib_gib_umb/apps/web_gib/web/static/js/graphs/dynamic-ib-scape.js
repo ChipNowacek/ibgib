@@ -419,6 +419,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           t.syncContextSourceNodes(/*rel8nIbGibs*/ []);
         }
 
+        // t.syncAdjuncts(t.contextNode.tempJuncIbGib);
       } catch (e) {
         console.error(`error syncing context children: ${e}`)
       } finally {
@@ -426,6 +427,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       }
     });
   }
+  /**
+   * Sync all adjunct nodes that are related to the given `tempJuncIbGib`.
+   * @param tempJuncIbGib is the src/target node's temporal junction point, NOT the _adjunct's_ temporal junction point.
+   */
   syncAdjuncts(tempJuncIbGib) {
     let t = this;
 
@@ -448,10 +453,15 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         let src = rel8nNode.rel8nSrc;
         let children = t.getChildren(rel8nNode);
         adjunctInfos
-          .filter(info => !prunedAdjunctIbGibs.includes(info.adjunctIbGib))
-          .filter(info => info.tempJuncIbGib === src.tempJuncIbGib)
           .filter(info => {
-            return !children.map(c => c.ibGib).includes(info.adjunctIbGib);
+            return !prunedAdjunctIbGibs.includes(info.adjunctIbGib);
+          })
+          .filter(info => {
+            return info.tempJuncIbGib === src.tempJuncIbGib;
+          })
+          .filter(info => {
+            let adjTempJuncIbGib = ibHelper.getTemporalJunctionIbGib(info.adjunctIbGibJson);
+            return !children.map(c => c.ibGib).includes(adjTempJuncIbGib);
           })
           .forEach(info => {
             t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ info.adjunctIbGib, /*srcNode*/ rel8nNode, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y}, /*isAdjunct*/ true);
@@ -480,15 +490,19 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         adjunctInfos.filter(info => {
           return !Object.keys(contextIbGibJson.rel8ns)
             .map(key => contextIbGibJson.rel8ns[key])
-            .some(rel8nIbGibs => rel8nIbGibs.includes(info.adjunctIbGib))
+            .some(rel8nIbGibs => {
+              return rel8nIbGibs.includes(info.tempJuncIbGib);
+            })
         });
-
       let adjunctSourceNodes =
         t.graphData.nodes.filter(n => n.isSource && n.id !== t.contextNode.id && !n.isRoot && n.isAdjunct);
 
       // prune
       adjunctSourceNodes
-        .filter(n => !adjunctInfos.some(info => info.adjunctIbGib))
+        .filter(n => !adjunctInfos.some(info => {
+          let adjTempJuncIbGib = ibHelper.getTemporalJunctionIbGib(info.adjunctIbGibJson);
+          return !children.map(c => c.ibGib).includes(adjTempJuncIbGib);
+        }))
         .forEach(n => t.removeNodeAndChildren(n));
 
       // reeval after pruning
@@ -496,7 +510,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         t.graphData.nodes.filter(n => n.isSource && n.id !== t.contextNode.id && !n.isRoot && n.isAdjunct);
 
       adjunctInfos
-        .filter(info => !adjunctSourceNodes.some(sn => sn.ibGib === info.adjunctIbGib))
+        .filter(info => !adjunctSourceNodes.some(sn => {
+          let snTempJuncIbGib = ibHelper.getTemporalJunctionIbGib(sn.ibGibJson);
+          let adjTempJuncIbGib = ibHelper.getTemporalJunctionIbGib(info.adjunctIbGibJson);
+          return snTempJuncIbGib === adjTempJuncIbGib;
+        }))
         .forEach(info => {
           t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ info.adjunctIbGib, /*srcNode*/ null, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: t.contextNode.x, y: t.contextNode.y}, /*isAdjunct*/ true);
         });
@@ -581,13 +599,17 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   /**
    * Prunes the non-source rel8nNodes of adjunct nodes that have been
    * assimilated directly to their corrsponding target nodes.
+   * @param tempJuncIbGib is the src/target node's temporal junction point, NOT the _adjunct's_ temporal junction point.
    */
   pruneAdjuncts(tempJuncIbGib) {
     let t = this;
     let prunedAdjunctIbGibs = [];
     t.graphData.nodes
-      .filter(n => n.tempJuncIbGib === tempJuncIbGib)
+      .filter(n => n.tempJuncIbGib === tempJuncIbGib) // get existing adj nodes
       .forEach(n => {
+        // Get the parent rel8n node
+        debugger;
+        let parentRel8nNode = t.graphData.links.filter(l => l.target.id === n.id)[0];
         // Get the nodes adjunctNodes
         t.getChildren(n)
           .filter(n => n.isAdjunct)
@@ -974,7 +996,18 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           .forEach(rel8dIbGib => {
             t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ rel8dIbGib, /*srcNode*/ rel8nNode, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y}, /*isAdjunct*/ false);
           });
-        t.syncAdjuncts(rel8nNode.rel8nSrc.tempJuncIbGib);
+        let toRefresh = srcRel8ns.concat([rel8nSrc.ibGib]);
+        // Triggers both a refresh on the expanded nodes, as well as an
+        // adjuncts update.
+        t.backgroundRefresher.exec(toRefresh,
+          successMsg => {
+            console.log("toggleExpandCollapseLevel_Rel8n: refresh toRefresh succeeded.")
+            t.syncAdjuncts(rel8nNode.rel8nSrc.tempJuncIbGib);
+          },
+          errorMsg => {
+            console.error(`toggleExpandCollapseLevel_Rel8n: refresh toRefresh failed. Error: ${JSON.stringify(errorMsg)}`)
+          });
+
         rel8nNode.expandLevel = 1;
         break;
 
@@ -987,12 +1020,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           rel8nNode.expandLevel = 0;
         }
     }
-
   }
 
   handleEventBusMsg_Update(tempJuncIbGib, ibGib, msg) {
     let t = this;
-    console.log(`msg:\n${JSON.stringify(msg)}`)
+    console.log(`handleEventBusMsg_Update msg:\n${JSON.stringify(msg)}`)
 
     if (msg && msg.data &&
         // possibly redundant (unnecessary)
@@ -1018,30 +1050,24 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           }
         });
     } else {
-      debugger;
       console.warn(`Unused msg(?): ${JSON.stringify(msg)}`);
     }
   }
 
   handleEventBusMsg_Adjuncts(tempJuncIbGib, ibGib, msg) {
     let t = this;
-    console.log(`msg:\n${JSON.stringify(msg)}`)
+    console.log(`handleEventBusMsg_Adjuncts msg:\n${JSON.stringify(msg)}`)
     if (msg && msg.data && msg.metadata.temp_junc_ib_gib === tempJuncIbGib) {
-      let adjunctIbGibs =
+      t.getIbGibJsons(msg.data.adjunct_ib_gibs, adjunctIbGibJsons => {
         msg.data.adjunct_ib_gibs
-          .filter(adjunctIbGib => {
-            // For now, filter for only comments, pics, and links. In the
-            // future, this will have to be generalized (or not filtered at
-            // this stage)
-            let adjunctIb = ibHelper.getIbAndGib(adjunctIbGib).ib;
-            return adjunctIb === "comment" || adjunctIb === "pic" || adjunctIb === "link";
-          })
           .forEach(adjunctIbGib => {
-            t.getIbGibJson(adjunctIbGib, adjunctIbGibJson => {
-              t.ibGibCache.addAdjunctInfo(tempJuncIbGib, ibGib, adjunctIbGib, adjunctIbGibJson);
-              t.syncAdjuncts(tempJuncIbGib);
-            });
-          })
+            let adjunctIbGibJson = adjunctIbGibJsons[adjunctIbGib];
+            t.ibGibCache.addAdjunctInfo(tempJuncIbGib, ibGib, adjunctIbGib, adjunctIbGibJson);
+          });
+        // At this point, we have loaded all adjunctInfos and are ready to sync
+        // the tempJuncIbGib
+        // t.syncAdjuncts(tempJuncIbGib);
+      });
     } else {
       console.warn(`Unused msg(?): ${JSON.stringify(msg)}`);
     }
@@ -1304,6 +1330,26 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
         if (callback) { callback(ibGibJson); }
       });
+    }
+  }
+  /**
+   * Gets all ibGibJsons for given ibGibs in a javascript object.
+   * Ugly manual async whenAll code here...ick.
+   */
+  getIbGibJsons(ibGibs, callback) {
+    let t = this;
+    t._getIbGibJsonsRecursive(ibGibs, {}, callback);
+  }
+  _getIbGibJsonsRecursive(ibGibsToDo, ibGibsDone, callback) {
+    let t = this;
+    if (ibGibsToDo && ibGibsToDo.length > 0) {
+      t.getIbGibJson(ibGibsToDo[0], ibGibJson => {
+        let ibGibDone = ibGibsToDo.splice(0,1);
+        ibGibsDone[ibGibDone] = ibGibJson;
+        t._getIbGibJsonsRecursive(ibGibsToDo, ibGibsDone, callback);
+      });
+    } else {
+      callback(ibGibsDone);
     }
   }
 
