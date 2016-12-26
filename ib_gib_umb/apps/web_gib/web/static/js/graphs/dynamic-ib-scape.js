@@ -410,7 +410,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
             }
 
             t.syncContextRel8nNode(rel8nName, rel8nNodes, rel8nIbGibs);
-            // t.syncContextAdjuncts();
+            t.syncContextAdjuncts();
           });
 
         // If we've just gone back in history and there are no rel8ns via
@@ -434,43 +434,64 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   syncAdjuncts(tempJuncIbGib) {
     let t = this;
 
+    if (t.syncingAdjuncts) {
+      console.log(`syncAdjuncts: Already syncying adjuncts.`);
+      return;
+    } else {
+      t.syncingAdjuncts = true;
+    }
+
     let adjunctInfos = t.ibGibCache.getAdjunctInfos(tempJuncIbGib);
+    console.log(`syncAdjuncts: adjunctInfos: ${JSON.stringify(adjunctInfos)}`);
 
     if (tempJuncIbGib === t.contextNode.tempJuncIbGib) {
+      console.log(`syncAdjuncts: calling syncContextAdjuncts...`);
       t.syncContextAdjuncts(adjunctInfos);
     }
 
     // iterate through all rel8n nodes. Skip past, ancestor, and dna rel8ns.
     // If the rel8nSrc.tempJuncIbGib has an adjunct and it's the right rel8n,
     // then add it
-    let prunedAdjunctIbGibs = t.pruneAdjuncts(tempJuncIbGib);
+    let prunedAdjunctTempJuncIbGibs = t.pruneAdjuncts(tempJuncIbGib);
+
+    console.warn(`syncAdjuncts: prunedAdjunctTempJuncIbGibs: ${JSON.stringify(prunedAdjunctTempJuncIbGibs)}`)
 
     t.graphData.nodes
       .filter(n => n.type === "rel8n" &&
                    !n.virtualId &&
                    !["past", "ancestor"].includes(n.rel8nName))
       .forEach(rel8nNode => {
+        // if (rel8nNode.rel8nName === "comment") {
+        //   debugger;
+        // }
         let src = rel8nNode.rel8nSrc;
-        let children = t.getChildren(rel8nNode);
+        let childrenTempJuncIbGibs = t.getChildren(rel8nNode).filter(c => c.type === "ibGib").map(child => child.tempJuncIbGib);
+
         adjunctInfos
           .filter(info => {
-            return !prunedAdjunctIbGibs.includes(info.adjunctIbGib);
+            // Don't add pruned (assimilated) adjuncts.
+            return !prunedAdjunctTempJuncIbGibs.includes(info.adjunctTempJuncIbGib);
           })
           .filter(info => {
+            // Only corresponding adjuncts to the given tempJunc
+            // (Not the given adjunct temp junc)
             return info.tempJuncIbGib === src.tempJuncIbGib;
           })
-          .filter(info => {
-            let adjTempJuncIbGib = ibHelper.getTemporalJunctionIbGib(info.adjunctIbGibJson);
-            return !children.map(c => c.ibGib).includes(adjTempJuncIbGib);
-          })
           .forEach(info => {
-            t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ info.adjunctIbGib, /*srcNode*/ rel8nNode, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y}, /*isAdjunct*/ true);
+            // Don't add ones that already exist.
+            if (!childrenTempJuncIbGibs.includes(info.adjunctTempJuncIbGib)) {
+              childrenTempJuncIbGibs.push(info.adjunctTempJuncIbGib);
+              t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ info.adjunctIbGib, /*srcNode*/ rel8nNode, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y}, /*isAdjunct*/ true);
+            }
           });
       });
+
+    t.syncingAdjuncts = false;
   }
   /**
    * Syncs the adjuncts for the contextNode only. We need separate code for
-   * the context, because it behaves differently than other ibGib nodes.
+   * the context, because it behaves differently than other ibGib nodes in that
+   * it has the additional free-floating nodes.
    *
    * Note: Right now to simplify things, we're pretending that adjuncts do not
    * change i.e. the user doesn't edit their comment. Worst case is that
@@ -478,8 +499,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
    */
   syncContextAdjuncts(adjunctInfos) {
     let t = this;
+    console.log(`syncContextAdjuncts: starting...`)
+
     let contextIbGibJson = t.contextNode.ibGibJson;
-    if (!contextIbGibJson) { console.warn("no contextIbGibJson. this is assumed to be populated at this point."); }
+    if (!contextIbGibJson) { console.warn("syncContextAdjuncts: no contextIbGibJson. this is assumed to be populated at this point."); }
 
     if (adjunctInfos && adjunctInfos.length > 0) {
       // If the adjunct ibGib has been "assimilated" into the user's scene
@@ -498,10 +521,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         t.graphData.nodes.filter(n => n.isSource && n.id !== t.contextNode.id && !n.isRoot && n.isAdjunct);
 
       // prune
+      // Go through the source nodes and remove any that are adjuncts but are not found in adjunctInfos (because they
+      // have already been assimilated.)
       adjunctSourceNodes
         .filter(n => !adjunctInfos.some(info => {
-          let adjTempJuncIbGib = ibHelper.getTemporalJunctionIbGib(info.adjunctIbGibJson);
-          return !children.map(c => c.ibGib).includes(adjTempJuncIbGib);
+          return !t.getChildren(n).map(c => c.ibGib).includes(info.tempJuncIbGib);
         }))
         .forEach(n => t.removeNodeAndChildren(n));
 
@@ -511,13 +535,14 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
       adjunctInfos
         .filter(info => !adjunctSourceNodes.some(sn => {
-          let snTempJuncIbGib = ibHelper.getTemporalJunctionIbGib(sn.ibGibJson);
           let adjTempJuncIbGib = ibHelper.getTemporalJunctionIbGib(info.adjunctIbGibJson);
-          return snTempJuncIbGib === adjTempJuncIbGib;
+          return sn.tempJuncIbGib === adjTempJuncIbGib;
         }))
         .forEach(info => {
           t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ info.adjunctIbGib, /*srcNode*/ null, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: t.contextNode.x, y: t.contextNode.y}, /*isAdjunct*/ true);
         });
+    } else {
+      console.log(`syncContextAdjuncts: no adjunctInfos.`)
     }
   }
   /**
@@ -584,16 +609,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     } else {
       // rel8nNode does not yet exist.
       // do nothing?
-
-      // let fadeTimeoutMs =
-      //   d3BoringRel8ns.includes(rel8nName) ?
-      //   t.config.other.rel8nFadeTimeoutMs_Boring :
-      //   t.config.other.rel8nFadeTimeoutMs_Spiffy;
-      // Object.keys(node.ibGibJson.rel8ns)
-      //   .filter(rel8n => !d3BoringRel8ns.includes(rel8n))
-      //   .forEach(rel8n => {
-      //     t.addRel8nVirtualNode(t.contextNode, rel8nName, /*fadeTimeoutMs*/ 0);
-      //   });
     }
   }
   /**
@@ -608,7 +623,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       .filter(n => n.tempJuncIbGib === tempJuncIbGib) // get existing adj nodes
       .forEach(n => {
         // Get the parent rel8n node
-        debugger;
         let parentRel8nNode = t.graphData.links.filter(l => l.target.id === n.id)[0];
         // Get the nodes adjunctNodes
         t.getChildren(n)
@@ -622,7 +636,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
                   .some(rel8nIbGibs => rel8nIbGibs.includes(adjunctNode.ibGib))) {
               adjunctNode.isAdjunct = false;
               t.swap(adjunctNode, adjunctNode, /*updateParentOrChild*/ true);
-              prunedAdjunctIbGibs.push(adjunctNode.ibGib);
+              prunedAdjunctIbGibs.push(adjunctNode.tempJuncIbGib);
             }
           });
       });
@@ -1057,8 +1071,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   handleEventBusMsg_Adjuncts(tempJuncIbGib, ibGib, msg) {
     let t = this;
     console.log(`handleEventBusMsg_Adjuncts msg:\n${JSON.stringify(msg)}`)
-    if (msg && msg.data && msg.metadata.temp_junc_ib_gib === tempJuncIbGib) {
+    if (msg && msg.metadata && msg.metadata.temp_junc_ib_gib === tempJuncIbGib) {
+      console.log(`handleEventBusMsg_Adjuncts: calling getIbGibJsons...`)
       t.getIbGibJsons(msg.data.adjunct_ib_gibs, adjunctIbGibJsons => {
+        console.log(`handleEventBusMsg_Adjuncts: adjunctIbGibJsons: ${JSON.stringify(adjunctIbGibJsons)}`)
+
         msg.data.adjunct_ib_gibs
           .forEach(adjunctIbGib => {
             let adjunctIbGibJson = adjunctIbGibJsons[adjunctIbGib];
@@ -1066,7 +1083,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           });
         // At this point, we have loaded all adjunctInfos and are ready to sync
         // the tempJuncIbGib
-        // t.syncAdjuncts(tempJuncIbGib);
+        console.log(`handleEventBusMsg_Adjuncts: calling syncAdjuncts...`)
+        t.syncAdjuncts(tempJuncIbGib);
       });
     } else {
       console.warn(`Unused msg(?): ${JSON.stringify(msg)}`);
@@ -1338,7 +1356,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
    */
   getIbGibJsons(ibGibs, callback) {
     let t = this;
-    t._getIbGibJsonsRecursive(ibGibs, {}, callback);
+    t._getIbGibJsonsRecursive(ibGibs.concat(), {}, callback);
   }
   _getIbGibJsonsRecursive(ibGibsToDo, ibGibsDone, callback) {
     let t = this;

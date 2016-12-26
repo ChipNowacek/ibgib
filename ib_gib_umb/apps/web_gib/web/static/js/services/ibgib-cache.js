@@ -72,7 +72,11 @@ export class IbGibCache {
 
   addAdjunctInfo(tempJuncIbGib, ibGib, adjunctIbGib, adjunctIbGibJson) {
     let t = this;
-    tempJuncIbGib = tempJuncIbGib || ibHelper.getTemporalJunctionIbGib(ibGib);
+    if (!tempJuncIbGib) {
+      debugger;
+    }
+    // tempJuncIbGib = tempJuncIbGib || ibHelper.getTemporalJunctionIbGib(ibGib);
+    let adjunctTempJuncIbGib = ibHelper.getTemporalJunctionIbGib(adjunctIbGibJson);
 
     // adjunctInfo is considered immutable, since currently we
     // assume an adjunct is only related to a single ibGib. So make this
@@ -82,6 +86,7 @@ export class IbGibCache {
         adjunctIbGib: adjunctIbGib,
         ibGib: ibGib,
         tempJuncIbGib: tempJuncIbGib,
+        adjunctTempJuncIbGib: adjunctTempJuncIbGib,
         adjunctIbGibJson: adjunctIbGibJson,
         adjunctRel8n: adjunctIbGibJson.data.adjunct_rel8n,
         adjunctTargetRel8n: adjunctIbGibJson.data.adjunct_target_rel8n,
@@ -91,6 +96,7 @@ export class IbGibCache {
         adjunctRel8nTarget: adjunctIbGibJson.rel8ns[adjunctIbGibJson.data.adjunct_rel8n][0]
       };
 
+    console.log(`addAdjunctInfo: adjunctInfo: ${JSON.stringify(adjunctInfo)}`)
     t.adjunctNaiveCache[adjunctIbGib] = adjunctInfo;
   }
 
