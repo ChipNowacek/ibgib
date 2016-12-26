@@ -319,7 +319,7 @@ defmodule IbGib.Expression do
   end
 
   def handle_info({:life_timeout, what}, state) do
-    _ = Logger.debug "timeout...stopping #{what} normally"
+    # _ = Logger.debug "timeout...stopping #{what} normally"
     {:stop, :normal, state}
   end
 

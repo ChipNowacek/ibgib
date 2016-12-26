@@ -696,15 +696,17 @@ export class AllowCommand extends CommandBase {
     let t = this;
     console.log(`${t.cmdName} cmd exec`);
 
+    t.ibScape.removeVirtualCmdNodes();
     t.ibScape.setBusy(t.d);
-    debugger;
+    // debugger;
 
     let msg = t.getMessage();
     t.ibScape.commandMgr.bus.send(msg, (successMsg) => {
-      debugger;
+      // debugger;
+      console.log(`AllowCommand successMsg: ${JSON.stringify(successMsg)}`)
       t.handleSubmitResponse(successMsg);
     }, (errorMsg) => {
-      debugger;
+      // debugger;
       console.error(`${t.cmdName} command errored. Msg: ${JSON.stringify(errorMsg)}`);
       t.ibScape.clearBusy(t.d);
       t.virtualNode.type = "error";
@@ -743,7 +745,10 @@ export class AllowCommand extends CommandBase {
   handleSubmitResponse(msg) {
     let t = this;
 
-    debugger;
+    // debugger;
+
+    t.ibScape.clearBusy(t.d);
+
     // if (msg && msg.data) {
     //   if (msg.data.latest_is_different) {
     //     console.warn(`${typeof(t)}: There's a new version available...should come down event bus...(if hasn't already done so)`);

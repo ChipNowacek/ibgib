@@ -31,8 +31,6 @@ defmodule WebGib.Bus.Commanding.Allow do
                        "The root ib not an adjunct ibGib."),
 
       # Execute
-      # direct_ib_gib is the concretized adjunct_ib_gib now directly related
-      # to the new_target_ib_gib.
       {:ok, {old_target_ib_gib, new_target_ib_gib}} <-
         exec_impl(identity_ib_gibs, adjunct_ib_gib),
 

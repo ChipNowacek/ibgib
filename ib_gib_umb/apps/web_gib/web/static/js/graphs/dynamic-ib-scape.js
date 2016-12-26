@@ -40,9 +40,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       },
       simulation: {
         velocityDecay: 0.85,
-        chargeStrength: 135,
+        chargeStrength: 55,
         chargeDistanceMin: 10,
-        chargeDistanceMax: 10000,
+        chargeDistanceMax: 100,
         linkDistance: 125,
         linkDistance_Src_Rel8n: 25,
       },
@@ -246,8 +246,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
               let textLength = text.length;
               if (d.isSource) {
                 // emoji, smileys
-                if (textLength <= 4) {
-                  return "75px";
+                if (textLength <= 3) {
+                  return "65px";
                 } else if (textLength <= 20) {
                   return "35px";
                 } else if (textLength <= 40) {
@@ -259,8 +259,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
                 }
               } else {
                 // not a source, so is slightly smaller.
-                if (textLength < 5) {
-                  return "65px";
+                if (textLength <= 3) {
+                  return "45px";
                 } else if (textLength <= 20) {
                   return "25px";
                 } else if (textLength <= 40) {
@@ -435,7 +435,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     let t = this;
 
     if (t.syncingAdjuncts) {
-      console.log(`syncAdjuncts: Already syncying adjuncts.`);
+      console.log(`syncAdjuncts: Already syncing adjuncts.`);
       return;
     } else {
       t.syncingAdjuncts = true;
@@ -499,8 +499,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
    */
   syncContextAdjuncts(adjunctInfos) {
     let t = this;
-    console.log(`syncContextAdjuncts: starting...`)
-
+    console.log(`syncContextAdjuncts: starting...`);
+    // debugger;
     let contextIbGibJson = t.contextNode.ibGibJson;
     if (!contextIbGibJson) { console.warn("syncContextAdjuncts: no contextIbGibJson. this is assumed to be populated at this point."); }
 
@@ -514,7 +514,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           return !Object.keys(contextIbGibJson.rel8ns)
             .map(key => contextIbGibJson.rel8ns[key])
             .some(rel8nIbGibs => {
-              return rel8nIbGibs.includes(info.tempJuncIbGib);
+              return rel8nIbGibs.includes(info.adjunctTempJuncIbGib) ||
+                rel8nIbGibs.includes(info.adjunctIbGib);
             })
         });
       let adjunctSourceNodes =
@@ -525,7 +526,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       // have already been assimilated.)
       adjunctSourceNodes
         .filter(n => !adjunctInfos.some(info => {
-          return !t.getChildren(n).map(c => c.ibGib).includes(info.tempJuncIbGib);
+          return !t.getChildren(n).map(c => c.tempJuncIbGib).includes(info.adjunctTempJuncIbGib);
         }))
         .forEach(n => t.removeNodeAndChildren(n));
 
@@ -844,7 +845,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }, durationMs);
   }
 
-  zapVirtualNode(virtualNode) {
+  zapVirtualNode(virtualNode, callback) {
     let t = this;
 
     t.clearFadeTimeout(virtualNode);
@@ -862,14 +863,15 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         // execute the command
         t.commandMgr.exec(virtualNode.cmdTarget, virtualNode.cmd);
         t.clearBusy(virtualNode);
+        if (callback) { callback(); }
         break;
 
       case "ibGib":
-        t.zapVirtualNode_IbGib(virtualNode);
+        t.zapVirtualNode_IbGib(virtualNode, callback);
         break;
 
       case "rel8n":
-        t.zapVirtualNode_Rel8n(virtualNode);
+        t.zapVirtualNode_Rel8n(virtualNode, callback);
         break;
 
       case "error":
@@ -887,13 +889,15 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         }
 
         t.clearBusy(virtualNode);
+        if (callback) { callback(); }
         break;
 
       default:
         console.warn(`zapVirtualNode: Unknown node type: ${virtualNode.type}`);
+        if (callback) { callback(); }
     }
   }
-  zapVirtualNode_IbGib(node) {
+  zapVirtualNode_IbGib(node, callback) {
     let t = this;
 
     t.clearFadeTimeout(node);
@@ -933,6 +937,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
       t.clearBusy(node);
       t.animateNodeBorder(node, /*nodeShape*/ null);
+      if (callback) { callback(); }
     });
   }
   zapVirtualNode_Rel8n(rel8nNode) {
@@ -974,6 +979,15 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       case 0:
         node.expandLevel = 1;
         t.addSpiffyRel8ns(node);
+        // debugger;
+        let rel8ns = t.getChildren(node).filter(c => c.type === "rel8n");
+        rel8ns.forEach(rel8n => {
+          let autoExpandRel8ns = ["comment", "pic", "link"];
+          // hack
+          if (autoExpandRel8ns.includes(rel8n.rel8nName) && node.ibGibJson.rel8ns[rel8n.rel8nName]) {
+            t.zapVirtualNode(rel8n);
+          }
+        })
         t.addCmdVirtualNodes_Default(node);
         break;
       case 1:
@@ -1098,19 +1112,21 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     t.swap(node, node, /*updateParentOrChild*/ true);
     node.virtualId = ibHelper.getRandomString();
-    t.zapVirtualNode(node);
-
-    if (!skipUpdateUrl) {
-      if (node.isContext) {
-        // update URL
-        history.pushState({ibGib: node.ibGib, ibGibJson: node.ibGibJson}, "_", newIbGib);
-        t.syncContextChildren();
+    t.zapVirtualNode(node, () => {
+      if (!skipUpdateUrl) {
+        if (node.isContext) {
+          // update URL
+          history.pushState({ibGib: node.ibGib, ibGibJson: node.ibGibJson}, "_", newIbGib);
+          t.syncContextChildren();
+        }
       }
-    }
 
-    t.animateNodeBorder(node, /*nodeShape*/ null);
+      t.animateNodeBorder(node, /*nodeShape*/ null);
 
-    if (callback) { callback(); }
+      t.syncAdjuncts(node.tempJuncIbGib);
+
+      if (callback) { callback(); }
+    });
   }
   updateRender(node) {
     if (node.ibGibJson) {
@@ -1331,6 +1347,13 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       return super.getForceCollideDistance(d) * 1.3;
     } else {
       return super.getForceCollideDistance(d) * 1.1;
+    }
+  }
+  getForceChargeStrength(d) {
+    if (d.isSource) {
+      return -1 * this.config.simulation.chargeStrength;
+    } else {
+      return this.config.simulation.chargeStrength;
     }
   }
 
