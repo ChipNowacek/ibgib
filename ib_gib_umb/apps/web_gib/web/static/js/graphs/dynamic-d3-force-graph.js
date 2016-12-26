@@ -273,8 +273,8 @@ export class DynamicD3ForceGraph {
           .attr("id", d => t.nodeKeyFunction(d))
           .attr("cursor", d => t.getNodeCursor(d))
           .on("contextmenu", d  => t.handleNodeContextMenu(d))
-          .on("mouseover", d => t.handleNodeMouseover(d))
           .on("mousedown", d => t.handleNodeRawMouseDown(d))
+          .on("mouseover", d=> t.handleNodeRawMouseOver(d))
           .on("mouseout", d => t.handleNodeRawMouseOut(d))
           // Using "click" event because mouseup event doesn't fire
           .on("click", d => t.handleNodeRawMouseUp(d))
@@ -577,13 +577,17 @@ export class DynamicD3ForceGraph {
             //     console.error(`d is falsy in d3 force graph handleTicked (?)`);
             //     return 'translate(' + [d.x, d.y] + ')';
             //   }
+          })
+          .each(d => {
+            if (d.mouseover) {
+              d.vx = 0;
+              d.vy = 0;
+              console.log("mouseover yo")
+            }
           });
     } catch (e) {
       console.log("errored tick")
     }
-  }
-  handleNodeMouseover(d) {
-    // console.log(`d.id: ${d.id}`);
   }
   handleNodeContextMenu(d) {
     let t = this;
@@ -723,6 +727,9 @@ export class DynamicD3ForceGraph {
         t.handleNodeRawMouseDownOrTouchstart(d);
       d3.event.preventDefault();
     }
+  }
+  handleNodeRawMouseOver(d) {
+    // do nothing by default
   }
   handleNodeRawMouseOut(d) {
     let t = this;

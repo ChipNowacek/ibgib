@@ -1576,6 +1576,25 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       super.handleNodeRawMouseDown(d);
     }
   }
+  handleNodeRawMouseOver(d) {
+    if (d.fx || d.fy) {
+      d.pinnedBeforeMouseover = true;
+    }
+
+    d.mouseover = true;
+    d.fx = d.x;
+    d.fy = d.y;
+  }
+  handleNodeRawMouseOut(d) {
+    super.handleNodeRawMouseOut(d);
+    if (d.mouseover) {
+      delete d.mouseover;
+      if (!d.pinnedBeforeMouseover) {
+        delete d.fx;
+        delete d.fy;
+      }
+    }
+  }
 
   // addCmdVirtualNodes_Specialized(d) {
   //   let t = this;

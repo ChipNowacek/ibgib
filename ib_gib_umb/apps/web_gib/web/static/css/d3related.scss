@@ -168,3 +168,14 @@ button[name=ib-scape-details-close-btn] {
   -webkit-transform: translateY(-50%);
   transform: translateY(-50%);
 }
+
+#ib-comment-details-form {
+  height: 100%;
+  width: 100%;
+  padding: 10px 20px 10px 10px;
+}
+
+#comment_form_data_text {
+  height: 65%;
+  width: 100%;
+}
