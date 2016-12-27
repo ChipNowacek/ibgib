@@ -671,8 +671,10 @@ export class RefreshCommand extends CommandBase {
 
     if (msg && msg.data) {
       if (msg.data.latest_is_different) {
-        console.warn(`${typeof(t)}: There's a new version available...should come down event bus...(if hasn't already done so)`);
-        // new one available, don't clear busy.
+        t.d.ibGib = msg.data.latest_ib_gib;
+        t.ibScape.updateIbGib(t.d, msg.data.latest_ib_gib, /*skipUpdateUrl*/ false, /*callback*/ () => {
+          t.ibScape.clearBusy(t.d);
+        });
       } else {
         // already up-to-date
         t.ibScape.clearBusy(t.d);
@@ -826,4 +828,63 @@ export class BatchRefreshCommand extends CommandBase {
       local_time: new Date()
     };
   }
+}
+
+export class GetAdjunctsCommand extends CommandBase {
+  constructor(ibScape, d, successCallback, errorCallback) {
+    const cmdName = "getadjuncts";
+    super(cmdName, ibScape, d);
+
+    let t = this;
+    t.successCallback = successCallback;
+    t.errorCallback = errorCallback;
+  }
+
+  exec() {
+    // Does NOT call super.exec() because this command is different. See class
+    // documentation for details.
+    // super.exec();
+
+    let t = this;
+    console.log(`${t.cmdName} cmd exec`);
+
+    let msg = t.getMessage();
+    t.ibScape.commandMgr.bus.send(msg, (successMsg) => {
+      if (t.successCallback) {
+         t.successCallback(successMsg);
+       }
+    }, (errorMsg) => {
+      console.error(`${t.cmdName} command errored. Msg: ${JSON.stringify(errorMsg)}`);
+      if (t.errorCallback) { t.errorCallback(errorMsg); }
+    });
+  }
+
+  getMessage() {
+    let t = this;
+
+    return {
+      data: t.getMessageData(),
+      metadata: t.getMessageMetadata()
+    };
+  }
+
+  getMessageData() {
+    let t = this;
+
+    return {
+      ib_gibs: t.d.ibGibs
+    };
+  }
+
+  getMessageMetadata() {
+    let t = this;
+
+    return {
+      name: t.cmdName,
+      type: "cmd",
+      count: t.d.ibGibs.length,
+      local_time: new Date()
+    };
+  }
+
 }

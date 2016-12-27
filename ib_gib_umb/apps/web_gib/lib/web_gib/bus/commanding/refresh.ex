@@ -30,15 +30,17 @@ defmodule WebGib.Bus.Commanding.Refresh do
       # Execute
       {:ok, latest_ib_gib} <- exec_impl(identity_ib_gibs, src_ib_gib),
 
-      latest_is_different <- src_ib_gib !== latest_ib_gib,
+      # latest_is_different <- src_ib_gib !== latest_ib_gib,
 
-      # Broadcast latest_ib_gib if different
-      _ <- (if latest_is_different,
-            do: EventChannel.broadcast_ib_gib_event(:update, {src_ib_gib, latest_ib_gib}),
-            else: :ok),
+      # # I can't just broadcast on the channel, because this will
+      # # broadcast to all connected devices (very bad).
+      # # Broadcast latest_ib_gib if different
+      # _ <- (if latest_is_different,
+      #       do: EventChannel.broadcast_ib_gib_event(:update, {src_ib_gib, latest_ib_gib}),
+      #       else: :ok),
 
       # Reply
-      {:ok, reply_msg} <- get_reply_msg(latest_is_different)
+      {:ok, reply_msg} <- get_reply_msg(src_ib_gib, latest_ib_gib)
     ) do
       {:reply, {:ok, reply_msg}, socket}
     else
@@ -55,11 +57,13 @@ defmodule WebGib.Bus.Commanding.Refresh do
     IbGib.Common.get_latest_ib_gib(identity_ib_gibs, src_ib_gib)
   end
 
-  defp get_reply_msg(latest_is_different) do
+  defp get_reply_msg(src_ib_gib, latest_ib_gib) do
     reply_msg =
       %{
         "data" => %{
-          "latest_is_different" => latest_is_different
+          "src_ib_gib" => src_ib_gib,
+          "latest_ib_gib" => latest_ib_gib,
+          "latest_is_different" => src_ib_gib !== latest_ib_gib
         }
       }
     {:ok, reply_msg}

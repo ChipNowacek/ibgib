@@ -577,13 +577,6 @@ export class DynamicD3ForceGraph {
             //     console.error(`d is falsy in d3 force graph handleTicked (?)`);
             //     return 'translate(' + [d.x, d.y] + ')';
             //   }
-          })
-          .each(d => {
-            if (d.mouseover) {
-              d.vx = 0;
-              d.vy = 0;
-              console.log("mouseover yo")
-            }
           });
     } catch (e) {
       console.log("errored tick")
