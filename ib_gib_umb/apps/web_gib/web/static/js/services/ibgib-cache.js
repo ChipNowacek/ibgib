@@ -40,36 +40,6 @@ export class IbGibCache {
     }
   }
 
-  /**
-   * Adds a cache entry for the given `originalMsg`. `oldIbGib` and `newIbGib`
-   * are both convenience arguments and should exist in the `originalMsg`.
-   * i.e. originalMsg.old_ib_gib === oldIbGib, same for new.
-   * This
-   */
-  addUpdateEventMsg(oldIbGib, newIbGib, originalMsg) {
-    let t = this;
-
-    let existingInfo = t.updateEventMsgInfos[oldIbGib];
-    if (existingInfo) { clearTimeout(existingInfo.expiryTimer); }
-
-    let newInfo = {
-      newIbGib: newIbGib,
-      originalMsg: originalMsg,
-      // Cache invalidation driven by simple timer.
-      expiryTimer: setTimeout(() => {
-          if (t.updateEventMsgInfos[oldIbGib]) {
-            delete t.updateEventMsgInfos[oldIbGib];
-          }
-        }, t.latestExpiryMs)
-    }
-    t.updateEventMsgInfos[oldIbGib] = info;
-  }
-
-  getLatest(ibGib) {
-    let info = this.updateEventMsgInfos[ibGib];
-    return info ? info.newIbGib : "";
-  }
-
   addAdjunctInfo(tempJuncIbGib, ibGib, adjunctIbGib, adjunctIbGibJson) {
     let t = this;
     let existingInfos = t.adjunctNaiveCache[tempJuncIbGib];

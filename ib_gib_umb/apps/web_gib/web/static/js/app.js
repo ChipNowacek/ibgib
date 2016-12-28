@@ -5,6 +5,7 @@ import { IbGibCache } from "./services/ibgib-cache";
 import { IbGibImageProvider } from "./services/ibgib-image-provider";
 import { IbGibSocketManager } from "./services/ibgib-socket-manager";
 import { IbGibEventBus } from "./services/ibgib-event-bus";
+import { IbGibProvider } from "./services/ibgib-provider";
 
 class App {
 
@@ -20,11 +21,6 @@ class App {
         document.getElementsByName("ib_agg_identity_hash")[0].content;
       let ibGibSocket = new IbGibSocketManager(ibIdentityToken, ibAggregateIdentityHash);
       ibGibSocket.connect();
-      let ibGibEventBus = new IbGibEventBus(ibGibSocket.socket);
-
-      // // I'm not sure if these are really useful anymore.
-      // let query = divIbGibData.getAttribute("data-metaqueryibgib");
-      // let queryResult = divIbGibData.getAttribute("data-metaqueryresultibgib");
 
       // The server passes the current ibGib via the ibgib attribute.
       let ibGib = divIbGibData.getAttribute("ibgib");
@@ -32,6 +28,9 @@ class App {
       // This is our base json path that we will use to pull anything down.
       let baseJsonPath = divIbGibData.getAttribute("data-path");
       let baseD3JsonPath = divIbGibData.getAttribute("d3-data-path");
+
+      let ibGibProvider = new IbGibProvider(ibGibCache, baseJsonPath);
+      let ibGibEventBus = new IbGibEventBus(ibGibSocket.socket, ibGibProvider);
 
       // Create the ibScape, which is the d3 "landscape" for the ibGib.
       let graphDiv = document.querySelector("#ib-d3-graph-div");
@@ -42,7 +41,7 @@ class App {
       // let data = baseD3JsonPath + ibGib;
       // this.ibScape.update(data);
 
-      this.ibScape = new DynamicIbScape(graphDiv, "mainIbScapeSvg", /*config*/ null, baseJsonPath, ibGibCache, ibGibImageProvider, ibGib, ibGibSocket, ibGibEventBus, /*isPrimaryIbScape*/ true);
+      this.ibScape = new DynamicIbScape(graphDiv, "mainIbScapeSvg", /*config*/ null, baseJsonPath, ibGibCache, ibGibImageProvider, ibGib, ibGibSocket, ibGibEventBus, /*isPrimaryIbScape*/ true, ibGibProvider);
       // this.ibScape.init();
       this.ibScape.toggleFullScreen();
 

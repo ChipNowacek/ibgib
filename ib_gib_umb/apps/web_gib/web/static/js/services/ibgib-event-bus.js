@@ -2,11 +2,12 @@ import * as ibHelper from './ibgib-helper';
 import { Socket } from "phoenix";
 
 export class IbGibEventBus {
-  constructor(socket) {
+  constructor(socket, ibGibProvider) {
     let t = this;
 
     t.socket = socket;
     t.connectionInfos = [];
+    t.ibGibProvider = ibGibProvider;
   }
 
   /**
@@ -150,22 +151,26 @@ export class IbGibEventBus {
   broadcastIbGibUpdate_LocallyOnly(oldIbGib, newIbGib) {
     let t = this;
 
-    let connectionInfos = t.connectionInfos.filter(info => info.ibGib === oldIbGib);
+    t.ibGibProvider.getIbGibJson(oldIbGib, oldIbGibJson => {
+      let tempJuncIbGib = ibHelper.getTemporalJunctionIbGib(oldIbGibJson);
 
-    if (connectionInfos.length > 0) {
-      let msg = {
-        data: {
-          old_ib_gib: oldIbGib,
-          new_ib_gib: newIbGib
-        },
-        metadata: {
-          name: "update",
-          src: "client",
-          timestamp: Date.now()
+      let connectionInfos = t.connectionInfos.filter(info => info.ibGib === oldIbGib);
+      if (connectionInfos.length > 0) {
+        let msg = {
+          data: {
+            old_ib_gib: oldIbGib,
+            new_ib_gib: newIbGib
+          },
+          metadata: {
+            name: "update",
+            temp_junc_ib_gib: tempJuncIbGib,
+            src: "client",
+            timestamp: Date.now()
+          }
         }
-      }
 
-      connectionInfos.forEach(info => info.handler(msg));
-    }
+        connectionInfos.forEach(info => info.handler(msg));
+      }
+    })
   }
 }

@@ -12,11 +12,9 @@ import { IbGibIbScapeBackgroundRefresher } from '../services/ibgib-ib-scape-back
 /**
  * This is the ibGib d3 graph that contains all the stuff for our IbGib data
  * interaction. So on the client side, this is the big enchilada.
- *
- *
  */
 export class DynamicIbScape extends DynamicD3ForceGraph {
-  constructor(graphDiv, svgId, config, baseJsonPath, ibGibCache, ibGibImageProvider, sourceIbGib, ibGibSocketManager, ibGibEventBus, isPrimaryIbScape) {
+  constructor(graphDiv, svgId, config, baseJsonPath, ibGibCache, ibGibImageProvider, sourceIbGib, ibGibSocketManager, ibGibEventBus, isPrimaryIbScape, ibGibProvider) {
     super(graphDiv, svgId, {});
     let t = this;
 
@@ -28,6 +26,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.commandMgr = new CommandManager(t, ibGibSocketManager);
     t.virtualNodes = {};
     t.isPrimaryIbScape = isPrimaryIbScape;
+    t.ibGibProvider = ibGibProvider;
 
     let defaults = {
       background: {
@@ -70,7 +69,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         cmdFadeTimeoutMs_Default: 4000,
         cmdFadeTimeoutMs_Specialized: 10000,
         rel8nFadeTimeoutMs_Boring: 4000,
-        rel8nFadeTimeoutMs_Spiffy: 0,
+        rel8nFadeTimeoutMs_Spiffy: 10000,
       }
     }
     t.config = $.extend({}, defaults, config || {});
@@ -205,25 +204,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
                   return acc;
                 }, []);
             console.log(`${lc} Initial source node ibGibs to refresh: ${JSON.stringify(ibGibsToRefresh)}`);
-            t.backgroundRefresher.exec(ibGibsToRefresh, successMsg => {
-              console.log(`${lc} Initial refresh source nodes complete. successMsg: ${JSON.stringify(successMsg)}`);
-                if (successMsg.data && successMsg.data.latest_ib_gibs) {
-                  let latestIbGibs = successMsg.data.latest_ib_gibs;
-                  Object.keys(latestIbGibs)
-                    .forEach(oldIbGib => {
-                      t.getIbGibJson(oldIbGib, oldIbGibJson => {
-                        let oldTempJunc = ibHelper.getTemporalJunctionIbGib(oldIbGibJson);
-                        let newIbGib = latestIbGibs[oldIbGib];
-                        t.ibGibEventBus.broadcastIbGibUpdate_LocallyOnly(oldTempJunc, newIbGib);
-                      });
-
-                    });
-                } else {
-                  console.error(`${lc} successMsg.data problem.`)
-                }
-            }, errorMsg => {
-              console.error(`Error on initial refresh source nodes: ${JSON.stringify(errorMsg)}`);
-            });
+            t.execRefresh(ibGibsToRefresh, /*callback*/ null);
           });
 
 
@@ -233,6 +214,31 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         console.error("Error on context node initial refresh.")
       });
     }
+  }
+
+  execRefresh(ibGibs, callback) {
+    let t = this, lc = `execRefresh(ibGibs: ${JSON.stringify(ibGibs)})`;
+
+    t.backgroundRefresher.exec(ibGibs, successMsg => {
+      console.log(`${lc} Initial refresh source nodes complete. successMsg: ${JSON.stringify(successMsg)}`);
+        if (successMsg.data && successMsg.data.latest_ib_gibs) {
+          let latestIbGibs = successMsg.data.latest_ib_gibs;
+          Object.keys(latestIbGibs)
+            .forEach(oldIbGib => {
+              t.getIbGibJson(oldIbGib, oldIbGibJson => {
+                let oldTempJunc = ibHelper.getTemporalJunctionIbGib(oldIbGibJson);
+                let newIbGib = latestIbGibs[oldIbGib];
+                t.ibGibEventBus.broadcastIbGibUpdate_LocallyOnly(oldTempJunc, newIbGib);
+              });
+            });
+        } else {
+          console.error(`${lc} successMsg.data problem.`)
+        }
+        if (callback) { callback(); }
+    }, errorMsg => {
+      console.error(`Error on refresh ibGibs. errorMsg: ${JSON.stringify(errorMsg)}`);
+      if (callback) { callback(); }
+    });
   }
 
   updateNodeLabels() {
@@ -1147,10 +1153,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       });
 
     // Refresh children ibGibs.
-    let toRefresh = srcRel8ns.concat([rel8nSrc.ibGib]);
-    t.backgroundRefresher.exec(toRefresh,
-      successMsg => {
-      console.log("toggleExpandCollapseLevel_Rel8n: refresh toRefresh succeeded.");
+    let ibGibsToRefresh = srcRel8ns.concat([rel8nSrc.ibGib]);
+    t.execRefresh(ibGibsToRefresh, () => {
       // Sync adjuncts, passing callback.
       t.syncAdjuncts(rel8nNode.rel8nSrc.tempJuncIbGib, () => {
         if (callback) { callback(); }
@@ -1202,10 +1206,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           }
         });
     } else {
+      debugger;
       console.warn(`Unused msg(?): ${JSON.stringify(msg)}`);
     }
   }
-
   handleEventBusMsg_Adjuncts(tempJuncIbGib, ibGib, msg) {
     let t = this;
     console.log(`handleEventBusMsg_Adjuncts msg:\n${JSON.stringify(msg)}`)
@@ -1230,7 +1234,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       console.warn(`Unused msg(?): ${JSON.stringify(msg)}`);
     }
   }
-
   handleEventBusMsg_NewAdjunct(tempJuncIbGib, ibGib, msg) {
     let t = this; let lc = `handleEventBusMsg_NewAdjunct(${tempJuncIbGib})`;
     console.log(`${lc} msg:\n${JSON.stringify(msg)}`)
@@ -1511,43 +1514,15 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
   // Other get functions ------------------------------------
 
+  /** wrapper that calls ibGibProvider (refactoring) */
   getIbGibJson(ibgib, callback) {
-    let ibGibJson = this.ibGibCache.get(ibgib);
-    if (ibGibJson) {
-      if (callback) { callback(ibGibJson); }
-    } else {
-      // We don't yet have the json for this particular data.
-      // So we need to load the json, and when it returns we will exec callback.
-      d3.json(this.baseJsonPath + ibgib, ibGibJson => {
-        this.ibGibCache.add(ibGibJson);
-
-        if (callback) { callback(ibGibJson); }
-      });
-    }
+    let t = this;
+    t.ibGibProvider.getIbGibJson(ibgib, callback);
   }
-  /**
-   * Gets all ibGibJsons for given ibGibs in a javascript object.
-   * Ugly manual async whenAll code here...ick.
-   */
+  /** wrapper that calls ibGibProvider (refactoring) */
   getIbGibJsons(ibGibs, callback) {
     let t = this;
-    if (!ibGibs || ibGibs.length === 0) {
-      callback(null);
-    } else {
-      t._getIbGibJsonsRecursive(ibGibs.concat(), {}, callback);
-    }
-  }
-  _getIbGibJsonsRecursive(ibGibsToDo, ibGibsDone, callback) {
-    let t = this;
-    if (ibGibsToDo && ibGibsToDo.length > 0) {
-      t.getIbGibJson(ibGibsToDo[0], ibGibJson => {
-        let ibGibDone = ibGibsToDo.splice(0,1);
-        ibGibsDone[ibGibDone] = ibGibJson;
-        t._getIbGibJsonsRecursive(ibGibsToDo, ibGibsDone, callback);
-      });
-    } else {
-      callback(ibGibsDone);
-    }
+    t.ibGibProvider.getIbGibJsons(ibGibs, callback);
   }
 
   getNodeShapeFromIb(ib) {
@@ -1695,6 +1670,20 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   }
   handleNodeLongClicked(d) {
     let t = this;
+
+    if (d.virtualId) {
+      t.commandMgr.exec(d, d3MenuCommands.filter(c => c.name === "huh")[0]);
+      // t.zapVirtualNode(d);
+    } else if (d.type === "ibGib") {
+      t.clearSelectedNode();
+      t.selectNode(d);
+    } else if (d.type === "rel8n") {
+      t.toggleExpandCollapseLevel_Rel8n(d);
+    }
+  }
+  handleNodeContextMenu(d) {
+    let t = this;
+    super.handleNodeContextMenu(d);
 
     if (d.virtualId) {
       t.commandMgr.exec(d, d3MenuCommands.filter(c => c.name === "huh")[0]);

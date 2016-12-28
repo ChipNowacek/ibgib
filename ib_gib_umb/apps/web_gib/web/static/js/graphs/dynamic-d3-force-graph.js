@@ -145,7 +145,8 @@ export class DynamicD3ForceGraph {
         .attr("cx", radius)
         .attr("cy", radius)
         .attr("r", radius)
-        .on("click", () => t.handleBackgroundClicked());
+        .on("click", () => t.handleBackgroundClicked())
+        .on("contextmenu", () => t.handleBackgroundContextMenu());
     } else {
       t.background = t.svg
         .append("rect")
@@ -167,7 +168,8 @@ export class DynamicD3ForceGraph {
         // .attr("y", 0.5)
         // .attr("width", t.width - 1)
         // .attr("height", t.height - 1)
-        .on("click", () => t.handleBackgroundClicked());
+        .on("click", () => t.handleBackgroundClicked())
+        .on("contextmenu", () => t.handleBackgroundContextMenu());
     }
   }
   initSvgGroup() {
@@ -536,7 +538,11 @@ export class DynamicD3ForceGraph {
     t.animateNodeBorder(d);
   }
   handleBackgroundClicked() {
-    console.log(`background clicked in numero 2`);
+    // console.log(`background clicked in numero 2`);
+  }
+  handleBackgroundContextMenu() {
+    // console.log(`background context`)
+    d3.event.preventDefault();
   }
   handleZoom(svgGroup) {
     svgGroup
@@ -583,9 +589,10 @@ export class DynamicD3ForceGraph {
     }
   }
   handleNodeContextMenu(d) {
-    let t = this;
     d3.event.preventDefault();
-    t.remove(d, /*updateParentOrChild*/ true);
+    // let t = this;
+    // to show how to use it
+    // t.remove(d, /*updateParentOrChild*/ true);
   }
   handleSimulationEnd() {
     console.log("end yo");
