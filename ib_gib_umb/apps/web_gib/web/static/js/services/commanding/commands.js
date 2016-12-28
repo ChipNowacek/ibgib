@@ -581,18 +581,19 @@ export class CommentDetailsCommand extends FormDetailsCommandBase {
     let t = this;
 
     if (msg && msg.data && msg.data.comment_ib_gib) {
-      if (!msg.data.new_src_ib_gib) {
+      if (msg.data.new_src_ib_gib) {
+        let commentIbGib = msg.data.comment_ib_gib;
+        t.virtualNode.ibGib = commentIbGib;
+        t.ibScape.zapVirtualNode(t.virtualNode);
+      } else {
         // the src was not updated, so this is a user commenting on someone
         // else's ibGib. So a comment was created and was rel8d to the src,
         // but the src has not been inversely rel8d to the comment.
-        t.virtualNode.isAdjunct = true;
+        // t.virtualNode.isAdjunct = true;
+        t.ibScape.remove(t.virtualNode);
         // fire off a refresh command as a temporary hack
         t.ibScape.backgroundRefresher.enqueue([t.d.rel8nSrc.ibGib]);
       }
-
-      let commentIbGib = msg.data.comment_ib_gib;
-      t.virtualNode.ibGib = commentIbGib;
-      t.ibScape.zapVirtualNode(t.virtualNode);
     } else {
       console.error(`${typeof(t)}: Unknown msg response from channel.`);
     }

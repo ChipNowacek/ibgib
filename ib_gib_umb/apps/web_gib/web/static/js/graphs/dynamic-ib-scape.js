@@ -1668,6 +1668,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
 
   }
+  handleNodeDblClicked(d) {
+    let t = this;
+    t.removeChildren(d);
+  }
   handleNodeLongClicked(d) {
     let t = this;
 
@@ -1858,6 +1862,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
             t.remove(childNode, /*updateParentOrChild*/ true);
           }
         });
+  }
+  removeChildren(node) {
+    let t = this;
+    let children = t.getChildren(node);
+    children.forEach(child => t.removeNodeAndChildren(child));
   }
   removeNodeAndChildren(node) {
     let t = this;
