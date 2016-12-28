@@ -114,4 +114,20 @@ export class IbGibCache {
       delete t.adjunctNaiveCache[tempJuncIbGib];
     }
   }
+
+  // getAdjunctInfo_ByAdjunctIbGib(adjunctIbGib) {
+  //   let t = this;
+  //   let adjunctInfos =
+  //     Object.keys(t.adjunctNaiveCache)
+  //       .map(key => t.adjunctNaiveCache[key])
+  //       .filter(info => info.adjunctIbGib);
+  //   if (adjunctInfos.length === 0) {
+  //     return null;
+  //   } else if (adjunctInfos.length === 1) {
+  //     return adjunctInfos[0];
+  //   } else {
+  //     console.warn(`multiple adjunctInfos found for adjunctIbGib: ${adjunctIbGib}`)
+  //     return adjunctInfos[0];
+  //   }
+  // }
 }

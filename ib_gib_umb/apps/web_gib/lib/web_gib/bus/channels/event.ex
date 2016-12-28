@@ -128,6 +128,25 @@ defmodule WebGib.Bus.Channels.Event do
       error -> default_handle_error(error)
     end
   end
+  def broadcast_ib_gib_event(:new_adjunct = msg_type,
+                             {temp_junc_ib_gib,
+                              adjunct_ib_gib,
+                              target_ib_gib} = msg_info) do
+    with(
+      {:ok, msg} <- get_broadcast_msg(msg_type,
+                                      {temp_junc_ib_gib,
+                                       adjunct_ib_gib,
+                                       target_ib_gib}),
+      # Not interested if the broadcast errors. It is possible that the topic
+      # doesn't even exist (no one is signed up to hear it).
+      _ <-
+        WebGib.Endpoint.broadcast("event:" <> temp_junc_ib_gib, Atom.to_string(msg_type), msg)
+    ) do
+      {:ok, :ok}
+    else
+      error -> default_handle_error(error)
+    end
+  end
   def broadcast_ib_gib_event(:adjunct_rel8d = msg_type,
                              {adjunct_ib_gib,
                               old_target_ib_gib,
@@ -192,6 +211,26 @@ defmodule WebGib.Bus.Channels.Event do
     }
     {:ok, msg}
   end
+  # A new adjunct has just been added to a target
+  defp get_broadcast_msg(:new_adjunct = msg_type,
+                         {temp_junc_ib_gib,
+                          adjunct_ib_gib,
+                          target_ib_gib} = _msg_info) do
+    msg = %{
+      "data" => %{
+        "adjunct_ib_gib" => adjunct_ib_gib,
+        "target_ib_gib" => target_ib_gib
+      },
+      "metadata" => %{
+        "name" => Atom.to_string(msg_type),
+        "temp_junc_ib_gib" => temp_junc_ib_gib,
+        "src" => "server",
+        "timestamp" => "#{:erlang.system_time(:milli_seconds)}"
+      }
+    }
+    {:ok, msg}
+  end
+  # An adjunct has just been directly rel8d to a target
   defp get_broadcast_msg(:adjunct_rel8d = msg_type,
                          {temp_junc_ib_gib,
                           adjunct_ib_gib,

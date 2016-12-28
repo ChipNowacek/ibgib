@@ -877,7 +877,11 @@ export class DynamicD3ForceGraph {
     let newLinks = linksA.concat(linksB);
 
     // remove the old node and add the new one with the adjusted links.
+    let x = existingNode.x;
+    let y = existingNode.y;
     t.remove(existingNode, updateParentOrChild);
+    newNode.x = x;
+    newNode.y = y;
     t.add([newNode], newLinks, updateParentOrChild);
   }
   addChildGraph(child, shareDataReference) {

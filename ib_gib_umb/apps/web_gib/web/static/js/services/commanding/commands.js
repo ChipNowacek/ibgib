@@ -671,9 +671,9 @@ export class RefreshCommand extends CommandBase {
 
     if (msg && msg.data) {
       if (msg.data.latest_is_different) {
-        t.d.ibGib = msg.data.latest_ib_gib;
+        t.ibScape.clearBusy(t.d);
+
         t.ibScape.updateIbGib(t.d, msg.data.latest_ib_gib, /*skipUpdateUrl*/ false, /*callback*/ () => {
-          t.ibScape.clearBusy(t.d);
         });
       } else {
         // already up-to-date
@@ -765,7 +765,6 @@ export class AllowCommand extends CommandBase {
   }
 }
 
-
 /**
  * I'm creating this not to use as a menu command, rather to call from the
  * IbGibIbScapeBackgroundRefresher. So this class breaks some conventions used
@@ -830,6 +829,17 @@ export class BatchRefreshCommand extends CommandBase {
   }
 }
 
+/**
+ * Gets the adjuncts for a given ibGib data `d` and returns the adjuncts
+ * in the given `successCallback` when executed.
+ *
+ * The data `d` is not the "normal" d3 node `d` variable, but just data
+ * that contains information for the command. IOW, it is not the data
+ * associated to a d3 node, since this command is executed on its own.
+ *
+ * (Probably will need to revisit exact command architecture for these
+ * non-menu command commands, i.e. refactor.)
+ */
 export class GetAdjunctsCommand extends CommandBase {
   constructor(ibScape, d, successCallback, errorCallback) {
     const cmdName = "getadjuncts";
@@ -886,5 +896,4 @@ export class GetAdjunctsCommand extends CommandBase {
       local_time: new Date()
     };
   }
-
 }

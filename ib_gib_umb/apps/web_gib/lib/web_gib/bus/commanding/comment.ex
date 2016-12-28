@@ -24,11 +24,9 @@ defmodule WebGib.Bus.Commanding.Comment do
 
   require Logger
 
-  alias IbGib.Transform.Plan.Factory, as: PlanFactory
   alias WebGib.Bus.Channels.Event, as: EventChannel
   alias IbGib.Auth.Authz
-  import IbGib.Expression
-  import IbGib.Helper
+  import IbGib.{Expression, Helper}
   import WebGib.Bus.Commanding.Helper
   use IbGib.Constants, :ib_gib
 
@@ -52,11 +50,16 @@ defmodule WebGib.Bus.Commanding.Comment do
                        "Cannot comment on the root"),
 
       # Execute
-      {:ok, {comment_ib_gib, new_src_ib_gib_or_nil}} <-
+      {:ok, {comment_ib_gib, new_src_ib_gib_or_nil, src_temp_junc_ib_gib_or_nil}} <-
         exec_impl(identity_ib_gibs, src_ib_gib, comment_text),
 
-      # Broadcast updated src_ib_gib if there is a new one
-      {:ok, :ok} <- broadcast_if_necessary(src_ib_gib, new_src_ib_gib_or_nil),
+      # Broadcast updates, depending on if we have directly rel8d to
+      # the src or if we rel8d an adjunct indirectly to it.
+      {:ok, :ok} <-
+        broadcast(src_ib_gib,
+                  comment_ib_gib,
+                  new_src_ib_gib_or_nil,
+                  src_temp_junc_ib_gib_or_nil),
 
       # Reply
       {:ok, reply_msg} <- get_reply_msg(comment_ib_gib, new_src_ib_gib_or_nil)
@@ -74,8 +77,9 @@ defmodule WebGib.Bus.Commanding.Comment do
 
   defp exec_impl(identity_ib_gibs, src_ib_gib, comment_text) do
     with(
-      # Get the **latest** src and a reference to base comment_gib to instance.
-      # See notes in module doc (`WebGib.Bus.Commanding.Comment`) for more info.
+      # Get **latest** src and reference to base comment_gib to use.
+      # See notes in module doc (`WebGib.Bus.Commanding.Comment`) for
+      # more info on why getting the latest src.
       {:ok, {latest_src, comment_gib}} <- prepare(identity_ib_gibs, src_ib_gib),
 
       # Create the bare comment itself
@@ -86,16 +90,16 @@ defmodule WebGib.Bus.Commanding.Comment do
       {:ok, new_src_or_nil} <-
         rel8_to_src_if_authorized(latest_src, comment, identity_ib_gibs),
 
-      # If above is not authorized (new_src_or_nil is nil), then create a 1-way
-      # adjunct rel8n on the comment to the src.
-      {:ok, comment} <-
+      # If above is not authorized (new_src_or_nil is nil), then create
+      # a 1-way adjunct rel8n on the comment to the src.
+      {:ok, {comment, src_temp_junc_ib_gib_or_nil}} <-
         rel8_adjunct_if_necessary(new_src_or_nil, identity_ib_gibs, latest_src, comment),
 
       # Get the corresponding ib^gibs to return
       {:ok, {comment_ib_gib, new_src_ib_gib_or_nil}} <-
         get_ib_gibs(comment, new_src_or_nil)
     ) do
-      {:ok, {comment_ib_gib, new_src_ib_gib_or_nil}}
+      {:ok, {comment_ib_gib, new_src_ib_gib_or_nil, src_temp_junc_ib_gib_or_nil}}
     else
       error -> default_handle_error(error)
     end
@@ -202,7 +206,7 @@ defmodule WebGib.Bus.Commanding.Comment do
       {:ok, comment} <-
         comment |> rel8(src_temporal_junction, identity_ib_gibs, ["adjunct_to"])
     ) do
-      {:ok, comment}
+      {:ok, {comment, src_temp_junc_ib_gib}}
     else
       error -> default_handle_error(error)
     end
@@ -212,7 +216,7 @@ defmodule WebGib.Bus.Commanding.Comment do
     # adjunct not needed, because new_src was not nil. The reasoning here is
     # that we have a new_src only if we WERE authorized to rel8 comment to src
     # **directly**, so we do NOT need an _adjunct_ rel8n.
-    {:ok, comment}
+    {:ok, {comment, nil}}
   end
 
   defp get_ib_gibs(comment, new_src) do
@@ -231,13 +235,30 @@ defmodule WebGib.Bus.Commanding.Comment do
     end
   end
 
-  defp broadcast_if_necessary(src_ib_gib, new_src_ib_gib_or_nil) do
-    if new_src_ib_gib_or_nil do
-      EventChannel.broadcast_ib_gib_event(:update, {src_ib_gib, new_src_ib_gib_or_nil})
-      {:ok, :ok}
-    else
-      {:ok, :ok}
-    end
+  defp broadcast(src_ib_gib,
+                 comment_ib_gib,
+                 new_src_ib_gib_or_nil,
+                 src_temp_junc_ib_gib_or_nil)
+  defp broadcast(src_ib_gib,
+                 _comment_ib_gib,
+                 new_src_ib_gib,
+                 nil) do
+    # We directly rel8d the comment to the src, so publish an update
+    # msg for the src.
+    EventChannel.broadcast_ib_gib_event(:update,
+                                        {src_ib_gib, new_src_ib_gib})
+    {:ok, :ok}
+  end
+  defp broadcast(src_ib_gib,
+                 comment_ib_gib,
+                 nil = _new_src_ib_gib_or_nil,
+                 src_temp_junc_ib_gib) do
+   _ = Logger.debug("broadcasting :new_adjunct.\nsrc_temp_junc_ib_gib: #{src_temp_junc_ib_gib}\ncomment_ib_gib: #{comment_ib_gib}\nsrc_ib_gib: #{src_ib_gib}")
+    EventChannel.broadcast_ib_gib_event(:new_adjunct,
+                                        {src_temp_junc_ib_gib,
+                                         comment_ib_gib,
+                                         src_ib_gib})
+    {:ok, :ok}
   end
 
   defp get_reply_msg(comment_ib_gib, new_src_ib_gib) do

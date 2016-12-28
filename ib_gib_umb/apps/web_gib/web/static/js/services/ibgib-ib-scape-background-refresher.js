@@ -96,7 +96,8 @@ export class IbGibIbScapeBackgroundRefresher {
 
       cmd.exec();
     } else {
-      console.error("IbGibIbScapeBackgroundRefresher.exec: invalid ibGibs.");
+      console.log(`nothing to refresh.`);
+      if (successCallback) { successCallback(null); }
     }
   }
 

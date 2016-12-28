@@ -86,9 +86,9 @@ defmodule IbGib.Expression.Registry do
   """
   def handle_info({:DOWN, ref, :process, _pid, _reason}, {expressions, refs}) do
     {expr_ib_gib, refs} = Map.pop(refs, ref)
-    _ = Logger.debug "Removed ref: #{inspect ref}"
+    # _ = Logger.debug "Removed ref: #{inspect ref}"
     {expr_pid, expressions} = Map.pop(expressions, expr_ib_gib)
-    _ = Logger.debug "Removing expr_pid: #{inspect expr_pid}"
+    # _ = Logger.debug "Removing expr_pid: #{inspect expr_pid}"
     # :ets.delete(expressions, expression)
     {:noreply, {expressions, refs}}
   end
@@ -98,7 +98,7 @@ defmodule IbGib.Expression.Registry do
   end
 
   defp get_process_impl(expressions, expr_ib_gib) do
-    _ = Logger.debug "expr_ib_gib: #{expr_ib_gib}"
+    # _ = Logger.debug "expr_ib_gib: #{expr_ib_gib}"
     case Map.fetch(expressions, expr_ib_gib) do
       {:ok, value} -> {:ok, value}
       :error -> {:error, :not_found}

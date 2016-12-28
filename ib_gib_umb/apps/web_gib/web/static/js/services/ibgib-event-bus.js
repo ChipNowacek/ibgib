@@ -70,11 +70,16 @@ export class IbGibEventBus {
     let channel = t.socket.channel(topic, {});
 
     channel.join()
-      .receive("ok", resp => { console.log(`Joined event bus channel successfully. topic: ${topic}`, resp) })
-      .receive("error", resp => { console.error(`Unable to join event bus channel. topic: ${topic}. resp: ${JSON.stringify(resp)}`, resp) })
+      .receive("ok", resp => {
+        console.log(`Joined event bus channel successfully.`, `topic: ${topic}}`, JSON.stringify(resp));
+      })
+      .receive("error", resp => {
+        console.error(`Unable to join event bus channel. topic: ${topic}`, JSON.stringify(resp));
+      })
 
     channel.on("update", msg => t.handleMsg(ibGib, msg));
     channel.on("adjuncts", msg => t.handleMsg(ibGib, msg));
+    channel.on("new_adjunct", msg => t.handleMsg(ibGib, msg));
 
     return channel;
   }
