@@ -106,9 +106,10 @@ defmodule WebGib.Bus.Commanding.Allow do
       # things up a bit). I don't really know and am just groping here.
       {:ok, temp_junc_ib_gib} <- get_temporal_junction_ib_gib(target_ib_gib),
 
-      {:ok, latest_target_ib_gib} <- IbGib.Common.get_latest_ib_gib(identity_ib_gibs, temp_junc_ib_gib),
+      {:ok, latest_target_ib_gib} <-
+        IbGib.Common.get_latest_ib_gib(identity_ib_gibs, temp_junc_ib_gib),
       {:ok, target} <-
-        IbGib.Expression.Supervisor.start_expression(target_ib_gib)
+        IbGib.Expression.Supervisor.start_expression(latest_target_ib_gib)
     ) do
       {:ok, {adjunct, adjunct_target_rel8n, target}}
     else
