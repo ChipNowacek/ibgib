@@ -40,9 +40,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       },
       simulation: {
         velocityDecay: 0.85,
-        chargeStrength: 75,
+        chargeStrength: -1000,
         chargeDistanceMin: 10,
-        chargeDistanceMax: 100,
+        chargeDistanceMax: 700,
         linkDistance: 125,
         linkDistance_Src_Rel8n: 25,
       },
@@ -1489,12 +1489,12 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
   /** Overridden to remove the center force. Much more tolerable this way. */
   getForceCenter() { return null; }
-  getForceLink() {
-    let t = this;
-
-    return super.getForceLink()
-                .strength(l => t.getForceLinkStrength(l));
-  }
+  // getForceLink() {
+  //   let t = this;
+  //
+  //   return super.getForceLink()
+  //               .strength(l => t.getForceLinkStrength(l));
+  // }
   getForceLinkDistance(l) {
     let t = this;
     if (l.source.type === "rel8n") {
@@ -1503,14 +1503,14 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       return super.getForceLinkDistance(l);
     }
   }
-  getForceLinkStrength(l) {
-    return 1;
-    // if (l.source && l.source.isSource) {
-    //   return 1;
-    // } else {
-    //   return 1/10;
-    // }
-  } // returns default
+  // getForceLinkStrength(l) {
+  //   return 1;
+  //   // if (l.source && l.source.isSource) {
+  //   //   return 1;
+  //   // } else {
+  //   //   return 1/10;
+  //   // }
+  // } // returns default
   getForceCollideDistance(d) {
     if (d.type === "rel8n") {
       return super.getForceCollideDistance(d) * 1.3;
@@ -1519,10 +1519,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
   }
   getForceChargeStrength(d) {
-    if (d.isSource) {
-      return 10 * this.config.simulation.chargeStrength;
+    // return super.getForceChargeStrength(d);
+    if (d.isSource || (d.type && d.type === "rel8n")) {
+      return this.config.simulation.chargeStrength;
     } else {
-      return -1 * this.config.simulation.chargeStrength;
+      return 5 * this.config.simulation.chargeStrength;
     }
   }
 
