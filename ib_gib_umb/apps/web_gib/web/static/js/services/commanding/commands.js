@@ -582,17 +582,20 @@ export class CommentDetailsCommand extends FormDetailsCommandBase {
 
     if (msg && msg.data && msg.data.comment_ib_gib) {
       if (msg.data.new_src_ib_gib) {
+        // The src was directly commented on, so this user had authz to
+        // do it (it's the ibGib's owner). So set the comment ibGib and
+        // zap it.
         let commentIbGib = msg.data.comment_ib_gib;
         t.virtualNode.ibGib = commentIbGib;
         t.ibScape.zapVirtualNode(t.virtualNode);
       } else {
-        // the src was not updated, so this is a user commenting on someone
-        // else's ibGib. So a comment was created and was rel8d to the src,
-        // but the src has not been inversely rel8d to the comment.
-        // t.virtualNode.isAdjunct = true;
+        // The src was not updated, so this is a user commenting on
+        // someone else's ibGib. So a comment was created and was rel8d
+        // to the src, but the src has not been inversely rel8d to the
+        // comment. So we'll remove the placeholder node and the
+        // :new_adjunct event will create a new node.
+
         t.ibScape.remove(t.virtualNode);
-        // fire off a refresh command as a temporary hack
-        t.ibScape.backgroundRefresher.enqueue([t.d.rel8nSrc.ibGib]);
       }
     } else {
       console.error(`${typeof(t)}: Unknown msg response from channel.`);

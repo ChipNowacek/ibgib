@@ -40,7 +40,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       },
       simulation: {
         velocityDecay: 0.85,
-        chargeStrength: 155,
+        chargeStrength: 75,
         chargeDistanceMin: 10,
         chargeDistanceMax: 100,
         linkDistance: 125,
@@ -1489,6 +1489,12 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
   /** Overridden to remove the center force. Much more tolerable this way. */
   getForceCenter() { return null; }
+  getForceLink() {
+    let t = this;
+
+    return super.getForceLink()
+                .strength(l => t.getForceLinkStrength(l));
+  }
   getForceLinkDistance(l) {
     let t = this;
     if (l.source.type === "rel8n") {
@@ -1497,6 +1503,14 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       return super.getForceLinkDistance(l);
     }
   }
+  getForceLinkStrength(l) {
+    return 1;
+    // if (l.source && l.source.isSource) {
+    //   return 1;
+    // } else {
+    //   return 1/10;
+    // }
+  } // returns default
   getForceCollideDistance(d) {
     if (d.type === "rel8n") {
       return super.getForceCollideDistance(d) * 1.3;
@@ -1506,9 +1520,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   }
   getForceChargeStrength(d) {
     if (d.isSource) {
-      return -1 * this.config.simulation.chargeStrength;
+      return 10 * this.config.simulation.chargeStrength;
     } else {
-      return this.config.simulation.chargeStrength;
+      return -1 * this.config.simulation.chargeStrength;
     }
   }
 
