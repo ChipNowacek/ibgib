@@ -250,6 +250,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           return t.getNodeRenderType(d) === "text";
         })
         .append("foreignObject")
+          .attr("id", d => t.getUniqueId(d.id, "label", "foreignObject"))
           .attr("width", d => 2 * t.getNodeShapeRadius(d))
           .attr("height", d => 2 * t.getNodeShapeRadius(d))
           .attr("x", d => (-1) * t.getNodeShapeRadius(d))
@@ -1616,10 +1617,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     let transform = ibHelper.parseTransformString(t.svgGroup.attr("transform"));
 
-    let trans =
-      d3.transition()
-        .duration(75)
-        .ease(d3.easeLinear);
+    // let trans =
+    //   d3.transition()
+    //     .duration(75)
+    //     .ease(d3.easeLinear);
 
     t.rootNode.x = (event.clientX - transform.translateX) / transform.scaleX;
     t.rootNode.y = (event.clientY - transform.translateY) / transform.scaleY;
@@ -1685,7 +1686,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   }
   handleNodeDblClicked(d) {
     let t = this;
-    t.removeChildren(d);
+
+    let durationMs = 150;
+
+    t.removeChildren(d, durationMs);
   }
   handleNodeLongClicked(d) {
     let t = this;
@@ -1878,10 +1882,47 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           }
         });
   }
-  removeChildren(node) {
+  removeChildren(node, durationMs) {
     let t = this;
-    let children = t.getChildren(node);
-    children.forEach(child => t.removeNodeAndChildren(child));
+
+    if (durationMs) {
+
+      let transition =
+        d3.transition()
+          .duration(durationMs)
+          .ease(d3.easeLinear);
+
+      t.getChildren(node).forEach(child => {
+        let radius = t.getNodeShapeRadius(child);
+        let cx = node.x - child.x - radius;
+        let cy = node.y - child.y - radius;
+
+        d3.select("#" + t.getNodeShapeId(child))
+          .transition(transition)
+          .attr("cx", cx)
+          .attr("cy", cy)
+          .attr("x", cx)
+          .attr("y", cy)
+
+        d3.select("#" + t.getNodeLabelId(child))
+          .transition(transition)
+          .attr("x", cx + "px")
+          .attr("y", cy + "px")
+
+        // if the node is a comment with a foreign object
+        d3.select("#" + t.getUniqueId(child.id, "label", "foreignObject"))
+          .transition(transition)
+          .attr("x", cx + "px")
+          .attr("y", cy + "px")
+
+          // d3.select("#" + t.getNodeImageGroupId(child)),
+
+        setTimeout(() => t.removeNodeAndChildren(child), durationMs);
+      });
+    } else {
+      t.removeNodeAndChildren(child)
+    }
+
   }
   removeNodeAndChildren(node) {
     let t = this;
