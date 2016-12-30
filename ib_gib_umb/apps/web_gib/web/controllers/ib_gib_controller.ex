@@ -123,6 +123,7 @@ defmodule WebGib.IbGibController do
           |> assign(:thing_relations, thing_relations)
           |> assign(:ancestors, thing_relations["ancestor"])
           |> assign(:past, thing_relations["past"])
+          |> assign(:identity_ib_gibs, get_session(conn, @ib_identity_ib_gibs_key))
         {:ok, conn}
     end
 

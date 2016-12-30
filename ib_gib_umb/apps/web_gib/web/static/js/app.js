@@ -28,6 +28,8 @@ class App {
       // This is our base json path that we will use to pull anything down.
       let baseJsonPath = divIbGibData.getAttribute("data-path");
       let baseD3JsonPath = divIbGibData.getAttribute("d3-data-path");
+      let identityIbGibs = divIbGibData.getAttribute("data-identityibgibs");
+      debugger;
 
       let ibGibProvider = new IbGibProvider(ibGibCache, baseJsonPath);
       let ibGibEventBus = new IbGibEventBus(ibGibSocket.socket, ibGibProvider);
