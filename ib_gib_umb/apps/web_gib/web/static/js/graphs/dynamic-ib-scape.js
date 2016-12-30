@@ -918,21 +918,32 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         .forEach(n => t.removeVirtualNode(n));
     }
 
+  clearFreezeNodeTimer(node) {
+    if (node.freezeNodeTimer) {
+      clearTimeout(node.freezeNodeTimer);
+    }
+
+    if (node.frozen) {
+      if (!node.fixedBeforeFreeze) {
+        delete node.fx;
+        delete node.fy;
+      }
+      delete node.fixedBeforeFreeze;
+      delete node.frozen;
+    }
+  }
+
   freezeNode(node, durationMs) {
+    let t = this;
+    t.clearFreezeNodeTimer(node);
+
     if (!node.fx && !node.fy) {
       node.fx = node.x;
       node.fy = node.y;
       node.frozen = true;
 
-      setTimeout(() => {
-        if (node.frozen) {
-          if (!node.fixedBeforeFreeze) {
-            delete node.fx;
-            delete node.fy;
-          }
-          delete node.fixedBeforeFreeze;
-          delete node.frozen;
-        }
+      node.freezeNodeTimer = setTimeout(() => {
+        t.clearFreezeNodeTimer(node);
       }, durationMs);
     }
   }

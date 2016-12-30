@@ -557,32 +557,36 @@ export class DynamicD3ForceGraph {
     try {
       // Update the link Positions
       t.graphLinksData
-        .attr("x1", d => d.source.x)
-        .attr("y1", d => d.source.y)
+        .attr("x1", d => {
+          // hack b/c of freezing nodes change causes NaN errors...not sure how to diag
+          // see commit https://github.com/ibgib/ibgib/commit/7a4b37b642356e099089af350287812ff0aa2f57
+          if (isNaN(d.source.x)) {
+            d.source.x = d.source.lastX ? d.source.lastX : 0;
+          } else {
+            d.source.lastX = d.source.x;
+          }
+          return d.source.x;
+        })
+        .attr("y1", d => {
+          // hack b/c of freezing nodes change causes NaN errors...not sure how to diag
+          // see commit https://github.com/ibgib/ibgib/commit/7a4b37b642356e099089af350287812ff0aa2f57
+          if (isNaN(d.source.y)) {
+            d.source.y = d.source.lastY ? d.source.lastY : 0;
+          } else {
+            d.source.lastY = d.source.y;
+          }
+          return d.source.y;
+        })
         .attr("x2", d => d.target.x)
         .attr("y2", d => d.target.y);
 
       // Translate the node groups
       t.graphNodesData
           .attr("transform", d => {
-            let x = d.x;
-            let y = d.y;
-            if (isNaN(x) || isNaN(y)) {
-              // x = d.x;
-              // y = d.y;
-              x = 0;
-              y = 0;
-              // debugger;
-            }
+            let x = isNaN(d.x) ? (d.lastX || 0) : d.x;
+            let y = isNaN(d.y) ? (d.lastY || 0) : d.y;
+
             return 'translate(' + [x, y] + ')';
-            // if (isNaN(d.fx)) { delete d.fx; delete d.fy; }
-            //   if (d && !isNaN(d.x)) {
-            //     return 'translate(' + [d.x, d.y] + ')';
-            //   } else {
-            //     debugger;
-            //     console.error(`d is falsy in d3 force graph handleTicked (?)`);
-            //     return 'translate(' + [d.x, d.y] + ')';
-            //   }
           });
     } catch (e) {
       console.log("errored tick")
