@@ -12,7 +12,7 @@ defmodule WebGib.IbGibView do
           "ibgib": "#{@ib_gib}",
           "data-metaqueryibgib": "#{@meta_query_ib_gib}",
           "data-metaqueryresultibgib": "#{@meta_query_result_ib_gib}",
-          "data-identityibgibs": "#{@identity_ib_gibs}",
+          "data-identityibgibs": @identity_ib_gibs |> Enum.reduce(fn(x, acc) -> acc <> "|" <> x end),
           "data-path": "#{WebGib.Router.Helpers.ib_gib_path(WebGib.Endpoint, :get, "")}",
           "d3-data-path": "#{WebGib.Router.Helpers.ib_gib_path(WebGib.Endpoint, :getd3, "")}",
           "data-open-path": "#{WebGib.Router.Helpers.ib_gib_path(WebGib.Endpoint, :show, "")}",

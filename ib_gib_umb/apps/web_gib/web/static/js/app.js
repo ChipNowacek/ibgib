@@ -28,8 +28,7 @@ class App {
       // This is our base json path that we will use to pull anything down.
       let baseJsonPath = divIbGibData.getAttribute("data-path");
       let baseD3JsonPath = divIbGibData.getAttribute("d3-data-path");
-      let identityIbGibs = divIbGibData.getAttribute("data-identityibgibs");
-      debugger;
+      let currentIdentityIbGibs = divIbGibData.getAttribute("data-identityibgibs").split("|");
 
       let ibGibProvider = new IbGibProvider(ibGibCache, baseJsonPath);
       let ibGibEventBus = new IbGibEventBus(ibGibSocket.socket, ibGibProvider);
@@ -43,7 +42,7 @@ class App {
       // let data = baseD3JsonPath + ibGib;
       // this.ibScape.update(data);
 
-      this.ibScape = new DynamicIbScape(graphDiv, "mainIbScapeSvg", /*config*/ null, baseJsonPath, ibGibCache, ibGibImageProvider, ibGib, ibGibSocket, ibGibEventBus, /*isPrimaryIbScape*/ true, ibGibProvider);
+      this.ibScape = new DynamicIbScape(graphDiv, "mainIbScapeSvg", /*config*/ null, baseJsonPath, ibGibCache, ibGibImageProvider, ibGib, ibGibSocket, ibGibEventBus, /*isPrimaryIbScape*/ true, ibGibProvider, currentIdentityIbGibs);
       // this.ibScape.init();
       this.ibScape.toggleFullScreen();
 

@@ -85,19 +85,30 @@ export class IbGibCache {
     }
   }
 
-  // getAdjunctInfo_ByAdjunctIbGib(adjunctIbGib) {
-  //   let t = this;
-  //   let adjunctInfos =
-  //     Object.keys(t.adjunctNaiveCache)
-  //       .map(key => t.adjunctNaiveCache[key])
-  //       .filter(info => info.adjunctIbGib);
-  //   if (adjunctInfos.length === 0) {
-  //     return null;
-  //   } else if (adjunctInfos.length === 1) {
-  //     return adjunctInfos[0];
-  //   } else {
-  //     console.warn(`multiple adjunctInfos found for adjunctIbGib: ${adjunctIbGib}`)
-  //     return adjunctInfos[0];
-  //   }
-  // }
+  getAdjunctInfo_ByAdjunctIbGib(adjunctIbGib) {
+    let t = this;
+    let result = null;
+
+    // Groups by tempJuncIbGib
+    let adjunctInfoGroups =
+      Object.keys(t.adjunctNaiveCache)
+        .map(key => t.adjunctNaiveCache[key]);
+
+    for (var i = 0; i < adjunctInfoGroups.length; i++) {
+      let infos = adjunctInfoGroups[i];
+      let adjunctInfos = infos.filter(info => info.adjunctIbGib === adjunctIbGib);
+      if (adjunctInfos && adjunctInfos.length > 0) {
+        if (adjunctInfos.length > 1) {
+          console.warn(`multiple adjunctInfos found for adjunctIbGib: ${adjunctIbGib}`)
+        }
+        result = adjunctInfos[0];
+        break;
+      }
+    }
+
+    return result;
+    // if (adjunctInfos.length === 0) {
+    //   return null;
+    // } else
+  }
 }
