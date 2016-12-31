@@ -180,6 +180,15 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     t.refreshContextNode();
   }
+  initIdentities() {
+    let t = this;
+
+    t.currentIdentityIbGibs
+      .forEach(identityIbGib =>
+        t.connectToEventBus_Identity(identityIbGib)
+      );
+  }
+
   refreshContextNode() {
     let t = this, lc = `refreshContextNode`;
 
@@ -217,13 +226,12 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       });
     }
   }
-
   execRefresh(ibGibs, callback) {
     let t = this, lc = `execRefresh(ibGibs: ${JSON.stringify(ibGibs)})`;
 
     t.backgroundRefresher.exec(ibGibs, successMsg => {
       console.log(`${lc} Initial refresh source nodes complete. successMsg: ${JSON.stringify(successMsg)}`);
-        if (successMsg.data) {
+        if (successMsg && successMsg.data) {
           let latestIbGibs = successMsg.data.latest_ib_gibs || {};
           Object.keys(latestIbGibs)
             .forEach(oldIbGib => {
@@ -233,8 +241,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
                 t.ibGibEventBus.broadcastIbGibUpdate_LocallyOnly(oldTempJunc, newIbGib);
               });
             });
+        } else if (successMsg === null) {
+          console.log(`${lc} Nothing to refresh.`);
         } else {
-          console.error(`${lc} successMsg.data problem.`)
+          console.error(`${lc} successMsg.data problem.`);
         }
         if (callback) { callback(); }
     }, errorMsg => {
@@ -1032,23 +1042,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       t.swap(node, node, /*updateParentOrChild*/ true);
 
       if (node.ibGib !== "ib^gib") {
-        let tempJuncIbGib = ibHelper.getTemporalJunctionIbGib(ibGibJson);
-
-        t.ibGibEventBus.connect(/*connectionId*/ node.id, tempJuncIbGib, msg => {
-          switch (msg.metadata.name) {
-            case "update":
-              t.handleEventBusMsg_Update(tempJuncIbGib, node.ibGib, msg);
-              break;
-            case "adjuncts":
-              t.handleEventBusMsg_Adjuncts(tempJuncIbGib, node.ibGib, msg);
-              break;
-            case "new_adjunct":
-              t.handleEventBusMsg_NewAdjunct(tempJuncIbGib, node.ibGib, msg);
-              break;
-            default:
-              console.error(`Unhandled/invalid msg received on event bus. Msg: ${JSON.stringify(msg)}`)
-          }
-        });
+        t.connectToEventBus_IbGibNode(node)
       }
 
       t.clearBusy(node);
@@ -1184,82 +1178,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
   }
 
-  handleEventBusMsg_Update(tempJuncIbGib, ibGib, msg) {
-    let t = this;
-    console.log(`handleEventBusMsg_Update msg:\n${JSON.stringify(msg)}`)
-
-    if (msg && msg.data &&
-        // possibly redundant (unnecessary)
-        msg.metadata.temp_junc_ib_gib === tempJuncIbGib &&
-        msg.data.new_ib_gib) {
-      t.graphData.nodes
-        .filter(n => n.ibGib === ibGib)
-        .forEach(n => {
-          console.log(`updating ibGib node`)
-          t.clearBusy(n);
-          // ibGib in the "past" rel8n will be paused, because we don't want to
-          // update those, rather we want to keep them at that particular frame
-          // in time. There may be other use cases for pausing (e.g. user
-          // pauses the ibGib for whatever reason, or possibly when we navigate
-          // to an ibGib in the past rel8n).
-          if (n.isPaused) {
-            console.log(`msg received, but node ${n.id} is paused.`);
-          } else {
-            t.updateIbGib(n,
-                          msg.data.new_ib_gib,
-                          /*skipUpdateUrl*/ false,
-                          /*callback*/ null);
-          }
-        });
-    } else {
-      debugger;
-      console.warn(`Unused msg(?): ${JSON.stringify(msg)}`);
-    }
-  }
-  handleEventBusMsg_Adjuncts(tempJuncIbGib, ibGib, msg) {
-    let t = this;
-    console.log(`handleEventBusMsg_Adjuncts msg:\n${JSON.stringify(msg)}`)
-    if (msg && msg.metadata && msg.metadata.temp_junc_ib_gib === tempJuncIbGib) {
-      console.log(`handleEventBusMsg_Adjuncts: calling getIbGibJsons...`)
-      t.getIbGibJsons(msg.data.adjunct_ib_gibs, adjunctIbGibJsons => {
-        console.log(`handleEventBusMsg_Adjuncts: adjunctIbGibJsons: ${JSON.stringify(adjunctIbGibJsons)}`)
-
-        msg.data.adjunct_ib_gibs
-          .forEach(adjunctIbGib => {
-            let adjunctIbGibJson = adjunctIbGibJsons[adjunctIbGib];
-            t.ibGibCache.addAdjunctInfo(tempJuncIbGib, ibGib, adjunctIbGib, adjunctIbGibJson);
-          });
-        // At this point, we have loaded all adjunctInfos and are ready to sync
-        // the tempJuncIbGib
-        console.log(`handleEventBusMsg_Adjuncts: calling syncAdjuncts...`)
-        t.syncAdjuncts(tempJuncIbGib, /*callback*/ () => {
-          console.log(`handleEventBusMsg_Adjuncts: completed syncAdjuncts.`)
-        });
-      });
-    } else {
-      console.warn(`Unused msg(?): ${JSON.stringify(msg)}`);
-    }
-  }
-  handleEventBusMsg_NewAdjunct(tempJuncIbGib, ibGib, msg) {
-    let t = this; let lc = `handleEventBusMsg_NewAdjunct(${tempJuncIbGib})`;
-    console.log(`${lc} msg:\n${JSON.stringify(msg)}`)
-    if (msg && msg.metadata && msg.metadata.temp_junc_ib_gib === tempJuncIbGib) {
-      let adjunctIbGib = msg.data.adjunct_ib_gib;
-      console.log(`${lc} calling getIbGibJson...`)
-      t.getIbGibJson(adjunctIbGib, adjunctIbGibJson => {
-        console.log(`${lc} adjunctIbGibJson: ${JSON.stringify(adjunctIbGibJson)}`)
-
-        t.ibGibCache.addAdjunctInfo(tempJuncIbGib, ibGib, adjunctIbGib, adjunctIbGibJson);
-        console.log(`${lc} calling syncAdjuncts...`);
-        t.syncAdjuncts(tempJuncIbGib, /*callback*/ () => {
-          console.log(`${lc} completed syncAdjuncts.`);
-        });
-      });
-    } else {
-      console.warn(`${lc} Invalid msg(?): ${JSON.stringify(msg)}`);
-    }
-  }
-
   updateIbGib(node, newIbGib, skipUpdateUrl, callback) {
     let t = this;
 
@@ -1362,7 +1280,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         multiplier = d3Scales["default"];
     }
 
-    return d3CircleRadius * multiplier;
+    d.r = d3CircleRadius * multiplier;
+    return d.r;
   }
   getIbGibMultiplier(d) {
     let t = this;
@@ -1445,10 +1364,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   getNodeLabelText(d) {
     if (d.type === "ibGib" && d.ibGibJson) {
       if (d.ibGibJson && d.ibGibJson.data) {
-        if (d.ibGibJson.data.render &&
-            d.ibGibJson.data.render === "text" &&
+        if (d.render === "text" &&
             d.ibGibJson.data.text) {
           return d.ibGibJson.data.text;
+        } else if (d.render === "image") {
+          return "";
         } else if (d.ibGibJson.data.label) {
           return d.ibGibJson.data.label;
         } else if (d.ibGib === "ib^gib") {
@@ -1488,6 +1408,16 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       return "There was an error...noooooooooo 😱";
     } else {
       return d.id;
+    }
+  }
+  getNodeImageHref(d) {
+    let t = this;
+    let imageUrl =
+      t.ibGibImageProvider.getThumbnailImageUrl(d.ibGib, d.ibGibJson);
+    if (imageUrl) {
+      return imageUrl;
+    } else {
+      return super.getNodeImageHref(d);
     }
   }
 
@@ -1984,5 +1914,114 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         }
       }, t.config.other.rootPulseMs);
     }
+  }
+
+  // Event bus related -------------------------------------
+
+  connectToEventBus_IbGibNode(node) {
+    let t = this;
+    let tempJuncIbGib = ibHelper.getTemporalJunctionIbGib(node.ibGibJson);
+
+    t.ibGibEventBus.connect(/*connectionId*/ node.id, tempJuncIbGib, msg => {
+      switch (msg.metadata.name) {
+        case "update":
+          t.handleEventBusMsg_Update(tempJuncIbGib, node.ibGib, msg);
+          break;
+        case "adjuncts":
+          t.handleEventBusMsg_Adjuncts(tempJuncIbGib, node.ibGib, msg);
+          break;
+        case "new_adjunct":
+          t.handleEventBusMsg_NewAdjunct(tempJuncIbGib, node.ibGib, msg);
+          break;
+        default:
+          console.error(`Unhandled/invalid msg received on event bus. Msg: ${JSON.stringify(msg)}`)
+      }
+    });
+  }
+  connectToEventBus_Identity(identityIbGib) {
+    let t = this;
+
+    t.ibGibEventBus.connect(/*connectionId*/ identityIbGib, identityIbGib, msg => {
+      t.handleEventBusMsg_Identity(identityIbGib, msg);
+    });
+  }
+
+  handleEventBusMsg_Update(tempJuncIbGib, ibGib, msg) {
+    let t = this;
+    console.log(`handleEventBusMsg_Update msg:\n${JSON.stringify(msg)}`)
+
+    if (msg && msg.data &&
+        // possibly redundant (unnecessary)
+        msg.metadata.temp_junc_ib_gib === tempJuncIbGib &&
+        msg.data.new_ib_gib) {
+      t.graphData.nodes
+        .filter(n => n.ibGib === ibGib)
+        .forEach(n => {
+          console.log(`updating ibGib node`)
+          t.clearBusy(n);
+          // ibGib in the "past" rel8n will be paused, because we don't want to
+          // update those, rather we want to keep them at that particular frame
+          // in time. There may be other use cases for pausing (e.g. user
+          // pauses the ibGib for whatever reason, or possibly when we navigate
+          // to an ibGib in the past rel8n).
+          if (n.isPaused) {
+            console.log(`msg received, but node ${n.id} is paused.`);
+          } else {
+            t.updateIbGib(n,
+                          msg.data.new_ib_gib,
+                          /*skipUpdateUrl*/ false,
+                          /*callback*/ null);
+          }
+        });
+    } else {
+      debugger;
+      console.warn(`Unused msg(?): ${JSON.stringify(msg)}`);
+    }
+  }
+  handleEventBusMsg_Adjuncts(tempJuncIbGib, ibGib, msg) {
+    let t = this;
+    console.log(`handleEventBusMsg_Adjuncts msg:\n${JSON.stringify(msg)}`)
+    if (msg && msg.metadata && msg.metadata.temp_junc_ib_gib === tempJuncIbGib) {
+      console.log(`handleEventBusMsg_Adjuncts: calling getIbGibJsons...`)
+      t.getIbGibJsons(msg.data.adjunct_ib_gibs, adjunctIbGibJsons => {
+        console.log(`handleEventBusMsg_Adjuncts: adjunctIbGibJsons: ${JSON.stringify(adjunctIbGibJsons)}`)
+
+        msg.data.adjunct_ib_gibs
+          .forEach(adjunctIbGib => {
+            let adjunctIbGibJson = adjunctIbGibJsons[adjunctIbGib];
+            t.ibGibCache.addAdjunctInfo(tempJuncIbGib, ibGib, adjunctIbGib, adjunctIbGibJson);
+          });
+        // At this point, we have loaded all adjunctInfos and are ready to sync
+        // the tempJuncIbGib
+        console.log(`handleEventBusMsg_Adjuncts: calling syncAdjuncts...`)
+        t.syncAdjuncts(tempJuncIbGib, /*callback*/ () => {
+          console.log(`handleEventBusMsg_Adjuncts: completed syncAdjuncts.`)
+        });
+      });
+    } else {
+      console.warn(`Unused msg(?): ${JSON.stringify(msg)}`);
+    }
+  }
+  handleEventBusMsg_NewAdjunct(tempJuncIbGib, ibGib, msg) {
+    let t = this; let lc = `handleEventBusMsg_NewAdjunct(${tempJuncIbGib})`;
+    console.log(`${lc} msg:\n${JSON.stringify(msg)}`)
+    if (msg && msg.metadata && msg.metadata.temp_junc_ib_gib === tempJuncIbGib) {
+      let adjunctIbGib = msg.data.adjunct_ib_gib;
+      console.log(`${lc} calling getIbGibJson...`)
+      t.getIbGibJson(adjunctIbGib, adjunctIbGibJson => {
+        console.log(`${lc} adjunctIbGibJson: ${JSON.stringify(adjunctIbGibJson)}`)
+
+        t.ibGibCache.addAdjunctInfo(tempJuncIbGib, ibGib, adjunctIbGib, adjunctIbGibJson);
+        console.log(`${lc} calling syncAdjuncts...`);
+        t.syncAdjuncts(tempJuncIbGib, /*callback*/ () => {
+          console.log(`${lc} completed syncAdjuncts.`);
+        });
+      });
+    } else {
+      console.warn(`${lc} Invalid msg(?): ${JSON.stringify(msg)}`);
+    }
+  }
+  handleEventBusMsg_Identity(identityIbGib, msg) {
+    debugger;
   }
 }

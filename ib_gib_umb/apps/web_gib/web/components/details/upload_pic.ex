@@ -14,7 +14,7 @@ defmodule WebGib.Web.Components.Details.UploadPic do
     # Upload pic details
     # This is shown when the user presses the image button on an ibGib.
     div [id: "ib-pic-details", class: "ib-details-off"] do
-      form [action: "/ibgib/pic", method: "post", enctype: "multipart/form-data"] do
+      form [id: "ib-pic-details-form", action: "/ibgib/pic", method: "post", enctype: "multipart/form-data"] do
         div [class: "form-group ib-hidden"] do
           input [name: "_utf8", type: "hidden", value: "✓"]
           input [id: "pic_form_data_src_ib_gib", name: "pic_form_data[src_ib_gib]",type: "hidden", value: ""]

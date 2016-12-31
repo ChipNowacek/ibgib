@@ -253,7 +253,7 @@ defmodule WebGib.Bus.Commanding.Comment do
                  comment_ib_gib,
                  nil = _new_src_ib_gib_or_nil,
                  src_temp_junc_ib_gib) do
-   _ = Logger.debug("broadcasting :new_adjunct.\nsrc_temp_junc_ib_gib: #{src_temp_junc_ib_gib}\ncomment_ib_gib: #{comment_ib_gib}\nsrc_ib_gib: #{src_ib_gib}")
+    _ = Logger.debug("broadcasting :new_adjunct.\nsrc_temp_junc_ib_gib: #{src_temp_junc_ib_gib}\ncomment_ib_gib: #{comment_ib_gib}\nsrc_ib_gib: #{src_ib_gib}")
     EventChannel.broadcast_ib_gib_event(:new_adjunct,
                                         {src_temp_junc_ib_gib,
                                          comment_ib_gib,

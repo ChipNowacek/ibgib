@@ -178,7 +178,6 @@ export class FormDetailsCommandBase extends DetailsCommandBase {
     let t = this;
     console.log(`${t.cmdName} cmd submitFunc`);
 
-    let formId = t.getFormId();
     let form = document.getElementById(t.getFormId());
     if (form.checkValidity()) {
       console.log("form is valid");
@@ -601,6 +600,265 @@ export class CommentDetailsCommand extends FormDetailsCommandBase {
       console.error(`${typeof(t)}: Unknown msg response from channel.`);
     }
   }
+}
+
+export class IdentEmailDetailsCommand extends FormDetailsCommandBase {
+  constructor(ibScape, d) {
+    const cmdName = "identemail";
+    super(cmdName, ibScape, d);
+  }
+
+  init() {
+    let t = this;
+
+    d3.select("#identemail_form_data_src_ib_gib")
+      .attr("value", t.d.ibGib);
+
+    $("#identemail_form_data_text").focus();
+  }
+
+  getMessageData() {
+    let t = this;
+
+    document.getElementById('pic_form_data_file').files[0]
+
+    var formData = new FormData();
+    formData.append("fileToUpload", document.getElementById('fileToUpload').files[0]);
+
+    return {
+      virtual_id: t.virtualNode.virtualId,
+      src_ib_gib: t.d.type === "rel8n" ? t.d.rel8nSrc.ibGib : t.d.ibGib,
+      comment_text: $("#comment_form_data_text").val()
+    };
+  }
+
+  /**
+   * Default implementation is for a command that will produce a single virtual
+   * node that will be busy while the message is sent to the server via the
+   * channel.
+   */
+  submitFunc() {
+    let t = this;
+    console.log(`${t.cmdName} cmd submitFunc`);
+
+    debugger;
+    // let form = document.getElementById(t.getFormId());
+    let form = document.querySelector("#" + t.getFormId());
+    let formData = new FormData(form);
+
+    for (let [key, value] of formData.entries()) {
+      console.log(key, value);
+    }
+
+    let xhr = new XMLHttpRequest();
+    xhr.addEventListener("load", t.xhrComplete, false);
+    xhr.addEventListener("error", t.xhrFailed, false);
+    xhr.addEventListener("abort", t.xhrCanceled, false);
+    xhr.open("POST", "/ibgib/ident");
+    xhr.send(formData);
+
+    // if (form.checkValidity()) {
+    //   console.log("form is valid");
+    //   t.addVirtualNode();
+    //   t.ibScape.setBusy(t.virtualNode);
+    //
+    //   let msg = t.getMessage();
+    //   t.ibScape.commandMgr.bus.send(msg, (successMsg) => {
+    //     t.ibScape.clearBusy(t.virtualNode);
+    //     if (t.handleSubmitResponse) {
+    //       t.handleSubmitResponse(successMsg);
+    //     }
+    //   }, (errorMsg) => {
+    //     console.error(`Command errored. Msg: ${JSON.stringify(errorMsg)}`);
+    //     t.ibScape.clearBusy(t.virtualNode);
+    //     t.virtualNode.type = "error";
+    //     t.virtualNode.errorMsg = JSON.stringify(errorMsg);
+    //     t.ibScape.zapVirtualNode(t.virtualNode);
+    //   });
+    // } else {
+    //   console.log("form is invalid");
+    // }
+
+    t.close();
+  }
+
+  /* This event is raised when the server send back a response */
+  xhrComplete(evt) {
+    console.log(`xhrComplete. responseText: ${evt.target.responseText}`)
+  }
+
+  xhrFailed(evt) {
+    console.log(`xhrFailed. evt: ${JSON.stringify(evt)}`);
+  }
+
+  xhrCanceled(evt) {
+    console.log(`xhrCanceled. The upload has been canceled by the user or the browser dropped the connection.`);
+  }
+
+  // handleSubmitResponse(msg) {
+  //   let t = this;
+  //
+  //   if (msg && msg.data && msg.data.comment_ib_gib) {
+  //     if (msg.data.new_src_ib_gib) {
+  //       // The src was directly commented on, so this user had authz to
+  //       // do it (it's the ibGib's owner). So set the comment ibGib and
+  //       // zap it.
+  //       let commentIbGib = msg.data.comment_ib_gib;
+  //       t.virtualNode.ibGib = commentIbGib;
+  //       t.ibScape.zapVirtualNode(t.virtualNode);
+  //     } else {
+  //       // The src was not updated, so this is a user commenting on
+  //       // someone else's ibGib. So a comment was created and was rel8d
+  //       // to the src, but the src has not been inversely rel8d to the
+  //       // comment. So we'll remove the placeholder node and the
+  //       // :new_adjunct event will create a new node.
+  //
+  //       t.ibScape.remove(t.virtualNode);
+  //     }
+  //   } else {
+  //     console.error(`${typeof(t)}: Unknown msg response from channel.`);
+  //   }
+  // }
+}
+
+export class PicDetailsCommand extends FormDetailsCommandBase {
+  constructor(ibScape, d) {
+    const cmdName = "pic";
+    super(cmdName, ibScape, d);
+  }
+
+  init() {
+    let t = this;
+
+    d3.select("#pic_form_data_src_ib_gib")
+      .attr("value", t.d.ibGib);
+
+    $("#pic_form_data_file").focus();
+  }
+
+  getMessageData() {
+    let t = this;
+
+    document.getElementById('pic_form_data_file').files[0]
+
+    var formData = new FormData();
+    formData.append("fileToUpload", document.getElementById('fileToUpload').files[0]);
+
+    return {
+      virtual_id: t.virtualNode.virtualId,
+      src_ib_gib: t.d.type === "rel8n" ? t.d.rel8nSrc.ibGib : t.d.ibGib,
+      comment_text: $("#comment_form_data_text").val()
+    };
+  }
+
+  /**
+   * Default implementation is for a command that will produce a single virtual
+   * node that will be busy while the message is sent to the server via the
+   * channel.
+   */
+  submitFunc() {
+    let t = this;
+    console.log(`${t.cmdName} cmd submitFunc`);
+
+    debugger;
+    // let form = document.getElementById(t.getFormId());
+    let form = document.querySelector("#" + t.getFormId());
+    let formData = new FormData(form);
+
+    for (let [key, value] of formData.entries()) {
+      console.log(key, value);
+    }
+
+    let xhr = new XMLHttpRequest();
+    xhr.upload.addEventListener("progress", t.xhrUploadProgress, false);
+    xhr.addEventListener("load", t.xhrComplete, false);
+    xhr.addEventListener("error", t.xhrFailed, false);
+    xhr.addEventListener("abort", t.xhrCanceled, false);
+    xhr.open("POST", "/ibgib/pic");
+    xhr.send(formData);
+
+    // if (form.checkValidity()) {
+    //   console.log("form is valid");
+    //   t.addVirtualNode();
+    //   t.ibScape.setBusy(t.virtualNode);
+    //
+    //   let msg = t.getMessage();
+    //   t.ibScape.commandMgr.bus.send(msg, (successMsg) => {
+    //     t.ibScape.clearBusy(t.virtualNode);
+    //     if (t.handleSubmitResponse) {
+    //       t.handleSubmitResponse(successMsg);
+    //     }
+    //   }, (errorMsg) => {
+    //     console.error(`Command errored. Msg: ${JSON.stringify(errorMsg)}`);
+    //     t.ibScape.clearBusy(t.virtualNode);
+    //     t.virtualNode.type = "error";
+    //     t.virtualNode.errorMsg = JSON.stringify(errorMsg);
+    //     t.ibScape.zapVirtualNode(t.virtualNode);
+    //   });
+    // } else {
+    //   console.log("form is invalid");
+    // }
+
+    t.close();
+  }
+
+  /* This event is raised when the server send back a response */
+  xhrComplete(evt) {
+    let { status } = evt.target;
+    if (status === 200) {
+      debugger;
+      console.log(`xhrComplete. responseText: ${evt.target.responseText}`)
+    } else if (status === 403) {
+      // hack. need to change this to show a details information popup
+      // so the user can just click on the links.
+      alert(evt.target.responseText);
+    }
+  }
+
+  xhrFailed(evt) {
+    console.log(`xhrFailed. evt: ${JSON.stringify(evt)}`);
+  }
+
+  xhrCanceled(evt) {
+    console.log(`xhrCanceled. The upload has been canceled by the user or the browser dropped the connection.`);
+  }
+
+  xhrUploadProgress(evt) {
+    if (evt.lengthComputable) {
+      var percentComplete = Math.round(evt.loaded * 100 / evt.total);
+      console.log(`pct complete... ${percentComplete}%`)
+      // document.getElementById('progressNumber').innerHTML = percentComplete.toString() + '%';
+    }
+    else {
+      console.log(`error upload progress`)
+      // document.getElementById('progressNumber').innerHTML = 'unable to compute';
+    }
+  }
+
+  // handleSubmitResponse(msg) {
+  //   let t = this;
+  //
+  //   if (msg && msg.data && msg.data.comment_ib_gib) {
+  //     if (msg.data.new_src_ib_gib) {
+  //       // The src was directly commented on, so this user had authz to
+  //       // do it (it's the ibGib's owner). So set the comment ibGib and
+  //       // zap it.
+  //       let commentIbGib = msg.data.comment_ib_gib;
+  //       t.virtualNode.ibGib = commentIbGib;
+  //       t.ibScape.zapVirtualNode(t.virtualNode);
+  //     } else {
+  //       // The src was not updated, so this is a user commenting on
+  //       // someone else's ibGib. So a comment was created and was rel8d
+  //       // to the src, but the src has not been inversely rel8d to the
+  //       // comment. So we'll remove the placeholder node and the
+  //       // :new_adjunct event will create a new node.
+  //
+  //       t.ibScape.remove(t.virtualNode);
+  //     }
+  //   } else {
+  //     console.error(`${typeof(t)}: Unknown msg response from channel.`);
+  //   }
+  // }
 }
 
 export class GotoCommand extends CommandBase {

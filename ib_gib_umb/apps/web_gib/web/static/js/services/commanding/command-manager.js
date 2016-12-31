@@ -60,6 +60,12 @@ export class CommandManager {
       case "comment":
         t.ibScape.currentCmd = t.getCommand_Comment(dIbGib);
         break;
+      case "identemail":
+        t.ibScape.currentCmd = t.getCommand_IdentEmail(dIbGib);
+        break;
+      case "pic":
+        t.ibScape.currentCmd = t.getCommand_Pic(dIbGib);
+        break;
       case "goto":
         t.ibScape.currentCmd = t.getCommand_Goto(dIbGib);
         break;
@@ -114,69 +120,67 @@ export class CommandManager {
         throw new Error(`Unknown rel8n to add: ${dIbGib.rel8nName}`);
     }
   }
-  execView(dIbGib) {
-    this.ibScape.toggleExpandNode(dIbGib);
-    this.ibScape.destroyStuff();
-    this.ibScape.update(null);
-  }
-  execFork(dIbGib) {
-    let init = () => {
-      d3.select("#fork_form_data_src_ib_gib")
-        .attr("value", dIbGib.ibgib);
-    };
-    this.ibScape.showDetails("fork", init);
-    $("#fork_form_data_dest_ib").focus();
-  }
+  // execView(dIbGib) {
+  //   this.ibScape.toggleExpandNode(dIbGib);
+  //   this.ibScape.destroyStuff();
+  //   this.ibScape.update(null);
+  // }
+  // execFork(dIbGib) {
+  //   let init = () => {
+  //     d3.select("#fork_form_data_src_ib_gib")
+  //       .attr("value", dIbGib.ibgib);
+  //   };
+  //   this.ibScape.showDetails("fork", init);
+  //   $("#fork_form_data_dest_ib").focus();
+  // }
   getCommand_Goto(dIbGib) {
     return new commands.GotoCommand(this.ibScape, dIbGib);
-  }
-  execGoto(dIbGib) {
-    location.href = `/ibgib/${dIbGib.ibgib}`
   }
   getCommand_Info(dIbGib) {
     return new commands.InfoDetailsCommand(this.ibScape, dIbGib);
   }
-  execPic(dIbGib) {
-    let init = () => {
-      d3.select("#pic_form_data_src_ib_gib")
-        .attr("value", dIbGib.ibgib);
-    };
-    this.ibScape.showDetails("pic", init);
-    $("#pic_form_data_file").focus();
-  }
-  execLink(dIbGib) {
-    let init = () => {
-      d3.select("#link_form_data_src_ib_gib")
-        .attr("value", dIbGib.ibgib);
-    };
-    this.ibScape.showDetails("link", init);
-    $("#link_form_data_text").focus();
-  }
-  execFullscreen(dIbGib) {
-    if (dIbGib.ibgib === "ib^gib") {
-      let id = this.ibScape.graphDiv.id;
-      this.ibScape.toggleFullScreen(`#${id}`);
-    } else {
-      this.ibScape.openImage(dIbGib.ibgib);
-    }
-  }
-  execExternalLink(dIbGib) {
-    let ibGibJson = this.ibGibCache.get(dIbGib.ibgib);
-    let url = ibHelper.getDataText(ibGibJson);
-    if (url) {
-      window.open(url,'_blank');
-    } else {
-      alert("Error opening external link... :-/");
-    }
-  }
-  execIdentEmail(dIbGib) {
-    let init = () => {
-      d3.select("#ident_form_data_src_ib_gib")
-        .attr("value", dIbGib.ibgib);
-    };
-    this.ibScape.showDetails("ident", init);
-    $("#ident_form_data_text").focus();
-  }
+  // execPic(dIbGib) {
+  //   let init = () => {
+  //     d3.select("#pic_form_data_src_ib_gib")
+  //       .attr("value", dIbGib.ibgib);
+  //   };
+  //   this.ibScape.showDetails("pic", init);
+  //   $("#pic_form_data_file").focus();
+  // }
+  // execLink(dIbGib) {
+  //   let init = () => {
+  //     d3.select("#link_form_data_src_ib_gib")
+  //       .attr("value", dIbGib.ibgib);
+  //   };
+  //   this.ibScape.showDetails("link", init);
+  //   $("#link_form_data_text").focus();
+  // }
+  // execFullscreen(dIbGib) {
+  //   if (dIbGib.ibgib === "ib^gib") {
+  //     let id = this.ibScape.graphDiv.id;
+  //     this.ibScape.toggleFullScreen(`#${id}`);
+  //   } else {
+  //     this.ibScape.openImage(dIbGib.ibgib);
+  //   }
+  // }
+  // execExternalLink(dIbGib) {
+  //   let ibGibJson = this.ibGibCache.get(dIbGib.ibgib);
+  //   let url = ibHelper.getDataText(ibGibJson);
+  //   if (url) {
+  //     window.open(url,'_blank');
+  //   } else {
+  //     alert("Error opening external link... :-/");
+  //   }
+  // }
+  // execIdentEmail(dIbGib) {
+  //   let init = () => {
+  //     d3.select("#ident_form_data_src_ib_gib")
+  //       .attr("value", dIbGib.ibgib);
+  //   };
+  //   this.ibScape.showDetails("ident", init);
+  //   $("#ident_form_data_text").focus();
+  // }
+
   getCommand_Help(dIbGib) {
     return new commands.HelpDetailsCommand(this.ibScape, dIbGib);
   }
@@ -192,62 +196,68 @@ export class CommandManager {
   getCommand_Comment(dIbGib) {
     return new commands.CommentDetailsCommand(this.ibScape, dIbGib);
   }
+  getCommand_IdentEmail(dIbGib) {
+    return new commands.IdentEmailDetailsCommand(this.ibScape, dIbGib);
+  }
+  getCommand_Pic(dIbGib) {
+    return new commands.PicDetailsCommand(this.ibScape, dIbGib);
+  }
   getCommand_Refresh(dIbGib) {
     return new commands.RefreshCommand(this.ibScape, dIbGib);
   }
   getCommand_Allow(dIbGib) {
     return new commands.AllowCommand(this.ibScape, dIbGib);
   }
-  execRefresh(dIbGib) {
-    location.href = `/ibgib/${dIbGib.ibgib}?latest=true`
-  }
-  execDownload(dIbGib) {
-    let t = this;
-    let imageUrl =
-      t.ibScape.ibGibImageProvider.getFullImageUrl(dIbGib.ibgib);
-
-    let init = () => {
-      let btn = d3.select("#download_form_submit_btn");
-      btn
-        .attr("href", imageUrl)
-        .attr("download", "");
-
-      if (!btn.node().onclick) {
-        btn.node().onclick = () => {
-          t.ibScape.cancelDetails();
-          t.ibScape.clearSelectedNode();
-        }
-      }
-
-      d3.select("#download_form_url")
-        .text(imageUrl);
-
-      d3.select("#download_form_filetype")
-        .text("not set");
-
-      d3.select("#download_form_filename")
-        .text("not set");
-
-      t.ibScape.repositionDetails();
-
-      t.ibScape.getIbGibJson(dIbGib.ibgib, (ibGibJson) => {
-        if (ibGibJson.data) {
-          if (ibGibJson.data.content_type) {
-            d3.select("#download_form_filetype")
-              .text(ibGibJson.data.content_type);
-          }
-          if (ibGibJson.data.filename) {
-            d3.select("#download_form_filename")
-              .text(ibGibJson.data.filename);
-            btn
-              .attr("download", ibGibJson.data.filename);
-          }
-        }
-      });
-    };
-
-    t.ibScape.showDetails("download", init);
-
-    $("#download_form_submit_btn").focus();
-  }
+  // execRefresh(dIbGib) {
+  //   location.href = `/ibgib/${dIbGib.ibgib}?latest=true`
+  // }
+  // execDownload(dIbGib) {
+  //   let t = this;
+  //   let imageUrl =
+  //     t.ibScape.ibGibImageProvider.getFullImageUrl(dIbGib.ibgib);
+  //
+  //   let init = () => {
+  //     let btn = d3.select("#download_form_submit_btn");
+  //     btn
+  //       .attr("href", imageUrl)
+  //       .attr("download", "");
+  //
+  //     if (!btn.node().onclick) {
+  //       btn.node().onclick = () => {
+  //         t.ibScape.cancelDetails();
+  //         t.ibScape.clearSelectedNode();
+  //       }
+  //     }
+  //
+  //     d3.select("#download_form_url")
+  //       .text(imageUrl);
+  //
+  //     d3.select("#download_form_filetype")
+  //       .text("not set");
+  //
+  //     d3.select("#download_form_filename")
+  //       .text("not set");
+  //
+  //     t.ibScape.repositionDetails();
+  //
+  //     t.ibScape.getIbGibJson(dIbGib.ibgib, (ibGibJson) => {
+  //       if (ibGibJson.data) {
+  //         if (ibGibJson.data.content_type) {
+  //           d3.select("#download_form_filetype")
+  //             .text(ibGibJson.data.content_type);
+  //         }
+  //         if (ibGibJson.data.filename) {
+  //           d3.select("#download_form_filename")
+  //             .text(ibGibJson.data.filename);
+  //           btn
+  //             .attr("download", ibGibJson.data.filename);
+  //         }
+  //       }
+  //     });
+  //   };
+  //
+  //   t.ibScape.showDetails("download", init);
+  //
+  //   $("#download_form_submit_btn").focus();
+  // }
 }

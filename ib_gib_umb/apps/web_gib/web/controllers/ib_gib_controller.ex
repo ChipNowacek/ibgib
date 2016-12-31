@@ -900,7 +900,7 @@ defmodule WebGib.IbGibController do
 
   # Email identity clause
   def ident(conn,
-            %{"ident_form_data" =>
+            %{"identemail_form_data" =>
               %{"ident_type" => "email",
                 "ident_text" => email_addr,
                 "ident_pin" => ident_pin,
@@ -966,10 +966,15 @@ defmodule WebGib.IbGibController do
 
     case complete_email_impl(conn, token, ident_pin) do
       {:ok, {conn, email_addr, src_ib_gib}} ->
+        # publish
+        _ = EventChannel.broadcast_ib_gib_event(:ident_email,
+                                            {session_ib_gib,
+                                             ident_ib_gib})
+
         redirect_ib_gib =
           if valid_ib_gib?(src_ib_gib), do: src_ib_gib, else: @root_ib_gib
         conn
-        |> put_flash(:info, gettext("Success! You have now added an email to your current identity. See https://github.com/ibgib/ibgib/wiki/identity for more info.") <> "\n#{email_addr}")
+        |> put_flash(:info, gettext("Success! You have now added the email address #{email_addr} to your current identity. Delete the login email we sent you, close this window, and return to your previous ibGib window. See https://github.com/ibgib/ibgib/wiki/identity for more info. (Note: We're working on streamlining this so you don't have to do this close window rigamarole...) ")
         |> redirect(to: "/ibgib/#{redirect_ib_gib}")
 
       {:error, reason} ->
@@ -1124,7 +1129,10 @@ defmodule WebGib.IbGibController do
       # Token is valid, pin is valid, so add the identity if not already added.
       # If the `email_addr` is new to ibgib, this will **create** the identity
       # ib_gib first and then add the ib^gib to the session identity_ib_gibs.
-      {:ok, conn} <- add_identity_to_session(conn, email_addr)
+      {:ok, {conn, identity_ib_gib}} <-
+        add_identity_to_session(conn, email_addr),
+      {:ok, session_identity_ib_gib} <-
+        get_session_identity_ib_gib(conn)
     ) do
       {:ok, {conn, email_addr, src_ib_gib}}
     else
@@ -1164,7 +1172,7 @@ defmodule WebGib.IbGibController do
                           identity_ib_gibs ++ [identity_ib_gib])
          end)
     ) do
-      {:ok, conn}
+      {:ok, {conn, identity_ib_gib}}
     else
       {:error, reason} when is_bitstring(reason) -> {:error, reason}
       {:error, reason} -> {:error, inspect reason}
@@ -1349,9 +1357,10 @@ defmodule WebGib.IbGibController do
     if has_email_identity?(identity_ib_gibs) do
       conn
     else
+      _ = Logger.info("User not authorized to upload pic.")
+      emsg = "You must be identified by at least one email account to upload. To identify yourself with an email address, click on the root ibGib (the green one that pops up when you click the background) and click the white \"Login\" button.\n\nFor a slightly outdated walkthru of this, see https://github.com/ibgib/ibgib/wiki/Identify-with-Email---Step-By-Step-Walkthru.\n\nAnd for more information on ibGib Identity, see https://github.com/ibgib/ibgib/wiki/Identity for more info."
       conn
-      |> put_flash(:error, "You must be identified by at least one email account to upload. Just hit the back button, log in with an email account and try again. See https://github.com/ibgib/ibgib/wiki/Identify-with-Email---Step-By-Step-Walkthru and https://github.com/ibgib/ibgib/wiki/Identity for more info.")
-      |> redirect(to: "/ibgib/#{@root_ib_gib}")
+      |> send_resp(403, emsg)
       |> halt
     end
   end
