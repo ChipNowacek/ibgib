@@ -41,10 +41,12 @@ defmodule WebGib.Endpoint do
   # The session will be stored in the cookie and signed,
   # this means its contents can be read but not tampered with.
   # Set :encryption_salt if you would also like to encrypt it.
+
   plug Plug.Session,
     store: :cookie,
     key: "_web_gib_key",
     signing_salt: "/EWwmO80",
+    # max_age: thanks SO! http://stackoverflow.com/questions/34578163/implementing-remember-me-in-phoenix
     max_age: 2_592_000 # 60*60*24*30 = 30 days
 
   plug WebGib.Router

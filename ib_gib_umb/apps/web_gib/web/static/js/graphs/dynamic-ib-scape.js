@@ -2030,16 +2030,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       t.currentIdentityIbGibs.push(identityIbGib);
     }
 
-    console.log(`reloading page...why doesn't this work in background tab in firefox?`)
+    // Thanks SO! http://stackoverflow.com/a/28171425/4275029
     setTimeout(() => window.location.reload());
-    // window.location.reload(true);
-    // setTimeout(window.location.reload);
-
-    // window.location.reload();
-    // window.location.reload();
-    // window.location.reload();
-    // window.location.href = window.location.href;
-    // window.location.href = window.location.href;
-    // window.location.href = window.location.href;
   }
 }
