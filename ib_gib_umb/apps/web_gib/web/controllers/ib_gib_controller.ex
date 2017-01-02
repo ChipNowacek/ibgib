@@ -15,6 +15,7 @@ defmodule WebGib.IbGibController do
 
   # alias IbGib.Transform.Mut8.Factory, as: Mut8Factory
   alias IbGib.{Expression, Auth.Identity}
+  alias WebGib.Adjunct
   alias WebGib.Bus.Channels.Event, as: EventChannel
   import IbGib.QueryOptionsFactory
   import WebGib.Validate
@@ -678,69 +679,91 @@ defmodule WebGib.IbGibController do
       _ = Logger.debug "pic is valid. content_type, filename, path: #{content_type}, #{filename}, #{path}"
 
       case pic_impl(conn, src_ib_gib, content_type, filename, path) do
-        {:ok, new_src_ib_gib} ->
+        {:ok, :ok} ->
           conn
-          |> redirect(to: "/ibgib/#{new_src_ib_gib}")
+          |> send_resp(200, "Pic uploaded successfully.")
+          # |> redirect(to: "/ibgib/#{new_src_ib_gib}")
 
         {:error, reason} ->
-          _ = Logger.error(inspect reason)
-          redirect_ib_gib =
-            if valid_ib_gib?(src_ib_gib), do: src_ib_gib, else: @root_ib_gib
-          # friendly_emsg = dgettext "error", @emsg_invalid_pic
-          friendly_emsg = gettext "The pic is Invalid. :-/"
+          emsg = "There was an error uploading the pic. Error: #{inspect reason}"
+          _ = Logger.error(emsg)
           conn
-          |> put_flash(:error, friendly_emsg)
-          |> redirect(to: "/ibgib/#{redirect_ib_gib}")
+          |> send_resp(500, emsg)
       end
     else
-      redirect_ib_gib =
-        if valid_ib_gib?(src_ib_gib), do: src_ib_gib, else: @root_ib_gib
-      _ = Logger.debug "pic is INVALID. pic_data: #{pic_data}"
-      # friendly_emsg = dgettext("error", @emsg_invalid_pic)
-      friendly_emsg = gettext "The pic is Invalid. :-/"
+      emsg = "Pic is invalid. pic_data: #{inspect pic_data}."
+      _ = Logger.error(emsg)
       conn
-      |> put_flash(:error, friendly_emsg)
-      |> redirect(to: "/ibgib/#{redirect_ib_gib}")
+      |> send_resp(500, emsg)
     end
   end
 
   defp pic_impl(conn, src_ib_gib, content_type, filename, path) do
     _ = Logger.debug "src_ib_gib: #{src_ib_gib}\ncontent_type, filename, path: #{content_type}, #{filename}, #{path}"
-
     with(
       # Prepare
-      identity_ib_gibs <- conn |> get_session(@ib_identity_ib_gibs_key),
-      {:ok, src} <- IbGib.Expression.Supervisor.start_expression(src_ib_gib),
-      {:ok, pic_gib} <-
-        IbGib.Expression.Supervisor.start_expression("pic#{@delim}gib"),
+      {:ok, {identity_ib_gibs, latest_src, pic_gib}} <-
+        prepare_pic(conn, src_ib_gib),
 
       # Creates thumbnail, generates bin_ids to reference in pic_gib data.
       {:ok, {bin_id, thumb_bin_id, thumb_filename, ext}} <- save_pic_to_bin_store(conn, content_type, path, filename),
 
-      # Generate pic ibGib
-      # Need to convert this to a plan^gib
-      {:ok, pic} <- pic_gib |> Expression.fork(identity_ib_gibs, "pic"),
-      {:ok, pic} <-
-        pic
-        |> Expression.mut8(identity_ib_gibs,
-                           %{
-                             "content_type" => content_type,
-                             "filename" => filename,
-                             "bin_id" => bin_id,
-                             "ext" => ext,
-                             "thumb_bin_id" => thumb_bin_id,
-                             "thumb_filename" => thumb_filename,
-                             "thumb_size" => "#{@pic_thumb_size}"
-                            }),
-      {:ok, new_src} <- src |> Expression.rel8(pic, identity_ib_gibs, ["pic"]),
-      {:ok, new_src_info} <- new_src |> Expression.get_info,
-      {:ok, new_src_ib_gib} <- get_ib_gib(new_src_info)
+      {:ok, pic} <- create_pic(identity_ib_gibs,
+                               latest_src,
+                               pic_gib,
+                               {content_type,
+                                filename,
+                                bin_id,
+                                ext,
+                                thumb_bin_id,
+                                thumb_filename}),
+
+      # If authorized, rel8 the pic directly to the src
+      # (If the owner of the src is the one adding the pic)
+      {:ok, new_src_or_nil} <-
+          Adjunct.rel8_target_to_other_if_authorized(
+            latest_src,
+            pic,
+            identity_ib_gibs,
+            ["pic"]
+          ),
+      # If above is not authorized (new_src_or_nil is nil), then create
+      # a 1-way adjunct rel8n on the comment to the src.
+      {:ok, {pic, src_temp_junc_ib_gib_or_nil}} <-
+        rel8_adjunct_if_necessary(new_src_or_nil, identity_ib_gibs, latest_src, pic),
+
+      {:ok, {pic_ib_gib, new_src_ib_gib_or_nil}} <-
+        get_ib_gibs_pic(pic, new_src_or_nil),
+
+      # Broadcast updates, depending on if we have directly rel8d to
+      # the src or if we rel8d an adjunct indirectly to it.
+      {:ok, :ok} <-
+        broadcast_pic(src_ib_gib,
+                      pic_ib_gib,
+                      new_src_ib_gib_or_nil,
+                      src_temp_junc_ib_gib_or_nil)
+
     ) do
-      {:ok, new_src_ib_gib}
+      {:ok, :ok}
     else
-      {:error, reason} when is_bitstring(reason) -> {:error, reason}
-      {:error, reason} -> {:error, inspect reason}
-      error -> {:error, inspect error}
+      error -> default_handle_error(error)
+    end
+  end
+
+  defp prepare_pic(conn, src_ib_gib) do
+    with(
+      identity_ib_gibs <- conn |> get_session(@ib_identity_ib_gibs_key),
+
+      {:ok, latest_src_ib_gib} <-
+        IbGib.Common.get_latest_ib_gib(identity_ib_gibs, src_ib_gib),
+      {:ok, latest_src} <-
+        IbGib.Expression.Supervisor.start_expression(latest_src_ib_gib),
+      {:ok, pic_gib} <-
+        IbGib.Expression.Supervisor.start_expression("pic#{@delim}gib")
+    ) do
+      {:ok, {identity_ib_gibs, latest_src, pic_gib}}
+    else
+      error -> default_handle_error(error)
     end
   end
 
@@ -782,6 +805,97 @@ defmodule WebGib.IbGibController do
 
       error -> default_handle_error(error)
     end
+  end
+
+  defp create_pic(identity_ib_gibs, latest_src, pic_gib, {content_type, filename, bin_id, ext, thumb_bin_id, thumb_filename}) do
+    with(
+      # Generate pic ibGib
+      # Need to convert this to a plan^gib
+      {:ok, pic} <- pic_gib |> Expression.fork(identity_ib_gibs, "pic"),
+      {:ok, pic} <-
+        pic
+        |> Expression.mut8(identity_ib_gibs,
+                           %{
+                             "content_type" => content_type,
+                             "filename" => filename,
+                             "bin_id" => bin_id,
+                             "ext" => ext,
+                             "thumb_bin_id" => thumb_bin_id,
+                             "thumb_filename" => thumb_filename,
+                             "thumb_size" => "#{@pic_thumb_size}"
+                            }),
+      {:ok, pic} <-
+        pic |> Expression.rel8(latest_src, identity_ib_gibs, ["pic_"])
+    ) do
+      {:ok, pic}
+    else
+      error -> default_handle_error(error)
+    end
+  end
+
+  defp rel8_adjunct_if_necessary(nil, identity_ib_gibs, latest_src, pic) do
+    _ = Logger.debug("rel8_adjunct necessary. new_src is nil." |> ExChalk.bg_cyan |> ExChalk.black)
+    # adjunct IS needed, because new_src is nil. The reasoning here is
+    #   that we don't have a new_src (it's nil), so the user was NOT
+    #   authorized to rel8 **directly** to the target, so we need an
+    #   _adjunct_ rel8n.
+    Adjunct.rel8_adjunct_to_target(
+      latest_src,        # target
+      pic,               # adjunct
+      identity_ib_gibs,  # identity_ib_gibs
+      "pic_",            # adjunct_rel8n
+      "pic"              # adjunct_target_rel8n
+    )
+  end
+  defp rel8_adjunct_if_necessary(_new_src, _identity_ib_gibs, _src, adjunct) do
+    _ = Logger.debug("rel8_adjunct NOT necessary. new_src is NOT nil." |> ExChalk.bg_cyan |> ExChalk.black)
+    # adjunct not needed, because new_src was not nil. The reasoning
+    #   here is that we have a new_src only if we were authorized to
+    #   rel8 adjunct to src **directly**, so we do NOT need an _adjunct_
+    #   rel8n.
+    {:ok, {adjunct, nil}}
+  end
+
+  defp get_ib_gibs_pic(pic, new_src) do
+    with(
+      {:ok, pic_info} <- Expression.get_info(pic),
+      {:ok, pic_ib_gib} <- get_ib_gib(pic_info),
+
+      {:ok, new_src_info} <-
+        (if new_src, do: Expression.get_info(new_src), else: {:ok, nil}),
+      {:ok, new_src_ib_gib} <-
+        (if new_src, do: get_ib_gib(new_src_info), else: {:ok, nil})
+    ) do
+      {:ok, {pic_ib_gib, new_src_ib_gib}}
+    else
+      error -> default_handle_error(error)
+    end
+  end
+
+  defp broadcast_pic(src_ib_gib,
+                     pic_ib_gib,
+                     new_src_ib_gib_or_nil,
+                     src_temp_junc_ib_gib_or_nil)
+  defp broadcast_pic(src_ib_gib,
+                     _pic_ib_gib,
+                     new_src_ib_gib,
+                     nil) do
+    # We directly rel8d the pic to the src, so publish an update
+    # msg for the src only.
+    EventChannel.broadcast_ib_gib_event(:update,
+                                        {src_ib_gib, new_src_ib_gib})
+    {:ok, :ok}
+  end
+  defp broadcast_pic(src_ib_gib,
+                     pic_ib_gib,
+                     nil = _new_src_ib_gib_or_nil,
+                     src_temp_junc_ib_gib) do
+    _ = Logger.debug("broadcasting :new_adjunct.\nsrc_temp_junc_ib_gib: #{src_temp_junc_ib_gib}\npic_ib_gib: #{pic_ib_gib}\nsrc_ib_gib: #{src_ib_gib}")
+    EventChannel.broadcast_ib_gib_event(:new_adjunct,
+                                        {src_temp_junc_ib_gib,
+                                         pic_ib_gib,
+                                         src_ib_gib})
+    {:ok, :ok}
   end
 
   # @upload_files_path "/var/www/web_gib/files/"

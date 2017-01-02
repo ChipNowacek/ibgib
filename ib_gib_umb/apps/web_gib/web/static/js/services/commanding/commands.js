@@ -772,7 +772,7 @@ export class PicDetailsCommand extends FormDetailsCommandBase {
 
   /* This event is raised when the server send back a response */
   xhrComplete(evt) {
-    let lc = `xhrComplete`;
+    let t = this, lc = `xhrComplete`;
 
     let { status } = evt.target;
     if (status === 200) {
@@ -793,7 +793,8 @@ export class PicDetailsCommand extends FormDetailsCommandBase {
   }
 
   xhrFailed(evt) {
-    console.log(`xhrFailed. evt: ${JSON.stringify(evt)}`);
+    let t = this, lc = `xhrFailed`;
+    console.log(`${lc} evt: ${JSON.stringify(evt)}`);
     t.ibScape.clearBusy(t.virtualNode);
     t.virtualNode.type = "error";
     t.virtualNode.errorMsg = JSON.stringify(evt);
@@ -801,8 +802,10 @@ export class PicDetailsCommand extends FormDetailsCommandBase {
   }
 
   xhrCanceled(evt) {
-    console.log(`xhrCanceled. The upload has been canceled by the user or the browser dropped the connection.`);
-    console.log(`xhrFailed. evt: ${JSON.stringify(evt)}`);
+    let t = this, lc = `xhrCanceled`;
+
+    console.log(`${lc} The upload has been canceled by the user or the browser dropped the connection.`);
+    console.log(`${lc} evt: ${JSON.stringify(evt)}`);
     t.ibScape.clearBusy(t.virtualNode);
     t.virtualNode.type = "error";
     t.virtualNode.errorMsg = "Cancelled by user.";
@@ -810,7 +813,7 @@ export class PicDetailsCommand extends FormDetailsCommandBase {
   }
 
   xhrUploadProgress(evt) {
-    let lc = `xhrUploadProgress`;
+    let t = this, lc = `xhrUploadProgress`;
 
     if (evt.lengthComputable) {
       var percentComplete = Math.round(evt.loaded * 100 / evt.total);

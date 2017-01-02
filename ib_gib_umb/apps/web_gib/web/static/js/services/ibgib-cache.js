@@ -54,6 +54,8 @@ export class IbGibCache {
 
     let adjunctTempJuncIbGib = ibHelper.getTemporalJunctionIbGib(adjunctIbGibJson);
 
+    let adjunctRel8nTarget = adjunctIbGibJson.rel8ns[adjunctIbGibJson.data.adjunct_rel8n] ? adjunctIbGibJson.rel8ns[adjunctIbGibJson.data.adjunct_rel8n][0] : null;
+
     let adjunctInfo = {
         adjunctIbGib: adjunctIbGib,
         ibGib: ibGib,
@@ -65,7 +67,7 @@ export class IbGibCache {
         // should be the same as tempJuncIbGib
         adjunctToTemporalJunction: adjunctIbGibJson.rel8ns.adjunct_to[0],
 
-        adjunctRel8nTarget: adjunctIbGibJson.rel8ns[adjunctIbGibJson.data.adjunct_rel8n][0]
+        adjunctRel8nTarget: adjunctRel8nTarget
       };
 
     console.log(`addAdjunctInfo: adjunctInfo: ${JSON.stringify(adjunctInfo)}`)

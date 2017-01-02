@@ -196,7 +196,7 @@ defmodule WebGib.Bus.Commanding.Comment do
                  new_src_ib_gib,
                  nil) do
     # We directly rel8d the comment to the src, so publish an update
-    # msg for the src.
+    # msg for the src only.
     EventChannel.broadcast_ib_gib_event(:update,
                                         {src_ib_gib, new_src_ib_gib})
     {:ok, :ok}
