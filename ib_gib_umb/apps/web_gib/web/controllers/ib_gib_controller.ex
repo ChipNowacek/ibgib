@@ -15,6 +15,7 @@ defmodule WebGib.IbGibController do
 
   # alias IbGib.Transform.Mut8.Factory, as: Mut8Factory
   alias IbGib.{Expression, Auth.Identity}
+  alias WebGib.Bus.Channels.Event, as: EventChannel
   import IbGib.QueryOptionsFactory
   import WebGib.Validate
 
@@ -966,16 +967,11 @@ defmodule WebGib.IbGibController do
 
     case complete_email_impl(conn, token, ident_pin) do
       {:ok, {conn, email_addr, src_ib_gib}} ->
-        # publish
-        _ = EventChannel.broadcast_ib_gib_event(:ident_email,
-                                            {session_ib_gib,
-                                             ident_ib_gib})
-
         redirect_ib_gib =
           if valid_ib_gib?(src_ib_gib), do: src_ib_gib, else: @root_ib_gib
         conn
-        |> put_flash(:info, gettext("Success! You have now added the email address #{email_addr} to your current identity. Delete the login email we sent you, close this window, and return to your previous ibGib window. See https://github.com/ibgib/ibgib/wiki/identity for more info. (Note: We're working on streamlining this so you don't have to do this close window rigamarole...) ")
-        |> redirect(to: "/ibgib/#{redirect_ib_gib}")
+        |> put_flash(:info, gettext("Success! You have now added the email address to your current identity. Delete the login email we sent you, close this window, and return to your previous ibGib window. See https://github.com/ibgib/ibgib/wiki/identity for more info. (Note: We're working on streamlining this so you don't have to do this close window rigamarole...)") <> "\nEmail Address: #{email_addr}")
+        |> redirect(to: "/")
 
       {:error, reason} ->
         _ = Logger.error reason
@@ -1131,8 +1127,13 @@ defmodule WebGib.IbGibController do
       # ib_gib first and then add the ib^gib to the session identity_ib_gibs.
       {:ok, {conn, identity_ib_gib}} <-
         add_identity_to_session(conn, email_addr),
-      {:ok, session_identity_ib_gib} <-
-        get_session_identity_ib_gib(conn)
+      session_identity_ib_gib <-
+        conn |> get_session(@ib_session_ib_gib_key),
+
+        # publish
+      _ <- EventChannel.broadcast_ib_gib_event(:ident_email,
+                                              {session_identity_ib_gib,
+                                               identity_ib_gib})
     ) do
       {:ok, {conn, email_addr, src_ib_gib}}
     else
@@ -1149,7 +1150,6 @@ defmodule WebGib.IbGibController do
       {:error, @emsg_ident_email_token_mismatch}
     end
   end
-
 
   defp add_identity_to_session(conn, email_addr) do
     with(

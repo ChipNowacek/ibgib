@@ -173,14 +173,16 @@ defmodule WebGib.Bus.Channels.Event do
   def broadcast_ib_gib_event(:ident_email = msg_type,
                              {session_ib_gib,
                               ident_ib_gib} = msg_info) do
+    _ = Logger.debug("Broadcasting ident_email sir. session_ib_gib: #{session_ib_gib}" |> ExChalk.yellow |> ExChalk.bg_blue)
     with(
       {:ok, msg} <- get_broadcast_msg(msg_type,
                                       {session_ib_gib,
                                        ident_ib_gib}),
       # Not interested if the broadcast errors. It is possible that the topic
       # doesn't even exist (no one is signed up to hear it).
-      _ <-
-        WebGib.Endpoint.broadcast("event:" <> session_ib_gib, Atom.to_string(msg_type), msg)
+      result <-
+        WebGib.Endpoint.broadcast("event:" <> session_ib_gib, Atom.to_string(msg_type), msg),
+      _ <- Logger.debug("broadcast result: #{inspect result}" |> ExChalk.yellow |> ExChalk.bg_blue)
     ) do
       {:ok, :ok}
     else

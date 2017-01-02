@@ -22,9 +22,6 @@ export class IbGibEventBus {
   connect(connectionId, ibGib, handleMsgFunc) {
     let t = this;
 
-    if (ibGib === "ib^gib") {
-      debugger;
-    }
     if (ibGib && handleMsgFunc) {
       // If connectionId already exists, then return immediately.
       if (t.connectionInfos.some(info => info.connId === connectionId)) {
@@ -81,6 +78,7 @@ export class IbGibEventBus {
     channel.on("update", msg => t.handleMsg(ibGib, msg));
     channel.on("adjuncts", msg => t.handleMsg(ibGib, msg));
     channel.on("new_adjunct", msg => t.handleMsg(ibGib, msg));
+    channel.on("ident_email", msg => t.handleMsg(ibGib, msg));
 
     return channel;
   }

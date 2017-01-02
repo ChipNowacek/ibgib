@@ -44,7 +44,8 @@ defmodule WebGib.Endpoint do
   plug Plug.Session,
     store: :cookie,
     key: "_web_gib_key",
-    signing_salt: "/EWwmO80"
+    signing_salt: "/EWwmO80",
+    max_age: 2_592_000 # 60*60*24*30 = 30 days
 
   plug WebGib.Router
 end

@@ -641,7 +641,6 @@ export class IdentEmailDetailsCommand extends FormDetailsCommandBase {
     let t = this;
     console.log(`${t.cmdName} cmd submitFunc`);
 
-    debugger;
     // let form = document.getElementById(t.getFormId());
     let form = document.querySelector("#" + t.getFormId());
     let formData = new FormData(form);
@@ -760,7 +759,6 @@ export class PicDetailsCommand extends FormDetailsCommandBase {
     let t = this;
     console.log(`${t.cmdName} cmd submitFunc`);
 
-    debugger;
     // let form = document.getElementById(t.getFormId());
     let form = document.querySelector("#" + t.getFormId());
     let formData = new FormData(form);
@@ -806,7 +804,6 @@ export class PicDetailsCommand extends FormDetailsCommandBase {
   xhrComplete(evt) {
     let { status } = evt.target;
     if (status === 200) {
-      debugger;
       console.log(`xhrComplete. responseText: ${evt.target.responseText}`)
     } else if (status === 403) {
       // hack. need to change this to show a details information popup
@@ -962,15 +959,12 @@ export class AllowCommand extends CommandBase {
 
     t.ibScape.removeVirtualCmdNodes();
     t.ibScape.setBusy(t.d);
-    // debugger;
 
     let msg = t.getMessage();
     t.ibScape.commandMgr.bus.send(msg, (successMsg) => {
-      // debugger;
       console.log(`AllowCommand successMsg: ${JSON.stringify(successMsg)}`)
       t.handleSubmitResponse(successMsg);
     }, (errorMsg) => {
-      // debugger;
       console.error(`${t.cmdName} command errored. Msg: ${JSON.stringify(errorMsg)}`);
       t.ibScape.clearBusy(t.d);
       t.virtualNode.type = "error";
@@ -1008,8 +1002,6 @@ export class AllowCommand extends CommandBase {
 
   handleSubmitResponse(msg) {
     let t = this;
-
-    // debugger;
 
     t.ibScape.clearBusy(t.d);
 

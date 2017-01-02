@@ -97,6 +97,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.initRoot();
     t.initBackgroundRefresher();
     t.initContext();
+    t.initIdentities();
   }
   initNoScrollHtmlAndBody() {
     d3.select("html")
@@ -2022,6 +2023,23 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
   }
   handleEventBusMsg_Identity(identityIbGib, msg) {
-    debugger;
+    let t = this, lc = `handleEventBusMsg_Identity(${identityIbGib})`;
+
+    if (!t.currentIdentityIbGibs.includes(identityIbGib)) {
+      console.log(`Adding identityIbGib to currentIdentityIbGibs`);
+      t.currentIdentityIbGibs.push(identityIbGib);
+    }
+
+    console.log(`reloading page...why doesn't this work in background tab in firefox?`)
+    setTimeout(() => window.location.reload());
+    // window.location.reload(true);
+    // setTimeout(window.location.reload);
+
+    // window.location.reload();
+    // window.location.reload();
+    // window.location.reload();
+    // window.location.href = window.location.href;
+    // window.location.href = window.location.href;
+    // window.location.href = window.location.href;
   }
 }
