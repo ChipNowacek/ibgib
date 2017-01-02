@@ -735,21 +735,6 @@ export class PicDetailsCommand extends FormDetailsCommandBase {
     $("#pic_form_data_file").focus();
   }
 
-  getMessageData() {
-    let t = this;
-
-    document.getElementById('pic_form_data_file').files[0]
-
-    var formData = new FormData();
-    formData.append("fileToUpload", document.getElementById('fileToUpload').files[0]);
-
-    return {
-      virtual_id: t.virtualNode.virtualId,
-      src_ib_gib: t.d.type === "rel8n" ? t.d.rel8nSrc.ibGib : t.d.ibGib,
-      comment_text: $("#comment_form_data_text").val()
-    };
-  }
-
   /**
    * Default implementation is for a command that will produce a single virtual
    * node that will be busy while the message is sent to the server via the
@@ -759,77 +744,90 @@ export class PicDetailsCommand extends FormDetailsCommandBase {
     let t = this;
     console.log(`${t.cmdName} cmd submitFunc`);
 
-    // let form = document.getElementById(t.getFormId());
+    let file = document.getElementById('pic_form_data_file').files[0];
     let form = document.querySelector("#" + t.getFormId());
-    let formData = new FormData(form);
+    if (form.checkValidity()) {
+      let formData = new FormData(form);
 
-    for (let [key, value] of formData.entries()) {
-      console.log(key, value);
+      t.addVirtualNode();
+      t.ibScape.setBusy(t.virtualNode);
+
+      for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+      }
+
+      let xhr = new XMLHttpRequest();
+      xhr.upload.addEventListener("progress", t.xhrUploadProgress, false);
+      xhr.addEventListener("load", t.xhrComplete, false);
+      xhr.addEventListener("error", t.xhrFailed, false);
+      xhr.addEventListener("abort", t.xhrCanceled, false);
+      xhr.open("POST", "/ibgib/pic");
+      xhr.send(formData);
+    } else {
+      alert("Please select a valid image file!");
     }
-
-    let xhr = new XMLHttpRequest();
-    xhr.upload.addEventListener("progress", t.xhrUploadProgress, false);
-    xhr.addEventListener("load", t.xhrComplete, false);
-    xhr.addEventListener("error", t.xhrFailed, false);
-    xhr.addEventListener("abort", t.xhrCanceled, false);
-    xhr.open("POST", "/ibgib/pic");
-    xhr.send(formData);
-
-    // if (form.checkValidity()) {
-    //   console.log("form is valid");
-    //   t.addVirtualNode();
-    //   t.ibScape.setBusy(t.virtualNode);
-    //
-    //   let msg = t.getMessage();
-    //   t.ibScape.commandMgr.bus.send(msg, (successMsg) => {
-    //     t.ibScape.clearBusy(t.virtualNode);
-    //     if (t.handleSubmitResponse) {
-    //       t.handleSubmitResponse(successMsg);
-    //     }
-    //   }, (errorMsg) => {
-    //     console.error(`Command errored. Msg: ${JSON.stringify(errorMsg)}`);
-    //     t.ibScape.clearBusy(t.virtualNode);
-    //     t.virtualNode.type = "error";
-    //     t.virtualNode.errorMsg = JSON.stringify(errorMsg);
-    //     t.ibScape.zapVirtualNode(t.virtualNode);
-    //   });
-    // } else {
-    //   console.log("form is invalid");
-    // }
 
     t.close();
   }
 
   /* This event is raised when the server send back a response */
   xhrComplete(evt) {
+    let lc = `xhrComplete`;
+
     let { status } = evt.target;
     if (status === 200) {
-      console.log(`xhrComplete. responseText: ${evt.target.responseText}`)
+      console.log(`${lc} Upload status 200. Removing temp virtualNode. responseText: ${evt.target.responseText}`)
+      t.ibScape.remove(t.virtualNode);
     } else if (status === 403) {
+      console.log(`${lc} Upload status 403. evt: ${JSON.stringify(evt)}`);
+
+      t.ibScape.clearBusy(t.virtualNode);
+      t.virtualNode.type = "error";
+      t.virtualNode.errorMsg = evt.target.responseText;
+      t.ibScape.zapVirtualNode(t.virtualNode);
+
       // hack. need to change this to show a details information popup
       // so the user can just click on the links.
-      alert(evt.target.responseText);
+      // alert(evt.target.responseText);
     }
   }
 
   xhrFailed(evt) {
     console.log(`xhrFailed. evt: ${JSON.stringify(evt)}`);
+    t.ibScape.clearBusy(t.virtualNode);
+    t.virtualNode.type = "error";
+    t.virtualNode.errorMsg = JSON.stringify(evt);
+    t.ibScape.zapVirtualNode(t.virtualNode);
   }
 
   xhrCanceled(evt) {
     console.log(`xhrCanceled. The upload has been canceled by the user or the browser dropped the connection.`);
+    console.log(`xhrFailed. evt: ${JSON.stringify(evt)}`);
+    t.ibScape.clearBusy(t.virtualNode);
+    t.virtualNode.type = "error";
+    t.virtualNode.errorMsg = "Cancelled by user.";
+    t.ibScape.zapVirtualNode(t.virtualNode);
   }
 
   xhrUploadProgress(evt) {
+    let lc = `xhrUploadProgress`;
+
     if (evt.lengthComputable) {
       var percentComplete = Math.round(evt.loaded * 100 / evt.total);
-      console.log(`pct complete... ${percentComplete}%`)
-      // document.getElementById('progressNumber').innerHTML = percentComplete.toString() + '%';
+      t.virtualNode.label = `{percentComplete}%`
+      console.log(`${lc} pct complete... ${percentComplete}%`)
     }
     else {
-      console.log(`error upload progress`)
-      // document.getElementById('progressNumber').innerHTML = 'unable to compute';
+      console.log(`${lc} error upload progress`)
     }
+  }
+
+  getMessageData() {
+    throw new Error("Not implemented in this class");
+  }
+
+  handleSubmitResponse(msg) {
+    throw new Error("Not implemented in this class");
   }
 
   // handleSubmitResponse(msg) {
