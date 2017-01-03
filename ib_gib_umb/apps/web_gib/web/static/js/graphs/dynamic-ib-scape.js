@@ -429,7 +429,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     let adjunctInfos = t.ibGibCache.getAdjunctInfos(tempJuncIbGib);
     if (adjunctInfos) {
-      console.log(`adjunctInfos gotten from cache: ${JSON.stringify(adjunctInfos)}`);
+      console.log(`adjunctInfos gotten from cache: adjunctInfos.length}`);
+      // console.log(`adjunctInfos gotten from cache: ${JSON.stringify(adjunctInfos)}`);
       callback(adjunctInfos);
     } else {
       console.log(`No adjunctInfos in cache. Getting from server...`);
@@ -573,6 +574,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           let childrenTempJuncIbGibs = t.getChildren(rel8nNode).filter(c => c.type === "ibGib").map(child => child.tempJuncIbGib);
 
           adjunctInfos
+            .filter(info => {
+              // only infos for this rel8n
+              return info.adjunctTargetRel8n === rel8nNode.rel8nName;
+            })
             .filter(info => {
               // Don't add pruned (assimilated) adjuncts.
               return !prunedAdjunctTempJuncIbGibs.includes(info.adjunctTempJuncIbGib);
@@ -1093,6 +1098,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     let t = this;
     switch (node.expandLevel) {
       case 0:
+        if (node.isSource) {
+          t.pin(node);
+        }
         node.expandLevel = 1;
         t.addSpiffyRel8ns(node);
         t.getChildren(node)
@@ -1114,6 +1122,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         // collapse
         node.expandLevel = 0;
         t.removeAllRel8ns(node);
+        t.unpin(node);
     }
     if (callback) { callback(); }
   }
@@ -1175,7 +1184,27 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     } else {
       t.removeAllRel8ns(rel8nNode);
       rel8nNode.expandLevel = 0;
+      if (rel8nNode.fx) { delete rel8nNode.fx; }
+      if (rel8nNode.fy) { delete rel8nNode.fy; }
+      rel8nNode.isPinned = false;
       if (callback) { callback(); }
+    }
+  }
+
+  pin(node) {
+    let t = this;
+    if (!node.isPinned) {
+      t.clearFreezeNodeTimer(node);
+      node.fx = node.x;
+      node.fy = node.y;
+      node.isPinned = true;
+    }
+  }
+  unpin(node) {
+    if (node.isPinned) {
+      if (node.fx) { delete node.fx; }
+      if (node.fy) { delete node.fy; }
+      node.isPinned = false;
     }
   }
 
@@ -1599,6 +1628,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     if (d.isRoot) {
       t.fadeOutNode(d, t.config.other.rootFadeTimeoutMs);
     }
+    if (d.isPinned) {
+      d.fx = d.x;
+      d.fy = d.y;
+    }
   }
   handleBackgroundClicked() {
     let t = this;
@@ -1645,15 +1678,20 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   handleNodeLongClicked(d) {
     let t = this;
 
-    t.freezeNode(d, 1000);
     if (d.virtualId) {
+      t.freezeNode(d, 1000);
       t.commandMgr.exec(d, d3MenuCommands.filter(c => c.name === "huh")[0]);
       // t.zapVirtualNode(d);
     } else if (d.type === "ibGib") {
+      t.freezeNode(d, 1000);
       t.clearSelectedNode();
       t.selectNode(d);
     } else if (d.type === "rel8n") {
-      t.toggleExpandCollapseLevel_Rel8n(d);
+      if (d.isPinned) {
+        t.unpin(d);
+      } else {
+        t.pin(d);
+      }
     }
   }
   handleNodeContextMenu(d) {
@@ -1667,7 +1705,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       t.clearSelectedNode();
       t.selectNode(d);
     } else if (d.type === "rel8n") {
-      t.toggleExpandCollapseLevel_Rel8n(d);
+      t._toggleExpandCollapseLevel_Rel8n(d);
     }
   }
   handleResize() {

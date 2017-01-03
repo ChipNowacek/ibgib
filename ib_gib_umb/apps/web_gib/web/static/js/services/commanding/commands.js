@@ -41,8 +41,16 @@ export class DetailsCommandBase extends CommandBase {
   }
 
   exec() {
+    let t = this;
     super.exec();
-    this.open();
+    t.open();
+    t.keyupEventName = `keyup.${t.cmdName}`;
+    $(document).on(t.keyupEventName, e => {
+      // let keyCode = e.keyCode || e.which;
+      if (e.keyCode == 27) { // escape key maps to keycode `27`
+        t.close();
+      }
+    });
   }
 
   /**
@@ -71,6 +79,8 @@ export class DetailsCommandBase extends CommandBase {
 
   close() {
     let t = this;
+
+    $(document).unbind(t.keyupEventName);
 
     d3.select("#ib-scape-details")
       .attr("class", "ib-pos-abs ib-details-off");

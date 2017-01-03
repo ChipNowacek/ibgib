@@ -39,6 +39,7 @@ defmodule WebGib.Bus.Commanding.Comment do
                    %{ib_identity_ib_gibs: identity_ib_gibs}
                  } = socket) do
     _ = Logger.debug("yakker. src_ib_gib: #{src_ib_gib}" |> ExChalk.blue |> ExChalk.bg_white)
+    Process.sleep(2000);
     with(
       # Validate
       {:comment_text, true} <-
