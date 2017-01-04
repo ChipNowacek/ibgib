@@ -1243,6 +1243,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         node.render = "image";
       } else if (node.ibGibJson.ib === "comment") {
         node.render = "text";
+      } else if (node.ibGibJson.rel8ns.instance_of && node.ibGibJson.rel8ns.instance_of[0] === "identity^gib") {
+        node.render = "identity";
+      } else {
+        delete node.render;
       }
     } else {
       delete node.render;
@@ -1345,6 +1349,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           index = "text";
         } else if (d.render && d.render === "image") {
           index = "image";
+        } else if (d.render && d.render === "identity") {
+          index = "identity";
         } else {
           index = d.id;
         }
@@ -1399,6 +1405,15 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           return d.ibGibJson.data.text;
         } else if (d.render === "image") {
           return "";
+        } else if (d.render === "identity") {
+          if (d.ibGibJson.data.type === "email" && d.ibGibJson.data.email_addr) {
+            return d.ibGibJson.data.email_addr;
+          } else if (d.ibGibJson.data.type === "session") {
+            return d3Rel8nIcons["identity_session"];
+          } else {
+            console.error(`Unknown identity type: ${node.ibGibJson.data.type}`);
+            return d.ibGibJson.ib;
+          }
         } else if (d.ibGibJson.data.label) {
           return d.ibGibJson.data.label;
         } else if (d.ibGib === "ib^gib") {

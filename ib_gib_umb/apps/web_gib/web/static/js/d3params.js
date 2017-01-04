@@ -326,7 +326,8 @@ let d3Rel8nIcons = {
   // "ib^gib": "\u29c2",
   "ib^gib": d3RootUnicodeChar,
   "dna": "➿",
-  "adjunct": "\uf01c" // Font awesome inbox, unicode one is -> 📥
+  "adjunct": "\uf01c", // Font awesome inbox, unicode one is -> 📥
+  "identity_session": "\uf21b"
 };
 
 var d3RootUnicodeChar = "\uf10c";
