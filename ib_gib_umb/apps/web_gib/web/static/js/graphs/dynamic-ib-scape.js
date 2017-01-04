@@ -1096,6 +1096,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   }
   _toggleExpandCollapseLevel_IbGib(node, callback) {
     let t = this;
+
     switch (node.expandLevel) {
       case 0:
         if (node.isSource) {
@@ -1115,7 +1116,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         t.addCmdVirtualNodes_Default(node);
         break;
       case 1:
-      node.expandLevel = 2;
+      node.expandLevel = 0;
         t.addBoringRel8ns(node);
         break;
       default:
@@ -1410,8 +1411,15 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
             return d.ibGibJson.data.email_addr;
           } else if (d.ibGibJson.data.type === "session") {
             return d3Rel8nIcons["identity_session"];
+          } else if (d.ibGibJson.rel8ns["instance_of"] &&
+              d.ibGibJson.rel8ns["instance_of"][0] === "identity^gib") {
+            // The owning identity of a session identity is actually the
+            // same session identity's past identity. This past identity
+            // is the past before it's mut8d to have
+            // data.type = session. That's how this case comes to exist.
+            return d3Rel8nIcons["identity_session"];
           } else {
-            console.error(`Unknown identity type: ${node.ibGibJson.data.type}`);
+            console.error(`Unknown identity type: ${d.ibGibJson.data.type}`);
             return d.ibGibJson.ib;
           }
         } else if (d.ibGibJson.data.label) {
@@ -1554,7 +1562,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   getChildren_Rel8ns(node) {
     let t = this;
     return t.graphData.links
-      .filter(l => l.source.id === node.id && l.target.type === "rel8n");
+      .filter(l => l.source.id === node.id && l.target.type === "rel8n")
+      .map(l => l.target);
   }
   getChildren(node) {
     let t = this;
@@ -1878,12 +1887,15 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     let fadeTimeoutMs = t.config.other.rel8nFadeTimeoutMs_Boring;
     Object.keys(node.ibGibJson.rel8ns)
-      .filter(rel8n => d3BoringRel8ns.includes(rel8n))
-      .forEach(rel8n => {
+      .filter(rel8nName => d3BoringRel8ns.includes(rel8nName))
+      .filter(rel8nName => !t.getChildren_Rel8ns(node)
+                             .map(n => n.rel8nName)
+                             .includes(rel8nName))
+      .forEach(rel8nName => {
         // Don't add the ib^gib rel8n for the context node, because these
         // children are shown in the environment as free-floating ibGib.
-        if (!(node.isContext && rel8n === "ib^gib")) {
-          t.addRel8nVirtualNode(node, rel8n, fadeTimeoutMs);
+        if (!(node.isContext && rel8nName === "ib^gib")) {
+          t.addRel8nVirtualNode(node, rel8nName, fadeTimeoutMs);
         }
       });
   }
