@@ -1,5 +1,10 @@
 import * as d3 from 'd3';
 
+// var md = require('markdown-it')('commonmark');
+var md = require('markdown-it')();
+var emoji = require('markdown-it-emoji');
+md.use(emoji);
+
 import { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3BoringRel8ns, d3RequireExpandLevel2, d3MenuCommands, d3Rel8nIcons, d3RootUnicodeChar, d3AddableRel8ns } from '../d3params';
 
 import { DynamicD3ForceGraph } from './dynamic-d3-force-graph';
@@ -285,44 +290,61 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           .style("font-size", d => {
             let text = ibHelper.getDataText(d.ibGibJson);
             if (text) {
+              // debugger;
               let textLength = text.length;
+              // let singleEmojiRegEx = /^:\w+:$/;
+              // let regExResult = text.match(singleEmojiRegEx);
+              // let textIsSingleEmoji = regExResult && regExResult.length > 0;
+              let textIsSingleEmoji = false;
+              let fontSize = 0;
               if (d.isSource) {
                 // emoji, smileys
-                if (textLength <= 3) {
-                  return "65px";
+                if (textLength <= 3 || textIsSingleEmoji) {
+                  fontSize = 65;
                 } else if (textLength <= 20) {
-                  return "35px";
+                  fontSize = 35;
                 } else if (textLength <= 40) {
-                  return "25px";
+                  fontSize = 25;
                 } else if (textLength <= 80) {
-                  return "14px";
+                  fontSize = 14;
                 } else {
-                  return "12px";
+                  fontSize = 12;
                 }
               } else {
                 // not a source, so is slightly smaller.
-                if (textLength <= 3) {
-                  return "45px";
+                if (textLength <= 3 || textIsSingleEmoji) {
+                  fontSize = 45;
                 } else if (textLength <= 20) {
-                  return "25px";
+                  fontSize = 25;
                 } else if (textLength <= 40) {
-                  return "20px";
+                  fontSize = 20;
                 } else if (textLength <= 80) {
-                  return "11px";
+                  fontSize = 11;
                 } else {
-                  return "7px";
+                  fontSize = 7;
                 }
               }
+
+              // Hack to adjust if the comment includes markdown headers that change the font size.
+              if (text.includes("##")) {
+                fontSize *= 0.5;
+                if (fontSize < 7) {
+                  fontSize = 7;
+                }
+              }
+
+              return fontSize + "px";
             } else {
               // doesn't matter
               return "15px";
             }
           })
-        .append("p")
+        .append("div")
           .style("width", "100%")
           .style("max-height", d => (2 * t.getNodeShapeRadius(d)) + "px")
           .style("text-align", "center")
-          .text(d => ibHelper.getDataText(d.ibGibJson));
+          // .style("overflow-y", "auto")
+          .html(d => md.render(ibHelper.getDataText(d.ibGibJson)));
 
     t.graphNodesEnter_NonComments =
       t.graphNodesEnter

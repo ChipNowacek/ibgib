@@ -23,7 +23,7 @@ defmodule WebGib.Web.Components.Details.Comment do
         input [id: "comment_form_data_src_ib_gib", name: "comment_form_data[src_ib_gib]",type: "hidden", value: ""]
         input [name: "_utf8", type: "hidden", value: "✓"]
         p "Comment: "
-        textarea [id: "comment_form_data_text", required: "", name: "comment_form_data[comment_text]", maxlength: max_comment_text_size, title: "Enter your text up to #{max_comment_text_size} characters.", value: "ib"]
+        textarea [id: "comment_form_data_text", required: "", name: "comment_form_data[comment_text]", maxlength: max_comment_text_size, title: "Enter your text up to #{max_comment_text_size} characters. Markdown is supported.", value: "ib"]
         input [name: "_csrf_token", type: "hidden", value: Phoenix.Controller.get_csrf_token]
         div [class: "ib-tooltip"] do
           button [type: "submit"] do
