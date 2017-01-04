@@ -477,7 +477,12 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
             }
           });
         } else {
-          console.log(`GetAdjunctsCommand did not have successMsg.data && successMsg.data.adjunct_ib_gibs)`);
+          console.log(`GetAdjunctsCommand did not have successMsg.data && successMsg.data.adjunct_ib_gibs. Probably has no adjuncts.)`);
+          if (callback) {
+            callback([]);
+          } else {
+            console.error(`Callback isn't defined?`);
+          }
         }
       }, errorMsg => {
         console.error(`getAdjuncts error: ${JSON.stringify(errorMsg)}`);
@@ -998,6 +1003,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.clearFadeTimeout(virtualNode);
 
     if (!virtualNode.virtualId || virtualNode.busy) {
+      if (callback) { callback(); }
       return;
     }
 
@@ -1229,6 +1235,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       if (node.fy) { delete node.fy; }
       node.isPinned = false;
     }
+  }
+
+  fullyExpandNode(node, autoExpandRel8ns) {
+
   }
 
   updateIbGib(node, newIbGib, skipUpdateUrl, callback) {

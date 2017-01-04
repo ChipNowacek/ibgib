@@ -196,21 +196,22 @@ export class FormDetailsCommandBase extends DetailsCommandBase {
     let form = document.getElementById(t.getFormId());
     if (form.checkValidity()) {
       console.log("form is valid");
-      t.addVirtualNode();
-      t.ibScape.setBusy(t.virtualNode);
+      t.addVirtualNode(() => {
+        t.ibScape.setBusy(t.virtualNode);
 
-      let msg = t.getMessage();
-      t.ibScape.commandMgr.bus.send(msg, (successMsg) => {
-        t.ibScape.clearBusy(t.virtualNode);
-        if (t.handleSubmitResponse) {
-          t.handleSubmitResponse(successMsg);
-        }
-      }, (errorMsg) => {
-        console.error(`Command errored. Msg: ${JSON.stringify(errorMsg)}`);
-        t.ibScape.clearBusy(t.virtualNode);
-        t.virtualNode.type = "error";
-        t.virtualNode.errorMsg = JSON.stringify(errorMsg);
-        t.ibScape.zapVirtualNode(t.virtualNode);
+        let msg = t.getMessage();
+        t.ibScape.commandMgr.bus.send(msg, (successMsg) => {
+          t.ibScape.clearBusy(t.virtualNode);
+          if (t.handleSubmitResponse) {
+            t.handleSubmitResponse(successMsg);
+          }
+        }, (errorMsg) => {
+          console.error(`Command errored. Msg: ${JSON.stringify(errorMsg)}`);
+          t.ibScape.clearBusy(t.virtualNode);
+          t.virtualNode.type = "error";
+          t.virtualNode.errorMsg = JSON.stringify(errorMsg);
+          t.ibScape.zapVirtualNode(t.virtualNode);
+        });
       });
     } else {
       console.log("form is invalid");
@@ -219,9 +220,15 @@ export class FormDetailsCommandBase extends DetailsCommandBase {
     t.close();
   }
 
-  addVirtualNode() {
+  createAndSendMsg() {
+
+  }
+
+  addVirtualNode(callback) {
     let t = this;
     t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ t.d, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ d3RootUnicodeChar, /*startPos*/ {x: t.d.x, y: t.d.y});
+
+    if (callback) { callback(); }
   }
 
   getMessage() {
@@ -571,9 +578,10 @@ export class ForkDetailsCommand extends FormDetailsCommandBase {
     t.ibScape.removeVirtualCmdNodes();
   }
 
-  addVirtualNode() {
+  addVirtualNode(callback) {
     let t = this;
     t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ null, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ d3RootUnicodeChar, /*startPos*/ {x: t.d.x, y: t.d.y});
+    if (callback) { callback(); }
   }
 
   getMessageData() {
@@ -624,6 +632,34 @@ export class CommentDetailsCommand extends FormDetailsCommandBase {
       .attr("value", t.d.ibGib);
 
     $("#comment_form_data_text").val("").focus();
+  }
+
+  addVirtualNode(callback) {
+    let t = this;
+    if (t.d.type === "ibGib") {
+      let rel8nNodes = t.ibScape.getChildren_Rel8ns(t.d).filter(rel8nNode => rel8nNode.rel8nName === "comment");
+
+      let commentRel8nNode = null;
+      if (rel8nNodes.length === 0) {
+        t.ibScape.addSpiffyRel8ns(t.d);
+        rel8nNodes = t.ibScape.getChildren_Rel8ns(t.d).filter(rel8nNode => rel8nNode.rel8nName === "comment");
+      }
+      commentRel8nNode = rel8nNodes[0];
+
+      if (commentRel8nNode) {
+        t.ibScape.zapVirtualNode(commentRel8nNode, () => {
+          t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ commentRel8nNode, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ d3RootUnicodeChar, /*startPos*/ {x: t.d.x, y: t.d.y});
+          if (callback) { callback(); }
+        });
+      }
+
+    } else if (t.d.type === "rel8n") {
+      t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ t.d, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ d3RootUnicodeChar, /*startPos*/ {x: t.d.x, y: t.d.y});
+      if (callback) { callback(); }
+    } else {
+      console.error("Unknown t.d.type:", t.d.type);
+      if (callback) { callback(); }
+    }
   }
 
   getMessageData() {
@@ -796,6 +832,39 @@ export class PicDetailsCommand extends FormDetailsCommandBase {
     $("#pic_form_data_file").focus();
   }
 
+  addVirtualNode(callback) {
+    let t = this;
+    // Adding rigamarole because user can either click the add + cmd
+    // on the pic rel8n or right-click on the ibGib itself. So t.d will
+    // be one of two nodes. If it's the rel8n, then we have to handle
+    // in case it's already expanded
+    if (t.d.type === "ibGib") {
+      let rel8nNodes = t.ibScape.getChildren_Rel8ns(t.d).filter(rel8nNode => rel8nNode.rel8nName === "pic");
+
+      let picRel8nNode = null;
+      if (rel8nNodes.length === 0) {
+        t.ibScape.addSpiffyRel8ns(t.d);
+        rel8nNodes = t.ibScape.getChildren_Rel8ns(t.d).filter(rel8nNode => rel8nNode.rel8nName === "pic");
+      }
+      picRel8nNode = rel8nNodes[0];
+
+      if (picRel8nNode) {
+        t.ibScape.zapVirtualNode(picRel8nNode, () => {
+          t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ picRel8nNode, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ d3RootUnicodeChar, /*startPos*/ {x: t.d.x, y: t.d.y});
+          if (callback) { callback(); }
+        });
+      }
+
+    } else if (t.d.type === "rel8n") {
+      t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ t.d, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ d3RootUnicodeChar, /*startPos*/ {x: t.d.x, y: t.d.y});
+      if (callback) { callback(); }
+    } else {
+      console.error("Unknown t.d.type:", t.d.type);
+      if (callback) { callback(); }
+    }
+  }
+
+
   /**
    * Default implementation is for a command that will produce a single virtual
    * node that will be busy while the message is sent to the server via the
@@ -810,20 +879,21 @@ export class PicDetailsCommand extends FormDetailsCommandBase {
     if (form.checkValidity()) {
       let formData = new FormData(form);
 
-      t.addVirtualNode();
-      t.ibScape.setBusy(t.virtualNode);
+      t.addVirtualNode(() => {
+        t.ibScape.setBusy(t.virtualNode);
 
-      for (let [key, value] of formData.entries()) {
-        console.log(key, value);
-      }
+        for (let [key, value] of formData.entries()) {
+          console.log(key, value);
+        }
 
-      let xhr = new XMLHttpRequest();
-      xhr.upload.addEventListener("progress", t.xhrUploadProgress, false);
-      xhr.addEventListener("load", t.xhrComplete, false);
-      xhr.addEventListener("error", t.xhrFailed, false);
-      xhr.addEventListener("abort", t.xhrCanceled, false);
-      xhr.open("POST", "/ibgib/pic");
-      xhr.send(formData);
+        let xhr = new XMLHttpRequest();
+        xhr.upload.addEventListener("progress", (e) => t.xhrUploadProgress(e), false);
+        xhr.addEventListener("load", (e) => t.xhrComplete(e), false);
+        xhr.addEventListener("error", (e) => t.xhrFailed(e), false);
+        xhr.addEventListener("abort", (e) => t.xhrCanceled(e), false);
+        xhr.open("POST", "/ibgib/pic");
+        xhr.send(formData);
+      });
     } else {
       alert("Please select a valid image file!");
     }
@@ -837,10 +907,13 @@ export class PicDetailsCommand extends FormDetailsCommandBase {
 
     let { status } = evt.target;
     if (status === 200) {
-      console.log(`${lc} Upload status 200. Removing temp virtualNode. responseText: ${evt.target.responseText}`)
-      t.ibScape.remove(t.virtualNode);
-    } else if (status === 403) {
-      console.log(`${lc} Upload status 403. evt: ${JSON.stringify(evt)}`);
+      let picIbGib = evt.target.responseText;
+      console.log(`${lc} Upload status 200. Removing temp virtualNode. pic_ib_gib: ${picIbGib}`);
+      t.ibScape.clearBusy(t.virtualNode);
+      t.ibScape.updateIbGib(t.virtualNode, picIbGib, /*skipUpdateUrl*/ false, /*callback*/ null)
+      // t.ibScape.remove(t.virtualNode);
+    } else {
+      console.log(`${lc} Upload status ${status}. evt: ${JSON.stringify(evt)}`);
 
       t.ibScape.clearBusy(t.virtualNode);
       t.virtualNode.type = "error";

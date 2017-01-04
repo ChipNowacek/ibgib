@@ -116,6 +116,9 @@ export class CommandManager {
       case "comment":
         return t.getCommand_Comment(dIbGib);
         break;
+      case "pic":
+        return t.getCommand_Pic(dIbGib);
+        break;
       default:
         throw new Error(`Unknown rel8n to add: ${dIbGib.rel8nName}`);
     }

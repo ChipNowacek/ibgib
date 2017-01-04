@@ -348,7 +348,7 @@ var d3RootUnicodeChar = "\uf10c";
 // command.
 var d3AddableRel8ns = [
   "comment",
-  // "pic",
+  "pic",
 ]
 
 export { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3BoringRel8ns, d3RequireExpandLevel2, d3MenuCommands, d3Rel8nIcons, d3RootUnicodeChar, d3AddableRel8ns };

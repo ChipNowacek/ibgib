@@ -679,9 +679,10 @@ defmodule WebGib.IbGibController do
       _ = Logger.debug "pic is valid. content_type, filename, path: #{content_type}, #{filename}, #{path}"
 
       case pic_impl(conn, src_ib_gib, content_type, filename, path) do
-        {:ok, :ok} ->
+        {:ok, pic_ib_gib} ->
           conn
-          |> send_resp(200, "Pic uploaded successfully.")
+          |> send_resp(200, pic_ib_gib)
+          |> halt()
           # |> redirect(to: "/ibgib/#{new_src_ib_gib}")
 
         {:error, reason} ->
@@ -744,7 +745,7 @@ defmodule WebGib.IbGibController do
                       src_temp_junc_ib_gib_or_nil)
 
     ) do
-      {:ok, :ok}
+      {:ok, pic_ib_gib}
     else
       error -> default_handle_error(error)
     end
