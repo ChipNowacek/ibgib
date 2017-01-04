@@ -115,8 +115,11 @@ var d3MenuCommands = [
     "name": "huh",
     "text": "Huh?",
     "icon": "\uf128 \uf12a \uf128",
-    "description": "I have no idea what is going on right now...",
-    "color": "#EBFF0F"
+    "description": "This is like in-depth help. Click it when you have no idea what is going on.",
+    "color": "#EBFF0F",
+    "huh": [
+      `This command gives you more in-depth guidance as to what is going on with the individual ibGib you're looking at, as well as other possibly related stuff.`
+    ]
   },
   {
     "id": "menu-share",
@@ -132,7 +135,13 @@ var d3MenuCommands = [
     "text": "Comment",
     "icon": "\uf075",
     "description": "The Comment button adds a comment (or any text really) to the selected ibGib",
-    "color": "#61B9FF"
+    "color": "#61B9FF",
+    "huh": [
+      `Comments are how we add text to ibGib. Right now they're limited to a max of 4096 characters, but this may change in the future.`,
+      ``,
+      `So you can use comments as notes for yourself, or notes for others, or instructions, descriptions, etc.`,
+      // `When you comment on someone else's ibGib, the comment can be  allowed by the owner of the ibGib. (In the future, we will have preferences to auto-allow such things as others' comments, pics, etc.).`
+    ]
   },
   {
     "id": "menu-star",
@@ -147,8 +156,11 @@ var d3MenuCommands = [
     "name": "fork",
     "text": "Fork",
     "icon": "\uf259",
-    "description": "The Fork button will take the selected ibGib and create a new one based on it in your personal ib space. Live Long and Prosper!",
-    "color": "#61B9FF"
+    "description": "The Fork button will take the selected ibGib and create a new one based on it in your personal ib space. It's like making a copy at that point in time and branching off of it. Live Long and Prosper!",
+    "color": "#61B9FF",
+    "huh": [
+      `Forking is fundamental to using ibGib. Whenever you fork something (called the source), you create a new ibGib based on that source. What you choose as your source determines what the new ibGib will be like, much like starting a document from a template. If you fork the root ibGib (the green one when you click the background), then you will be starting from a "blank" template.`,
+    ]
   },
   {
     "id": "menu-flag",
@@ -264,9 +276,6 @@ var d3MenuCommands = [
       `It's basically like Back To The Future II. If you haven't, go watch that movie (like right now). I'll wait...`,
       ``,
       `Now that you've seen that movie and are thus an Alternate Timeline Expert, we can talk using that vocabulary. So when they first go into the Future, that is their current "Hill Valley" ibGib timeline. Then future Old Biff takes the Delorian back in time and **forks`,
-      ``,
-      ``,
-      ``,
     ]
   },
   {

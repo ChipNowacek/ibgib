@@ -57,12 +57,13 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
         size: menuDivSize,
         buttonRadius: 28,
         position: position,
-        d: d
+        d: d // why in the world did I do this?
       }
     }
     t.config = $.extend({}, defaults, config || {});
 
     t.ibScape = ibScape;
+    t.d = d;
     t.commandMgr = t.ibScape.commandMgr;
   }
 
@@ -91,7 +92,9 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
       let cmd = graph.nodes[i];
       let newNode = {
         id: i,
-        cmd: cmd
+        cmd: cmd,
+        virtualId: ibHelper.getRandomString(),
+        type: "cmd"
       };
 
       t.add([newNode], [], /*updateParentOrChild*/ true);
@@ -104,7 +107,7 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
 
     t.animateNodeBorder(d, /*node*/ null);
 
-    t.commandMgr.exec(t.ibScape.selectedDatum, d.cmd);
+    t.commandMgr.exec(t.d, d.cmd);
     // t.execMenuCommand(t.ibScape.selectedDatum, d);
   }
   handleNodeLongClicked(d) {
@@ -112,6 +115,8 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
     console.log(`menu node longclicked. d: ${JSON.stringify(d)}`);
 
     t.animateNodeBorder(d, /*node*/ null);
+    t.ibScape.commandMgr.exec(d, d3MenuCommands.filter(c => c.name === "huh")[0]);
+
   }
   handleNodeRawTouchstartOrMouseDown(d) {
     let t = this;

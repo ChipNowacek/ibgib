@@ -44,7 +44,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         chargeStrength: -1000,
         chargeDistanceMin: 10,
         chargeDistanceMax: 700,
-        linkDistance: 125,
+        linkDistance: 65,
         linkDistance_Src_Rel8n: 25,
       },
       node: {
@@ -1021,9 +1021,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   }
   zapVirtualNode_Cmd(node, callback) {
     let t = this;
-    // execute the command
+    t.removeVirtualCmdNodes();
     t.commandMgr.exec(node.cmdTarget, node.cmd);
-    t.clearBusy(node);
+    // t.clearBusy(node);
     if (callback) { callback(); }
   }
   zapVirtualNode_IbGib(node, callback) {
@@ -1108,7 +1108,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           .filter(c => c.type === "rel8n")
           .forEach(rel8n => {
             // hack
-            let autoExpandRel8ns = ["comment", "pic", "link"];
+            let autoExpandRel8ns = ["comment", "pic", "link", "result"];
             if (autoExpandRel8ns.includes(rel8n.rel8nName) && node.ibGibJson.rel8ns[rel8n.rel8nName]) {
               t.zapVirtualNode(rel8n);
             }
@@ -1687,6 +1687,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     if (d.virtualId) {
       t.zapVirtualNode(d);
+      if (d.isRoot) {
+        // hack
+        setTimeout(() => t.toggleExpandCollapseLevel(d), 500);
+      }
     } else {
       t.toggleExpandCollapseLevel(d);
     }
@@ -1788,11 +1792,12 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       t.addCmdVirtualNode(d, "help", /*fadeTimeoutMs*/ 0);
       t.addCmdVirtualNode(d, "huh", /*fadeTimeoutMs*/ 0);
       t._addCmdVirtualNode_Allow_OnlyIfAuthorized(d);
-    } else if (d.ibGib === "ib^gib") {
+    } else if (d.isRoot) {
       t.addCmdVirtualNode(d, "huh", fadeTimeoutMs);
       t.addCmdVirtualNode(d, "help", fadeTimeoutMs);
       t.addCmdVirtualNode(d, "query", fadeTimeoutMs);
       t.addCmdVirtualNode(d, "fork", fadeTimeoutMs);
+      t.addCmdVirtualNode(d, "identemail", fadeTimeoutMs);
     } else {
       if (d.ibGibJson) {
         t.addCmdVirtualNode(d, "huh", fadeTimeoutMs);
@@ -1804,7 +1809,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         if (!d.virtualId) { console.warn("addCmdVirtualNodes_Default on non-virtual node without ibGibJson"); }
       }
     }
-
   }
   addCmdVirtualNode(dSrc, cmdName, fadeTimeoutMs) {
     let t = this;

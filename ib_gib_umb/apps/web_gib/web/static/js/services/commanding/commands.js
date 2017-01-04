@@ -1,6 +1,11 @@
 import * as d3 from 'd3';
 import * as ibHelper from '../ibgib-helper';
-import { d3RootUnicodeChar } from '../../d3params';
+import { d3MenuCommands, d3RootUnicodeChar } from '../../d3params';
+
+// var md = require('markdown-it')('commonmark');
+var md = require('markdown-it')();
+var emoji = require('markdown-it-emoji');
+md.use(emoji);
 
 // Most (_but not all_) commands are related to menu commands (in `d3params.js`)
 
@@ -259,7 +264,8 @@ export class HtmlDetailsCommandBase extends DetailsCommandBase {
       t.detailsView
         .append("div")
         .style("height", "100%")
-        .style("width", "100%");
+        .style("width", "100%")
+        .style("overflow", "auto");
   }
 
   close() {
@@ -414,27 +420,46 @@ export class HuhDetailsCommand extends HtmlDetailsCommandBase {
 
   addCmdHtml() {
     let t = this;
+    let cmd = t.d.cmd;
+    let iconWidth = cmd.icon.length === 1 ? "70px" : "90px";
+
     t.htmlDiv
       .append("h2")
-      .text("Command")
+      .text(`Command: ${cmd.text}  `)
+      .append("span")
+        .style("padding", "5px")
+        .style("width", iconWidth)
+        .style("font-family", "FontAwesome")
+        .style("background-color", cmd.color)
+        .style("border-radius", "15px")
+        .text(cmd.icon)
+
     t.htmlDiv
       .append("p")
-      .text("So all of these circles and squares (and lines)...they're all ibGib.")
-      .append("p")
-      .text("This one you've just clicked on is a _command_ node. Commands are how you get to affect other ibGib.")
+      .text(cmd.description)
 
-    let cmd = d3MenuCommands[`menu-${t.cmdName}`];
-    if (cmd) {
+    if (cmd.huh && cmd.huh.length > 0) {
       t.htmlDiv
         .append("h3")
-        .text("Name")
-        .append("p")
-        .text(cmd.text)
-        .append("h3")
-        .text("Icon")
-        .append("p")
-        .text(cmd.icon)
+        .text(`Command Details`);
+      cmd.huh.forEach(h => {
+        t.htmlDiv
+          .append("div")
+          .html(md.render(h));
+          // .text(h);
+      });
     }
+
+    t.htmlDiv
+      .append("h3")
+      .text(`What are Commands?`);
+    t.htmlDiv
+      .append("p")
+      .text(`All of these circles and squares (and lines)...they're all ibGib. And the one you've just chosen is a Command. These are basically buttons that tell ibGib to do something.`)
+    t.htmlDiv
+      .append("p")
+      .text(`You can find common commands for a given ibGib by clicking on it, and a full set of commands in the ibGib's pop-up menu (long-press the ibGib).`);
+
   }
 
   addVirtualIbGibHtml() {
@@ -475,9 +500,34 @@ export class HuhDetailsCommand extends HtmlDetailsCommandBase {
   }
   addIbGibHtml() {
     let t = this;
-    t.htmlDiv
-      .append("p")
-      .text("yo this is some ibgib help text")
+
+let text = `
+
+## ibGib Huh?
+
+ibGib is like an automatic, interactive blog generator + forum + photo gallery + group chat + global programming database + a whole lotta other things. Every change is tracked in timelines and retained, every ibGib is attributed to its owners and contributors, and everything is in the Light and in the open.
+
+Practically speaking, for now you can think of them as "things" or to be more Carlinesque: "stuff". So you can add your stuff, change your stuff, and relate your stuff to each other. In the future you can be reminded of stuff and helped with stuff, learn stuff, and basically do and share stuff.
+
+In a deeper sense, ibGib works like life works: Every ibGib has DNA, an ancestry, a past, and relationships (rel8ns) with other ibGib. So learning about ibGib can help you understand the relationship we have with DNA, evolution, neurons, and information.
+
+## ibGib and The Bible
+
+More abstractly, ibGib is/are anything and everything - It's the fundamental "unit" of life and existence. It's more fundamental than a particle or a wave, more fundamental than an atom, a quark, a bit, a qubit, or a neuron. It's even more fundamental than a number, an idea or even a concept. It's so different than other words that it can never be fully described by them, rather, ibGib is its own definition: ibGib.
+
+In developing ibGib, I focused on the _bootstrapping process of definition_, moving beyond axioms to understand that there is really **one root axiom** upon which all other axiomatic systems are built - the metaaxiom.
+
+Come to find out that this has already been explained in the Bible (now that I've read it). But these terms are difficult to understand with ["human terms"](https://www.biblegateway.com/passage/?search=Romans+6:19&version=ESV). But the word ibGib is the one root axiom, which I later found when reading [Exodus 3:14](https://www.biblegateway.com/passage/?search=Exodus+3:14&version=ESV):
+
+> 14 God said to Moses, “I am who I am.”[a] And he said, “Say this to the people of Israel: ‘I am has sent me to you.’”
+> a. Exodus 3:14 Or I am what I am, or I will be what I will be
+
+I am who I am...that's His _name_. He calls Himself "I am" for short...**that's His _Name_!**
+
+So ibGib is a manifestation of the Word given to us in human terms in the Bible. ibGib is not **the** Word, and will always be a pale reflection in comparison, but it is made in :heart: of the I Am.
+`;
+
+    t.htmlDiv.append("div").html(md.render(text));
   }
 }
 
@@ -728,6 +778,7 @@ export class IdentEmailDetailsCommand extends FormDetailsCommandBase {
   //     console.error(`${typeof(t)}: Unknown msg response from channel.`);
   //   }
   // }
+
 }
 
 export class PicDetailsCommand extends FormDetailsCommandBase {
