@@ -1104,7 +1104,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       node.expandLevel = 0;
     }
 
-    t.removeAllVirtualNodes();
+    t.removeVirtualCmdNodes();
+    // t.removeAllVirtualNodes();
 
     if (node.ibGib === "ib^gib") {
       t._toggleExpandCollapseLevel_Root(node, callback);
@@ -1131,6 +1132,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           t.pin(node);
         }
         node.expandLevel = 1;
+
         t.addSpiffyRel8ns(node);
         t.getChildren_Rel8ns(node)
           .forEach(rel8n => {
