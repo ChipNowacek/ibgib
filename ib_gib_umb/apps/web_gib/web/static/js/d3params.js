@@ -64,6 +64,12 @@ var d3BoringRel8ns = [
   "identity"
 ];
 
+/** Rel8ns that should always be showing when user clicks node. */
+var d3AlwaysRel8ns = [
+  "comment",
+  "pic"
+];
+
 var d3RequireExpandLevel2 = [
   "ancestor",
   "past",
@@ -351,4 +357,4 @@ var d3AddableRel8ns = [
   "pic",
 ]
 
-export { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3BoringRel8ns, d3RequireExpandLevel2, d3MenuCommands, d3Rel8nIcons, d3RootUnicodeChar, d3AddableRel8ns };
+export { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3BoringRel8ns, d3AlwaysRel8ns, d3RequireExpandLevel2, d3MenuCommands, d3Rel8nIcons, d3RootUnicodeChar, d3AddableRel8ns };

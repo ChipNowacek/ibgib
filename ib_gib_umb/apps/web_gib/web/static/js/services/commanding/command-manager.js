@@ -37,6 +37,7 @@ export class CommandManager {
       case "add":
         let blah = dIbGib;
         if (dIbGib.type === "rel8n") {
+          // debugger;
           t.ibScape.currentCmd = t.getCommand_rel8nAdd(dIbGib);
         } else {
           console.error("unknown cmd add non-rel8n");
@@ -114,10 +115,10 @@ export class CommandManager {
     let t = this;
     switch (dIbGib.rel8nName) {
       case "comment":
-        return t.getCommand_Comment(dIbGib);
+        return t.getCommand_Comment(dIbGib.rel8nSrc);
         break;
       case "pic":
-        return t.getCommand_Pic(dIbGib);
+        return t.getCommand_Pic(dIbGib.rel8nSrc);
         break;
       default:
         throw new Error(`Unknown rel8n to add: ${dIbGib.rel8nName}`);

@@ -180,7 +180,7 @@ export class FormDetailsCommandBase extends DetailsCommandBase {
    */
   close () {
     this.$form.unbind('submit');
-
+    this.$form[0].reset();
     super.close();
   }
 
@@ -863,7 +863,6 @@ export class PicDetailsCommand extends FormDetailsCommandBase {
       if (callback) { callback(); }
     }
   }
-
 
   /**
    * Default implementation is for a command that will produce a single virtual

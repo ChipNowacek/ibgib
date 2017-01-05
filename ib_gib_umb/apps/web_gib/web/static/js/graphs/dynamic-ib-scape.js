@@ -5,7 +5,7 @@ var md = require('markdown-it')();
 var emoji = require('markdown-it-emoji');
 md.use(emoji);
 
-import { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3BoringRel8ns, d3RequireExpandLevel2, d3MenuCommands, d3Rel8nIcons, d3RootUnicodeChar, d3AddableRel8ns } from '../d3params';
+import { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3BoringRel8ns, d3AlwaysRel8ns, d3RequireExpandLevel2, d3MenuCommands, d3Rel8nIcons, d3RootUnicodeChar, d3AddableRel8ns } from '../d3params';
 
 import { DynamicD3ForceGraph } from './dynamic-d3-force-graph';
 import { DynamicIbScapeMenu } from './dynamic-ib-scape-menu';
@@ -48,7 +48,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         velocityDecay: 0.85,
         chargeStrength: -1000,
         chargeDistanceMin: 10,
-        chargeDistanceMax: 700,
+        chargeDistanceMax: 300,
         linkDistance: 65,
         linkDistance_Src_Rel8n: 25,
       },
@@ -1132,12 +1132,12 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         }
         node.expandLevel = 1;
         t.addSpiffyRel8ns(node);
-        t.getChildren(node)
-          .filter(c => c.type === "rel8n")
+        t.getChildren_Rel8ns(node)
           .forEach(rel8n => {
             // hack
             let autoExpandRel8ns = ["comment", "pic", "link", "result"];
-            if (autoExpandRel8ns.includes(rel8n.rel8nName) && node.ibGibJson.rel8ns[rel8n.rel8nName]) {
+            if (autoExpandRel8ns.includes(rel8n.rel8nName)) {
+            // if (autoExpandRel8ns.includes(rel8n.rel8nName) && node.ibGibJson.rel8ns[rel8n.rel8nName]) {
               t.zapVirtualNode(rel8n);
             }
           });
@@ -1897,19 +1897,29 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     // Don't add for root node.
     if (node.ibGib === "ib^gib") { return; }
 
+    // For checking existing rel8ns
+    let childrenRel8nNames = t.getChildren_Rel8ns(node).map(child => child.rel8nName);
+
     let fadeTimeoutMs = t.config.other.rel8nFadeTimeoutMs_Spiffy;
     Object.keys(node.ibGibJson.rel8ns)
-      .filter(rel8n => !d3BoringRel8ns.includes(rel8n))
-      .forEach(rel8n => {
-        t.addRel8nVirtualNode(node, rel8n, fadeTimeoutMs);
+      .filter(rel8nName => !d3BoringRel8ns.includes(rel8nName))
+      .filter(rel8nName => !childrenRel8nNames.includes(rel8nName))
+      .forEach(rel8nName => t.addRel8nVirtualNode(node, rel8nName, fadeTimeoutMs));
+
+    // Update children for next call (horribly non-optimized, but doesn't matter at this scale).
+    childrenRel8nNames = t.getChildren_Rel8ns(node).map(child => child.rel8nName);
+    // Add any rel8ns that should always be added.
+    d3AlwaysRel8ns
+      .filter(rel8nName => !childrenRel8nNames.includes(rel8nName))
+      .forEach(rel8nName => {
+        t.addRel8nVirtualNode(node, rel8nName, fadeTimeoutMs);
       });
 
-    d3AddableRel8ns.forEach(rel8n => {
-      if (!node.ibGibJson.rel8ns[rel8n]) {
-        t.addRel8nVirtualNode(node, rel8n, fadeTimeoutMs);
-        // t.addCmdVirtualNode(node, rel8n, t.config.other.cmdFadeTimeoutMs_Default);
-      }
-    })
+    // Update children again
+    childrenRel8nNames = t.getChildren_Rel8ns(node).map(child => child.rel8nName);
+    d3AddableRel8ns
+      .filter(rel8nName => !childrenRel8nNames.includes(rel8nName))
+      .forEach(rel8nName => t.addRel8nVirtualNode(node, rel8nName, fadeTimeoutMs));
   }
   /**
    * Adds "boring" rel8ns that are not collapsed by default.
