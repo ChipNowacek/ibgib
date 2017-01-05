@@ -44,7 +44,7 @@ defmodule IbGib.Expression.ExpressionHelper do
     # Overwrite the existing rel8ns with new_rel8ns.
     Map.put(this_info, :rel8ns, new_rel8ns)
   end
-  def add_rel8ns(this_info, rel8n_names, other_ib_gib) do
+  def add_rel8ns(this_info, _rel8n_names, _other_ib_gib) do
     # rel8n_names is empty list (or invalid)
     this_info
   end
@@ -72,13 +72,13 @@ defmodule IbGib.Expression.ExpressionHelper do
                 if Enum.member?(acc[rel8n], other_ib_gib) do
                   # The rel8n exists with the other_ib_gib, so remove it
                   new_rel8n_list = acc[rel8n] -- [other_ib_gib]
-                  contains_root? = Enum.member?(new_rel8n_list, @root_ib_gib)
+                  # contains_root? = Enum.member?(new_rel8n_list, @root_ib_gib)
                   if Enum.empty?(new_rel8n_list) do
                     # There are no other rel8d ib_gib via this rel8n
-                    acc = Map.delete(acc, rel8n)
+                    Map.delete(acc, rel8n)
                   else
                     # There are still other ib_gib rel8d via this rel8n
-                    acc = Map.put(acc, rel8n, new_rel8n_list)
+                    Map.put(acc, rel8n, new_rel8n_list)
                   end
                 else
                   # The rel8n doesn't exist, so log and skip
@@ -96,7 +96,7 @@ defmodule IbGib.Expression.ExpressionHelper do
     # Overwrite the existing rel8ns with new_rel8ns.
     Map.put(this_info, :rel8ns, new_rel8ns)
   end
-  def remove_rel8ns(this_info, rel8n_names, other_ib_gib) do
+  def remove_rel8ns(this_info, _rel8n_names, _other_ib_gib) do
     # rel8n_names is empty list (or invalid)
     this_info
   end
