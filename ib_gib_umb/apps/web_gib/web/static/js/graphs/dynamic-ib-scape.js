@@ -290,7 +290,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           .style("font-size", d => {
             let text = ibHelper.getDataText(d.ibGibJson);
             if (text) {
-              // debugger;
               let textLength = text.length;
               // let singleEmojiRegEx = /^:\w+:$/;
               // let regExResult = text.match(singleEmojiRegEx);
@@ -924,6 +923,16 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       t.removeVirtualNode(node, /*keepInGraph*/ false);
     }, fadeTimeoutMs);
   }
+  fadeOutChildlessRel8ns(fadeTimeoutMs) {
+    let t = this;
+    t.graphData.nodes
+      .filter(n => n.type &&
+                   n.type === "rel8n" &&
+                   t.getChildrenCount_All(n) === 0)
+      .forEach(n => {
+        t.fadeOutNode(n, fadeTimeoutMs)
+      });
+  }
   removeVirtualNode(node, keepInGraph) {
     let t = this;
     delete t.virtualNodes[node.id];
@@ -1140,34 +1149,40 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
             let autoExpandRel8ns = ["comment", "pic", "link", "result"];
             if (autoExpandRel8ns.includes(rel8n.rel8nName)) {
             // if (autoExpandRel8ns.includes(rel8n.rel8nName) && node.ibGibJson.rel8ns[rel8n.rel8nName]) {
+              // This actually creates a race condition that I'm ignoring right now.
               t.zapVirtualNode(rel8n);
             }
           });
         t.addCmdVirtualNodes_Default(node);
         break;
-      case 1:
-      node.expandLevel = 0;
-        t.addBoringRel8ns(node);
-        break;
+      // case 1:
+      //   node.expandLevel = 0;
+      //   t.addBoringRel8ns(node);
+      //   break;
       default:
-        // collapse
         node.expandLevel = 0;
-        t.removeAllRel8ns(node);
-        t.unpin(node);
+          t.addBoringRel8ns(node);
+
+        // // collapse
+        // node.expandLevel = 0;
+        // t.removeAllRel8ns(node);
+        // t.unpin(node);
     }
     if (callback) { callback(); }
   }
   _toggleExpandCollapseLevel_Rel8n(rel8nNode, callback) {
     let t = this;
 
-    switch (rel8nNode.expandLevel) {
-      case 0:
-        t._expandRel8nNode(rel8nNode, callback);
-        break;
+    t._expandRel8nNode(rel8nNode, callback);
 
-      default:
-        t._collapseRel8nNode(rel8nNode, callback);
-    }
+    // switch (rel8nNode.expandLevel) {
+    //   case 0:
+    //     t._expandRel8nNode(rel8nNode, callback);
+    //     break;
+    //
+    //   default:
+    //     t._collapseRel8nNode(rel8nNode, callback);
+    // }
   }
   _expandRel8nNode(rel8nNode, callback) {
     let t = this;
@@ -1184,43 +1199,52 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       }, t.config.other.cmdFadeTimeoutMs_Specialized);
     }
 
-    // Add the children ibGibs listed in the src rel8ns.
-    let { rel8nName, rel8nSrc } = rel8nNode;
-    let srcRel8ns = rel8nSrc.ibGibJson.rel8ns[rel8nName] || [];
-    srcRel8ns
-      .forEach(rel8dIbGib => {
+    let existingChildrenIbGibs =
+      t.getChildren(rel8nNode)
+        .filter(n => n.type && n.type === "ibGib")
+        .map(n => n.ibGib);
 
-        t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ rel8dIbGib, /*srcNode*/ rel8nNode, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y}, /*isAdjunct*/ false);
-      });
+    if (existingChildrenIbGibs.length > 0) {
+      // Already expanded
+      if (callback) { callback(); }
+    } else {
+      // Add the children ibGibs listed in the src rel8ns.
+      let { rel8nName, rel8nSrc } = rel8nNode;
+      let rel8dIbGibs = rel8nSrc.ibGibJson.rel8ns[rel8nName] || [];
+      rel8dIbGibs
+        .forEach(rel8dIbGib => {
+          t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ rel8dIbGib, /*srcNode*/ rel8nNode, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y}, /*isAdjunct*/ false);
+        });
 
-    // Refresh children ibGibs.
-    let ibGibsToRefresh = srcRel8ns.concat([rel8nSrc.ibGib]);
-    t.execRefresh(ibGibsToRefresh, () => {
-      // Sync adjuncts, passing callback.
-      t.syncAdjuncts(rel8nNode.rel8nSrc.tempJuncIbGib, () => {
-        if (callback) { callback(); }
-      });
-      }, errorMsg => {
-        console.error(`toggleExpandCollapseLevel_Rel8n: refresh toRefresh failed. Error: ${JSON.stringify(errorMsg)}`)
-        if (callback) { callback(); }
-      });
+      // Refresh children ibGibs.
+      let ibGibsToRefresh = rel8dIbGibs.concat([rel8nSrc.ibGib]);
+      t.execRefresh(ibGibsToRefresh, () => {
+        // Sync adjuncts, passing callback.
+        t.syncAdjuncts(rel8nNode.rel8nSrc.tempJuncIbGib, () => {
+          if (callback) { callback(); }
+        });
+        }, errorMsg => {
+          console.error(`toggleExpandCollapseLevel_Rel8n: refresh toRefresh failed. Error: ${JSON.stringify(errorMsg)}`)
+          if (callback) { callback(); }
+        });
+    }
 
     rel8nNode.expandLevel = 1;
   }
-  _collapseRel8nNode(rel8nNode, callback) {
-    let t = this;
-    if (d3AddableRel8ns.includes(rel8nNode.rel8nName) && !rel8nNode.showingAdd) {
-      t.addCmdVirtualNode(rel8nNode, "add", t.config.other.cmdFadeTimeoutMs_Specialized);
-      t.syncAdjuncts(rel8nNode.rel8nSrc.tempJuncIbGib, callback);
-    } else {
-      t.removeAllRel8ns(rel8nNode);
-      rel8nNode.expandLevel = 0;
-      if (rel8nNode.fx) { delete rel8nNode.fx; }
-      if (rel8nNode.fy) { delete rel8nNode.fy; }
-      rel8nNode.isPinned = false;
-      if (callback) { callback(); }
-    }
-  }
+  // _collapseRel8nNode(rel8nNode, callback) {
+  //   let t = this;
+  //   if (d3AddableRel8ns.includes(rel8nNode.rel8nName) && !rel8nNode.showingAdd) {
+  //     t.addCmdVirtualNode(rel8nNode, "add", t.config.other.cmdFadeTimeoutMs_Specialized);
+  //     t.syncAdjuncts(rel8nNode.rel8nSrc.tempJuncIbGib, callback);
+  //   } else {
+  //     t.removeAllRel8ns(rel8nNode);
+  //     rel8nNode.expandLevel = 0;
+  //     if (rel8nNode.fx) { delete rel8nNode.fx; }
+  //     if (rel8nNode.fy) { delete rel8nNode.fy; }
+  //     rel8nNode.isPinned = false;
+  //     if (callback) { callback(); }
+  //   }
+  // }
 
   pin(node) {
     let t = this;
@@ -1239,8 +1263,36 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
   }
 
-  fullyExpandNode(node, autoExpandRel8ns) {
+  fullyExpandNode(node, autoExpandRel8ns, callback) {
+    let t = this, lc = `fullyExpandNode(${node.id})`
 
+    t.toggleExpandCollapseLevel(node, () => {
+      let nodeChildren =
+        t.getChildren(node)
+          .filter(n => n.type)
+          .filter(n => n.type === "ibGib" ||
+                       (n.type === "rel8n" && autoExpandRel8ns.includes(n.rel8nName)));
+      let nodeChildCount = nodeChildren.length;
+      if (nodeChildCount > 0) {
+        // hack to know when all callbacks are done (depth-first)
+        if (!t.nodeChildCountHack) { t.nodeChildCountHack = {}; }
+        t.nodeChildCountHack[node.id] = nodeChildCount;
+
+        nodeChildren
+          .forEach(nodeChild => t.fullyExpandNode(nodeChild, autoExpandRel8ns, () => {
+            t.removeVirtualCmdNodes();
+            let count = t.nodeChildCountHack[node.id] - 1;
+            if (count === 0) {
+              delete t.nodeChildCountHack[node.id];
+              callback();
+            } else {
+              t.nodeChildCountHack[node.id] = count;
+            }
+          }))
+      } else {
+        callback();
+      }
+    });
   }
 
   updateIbGib(node, newIbGib, skipUpdateUrl, callback) {
@@ -1714,7 +1766,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     let t = this;
     console.log(`node clicked: ${JSON.stringify(d)}`);
 
-    t.freezeNode(d, 1000);
+    t.pin(d);
+    // t.freezeNode(d, 1000);
     t.clearSelectedNode();
     t.animateNodeBorder(d, /*nodeShape*/ null);
     if (!d.isRoot) { t.fadeOutNode(t.rootNode, t.config.other.rootFadeTimeoutMs_Fast); }
@@ -1732,10 +1785,18 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   handleNodeDblClicked(d) {
     let t = this;
 
-    t.freezeNode(d, 1000);
-
-    let durationMs = 150;
-    t.removeChildren(d, durationMs);
+    if (t.getChildrenCount_All(d) > 0) {
+      let durationMs = 150;
+      t.removeChildren(d, durationMs);
+      t.unpin(d);
+    } else {
+      t.pin(d);
+      t.fullyExpandNode(d, ["pic", "comment"], () => {
+        // t.fadeOutChildlessRel8ns(t.config.other.rel8nFadeTimeoutMs_Spiffy);
+        t.removeVirtualCmdNodes();
+        t.fadeOutChildlessRel8ns(5000);
+      });
+    }
   }
   handleNodeLongClicked(d) {
     let t = this;
@@ -2088,7 +2149,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           }
         });
     } else {
-      debugger;
       console.warn(`Unused msg(?): ${JSON.stringify(msg)}`);
     }
   }
