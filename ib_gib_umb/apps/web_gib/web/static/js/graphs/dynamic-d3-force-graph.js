@@ -457,7 +457,7 @@ export class DynamicD3ForceGraph {
 
   handleDragStarted(d) {
     let t = this;
-    console.log("drag started")
+    // console.log("drag started")
 
     if (!d3.event.active) {
       t.simulation.alphaTarget(0.1).restart();
@@ -481,7 +481,7 @@ export class DynamicD3ForceGraph {
     t.x0 = d3.event.x;
     t.y0 = d3.event.y;
 
-    console.log(`drag started d.fx: ${d.fx}`)
+    // console.log(`drag started d.fx: ${d.fx}`)
   }
   handleDragged(d) {
     let t = this;
@@ -507,7 +507,7 @@ export class DynamicD3ForceGraph {
   }
   handleDragEnded(d) {
     let t = this;
-    console.log("handleDragEnded")
+    // console.log("handleDragEnded")
 
     t.handleNodeRawMouseUp(d);
 
@@ -527,7 +527,7 @@ export class DynamicD3ForceGraph {
     d.y = d.fy;
 
     if (!d.fixedBeforeDragStarted) {
-      console.log("clearing d.fx and d.fy")
+      // console.log("clearing d.fx and d.fy")
       d.fx = undefined;
       d.fy = undefined;
     }
@@ -740,7 +740,7 @@ export class DynamicD3ForceGraph {
     if (t.longClicked) { delete t.longClicked; }
   }
   handleNodeRawMouseUp(d) {
-    console.log("handleNodeRawMouseUp")
+    // console.log("handleNodeRawMouseUp")
     this.handleNodeRawMouseUpOrTouchEnd(d);
   }
   handleNodeRawTouchStart(d) {

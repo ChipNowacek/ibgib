@@ -157,7 +157,7 @@ function _isAuthorizedToAllow_Session(targetIdentityIbGibs, currentIdentityIbGib
         }
       }, false);
 
-    console.log(`${lc} authorized: ${authorized}. (requires one) targetIdentityIbGibs: ${JSON.stringify(targetIdentityIbGibs)}. (actual) currentIdentityIbGibs: ${JSON.stringify(currentIdentityIbGibs)}`);
+    // console.log(`${lc} authorized: ${authorized}. (requires one) targetIdentityIbGibs: ${JSON.stringify(targetIdentityIbGibs)}. (actual) currentIdentityIbGibs: ${JSON.stringify(currentIdentityIbGibs)}`);
 
     return authorized;
 }
@@ -203,7 +203,7 @@ function _getHighestAuthTier(identityIbGibs) {
 
   let highestAuthTier = _tierValues_ByValue[tierValue];
 
-  console.log(`${lc} highestAuthTier: ${highestAuthTier}. identityIbGibs: ${JSON.stringify(identityIbGibs)}`);
+  // console.log(`${lc} highestAuthTier: ${highestAuthTier}. identityIbGibs: ${JSON.stringify(identityIbGibs)}`);
 
   return highestAuthTier;
 }
@@ -218,7 +218,7 @@ function _getIdentityType(identityIbGib) {
     let identityIb = getIbAndGib(identityIbGib).ib;
     let [identityType, _rest] = identityIb.split(identityTypeDelim);
 
-    console.log(`${lc} identityIb: ${identityIb}. identityType: ${identityType}`);
+    // console.log(`${lc} identityIb: ${identityIb}. identityType: ${identityType}`);
 
     return identityType;
   }

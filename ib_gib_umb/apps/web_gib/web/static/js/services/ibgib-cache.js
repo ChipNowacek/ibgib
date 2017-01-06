@@ -70,7 +70,7 @@ export class IbGibCache {
         adjunctRel8nTarget: adjunctRel8nTarget
       };
 
-    console.log(`addAdjunctInfo: adjunctInfo: ${JSON.stringify(adjunctInfo)}`)
+    // console.log(`addAdjunctInfo: adjunctInfo: ${JSON.stringify(adjunctInfo)}`)
 
     t.adjunctNaiveCache[tempJuncIbGib].push(adjunctInfo);
   }

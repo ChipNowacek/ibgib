@@ -86,7 +86,7 @@ export class IbGibIbScapeBackgroundRefresher {
    */
   exec(ibGibs, successCallback, errorCallback) {
     let t = this;
-    console.log("BackgroundRefresher.exec")
+    // console.log("BackgroundRefresher.exec")
 
     if (ibGibs && ibGibs.length && ibGibs.length > 0) {
       let d = { ibGibs: ibGibs };

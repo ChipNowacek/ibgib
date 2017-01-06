@@ -35,7 +35,7 @@ export class IbGibEventBus {
       let existingInfos =
         t.connectionInfos.filter(info => info.ibGib === ibGib);
       if (existingInfos.length === 0) {
-        console.log(`connecting to ibGib channel: ${ibGib}`)
+        // console.log(`connecting to ibGib channel: ${ibGib}`)
         channel = t.initChannel(ibGib);
       } else {
         // console.log(`already connected to ibGib channel: ${ibGib}`)
@@ -69,7 +69,7 @@ export class IbGibEventBus {
 
     channel.join()
       .receive("ok", resp => {
-        console.log(`Joined event bus channel successfully.`, `topic: ${topic}}`, JSON.stringify(resp));
+        // console.log(`Joined event bus channel successfully.`, `topic: ${topic}}`, JSON.stringify(resp));
       })
       .receive("error", resp => {
         console.error(`Unable to join event bus channel. topic: ${topic}`, JSON.stringify(resp));
