@@ -23,7 +23,7 @@ defmodule WebGib.Validate do
       # empty or nil dest_ib will be set automatically.
       dest_ib === "" or dest_ib === nil
   end
-  def validate(:comment_text, comment_text) when is_bitstring(comment_text) do
+  def validate(:comment_text, comment_text) when is_bitstring(comment_text) and comment_text !== "" do
     # Right now, I don't really care what text is in there. Will need to do
     # fancier validation later obviously. But I'm not too concerned with text
     # length at the moment, just so long as it is less than the allowed data

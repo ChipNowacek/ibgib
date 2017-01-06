@@ -201,6 +201,8 @@ export class FormDetailsCommandBase extends DetailsCommandBase {
         t.ibScape.setBusy(t.virtualNode);
 
         let msg = t.getMessage();
+        // can close only after we build the msg
+        t.close();
         t.ibScape.commandMgr.bus.send(msg, (successMsg) => {
           t.ibScape.clearBusy(t.virtualNode);
           if (t.handleSubmitResponse) {
@@ -211,14 +213,13 @@ export class FormDetailsCommandBase extends DetailsCommandBase {
           t.ibScape.clearBusy(t.virtualNode);
           t.virtualNode.type = "error";
           t.virtualNode.errorMsg = JSON.stringify(errorMsg);
-          t.ibScape.zapVirtualNode(t.virtualNode);
+          t.ibScape.zap(t.virtualNode, /*callback*/ null);
         });
       });
     } else {
       console.log("form is invalid");
-    }
 
-    t.close();
+    }
   }
 
   addVirtualNode(callback) {
@@ -576,7 +577,7 @@ export class ForkDetailsCommand extends FormDetailsCommandBase {
       } else {
         // Our ibScape already has a context, so just zap the virtual node.
         t.virtualNode.ibGib = forkedIbGib;
-        t.ibScape.zapVirtualNode(t.virtualNode);
+        t.ibScape.zap(t.virtualNode);
       }
     } else {
       console.error("ForkDetailsCommand: Unknown msg response from channel.");
@@ -612,7 +613,7 @@ export class CommentDetailsCommand extends FormDetailsCommandBase {
       commentRel8nNode = rel8nNodes[0];
 
       if (commentRel8nNode) {
-        t.ibScape.zapVirtualNode(commentRel8nNode, () => {
+        t.ibScape.zap(commentRel8nNode, () => {
           t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ commentRel8nNode, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ d3RootUnicodeChar, /*startPos*/ {x: t.d.x, y: t.d.y});
           if (callback) { callback(); }
         });
@@ -647,7 +648,7 @@ export class CommentDetailsCommand extends FormDetailsCommandBase {
         // zap it.
         let commentIbGib = msg.data.comment_ib_gib;
         t.virtualNode.ibGib = commentIbGib;
-        t.ibScape.zapVirtualNode(t.virtualNode);
+        t.ibScape.zap(t.virtualNode, /*callback*/ null);
       } else {
         // The src was not updated, so this is a user commenting on
         // someone else's ibGib. So a comment was created and was rel8d
@@ -733,7 +734,7 @@ export class IdentEmailDetailsCommand extends FormDetailsCommandBase {
     //     t.ibScape.clearBusy(t.virtualNode);
     //     t.virtualNode.type = "error";
     //     t.virtualNode.errorMsg = JSON.stringify(errorMsg);
-    //     t.ibScape.zapVirtualNode(t.virtualNode);
+    //     t.ibScape.zap(t.virtualNode, /*callback*/ null);
     //   });
     // } else {
     //   console.log("form is invalid");
@@ -765,7 +766,7 @@ export class IdentEmailDetailsCommand extends FormDetailsCommandBase {
   //       // zap it.
   //       let commentIbGib = msg.data.comment_ib_gib;
   //       t.virtualNode.ibGib = commentIbGib;
-  //       t.ibScape.zapVirtualNode(t.virtualNode);
+  //       t.ibScape.zap(t.virtualNode, /*callback*/ null);
   //     } else {
   //       // The src was not updated, so this is a user commenting on
   //       // someone else's ibGib. So a comment was created and was rel8d
@@ -814,7 +815,7 @@ export class PicDetailsCommand extends FormDetailsCommandBase {
       picRel8nNode = rel8nNodes[0];
 
       if (picRel8nNode) {
-        t.ibScape.zapVirtualNode(picRel8nNode, () => {
+        t.ibScape.zap(picRel8nNode, () => {
           t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ picRel8nNode, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ d3RootUnicodeChar, /*startPos*/ {x: t.d.x, y: t.d.y});
           if (callback) { callback(); }
         });
@@ -882,7 +883,7 @@ export class PicDetailsCommand extends FormDetailsCommandBase {
       t.ibScape.clearBusy(t.virtualNode);
       t.virtualNode.type = "error";
       t.virtualNode.errorMsg = evt.target.responseText;
-      t.ibScape.zapVirtualNode(t.virtualNode);
+      t.ibScape.zap(t.virtualNode, /*callback*/ null);
 
       // hack. need to change this to show a details information popup
       // so the user can just click on the links.
@@ -896,7 +897,7 @@ export class PicDetailsCommand extends FormDetailsCommandBase {
     t.ibScape.clearBusy(t.virtualNode);
     t.virtualNode.type = "error";
     t.virtualNode.errorMsg = JSON.stringify(evt);
-    t.ibScape.zapVirtualNode(t.virtualNode);
+    t.ibScape.zap(t.virtualNode, /*callback*/ null);
   }
 
   xhrCanceled(evt) {
@@ -907,7 +908,7 @@ export class PicDetailsCommand extends FormDetailsCommandBase {
     t.ibScape.clearBusy(t.virtualNode);
     t.virtualNode.type = "error";
     t.virtualNode.errorMsg = "Cancelled by user.";
-    t.ibScape.zapVirtualNode(t.virtualNode);
+    t.ibScape.zap(t.virtualNode, /*callback*/ null);
   }
 
   xhrUploadProgress(evt) {
@@ -941,7 +942,7 @@ export class PicDetailsCommand extends FormDetailsCommandBase {
   //       // zap it.
   //       let commentIbGib = msg.data.comment_ib_gib;
   //       t.virtualNode.ibGib = commentIbGib;
-  //       t.ibScape.zapVirtualNode(t.virtualNode);
+  //       t.ibScape.zap(t.virtualNode, /*callback*/ null);
   //     } else {
   //       // The src was not updated, so this is a user commenting on
   //       // someone else's ibGib. So a comment was created and was rel8d
@@ -993,7 +994,7 @@ export class RefreshCommand extends CommandBase {
       t.ibScape.clearBusy(t.d);
       t.virtualNode.type = "error";
       t.virtualNode.errorMsg = JSON.stringify(errorMsg);
-      t.ibScape.zapVirtualNode(t.virtualNode);
+      t.ibScape.zap(t.virtualNode, /*callback*/ null);
     });
   }
 
@@ -1068,7 +1069,7 @@ export class AllowCommand extends CommandBase {
       t.ibScape.clearBusy(t.d);
       t.virtualNode.type = "error";
       t.virtualNode.errorMsg = JSON.stringify(errorMsg);
-      t.ibScape.zapVirtualNode(t.virtualNode);
+      t.ibScape.zap(t.virtualNode, /*callback*/ null);
     });
   }
 
