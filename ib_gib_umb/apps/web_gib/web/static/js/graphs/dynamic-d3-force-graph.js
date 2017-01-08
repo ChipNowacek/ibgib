@@ -1093,11 +1093,14 @@ export class DynamicD3ForceGraph {
   /**
    * Applies super-fun border transition effect to `nodeShape`.
    * If `nodeShape` is not given, then will selected it from `d.id`.
+   * @param type is color transition type. If `type` is not given, defaults to "rainbow". Possible values = "rainbow", "error"
    */
-  animateNodeBorder(d, nodeShape) {
+  animateNodeBorder(d, nodeShape, type) {
     let t = this;
 
     nodeShape = nodeShape ? nodeShape : d3.select("#" + t.getNodeShapeId(d));
+
+    let colorTransitions = t.getColorTransitions(type);
 
     var transition =
       d3.transition()
@@ -1106,29 +1109,45 @@ export class DynamicD3ForceGraph {
 
     nodeShape
       .transition(transition)
-      .attr("stroke", "red")
+      .attr("stroke", colorTransitions[0])
       .attr("stroke-width", "5px")
       .transition(transition)
-      .attr("stroke", "orange")
+      .attr("stroke", colorTransitions[1])
       .attr("stroke-width", "10px")
       .transition(transition)
-      .attr("stroke", "yellow")
+      .attr("stroke", colorTransitions[2])
       .attr("stroke-width", "15px")
       .transition(transition)
-      .attr("stroke", "green")
+      .attr("stroke", colorTransitions[3])
       .attr("stroke-width", "16px")
       .transition(transition)
-      .attr("stroke", "blue")
+      .attr("stroke", colorTransitions[4])
       .attr("stroke-width", "15px")
       .transition(transition)
-      .attr("stroke", "indigo")
+      .attr("stroke", colorTransitions[5])
       .attr("stroke-width", "10px")
       .transition(transition)
-      .attr("stroke", "violet")
+      .attr("stroke", colorTransitions[6])
       .attr("stroke-width", "5px")
       .transition(transition)
       .attr("stroke", d => t.getNodeBorderStroke(nodeShape.data()))
       .attr("stroke-width", t.getNodeBorderStrokeWidth(nodeShape.data()));
+  }
+
+
+  getColorTransitions(type) {
+    let rainbow = [
+      "red", "orange", "yellow", "green", "blue", "indigo", "violet"
+    ]
+    let error = [
+      "red", "red", "red", "red", "red", "red", "red"
+    ]
+
+    switch (type || "") {
+      case "rainbow": return rainbow;
+      case "error": return error;
+      default: return rainbow;
+    }
   }
 
   setBusy(d) {
@@ -1151,5 +1170,41 @@ export class DynamicD3ForceGraph {
       clearInterval(d.busyInterval);
       delete d.busyInterval;
     }
+  }
+
+  setErrored(d, clearAfterMsg, emsg) {
+    let t = this;
+
+    if (d.errored) {
+      return;
+    } else {
+      d.errored = true;
+      d.clearAfterMsg = clearAfterMsg;
+      d.emsg = emsg;
+      d.erroredInterval = setInterval(() => {
+        if (d.errored) {
+          t.animateNodeBorder(d, /*nodeShape*/ null, "error");
+        }
+      }, 1000);
+    }
+  }
+  clearErrored(d) {
+    if (d.errored) { delete d.errored; }
+    if (d.clearAfterMsg) { delete d.clearAfterMsg; }
+    if (d.emsg) { delete d.emsg; }
+    if (d.erroredInterval) {
+      clearInterval(d.erroredInterval);
+      delete d.erroredInterval;
+    }
+  }
+
+  highlightNode(d, type, durationMs) {
+    let t = this;
+    let start = Date.now();
+    let interval = setInterval(() => {
+      let elapsed = Date.now() - start;
+      if (elapsed >= durationMs) { clearInterval(interval); }
+      t.animateNodeBorder(d, /*nodeShape*/ null, type);
+    }, 1000);
   }
 }

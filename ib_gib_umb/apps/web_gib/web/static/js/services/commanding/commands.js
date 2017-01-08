@@ -59,6 +59,10 @@ export class DetailsCommandBase extends CommandBase {
     });
   }
 
+  getDetailsViewId() {
+    return `ib-${this.cmdName}-details`;
+  }
+
   /**
    * This uses a convention that each details div is named
    * `#ib-${cmdName}-details`. It shows the details div, initializes the
@@ -73,7 +77,7 @@ export class DetailsCommandBase extends CommandBase {
         .attr("class", "ib-pos-abs ib-info-border");
 
     t.detailsView =
-      d3.select(`#ib-${t.cmdName}-details`)
+      d3.select("#" + t.getDetailsViewId())
         .attr("class", "ib-details-on ib-height-100");
 
     t.repositionView();
@@ -171,6 +175,8 @@ export class FormDetailsCommandBase extends DetailsCommandBase {
       // Does not submit via POST
       event.preventDefault();
 
+      t.sanitizeFormFields();
+
       // Perform our own submit function
       t.submitFunc();
     });
@@ -217,10 +223,12 @@ export class FormDetailsCommandBase extends DetailsCommandBase {
         });
       });
     } else {
-      console.log("form is invalid");
-
+      console.error("form is invalid (shouldn't get here ?)");
     }
   }
+
+  /** Trim whitespace, do whatever else. By default does nothing. */
+  sanitizeFormFields() { }
 
   addVirtualNode(callback) {
     let t = this;
@@ -600,6 +608,13 @@ export class CommentDetailsCommand extends FormDetailsCommandBase {
     $("#comment_form_data_text").val("").focus();
   }
 
+  /** Currently just trims whitespace of comment. */
+  sanitizeFormFields() {
+    let commentText = $("#comment_form_data_text").val();
+    commentText = commentText.trim();
+    $("#comment_form_data_text").val(commentText);
+  }
+
   addVirtualNode(callback) {
     let t = this;
     if (t.d.type === "ibGib") {
@@ -661,6 +676,120 @@ export class CommentDetailsCommand extends FormDetailsCommandBase {
     } else {
       console.error(`${typeof(t)}: Unknown msg response from channel.`);
     }
+  }
+}
+
+export class Mut8CommentDetailsCommand extends FormDetailsCommandBase {
+  constructor(ibScape, d) {
+    const cmdName = "mut8comment";
+    super(cmdName, ibScape, d);
+  }
+
+  /**
+   * Overriding this because we will reuse the comment details form.
+   */
+  getFormId() { return `ib-comment-details-form`; }
+
+  getDetailsViewId() { return `ib-comment-details`; }
+
+  close() {
+    let t = this;
+    if (!t.submitted && t.srcNode) {
+      t.ibScape.clearBusy(t.srcNode);
+    }
+    super.close();
+  }
+
+  init() {
+    let t = this;
+
+    t.srcNode = t.d.type === "rel8n" ? t.d.rel8nSrc : t.d;
+
+    t.ibScape.setBusy(t.srcNode);
+
+    d3.select("#comment_form_data_src_ib_gib")
+      .attr("value", t.d.ibGib);
+
+    $("#comment_form_data_text")
+      .val("Loading comment...")
+      .attr("disabled", true);
+
+    t.ibScape.ibGibProvider.getIbGibJson(t.d.ibGib, ibGibJson => {
+      t.initialCommentText = ibHelper.getDataText(ibGibJson);
+      $("#comment_form_data_text")
+        .val(t.initialCommentText)
+        .attr("disabled", false)
+        .focus();
+    });
+  }
+
+  /**
+   * Default implementation is for a command that will produce a single virtual
+   * node that will be busy while the message is sent to the server via the
+   * channel.
+   */
+  submitFunc() {
+    let t = this;
+    console.log(`${t.cmdName} cmd submitFunc`);
+
+    let commentText = $("#comment_form_data_text").val();
+    if (t.initialCommentText !== commentText) {
+      let form = document.getElementById(t.getFormId());
+      if (form.checkValidity()) {
+        // console.log("form is valid");
+        t.submitted = true;
+        let msg = t.getMessage();
+        // can close only after we build the msg
+        t.close();
+        t.ibScape.commandMgr.bus.send(msg, (successMsg) => {
+          t.ibScape.clearBusy(t.srcNode);
+          if (t.handleSubmitResponse) {
+            t.handleSubmitResponse(successMsg);
+          }
+        }, (errorMsg) => {
+          console.error(`Command errored. Msg: ${JSON.stringify(errorMsg)}`);
+          // Delay clear busy to let the user see the error message and easily see which node we're talking about.
+          t.ibScape.clearBusy(t.srcNode);
+          let emsg = `There was an error when editing: ${JSON.stringify(errorMsg)}`;
+          t.ibScape.setErrored(t.srcNode, /*clearAfterMsg*/ true, emsg);
+        });
+      } else {
+        t.ibScape.clearBusy(t.srcNode);
+        let emsg = "form is invalid (shouldn't get here ?)";
+        console.error(emsg);
+        t.ibScape.setErrored(t.srcNode, /*clearAfterMsg*/ true, emsg);
+      }
+    } else {
+      alert("Comment text has not changed, so we ain't mut8ing");
+      t.ibScape.clearBusy(t.srcNode);
+      t.ibScape.highlightNode(t.srcNode, "rainbow", 6000);
+    }
+  }
+
+  /** Currently just trims whitespace of comment. */
+  sanitizeFormFields() {
+    let commentText = $("#comment_form_data_text").val();
+    commentText = commentText.trim();
+    $("#comment_form_data_text").val(commentText);
+  }
+
+  addVirtualNode(callback) {
+    // We do not add a virtual node when mut8ing a comment.
+    if (callback) { callback(); }
+  }
+
+  getMessageData() {
+    let t = this;
+
+    return {
+      src_ib_gib: t.d.type === "rel8n" ? t.d.rel8nSrc.ibGib : t.d.ibGib,
+      comment_text: $("#comment_form_data_text").val()
+    };
+  }
+
+  handleSubmitResponse(msg) {
+    // Don't have to do anything, because the command will publish
+    // an update msg on the event bus which will update the node.
   }
 }
 

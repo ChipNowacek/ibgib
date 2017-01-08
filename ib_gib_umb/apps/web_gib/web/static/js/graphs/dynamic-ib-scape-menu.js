@@ -7,6 +7,7 @@ import { DynamicD3ForceGraph } from './dynamic-d3-force-graph';
 import * as commands from '../services/commanding/commands';
 import { CommandManager } from '../services/commanding/command-manager';
 import * as ibHelper from '../services/ibgib-helper';
+import * as ibAuthz from '../services/ibgib-authz';
 
 export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
   constructor(graphDiv, svgId, config, ibScape, d, position) {
@@ -153,6 +154,8 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
    * "merge", etc.
    */
   getMenuCommandsJson(d) {
+    let t = this;
+    
     // TODO: ib-scape.js getMenuCommandsJson: When we have client-side dynamicism (prefs, whatever), then we need to change this to take that into account when building the popup menu.
     let commands;
 
@@ -175,6 +178,9 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
       }
       if (d.cat === "link") {
         commands.push("externallink");
+      }
+      if (ibHelper.isComment(d.ibGibJson) && ibAuthz.isAuthorizedForMut8OrRel8(d.ibGibJson, t.ibScape.currentIdentityIbGibs)) {
+        commands.push("mut8comment");
       }
     }
 
