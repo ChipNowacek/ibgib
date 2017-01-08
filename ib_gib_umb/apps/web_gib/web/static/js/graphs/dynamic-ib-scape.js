@@ -5,11 +5,12 @@ var md = require('markdown-it')();
 var emoji = require('markdown-it-emoji');
 md.use(emoji);
 
-import { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3BoringRel8ns, d3AlwaysRel8ns, d3RequireExpandLevel2, d3MenuCommands, d3Rel8nIcons, d3RootUnicodeChar, d3AddableRel8ns } from '../d3params';
+import { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3BoringRel8ns, d3AlwaysRel8ns, d3RequireExpandLevel2, d3MenuCommands, d3Rel8nIcons, d3RootUnicodeChar, d3AddableRel8ns, d3PausedRel8ns } from '../d3params';
 
 import { DynamicD3ForceGraph } from './dynamic-d3-force-graph';
 import { DynamicIbScapeMenu } from './dynamic-ib-scape-menu';
 import * as ibHelper from '../services/ibgib-helper';
+import * as ibAuthz from '../services/ibgib-authz';
 import { CommandManager } from '../services/commanding/command-manager';
 import * as commands from '../services/commanding/commands';
 import { IbGibIbScapeBackgroundRefresher } from '../services/ibgib-ib-scape-background-refresher';
@@ -354,7 +355,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
                 return "...";
               }
             } else {
-              console.warn("update node label: no ibGibJson?")
+              // This happens during fully expanding automatically.
+              // I'm not sure if it's a bad thing or what.
+              // (Though I think it's probably fine.)
+              // console.warn("update node label: no ibGibJson?")
               return "...";
             }
           });
@@ -392,6 +396,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       if (callback) { callback(); }
     } else {
       node.ibGib = newIbGib;
+      delete node.ibGibJson;
 
       t.swap(node, node, /*updateParentOrChild*/ true);
       node.virtualId = ibHelper.getRandomString();
@@ -796,7 +801,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     if (d.isAdjunct) {
       t.addCmdVirtualNode(d, "help", /*fadeTimeoutMs*/ 0);
       t.addCmdVirtualNode(d, "huh", /*fadeTimeoutMs*/ 0);
-      t._addCmdVirtualNode_Allow_OnlyIfAuthorized(d);
+      t._addCmdVirtualNodesIfAuthorized_Adjunct(d);
     } else if (d.isRoot) {
       t.addCmdVirtualNode(d, "huh", fadeTimeoutMs);
       t.addCmdVirtualNode(d, "help", fadeTimeoutMs);
@@ -808,6 +813,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         t.addCmdVirtualNode(d, "huh", fadeTimeoutMs);
         t.addCmdVirtualNode(d, "help", fadeTimeoutMs);
         t.addCmdVirtualNode(d, "fork", fadeTimeoutMs);
+        t._addCmdVirtualNodesIfAuthorized_Comment(d, fadeTimeoutMs);
       } else {
         // not a loaded ibGibJson, so no virtual nodes to add.
         // So we are assuming this is a virtual node itself.
@@ -822,8 +828,21 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     let node = t.addVirtualNode(t.getUniqueId(`${dSrc.id}_${cmdName}`), /*type*/ "cmd", `${cmdName}^gib`, /*srcNode*/ dSrc, "circle", /*autoZap*/ false, fadeTimeoutMs, cmd, /*title*/ null, /*label*/ null, /*startPos*/ {x: dSrc.x, y: dSrc.y}, /*isAdjunct*/ false);
     node.cmdTarget = dSrc;
   }
-  _addCmdVirtualNode_Allow_OnlyIfAuthorized(d) {
-    let t = this, lc = `_addCmdVirtualNode_Allow_OnlyIfAuthorized`;
+  /**
+   * Add command nodes if the user is authorized.
+   * This is for adding "Mut8 comment" command, which the user must be authzd
+   * to do.
+   */
+  _addCmdVirtualNodesIfAuthorized_Comment(d, fadeTimeoutMs) {
+    let t = this;
+    t.ibGibProvider.getIbGibJson(d.ibGib, ibGibJson => {
+      if (ibHelper.isComment(ibGibJson) && ibAuthz.isAuthorizedForMut8OrRel8(ibGibJson, t.currentIdentityIbGibs)) {
+        t.addCmdVirtualNode(d, "mut8comment", fadeTimeoutMs)
+      }
+    });
+  }
+  _addCmdVirtualNodesIfAuthorized_Adjunct(d) {
+    let t = this, lc = `_addCmdVirtualNodesIfAuthorized_Adjunct`;
 
     // Assume that d is an adjunct
     if (!d.isAdjunct) {
@@ -846,7 +865,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         return;
       }
 
-      if (ibHelper.isAuthorizedToAllow(adjunctTargetIbGibJson, t.currentIdentityIbGibs)) {
+      if (ibAuthz.isAuthorizedForMut8OrRel8(adjunctTargetIbGibJson, t.currentIdentityIbGibs)) {
         t.addCmdVirtualNode(d, "allow", /*fadeTimeoutMs*/ 0)
       }
     });
@@ -1161,6 +1180,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     if (!keepInGraph) {
       if (t.graphData.nodes.some(n => n.id === node.id)) {
+        if (node.busy) { t.clearBusy(node); }
         t.removeNodeAndChildren(node);
         // t.remove(node, /*updateParentOrChild*/ true);
       }
@@ -1214,7 +1234,15 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   }
   zapConcreteNode(node, callback) {
     let t = this;
-    t.expandNode(node, callback);
+    if (node.errored && node.emsg) {
+      alert(node.emsg);
+      if (node.clearAfterMsg) {
+        t.clearErrored(node);
+      }
+    } else {
+      t.removeVirtualCmdNodes();
+      t.expandNode(node, callback);
+    }
   }
   zapVirtualNode(virtualNode, callback) {
     let t = this;
@@ -1267,25 +1295,32 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       delete t.rootPulseTimer;
     }
 
-    t.getIbGibJson(node.ibGib, ibGibJson => {
-      // console.log(`got json: ${JSON.stringify(ibGibJson)}`);
-      node.ibGibJson = ibGibJson;
-      node.tempJuncIbGib = ibHelper.getTemporalJunctionIbGib(ibGibJson);
-
-      t.updateRender(node);
-
-      t.removeVirtualNode(node, /*keepInGraph*/ true);
-      delete node.virtualId;
-      t.swap(node, node, /*updateParentOrChild*/ true);
-
-      if (node.ibGib !== "ib^gib") {
-        t.connectToEventBus_IbGibNode(node)
+    if (node.errored && node.emsg) {
+      alert(node.emsg);
+      if (node.clearAfterMsg) {
+        t.clearErrored(node);
       }
+    } else {
+      t.getIbGibJson(node.ibGib, ibGibJson => {
+        // console.log(`got json: ${JSON.stringify(ibGibJson)}`);
+        node.ibGibJson = ibGibJson;
+        node.tempJuncIbGib = ibHelper.getTemporalJunctionIbGib(ibGibJson);
 
-      t.clearBusy(node);
-      t.animateNodeBorder(node, /*nodeShape*/ null);
-      if (callback) { callback(); }
-    });
+        t.updateRender(node);
+
+        t.removeVirtualNode(node, /*keepInGraph*/ true);
+        delete node.virtualId;
+        t.swap(node, node, /*updateParentOrChild*/ true);
+
+        if (node.ibGib !== "ib^gib") {
+          t.connectToEventBus_IbGibNode(node)
+        }
+
+        t.clearBusy(node);
+        t.animateNodeBorder(node, /*nodeShape*/ null);
+        if (callback) { callback(); }
+      });
+    }
   }
   zapVirtualNode_Rel8n(rel8nNode, callback) {
     let t = this;
@@ -1302,18 +1337,18 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     // let links = t.graphData.links.filter(l => l.source.id === virtualNode.id || l.target.id === virtualNode.id);
 
-    if (virtualNode.notified) {
+    if (node.notified) {
       // The user's already been notified, so remove the node.
-      t.remove(virtualNode);
+      t.remove(node);
     } else {
       // Notify the user that something went wrong, re-add node to update
       // the label/tooltip.
-      alert(virtualNode.errorMsg);
-      virtualNode.notified = true;
-      t.swap(virtualNode, virtualNode, /*updateParentOrChild*/ true);
+      alert(node.errorMsg);
+      node.notified = true;
+      t.swap(node, node, /*updateParentOrChild*/ true);
     }
 
-    t.clearBusy(virtualNode);
+    t.clearBusy(node);
     if (callback) { callback(); }
   }
 
@@ -1403,7 +1438,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           });
       } else {
         console.error(`node already in expand hack`)
-        finalize();
+        if (callback) { callback(); }
+        // finalize();
       }
     } else {
       // no children to further auto-zap
@@ -1437,22 +1473,31 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       // Add the children ibGibs listed in the src rel8ns.
       let { rel8nName, rel8nSrc } = rel8nNode;
       let rel8dIbGibs = rel8nSrc.ibGibJson.rel8ns[rel8nName] || [];
+      let rel8dIbGibNodes = [];
       rel8dIbGibs
         .forEach(rel8dIbGib => {
-          t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ rel8dIbGib, /*srcNode*/ rel8nNode, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y}, /*isAdjunct*/ false);
+          let rel8dIbGibNode = t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ rel8dIbGib, /*srcNode*/ rel8nNode, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y}, /*isAdjunct*/ false);
+          rel8dIbGibNodes.push(rel8dIbGibNode);
         });
 
-      // Refresh children ibGibs.
-      let ibGibsToRefresh = rel8dIbGibs.concat([rel8nSrc.ibGib]);
-      t.refreshIbGibs(ibGibsToRefresh, () => {
-        // Sync adjuncts, passing callback.
-        t.syncAdjuncts(rel8nNode.rel8nSrc.tempJuncIbGib, () => {
-          if (callback) { callback(); }
+      if (d3PausedRel8ns.includes(rel8nNode.rel8nName)) {
+        // Mark all children as paused.
+        rel8dIbGibNodes.forEach(n => {
+          n.isPaused = true;
         });
-        }, errorMsg => {
-          console.error(`expandNode_Rel8n: refresh toRefresh failed. Error: ${JSON.stringify(errorMsg)}`)
-          if (callback) { callback(); }
-        });
+      } else {
+        // Refresh children ibGibs.
+        let ibGibsToRefresh = rel8dIbGibs.concat([rel8nSrc.ibGib]);
+        t.refreshIbGibs(ibGibsToRefresh, () => {
+          // Sync adjuncts, passing callback.
+          t.syncAdjuncts(rel8nNode.rel8nSrc.tempJuncIbGib, () => {
+            if (callback) { callback(); }
+          });
+          }, errorMsg => {
+            console.error(`expandNode_Rel8n: refresh toRefresh failed. Error: ${JSON.stringify(errorMsg)}`)
+            if (callback) { callback(); }
+          });
+      }
     }
 
     rel8nNode.expandLevel = 1;
@@ -1571,7 +1616,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         return d3Scales[d.ibGibJson.ib] || d3Scales["default"];
       }
     } else {
-      console.warn("getIbGibMultiplier assumes d.ibGibJson is truthy...");
+      // console.warn("getIbGibMultiplier assumes d.ibGibJson is truthy...");
+      // This isn't loaded often when fully expanding automatically.
       return d3Scales["default"];
     }
   }
@@ -2064,6 +2110,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.animateNodeBorder(d, /*nodeShape*/ null);
     if (!d.isRoot) { t.fadeOutNode(t.rootNode, t.config.other.rootFadeTimeoutMs_Fast); }
 
+    if (d.expanding) { delete d.expanding; }
     t.zap(d, () => {
       console.log(`zapped!`)
     })
@@ -2077,10 +2124,12 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     if (d.fullyExpanding) {
       delete (d.fullyExpanding);
+      if (d.expanding) { delete d.expanding; }
       t.clearBusy(d);
     } else if (t.getChildrenCount_All(d) > 0) {
       let durationMs = 150;
       t.removeChildren(d, durationMs);
+      if (d.expanding) { delete d.expanding; }
       t.unpin(d);
     } else {
       t.pin(d);

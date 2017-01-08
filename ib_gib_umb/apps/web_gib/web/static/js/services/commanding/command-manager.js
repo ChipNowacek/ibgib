@@ -61,6 +61,9 @@ export class CommandManager {
       case "comment":
         t.ibScape.currentCmd = t.getCommand_Comment(dIbGib);
         break;
+      case "mut8comment":
+        t.ibScape.currentCmd = t.getCommand_Mut8Comment(dIbGib);
+        break;
       case "identemail":
         t.ibScape.currentCmd = t.getCommand_IdentEmail(dIbGib);
         break;
@@ -116,6 +119,9 @@ export class CommandManager {
     switch (dIbGib.rel8nName) {
       case "comment":
         return t.getCommand_Comment(dIbGib.rel8nSrc);
+        break;
+      case "mut8comment":
+        return t.getCommand_Mut8Comment(dIbGib.rel8nSrc);
         break;
       case "pic":
         return t.getCommand_Pic(dIbGib.rel8nSrc);
@@ -199,6 +205,9 @@ export class CommandManager {
   }
   getCommand_Comment(dIbGib) {
     return new commands.CommentDetailsCommand(this.ibScape, dIbGib);
+  }
+  getCommand_Mut8Comment(dIbGib) {
+    return new commands.Mut8CommentDetailsCommand(this.ibScape, dIbGib);
   }
   getCommand_IdentEmail(dIbGib) {
     return new commands.IdentEmailDetailsCommand(this.ibScape, dIbGib);

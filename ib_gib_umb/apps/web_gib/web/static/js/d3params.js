@@ -201,9 +201,9 @@ var d3MenuCommands = [
     "color": "lightgray"
   },
   {
-    "id": "menu-mut8",
-    "name": "mut8",
-    "text": "Mut8",
+    "id": "menu-mut8comment",
+    "name": "mut8comment",
+    "text": "Mut8 Comment",
     "icon": "\u2622",
     "description": "The Mut8 button will allow you to edit the selected ibGib",
     "color": "lightblue"
@@ -357,4 +357,10 @@ var d3AddableRel8ns = [
   "pic",
 ]
 
-export { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3BoringRel8ns, d3AlwaysRel8ns, d3RequireExpandLevel2, d3MenuCommands, d3Rel8nIcons, d3RootUnicodeChar, d3AddableRel8ns };
+var d3PausedRel8ns = [
+  "past",
+  "dna"
+]
+
+export { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3BoringRel8ns, d3AlwaysRel8ns, d3RequireExpandLevel2, d3MenuCommands, d3Rel8nIcons, d3RootUnicodeChar, d3AddableRel8ns, d3PausedRel8ns };
+0

@@ -22,7 +22,7 @@ defmodule WebGib.Web.Components.Details.UploadPic do
         end
         div [class: "form-group"] do
           label "Select an image to upload: ", for: "pic_form_data_file"
-          input [id: "pic_form_data_file", name: "pic_form_data[pic_data]", class: "form-control", type: "file", required: "true"]
+          input [id: "pic_form_data_file", name: "pic_form_data[pic_data]", class: "form-control", type: "file", required: "true", accept: "image/*"]
         end
         div [class: "form-group"] do
           div [class: "ib-tooltip"] do
