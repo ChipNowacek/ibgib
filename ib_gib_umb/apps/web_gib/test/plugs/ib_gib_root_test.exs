@@ -7,9 +7,9 @@ defmodule WebGib.Test.Plugs.IbGibRootTest do
   require Logger
 
   setup context do
-    Logger.disable(self)
+    Logger.disable(self())
     Code.load_file("../../apps/ib_gib/priv/repo/seeds.exs")
-    Logger.enable(self)
+    Logger.enable(self())
   end
 
   @tag :capture_log

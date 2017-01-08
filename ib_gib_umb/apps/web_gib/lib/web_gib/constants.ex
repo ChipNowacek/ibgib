@@ -19,6 +19,8 @@ defmodule WebGib.Constants do
       # stored in session.
       # See `WebGib.Plugs.IbGibIdentity`
       @ib_identity_ib_gibs_key "identity_ib_gibs"
+      # @ib_identity_agg_id_hash_key "ib_identity_agg_id_hash"
+      @ib_identity_token_key "ib_identity_token"
 
       @meta_query_ib_gib_key "meta_query_ib_gib"
       @meta_query_result_ib_gib_key "meta_query_result_ib_gib"
@@ -35,7 +37,6 @@ defmodule WebGib.Constants do
     quote do
       @min_ident_pin_size 0
       @max_ident_pin_size 64
-
       @max_ident_elapsed_ms 300_000
     end
   end
@@ -46,7 +47,8 @@ defmodule WebGib.Constants do
       @upload_files_path "./files/"
       @pic_thumb_filename_prefix "thumb_"
       @pic_thumb_size "300x300"
-      # @upload_files_path "/var/www/app/files/"
+      @ib_identity_token_salt "8eymmTYgMlKzeGH0JmThq0tJ56uBBPS6"
+      @ib_identity_token_max_age 604_800 # seconds in 1 week
     end
   end
 

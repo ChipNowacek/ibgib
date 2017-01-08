@@ -34,7 +34,7 @@ defmodule IbGib.Auth.Identity do
 
   use IbGib.Constants, :ib_gib
   use IbGib.Constants, :error_msgs
-  import IbGib.{Expression, QueryOptionsFactory, Macros, Helper}
+  import IbGib.{Expression, QueryOptionsFactory, Helper}
 
   require Logger
 
@@ -180,7 +180,7 @@ defmodule IbGib.Auth.Identity do
     when is_bitstring(identity_ib) and is_pid(query_off_of) do
 
     query_options =
-      do_query
+      do_query()
       |> where_ib("is", identity_ib)
       |> where_gib("like", "#{@gib_stamp}%")
       |> most_recent_only

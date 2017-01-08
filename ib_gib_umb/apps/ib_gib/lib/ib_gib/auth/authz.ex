@@ -1,6 +1,6 @@
 defmodule IbGib.Auth.Authz do
   @moduledoc """
-  Contains behavior that authorizes interaction between two ibgib.
+  Contains functionality that authorizes interaction between two ibgib.
   I will refer to these as `a` and `b`, and conceivably this refers to _any_
   two ibgib. However, for right now, `a` will be a "regular" ibgib and `b` will
   refer to...
@@ -33,10 +33,11 @@ defmodule IbGib.Auth.Authz do
 
   alias IbGib.{Helper, UnauthorizedError}
 
-  import IbGib.Macros
+  # import IbGib.Macros
 
   use IbGib.Constants, :ib_gib
   use IbGib.Constants, :error_msgs
+
 
   # ----------------------------------------------------------------------------
   # Functions
@@ -45,19 +46,17 @@ defmodule IbGib.Auth.Authz do
   # Check to make sure that our identities are valid (authorization)
   # The passed in identities must contain **all** of the existing identities.
   # Otherwise, the caller does not have the proper authorization, and should
-  # fork their own version before trying to mut8.
+  # fork their own version before trying to mut8/rel8.
   # Note also that this will **ADD** any other identities that are passed in,
-  # thus raising the level of authorization required for future mut8ns.
-  # If this is invalid, then we are going to fail fast and crash, which is
-  # what we want, since this is in the new process that was created (somehow)
-  # by an unauthorized caller.
+  # thus raising the level of authorization required for future mut8ns/rel8ns.
   # Returns b_identities if authorized.
   # Raises exception if unauthorized (fail fast is proper).
   # b must always have at least one identity
-  @spec authorize_apply_b(atom, map, map) :: list(String.t)
+  @spec authorize_apply_b(atom, map, map) :: {:ok, list(String.t)} | {:error, String.t}
   def authorize_apply_b(which, a_rel8ns, b_rel8ns)
   def authorize_apply_b(which, a_rel8ns, b_rel8ns)
-    when which == :fork or which == :query do
+    when (which == :fork or which == :query) and
+         is_map(a_rel8ns) and is_map(b_rel8ns) do
     # When authorizing a fork or query, we only care that both a and b _have_
     # valid identities, because anyone can fork/read anything else.
     # Authorization here is really just checking for error in code or more
@@ -68,19 +67,17 @@ defmodule IbGib.Auth.Authz do
     _ = Logger.debug "a_rel8ns: #{inspect a_rel8ns}"
     _ = Logger.debug "b_rel8ns: #{inspect b_rel8ns}"
 
-    # if a_has_identity and b_has_identity do
     if has_identity(a_rel8ns) and has_identity(b_rel8ns) do
-      b_identity = b_rel8ns["identity"]
+      {:ok, b_rel8ns["identity"]}
     else
-      _ = Logger.error "DOH! Unidentified #{which} apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
       expected = "a_has_identity: true, b_has_identity: true"
       actual = "a_has_identity: #{has_identity(a_rel8ns)},
                 b_has_identity: #{has_identity(b_rel8ns)}"
-      raise UnauthorizedError, message:
-        emsg_invalid_authorization(expected, actual)
+      {:error, emsg_invalid_authorization(expected, actual)}
     end
   end
-  def authorize_apply_b(which, a_rel8ns, b_rel8ns) when is_atom(which) do
+  def authorize_apply_b(which, a_rel8ns, b_rel8ns)
+    when is_atom(which) and is_map(a_rel8ns) and is_map(b_rel8ns) do
     Logger.metadata([x: which])
     _ = Logger.debug "which: #{inspect which}"
     _ = Logger.debug "a_rel8ns: #{inspect a_rel8ns}"
@@ -89,16 +86,68 @@ defmodule IbGib.Auth.Authz do
     with(
       {:ok, :ok} <- ensure_a_and_b_have_identity(a_rel8ns, b_rel8ns),
       {:ok, highest_tier} <- get_highest_auth_tier(a_rel8ns),
-      {:ok, :ok} <- ensure_tier_authorized(highest_tier, a_rel8ns, b_rel8ns)
+      {:ok, :ok} <- check_tier_authorized(highest_tier, a_rel8ns, b_rel8ns)
     ) do
       # Return b identities for convenience to caller
-      b_rel8ns["identity"]
+      {:ok, b_rel8ns["identity"]}
     else
+      error -> Helper.default_handle_error(error)
+    end
+  end
+  def authorize_apply_b(which, a_rel8ns, b_identities)
+    when (which == :fork or which == :query) and
+         is_map(a_rel8ns) and is_list(b_identities) do
+    a_has_identity = has_identity(a_rel8ns)
+    b_identities_length = length(b_identities) > 0
+    valid_b_identities = Enum.all?(b_identities, &Helper.valid_identity?/1)
+
+    if a_has_identity and b_identities_length and valid_b_identities do
+      {:ok, b_identities}
+    else
+      expected = "a_has_identity: true, b_identities are valid"
+      actual = "a_has_identity: #{a_has_identity},
+                b_identities_length: #{b_identities_length},
+                valid_b_identities: #{valid_b_identities}"
+
+      {:error, emsg_invalid_authorization(expected, actual)}
+    end
+  end
+  def authorize_apply_b(which, a_rel8ns, b_identities)
+    when is_atom(which) and is_map(a_rel8ns) and is_list(b_identities) do
+    Logger.metadata([x: which])
+    _ = Logger.debug "which: #{inspect which}"
+    _ = Logger.debug "a_rel8ns: #{inspect a_rel8ns}"
+    _ = Logger.debug "b_identities: #{inspect b_identities}"
+
+    with(
+      true <- has_identity(a_rel8ns),
+      {:ok, highest_tier} <- get_highest_auth_tier(a_rel8ns),
+      {:ok, :ok} <- check_tier_authorized(highest_tier, a_rel8ns, b_identities)
+    ) do
+      # Return b identities for convenience to caller
+      {:ok, b_identities}
+    else
+      error -> Helper.default_handle_error(error)
+    end
+  end
+
+  # If this is invalid, then we are going to fail fast and crash, which is
+  # what we want, since this is in the new process that was created (somehow)
+  # by an unauthorized caller.
+  # This raises a special `UnauthorizedError` error.
+  @spec authorize_apply_b!(atom, map, map) :: list(String.t)
+  def authorize_apply_b!(which, a_rel8ns, b_rel8ns) do
+    case authorize_apply_b(which, a_rel8ns, b_rel8ns) do
+      {:ok, b_identities} -> b_identities
       {:error, reason} ->
         _ = Logger.error "DOH! Unauthorized transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}\nreason: #{reason}"
         raise UnauthorizedError, message: reason
     end
   end
+
+  # ----------------------------------------------------------------------------
+  # Private Impl Methods
+  # ----------------------------------------------------------------------------
 
   defp ensure_a_and_b_have_identity(a_rel8ns, b_rel8ns) do
     case {has_identity(a_rel8ns), has_identity(b_rel8ns)} do
@@ -137,14 +186,7 @@ defmodule IbGib.Auth.Authz do
            _ = Logger.debug("ib_gib: #{ib_gib}" |> ExChalk.bg_blue)
            acc ++ [get_identity_type(ib_gib)]
          end)
-      # |> Enum.reduce([], fn(identity_ib_gib, acc)) ->
-      #      if identity_ib_gib == @root_ib_gib do
-      #        acc ++ ["ibgib"]
-      #      else
-      #        acc ++ [get_identity_type(identity_ib_gib)]
-      #      end
-      #    end)
-      |> Enum.uniq
+      |> Enum.uniq()
 
     cond do
       Enum.member?(identity_types, "email")   -> {:ok, :email}
@@ -153,20 +195,25 @@ defmodule IbGib.Auth.Authz do
 
       # I don't know how this would get here, but would be a no-no.
       true ->
-        emsg = emsg_invalid_authorization(expected = "email, session, or ibgib", "unknown")
+        emsg = emsg_invalid_authorization(_expected = "email, session, or ibgib", "unknown")
         Logger.error emsg
         {:error, emsg}
     end
   end
 
-  # Raises `UnauthorizedError` if unauthorized.
-  defp ensure_tier_authorized(auth_tier, a_rel8ns, b_rel8ns)
-  defp ensure_tier_authorized(:ibgib, a_rel8ns, b_rel8ns) do
+  defp check_tier_authorized(auth_tier, a_rel8ns, b_rel8ns)
+  defp check_tier_authorized(:ibgib, _a_rel8ns, _b_rel8ns) do
     # At this point, we have already determined that both have identity.
     # So it is authorized.
     {:ok, :ok}
   end
-  defp ensure_tier_authorized(:session, a_rel8ns, b_rel8ns) do
+  defp check_tier_authorized(:session, a_rel8ns, b_rel8ns)
+    when is_map(b_rel8ns) do
+    b_identities = b_rel8ns["identity"]
+    check_tier_authorized(:session, a_rel8ns, b_identities)
+  end
+  defp check_tier_authorized(:session, a_rel8ns, b_identities)
+    when is_list(b_identities) do
     # `a` only has a session identity, so `b` must have at least that same
     # session identity ib^gib.
     # It's ok if `b` also has additional email identities.
@@ -178,25 +225,28 @@ defmodule IbGib.Auth.Authz do
       |> Enum.at(0)
 
     b_contains_a_session_identity =
-      Enum.member?(b_rel8ns["identity"], a_session_identity)
+      Enum.member?(b_identities, a_session_identity)
 
     if b_contains_a_session_identity do
       {:ok, :ok}
     else
       # unauthorized: a requires auth, b does not have any/all
-      expected = a_rel8ns["identity"]
-      actual = b_rel8ns["identity"]
+      expected = a_identities
+      actual = b_identities
       {:error, emsg_invalid_authorization(expected, actual)}
     end
   end
-  defp ensure_tier_authorized(:email, a_rel8ns, b_rel8ns) do
+  defp check_tier_authorized(:email, a_rel8ns, b_rel8ns) when is_map(b_rel8ns) do
+    b_identities = b_rel8ns["identity"]
+    check_tier_authorized(:email, a_rel8ns, b_identities)
+  end
+  defp check_tier_authorized(:email, a_rel8ns, b_identities)
+    when is_list(b_identities) do
     # `a` has at least one email identity, so `b` email identity/identities
     # must contain at least all of `a` email identities.
     a_email_identities =
       a_rel8ns["identity"]
       |> Enum.filter(&(get_identity_type(&1) == "email"))
-
-    b_identities = b_rel8ns["identity"]
 
     b_contains_all_of_a_email_identities =
       a_email_identities
@@ -209,9 +259,9 @@ defmodule IbGib.Auth.Authz do
       {:ok, :ok}
     else
       # unauthorized: a requires auth, b does not have any/all
-      expected = a_rel8ns["identity"]
-      actual = b_rel8ns["identity"]
-      _ = Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_rel8ns:#{inspect b_rel8ns}"
+      expected = a_email_identities
+      actual = b_identities
+      _ = Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_identities:#{inspect b_identities}"
       {:error, emsg_invalid_authorization(expected, actual)}
     end
   end

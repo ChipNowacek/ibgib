@@ -76,6 +76,9 @@ defmodule IbGib.Constants do
       @bootstrap_identity_ib_gib @root_ib_gib
       @identity_ib_gib "identity#{@delim}gib"
       @identity_type_delim "_"
+
+      @invalid_unrel8_rel8ns ["past", "ancestor", "dna", "identity"]
+      @invalid_adjunct_rel8ns ["past", "ancestor", "dna", "identity"]
     end
   end
 

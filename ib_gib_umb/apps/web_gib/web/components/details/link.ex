@@ -35,7 +35,7 @@ defmodule WebGib.Web.Components.Details.Link do
         div [class: "ib-tooltip"] do
           button [type: "submit"] do
             span [class: "ib-center-glyph glyphicon glyphicon-link ib-green"]
-            span [class: "ib-tooltiptext"], do: gettext("Add Link")
+          # span [class: "ib-tooltiptext"], do: gettext("Add Link")
           end
         end
       end

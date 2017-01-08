@@ -1,5 +1,5 @@
 defmodule IbGib.Expression.RegistryTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   require Logger
 
   setup context do
@@ -82,6 +82,9 @@ defmodule IbGib.Expression.RegistryTest do
     _ = Logger.debug "killing pid"
     Process.exit(pid, :kill)
     _ = Logger.debug "killed pid"
+
+    # Supposedly the dummy thing should work, but it doesn't.
+    Process.sleep(200)
 
     # Register a dummy to ensure that the registry has processed the
     # handle_info

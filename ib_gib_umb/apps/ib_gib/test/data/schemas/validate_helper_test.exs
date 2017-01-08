@@ -10,21 +10,21 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
   alias IbGib.Data.Schemas.ValidateHelper
   use IbGib.Constants, :ib_gib
 
-  def random_min_id, do: Get.some_letters(@min_id_length)
-  def random_max_id, do: Get.some_letters(@max_id_length)
+  def random_min_id(), do: Get.some_letters(@min_id_length)
+  def random_max_id(), do: Get.some_letters(@max_id_length)
 
-  def too_long_id, do: Get.some_letters(@max_id_length + 1)
-  def too_short_id, do: ""
+  def too_long_id(), do: Get.some_letters(@max_id_length + 1)
+  def too_short_id(), do: ""
 
-  def random_mid_id, do: Get.some_letters(10)
+  def random_mid_id(), do: Get.some_letters(10)
 
-  def random_valid_ib_gib do
+  def random_valid_ib_gib() do
     Get.one_of([
-      "#{random_min_id}#{@delim}#{random_min_id}",
-      "#{random_min_id}#{@delim}#{random_max_id}",
-      "#{random_max_id}#{@delim}#{random_min_id}",
-      "#{random_max_id}#{@delim}#{random_max_id}",
-      "#{random_mid_id}#{@delim}#{random_mid_id}",
+      "#{random_min_id()}#{@delim}#{random_min_id()}",
+      "#{random_min_id()}#{@delim}#{random_max_id()}",
+      "#{random_max_id()}#{@delim}#{random_min_id()}",
+      "#{random_max_id()}#{@delim}#{random_max_id()}",
+      "#{random_mid_id()}#{@delim}#{random_mid_id()}",
     ])
   end
 
@@ -32,11 +32,11 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
   @tag :capture_log
   test "valid ib_gibs" do
     [
-      "#{random_min_id}#{@delim}#{random_min_id}",
-      "#{random_min_id}#{@delim}#{random_max_id}",
-      "#{random_max_id}#{@delim}#{random_min_id}",
-      "#{random_max_id}#{@delim}#{random_max_id}",
-      "#{random_mid_id}#{@delim}#{random_mid_id}",
+      "#{random_min_id()}#{@delim}#{random_min_id()}",
+      "#{random_min_id()}#{@delim}#{random_max_id()}",
+      "#{random_max_id()}#{@delim}#{random_min_id()}",
+      "#{random_max_id()}#{@delim}#{random_max_id()}",
+      "#{random_mid_id()}#{@delim}#{random_mid_id()}",
     ]
     |> Enum.each(fn(ib_gib) ->
       assert ValidateHelper.valid_ib_gib?(ib_gib)
@@ -59,11 +59,11 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
   @tag :capture_log
   test "invalid ib_gib, no delim" do
     [
-      "#{random_min_id}#{random_min_id}",
-      "#{random_min_id}#{random_max_id}",
-      "#{random_max_id}#{random_min_id}",
-      "#{random_max_id}#{random_max_id}",
-      "#{random_mid_id}#{random_mid_id}",
+      "#{random_min_id()}#{random_min_id()}",
+      "#{random_min_id()}#{random_max_id()}",
+      "#{random_max_id()}#{random_min_id()}",
+      "#{random_max_id()}#{random_max_id()}",
+      "#{random_mid_id()}#{random_mid_id()}",
     ]
     |> Enum.each(fn(ib_gib) ->
       assert !ValidateHelper.valid_ib_gib?(ib_gib)
@@ -74,8 +74,8 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
   test "invalid ib_gib, ib_gib lengths" do
     [
       # a is extra character
-      "a#{random_max_id}#{@delim}#{random_max_id}",
-      "#{random_max_id}#{@delim}a#{random_max_id}",
+      "a#{random_max_id()}#{@delim}#{random_max_id()}",
+      "#{random_max_id()}#{@delim}a#{random_max_id()}",
     ]
     |> Enum.each(fn(ib_gib) ->
       assert !ValidateHelper.valid_ib_gib?(ib_gib)
@@ -85,10 +85,10 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
   @tag :capture_log
   test "invalid ib_gib, ib lengths" do
     [
-      "#{@delim}#{random_min_id}",
-      "#{@delim}#{random_max_id}",
-      "a#{random_max_id}#{@delim}#{random_min_id}",
-      "a#{random_max_id}#{@delim}#{random_max_id}",
+      "#{@delim}#{random_min_id()}",
+      "#{@delim}#{random_max_id()}",
+      "a#{random_max_id()}#{@delim}#{random_min_id()}",
+      "a#{random_max_id()}#{@delim}#{random_max_id()}",
     ]
     |> Enum.each(fn(ib_gib) ->
       assert !ValidateHelper.valid_ib_gib?(ib_gib)
@@ -98,10 +98,10 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
   @tag :capture_log
   test "invalid ib_gib, gib lengths" do
     [
-      "#{random_min_id}#{@delim}",
-      "#{random_max_id}#{@delim}",
-      "#{random_min_id}#{@delim}a#{random_max_id}",
-      "#{random_max_id}#{@delim}a#{random_max_id}",
+      "#{random_min_id()}#{@delim}",
+      "#{random_max_id()}#{@delim}",
+      "#{random_min_id()}#{@delim}a#{random_max_id()}",
+      "#{random_max_id()}#{@delim}a#{random_max_id()}",
     ]
     |> Enum.each(fn(ib_gib) ->
       assert !ValidateHelper.valid_ib_gib?(ib_gib)
@@ -114,11 +114,11 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
     [
       %{"dna" => ["ib^gib"]},
 
-      %{"a" => [random_valid_ib_gib]},
+      %{"a" => [random_valid_ib_gib()]},
 
-      %{"a" => [random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib],
+      %{"a" => [random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib()],
 
-      "b" => [random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib]
+      "b" => [random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib()]
       },
     ]
     |> Enum.each(fn(test_map) ->
@@ -134,15 +134,15 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
       %{"dna" => ["^gib"]},
       %{"dna" => ["^"]},
       %{"dna" => [""]},
-      %{"dna" => ["a#{random_max_id}#{@delim}#{random_max_id}"]},
+      %{"dna" => ["a#{random_max_id()}#{@delim}#{random_max_id()}"]},
       %{"" => ["ib^gib"]},
 
-      %{"a" => [random_valid_ib_gib, ""]},
+      %{"a" => [random_valid_ib_gib(), ""]},
 
       %{
-        "a" => [random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib],
+        "a" => [random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib()],
 
-        "b" => [random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, random_valid_ib_gib, ""]
+        "b" => [random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), random_valid_ib_gib(), ""]
       },
     ]
     |> Enum.each(fn(test_map) ->
@@ -256,22 +256,22 @@ defmodule IbGib.Data.Schemas.ValidateHelperTest do
   # end
   #
   # test "has id too short" do
-  #   result = ValidateHelper.id_array(:some_field, [@too_short_id])
+  #   result = ValidateHelper.id_array(:some_field, [@too_short_id()])
   #   assert result[:some_field] === ValidateHelper.invalid_id_length_msg()
   # end
   #
   # test "multiple valid id with single too short" do
-  #   result = ValidateHelper.id_array(:some_field, ["ib", "aswoeijwfoijwef", "weoifjwoeifjwoeifj", @too_short_id])
+  #   result = ValidateHelper.id_array(:some_field, ["ib", "aswoeijwfoijwef", "weoifjwoeifjwoeifj", @too_short_id()])
   #   assert result[:some_field] === ValidateHelper.invalid_id_length_msg
   # end
   #
   # test "multiple valid id with single too long" do
-  #   result = ValidateHelper.id_array(:some_field, ["ib", "aswoeijwfoijwef", "weoifjwoeifjwoeifj", @too_short_id])
+  #   result = ValidateHelper.id_array(:some_field, ["ib", "aswoeijwfoijwef", "weoifjwoeifjwoeifj", @too_short_id()])
   #   assert result[:some_field] === ValidateHelper.invalid_id_length_msg
   # end
   #
   # test "has id too long" do
-  #   result = ValidateHelper.id_array(:some_field, [@too_long_id])
+  #   result = ValidateHelper.id_array(:some_field, [@too_long_id()])
   #   assert result[:some_field] === ValidateHelper.invalid_id_length_msg
   # end
   #

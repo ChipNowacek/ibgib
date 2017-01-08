@@ -1,29 +1,20 @@
 @import 'colors';
 
-circle.node {
-  cursor: pointer;
-  stroke: #000;
-  stroke-width: 2.5px;
-}
-
-line.link {
-  fill: none;
-  stroke: #9ecae1;
-  stroke-width: 0.1px;
-}
-
-
 .links line {
   stroke: $ibgib_green;
-  stroke-width: 0.08px;
+  stroke-width: 1.08px;
   stroke-opacity: 1.5;
 }
 
 .nodes circle {
-  stroke: #eee;
-  stroke-width: 1.5px;
+  // stroke: green;
+  // stroke-width: 1px;
 }
 
+.nodes rect {
+  // stroke: green;
+  // stroke-width: 1px;
+}
 
 #ib-d3-graph-div {
   height: 100%;
@@ -51,7 +42,9 @@ line.link {
 }
 
 #ib-scape-details {
+  // background-color: #CDDEC5;
   background-color: #CDDEC5;
+  // width: 99% !important;
 }
 
 .ib-details-on {
@@ -64,8 +57,16 @@ line.link {
   position: absolute;
 }
 
+
+#ib-help-details {
+  display: flex;
+  align-items: center;
+}
+
 #ib-help-details-text {
-  width: 250px;
+  // width: 250px;
+  width: 100%;
+  text-align: center;
 }
 
 #comment_form_data_text {
@@ -140,4 +141,41 @@ pre {
 .download_form_submit_btn_div {
   margin-top: 5px;
   margin-bottom: 2px;
+}
+
+.test-graph-div {
+  height: 400px;
+  width: 100%;
+}
+
+button[name=ib-scape-details-close-btn] {
+  background-color: transparent;
+  color: $ibgib_red;
+  border-color: transparent;
+  border-width: 0px;
+  float: right;
+  z-index: 10000;
+  position: absolute;
+  // height: 50px;
+  // width: 50px;
+}
+
+.p-comment {
+  text-align: center;
+  position: relative;
+  top: 50%;
+  -ms-transform: translateY(-50%);
+  -webkit-transform: translateY(-50%);
+  transform: translateY(-50%);
+}
+
+#ib-comment-details-form {
+  height: 100%;
+  width: 100%;
+  padding: 10px 20px 10px 10px;
+}
+
+#comment_form_data_text {
+  height: 65%;
+  width: 100%;
 }

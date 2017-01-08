@@ -21,16 +21,16 @@ defmodule WebGib.Web.Components.Details.IdentEmail do
   component :ident_email_details do
 
     # Ident (Email) details
-    div [id: "ib-ident-details", class: "ib-details-off"] do
-      form [action: "/ibgib/ident", method: "post"] do
+    div [id: "ib-identemail-details", class: "ib-details-off"] do
+      form [id: "ib-identemail-details-form", action: "/ibgib/ident", method: "post"] do
         input [name: "_utf8", type: "hidden", value: "✓"]
-        input [id: "ident_form_data_src_ib_gib", name: "ident_form_data[src_ib_gib]", type: "hidden", value: ""]
-        input [name: "ident_form_data[ident_type]", type: "hidden", value: "email"]
+        input [id: "identemail_form_data_src_ib_gib", name: "identemail_form_data[src_ib_gib]", type: "hidden", value: ""]
+        input [name: "identemail_form_data[ident_type]", type: "hidden", value: "email"]
         p "Email Address: "
         div do
           input [
-            id: "ident_form_data_text",
-            name: "ident_form_data[ident_text]",
+            id: "identemail_form_data_text",
+            name: "identemail_form_data[ident_text]",
             type: "email",
             pattern: ".{#{min_email_addr_size},#{max_email_addr_size}}",
             required: "",
@@ -44,13 +44,13 @@ defmodule WebGib.Web.Components.Details.IdentEmail do
           span [class: "ib-tooltiptext-smallfont"], do: gettext("For additional security, you can enter a short pin here. If you enter this, you will be re-prompted for it after opening the link in your email. This is just a 1-time 'throwaway' pin! Make it random and short for this login.")
         end
         div do
-          input [id: "ident_form_data_pin", name: "ident_form_data[ident_pin]",type: "password", maxlength: max_ident_pin_size, value: ""]
+          input [id: "identemail_form_data_pin", name: "identemail_form_data[ident_pin]",type: "password", maxlength: max_ident_pin_size, value: ""]
         end
         input [name: "_csrf_token", type: "hidden", value: Phoenix.Controller.get_csrf_token]
         div [class: "ib-tooltip"] do
           button [type: "submit"] do
             span [class: "ib-center-glyph glyphicon glyphicon-envelope ib-green"]
-            span [class: "ib-tooltiptext"], do: gettext("Send Login Email")
+          # span [class: "ib-tooltiptext"], do: gettext("Send Login Email")
           end
         end
       end

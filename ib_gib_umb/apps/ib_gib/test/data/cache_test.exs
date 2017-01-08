@@ -1,5 +1,9 @@
 defmodule IbGib.Data.CacheTest do
-  use ExUnit.Case
+  @moduledoc """
+  Testing the simplistic naive cache that I have implemented.
+  """
+
+  use ExUnit.Case, async: true
   require Logger
 
   setup context do
@@ -33,7 +37,7 @@ defmodule IbGib.Data.CacheTest do
     _result = IbGib.Data.Cache.start_link(test_name)
 
     key = "key_#{test_name}"
-    value = %{"abc" => 12345}
+    value = %{"abc" => 123}
 
     put_result = IbGib.Data.Cache.put(key, value, test_name)
 
@@ -45,7 +49,7 @@ defmodule IbGib.Data.CacheTest do
     _result = IbGib.Data.Cache.start_link(test_name)
 
     key = "key_#{test_name}"
-    value = %{"abc" => 12345}
+    value = %{"abc" => 123}
 
     put_result = IbGib.Data.Cache.put(key, value, test_name)
 
@@ -62,7 +66,7 @@ defmodule IbGib.Data.CacheTest do
     # result = IbGib.Data.Cache.start_link(test_name)
 
     key = "key_#{test_name}"
-    value = %{"abc" => 12345}
+    value = %{"abc" => 123}
 
     put_result = IbGib.Data.Cache.put(key, value)
 
@@ -72,7 +76,7 @@ defmodule IbGib.Data.CacheTest do
   @tag :capture_log
   test "dont start cache, put value, get value", %{test_name: test_name} do
     key = "some_key#{test_name}"
-    value = %{"abc" => 12345}
+    value = %{"abc" => 123}
 
     put_result = IbGib.Data.Cache.put(key, value)
 

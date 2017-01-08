@@ -8,7 +8,7 @@ defmodule WebGib.Web.Components.IbScape do
 
   use WebGib.MarkerElements
   import WebGib.Gettext
-  import WebGib.Web.Components.Details.{Fork, Help, Comment, UploadPic, Link, IdentEmail, Info, Query, Download}
+  import WebGib.Web.Components.Details.{Fork, Help, Comment, UploadPic, Link, IdentEmail, Info, Query, Download, Huh}
 
   component :ib_scape do
 
@@ -19,6 +19,10 @@ defmodule WebGib.Web.Components.IbScape do
       # These are hidden divs that I show when I need them.
       # The positioning, showing/hiding is all done in the js.
       div [id: "ib-scape-details", class: "ib-details-off ib-pos-abs"] do
+        button [name: "ib-scape-details-close-btn"] do
+          span [class: "close ib-center-glyph glyphicon glyphicon-remove ib-red"]
+        end
+
         fork_details
         help_details
         comment_details
@@ -28,6 +32,8 @@ defmodule WebGib.Web.Components.IbScape do
         info_details
         query_details
         download_details
+        # add_ib_gib_details
+        huh_details
       end
 
     end

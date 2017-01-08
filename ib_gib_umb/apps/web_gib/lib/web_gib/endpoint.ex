@@ -3,7 +3,7 @@ defmodule WebGib.Endpoint do
   use IbGib.Constants, :ib_gib
   use WebGib.Constants, :config
 
-  # socket "/ibgibsocket", WebGib.IbGibSocket
+  socket "/ibgibsocket", WebGib.IbGibSocket
 
   # Serve at "/" the static files from "priv/static" directory.
   #
@@ -11,7 +11,7 @@ defmodule WebGib.Endpoint do
   # when deploying your static files in production.
   plug Plug.Static,
     at: "/", from: :web_gib, gzip: false,
-    only: ~w(css fonts images js files favicon.ico favicon-32x32.png favicon-16x16.png favicon-48x48.png apple-touch-icon.png manifest.json safari-pinned-tab.svg android-chrome-192x192.png android-chrome-512x512.png browserconfig.xml mstile-150x150.png robots.txt)
+    only: ~w(css fonts images js files favicon.ico favicon-32x32.png favicon-16x16.png favicon48x48.ico apple-touch-icon.png manifest.json safari-pinned-tab.svg android-chrome-192x192.png android-chrome-512x512.png browserconfig.xml mstile-150x150.png robots.txt)
 
   plug Plug.Static,
     at: "files/", from: @upload_files_path, gzip: false
@@ -41,10 +41,13 @@ defmodule WebGib.Endpoint do
   # The session will be stored in the cookie and signed,
   # this means its contents can be read but not tampered with.
   # Set :encryption_salt if you would also like to encrypt it.
+
   plug Plug.Session,
     store: :cookie,
     key: "_web_gib_key",
-    signing_salt: "/EWwmO80"
+    signing_salt: "/EWwmO80",
+    # max_age: thanks SO! http://stackoverflow.com/questions/34578163/implementing-remember-me-in-phoenix
+    max_age: 2_592_000 # 60*60*24*30 = 30 days
 
   plug WebGib.Router
 end

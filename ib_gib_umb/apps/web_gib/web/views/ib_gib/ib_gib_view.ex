@@ -1,10 +1,7 @@
 defmodule WebGib.IbGibView do
   use WebGib.Web, :view
 
-  import WebGib.Web.Components.Login
-  import WebGib.Web.Components.IbCircle1
-  import WebGib.Web.Components.IbLine1
-  import WebGib.Web.Components.IbScape
+  require WebGib.Web.Components.IbScape
 
   template :show do
     div [class: "ib-height-100"] do
@@ -15,6 +12,7 @@ defmodule WebGib.IbGibView do
           "ibgib": "#{@ib_gib}",
           "data-metaqueryibgib": "#{@meta_query_ib_gib}",
           "data-metaqueryresultibgib": "#{@meta_query_result_ib_gib}",
+          "data-identityibgibs": @identity_ib_gibs |> Enum.reduce(fn(x, acc) -> acc <> "|" <> x end),
           "data-path": "#{WebGib.Router.Helpers.ib_gib_path(WebGib.Endpoint, :get, "")}",
           "d3-data-path": "#{WebGib.Router.Helpers.ib_gib_path(WebGib.Endpoint, :getd3, "")}",
           "data-open-path": "#{WebGib.Router.Helpers.ib_gib_path(WebGib.Endpoint, :show, "")}",
@@ -44,7 +42,7 @@ defmodule WebGib.IbGibView do
             div [class: "ib-tooltip"] do
               button [type: "submit"] do
                 span [class: "ib-center-glyph glyphicon glyphicon-flash ib-green"]
-                span [class: "ib-tooltiptext"], do: gettext("Wah wah wah...")
+              # span [class: "ib-tooltiptext"], do: gettext("Wah wah wah...")
               end
             end
           end

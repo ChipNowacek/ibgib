@@ -11,9 +11,9 @@ defmodule IbGib.Data.DataTest do
   # alias IbGib.Data.Schemas.IbGibModel
   alias RandomGib.Get
 
-  @at_least_msg "should have at least %{count} item(s)"
-  @at_most_msg "should be at most %{count} character(s)"
-  @required_msg "can't be blank"
+  # @at_least_msg "should have at least %{count} item(s)"
+  # @at_most_msg "should be at most %{count} character(s)"
+  # @required_msg "can't be blank"
 
   setup context do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(IbGib.Data.Repo)

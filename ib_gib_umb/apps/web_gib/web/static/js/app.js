@@ -1,35 +1,11 @@
-// Brunch automatically concatenates all files in your
-// watched paths. Those paths can be configured at
-// config.paths.watched in "brunch-config.js".
-//
-// However, those files will only be executed if
-// explicitly imported. The only exception are files
-// in vendor, which are never wrapped in imports and
-// therefore are always executed.
-
-// Import dependencies
-//
-// If you no longer want to use a dependency, remember
-// to also remove its path from "config.paths.watched".
-// import "phoenix_html";
-
-// Import local files
-//
-// Local files can be imported directly using relative
-// paths "./socket" or full ones "web/static/js/socket".
-
-// import { IbGibChannel } from "./socket"
-
-// import { CircleMenu } from "./circlemenu";
-// import { IbScape } from "./ibscape-three";
-// import { IbScape } from "./ibscape-pixi";
-
-import { IbScape } from "./ib-scape";
+import { DynamicIbScape } from "./graphs/dynamic-ib-scape";
+import { DynamicD3ForceGraph } from "./graphs/dynamic-d3-force-graph";
+import { DynamicD3ForceGraph2 } from "./graphs/dynamic-d3-force-graph2";
 import { IbGibCache } from "./services/ibgib-cache";
 import { IbGibImageProvider } from "./services/ibgib-image-provider";
-
-
-// import { getData } from './miserables.js';
+import { IbGibSocketManager } from "./services/ibgib-socket-manager";
+import { IbGibEventBus } from "./services/ibgib-event-bus";
+import { IbGibProvider } from "./services/ibgib-provider";
 
 class App {
 
@@ -40,32 +16,135 @@ class App {
     if (divIbGibData) {
       let ibGibCache = new IbGibCache();
       let ibGibImageProvider = new IbGibImageProvider(ibGibCache);
+      let ibIdentityToken = document.getElementsByName("ib_identity_token")[0].content;
+      let ibAggregateIdentityHash =
+        document.getElementsByName("ib_agg_identity_hash")[0].content;
+      let ibGibSocket = new IbGibSocketManager(ibIdentityToken, ibAggregateIdentityHash);
+      ibGibSocket.connect();
 
-      // // I'm not sure if these are really useful anymore.
-      // let query = divIbGibData.getAttribute("data-metaqueryibgib");
-      // let queryResult = divIbGibData.getAttribute("data-metaqueryresultibgib");
-
-      // The server passes the current ibgib via the ibgib attribute.
-      let ibgib = divIbGibData.getAttribute("ibgib");
+      // The server passes the current ibGib via the ibgib attribute.
+      let ibGib = divIbGibData.getAttribute("ibgib");
 
       // This is our base json path that we will use to pull anything down.
       let baseJsonPath = divIbGibData.getAttribute("data-path");
       let baseD3JsonPath = divIbGibData.getAttribute("d3-data-path");
+      let currentIdentityIbGibs = divIbGibData.getAttribute("data-identityibgibs").split("|");
 
-      // Create the ibScape, which is the d3 "landscape" for the ibgib.
+      let ibGibProvider = new IbGibProvider(ibGibCache, baseJsonPath);
+      let ibGibEventBus = new IbGibEventBus(ibGibSocket.socket, ibGibProvider);
+
+      // Create the ibScape, which is the d3 "landscape" for the ibGib.
       let graphDiv = document.querySelector("#ib-d3-graph-div");
 
+      // this.ibScape = new IbScape(graphDiv, baseJsonPath, ibGibCache, ibGibImageProvider);
+      //
+      // // We set the ibScape to get its json data
+      // let data = baseD3JsonPath + ibGib;
+      // this.ibScape.update(data);
 
+      this.ibScape = new DynamicIbScape(graphDiv, "mainIbScapeSvg", /*config*/ null, baseJsonPath, ibGibCache, ibGibImageProvider, ibGib, ibGibSocket, ibGibEventBus, /*isPrimaryIbScape*/ true, ibGibProvider, currentIdentityIbGibs);
+      // this.ibScape.init();
+      this.ibScape.toggleFullScreen();
 
-      this.ibScape = new IbScape(graphDiv, baseJsonPath, ibGibCache, ibGibImageProvider);
+      //
+      // // We set the ibScape to get its json data
+      // let data = baseD3JsonPath + ibGib;
+      // this.ibScape.update(data);
 
-      // We set the ibScape to get its json data
-      let data = baseD3JsonPath + ibgib;
-      this.ibScape.update(data);
+      // let graph = new DynamicD3ForceGraph(graphDiv, "testSvgId", /*config*/ null);
+      // graph.init();
+      //
+      // let graphDiv2 = document.createElement('div');
+      // let graphDiv2Id = "graphDiv2";
+      // graphDiv2.id = graphDiv2Id;
+      // graphDiv2.className = "test-graph-div";
+      // graphDiv.parentNode.appendChild(graphDiv2);
+      // let graph2 = new DynamicD3ForceGraph2(graphDiv2, "testSvgId2", /*config*/ null);
+      // graph.addChildGraph(graph2, /*shareDataReference*/ false);
+      //
+      // initResize([graph, graph2]);
+      //
+      // setTimeout(() => {
+      //   initNodes(graph);
+      //   // initNodes(graph2);
+      //
+      //   let count = 0;
+      //   let interval = setInterval(() => {
+      //     // let targetGraph = Math.random() > 0.5 ? graph : graph2;
+      //     let targetGraph = graph; // testing children
+      //
+      //     // console.log("adding from app.js")
+      //     let randomIndex = Math.trunc(Math.random() * targetGraph.graphData.nodes.length);
+      //     let randomNode = targetGraph.graphData.nodes[randomIndex];
+      //     if (randomNode) {
+      //       let randomId = Math.trunc(Math.random() * 100000);
+      //       let newNode = {
+      //         id: randomId,
+      //         name: "server " + randomId,
+      //         shape: Math.random() > 0.5 ? "circle" : "rect",
+      //         // render: Math.random() > 0.1 ? "image" : ""
+      //         render: "image"
+      //       };
+      //       if (randomNode.x) {
+      //         newNode.x = randomNode.x;
+      //         newNode.y = randomNode.y;
+      //       }
+      //       let newLink = {source: randomNode.id, target: randomId};
+      //       targetGraph.add([newNode], [newLink], /*updateParentOrChild*/ true);
+      //       count ++;
+      //       if (count % 10 === 0) {
+      //         console.log(`count: ${count}`)
+      //         if (count % 10 === 0) {
+      //           clearInterval(interval);
+      //         }
+      //       }
+      //     } else {
+      //       // debugger;
+      //       // setTimeout(() => initNodes(), 500);
+      //       console.log("no nodes");
+      //     }
+      //   }, 5);
+      //
+      // }, 500);
+      //
+      // function initNodes(g) {
+      //   let initialCount = 10;
+      //   let nodes = [ {"id": 0, "name": "root node", render: "image", shape: "circle" } ];
+      //   let links = [];
+      //   for (var i = 1; i < initialCount; i++) {
+      //     let randomIndex = Math.trunc(Math.random() * nodes.length);
+      //     let randomNode = nodes[randomIndex];
+      //     let newNode = {
+      //       id: i,
+      //       name: `node ${i}`,
+      //       render: "image",
+      //       shape: Math.random() > 0.5 ? "circle" : "rect"
+      //     };
+      //     let newLink = {source: randomIndex, target: newNode.id};
+      //
+      //     nodes.push(newNode);
+      //     links.push(newLink);
+      //   }
+      //
+      //   g.add(nodes, links, /*updateParentOrChild*/ true);
+      // }
+      //
+      // function initResize(graphs) {
+      //   window.onresize = () => {
+      //     const debounceMs = 250;
+      //
+      //     // hack: apparently no static "properties" in ES6, so putting it on window.
+      //     if (window.resizeTimer) { clearTimeout(window.resizeTimer); }
+      //
+      //     window.resizeTimer = setTimeout(() => {
+      //       graphs.forEach(g => g.handleResize());
+      //     }, debounceMs);
+      //   };
+      // }
+
     }
-
     // if (!this.ibGibChannel) {
-    //   this.ibGibChannel = new IbGibChannel();
+    //   this.ibGibChannel = new IbGibSocketManager();
     //   this.ibGibChannel.connect();
     // }
 
@@ -107,16 +186,8 @@ class App {
     //   var username = this.sanitize(msg.user || "anonymous")
     //   $messages.append(`<br/><i>[${username} entered]</i>`)
     // })
-  }
 
-  // static sanitize(html){ return $("<div/>").text(html).html() }
-  //
-  // static messageTemplate(msg){
-  //   let username = this.sanitize(msg.user || "anonymous")
-  //   let body     = this.sanitize(msg.body)
-  //
-  //   return(`<p><a href='#'>[${username}]</a>&nbsp; ${body}</p>`)
-  // }
+  }
 }
 
 // Init slider

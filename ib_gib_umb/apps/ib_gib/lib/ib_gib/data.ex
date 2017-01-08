@@ -45,7 +45,7 @@ defmodule IbGib.Data do
       {:ok, :ok}
     else
       {:error, :already} ->
-        Logger.info "Tried to save info data that already exists."
+        Logger.debug "Tried to save info data that already exists."
         {:ok, :ok}
 
       failure -> {:error, "Save failed: #{inspect failure}"}
@@ -119,47 +119,47 @@ defmodule IbGib.Data do
     models_array
   end
 
-  @doc """
-  Hashes the given `binary` to create the `binary_id`. Inserts the binary
-  into the repo using the `IbGib.Data.Schemas.BinaryModel`.
+  # @doc """
+  # Hashes the given `binary` to create the `binary_id`. Inserts the binary
+  # into the repo using the `IbGib.Data.Schemas.BinaryModel`.
+  #
+  # Returns {:ok, binary_id} (hash) or {:error, reason}
+  # """
+  # @spec save_binary(binary) :: {:ok, String.t} | {:error, String.t}
+  # def save_binary(binary_data) do
+  #   binary_id = Helper.hash(binary_data)
+  #   with(
+  #     {:ok, _model} <- insert_into_repo({binary_id, binary_data})
+  #   ) do
+  #     {:ok, binary_id}
+  #   else
+  #     {:error, :already} ->
+  #       Logger.debug "Tried to save info data that already exists. binary_id: #{binary_id}"
+  #       {:ok, binary_id}
+  #
+  #     failure ->
+  #       {:error, "Save binary failed. binary_id: #{binary_id}. Failure: #{inspect failure}"}
+  #   end
+  # end
 
-  Returns {:ok, binary_id} (hash) or {:error, reason}
-  """
-  @spec save_binary(binary) :: {:ok, String.t} | {:error, String.t}
-  def save_binary(binary_data) do
-    binary_id = Helper.hash(binary_data)
-    with(
-      {:ok, _model} <- insert_into_repo({binary_id, binary_data})
-    ) do
-      {:ok, binary_id}
-    else
-      {:error, :already} ->
-        Logger.info "Tried to save info data that already exists. binary_id: #{binary_id}"
-        {:ok, binary_id}
-
-      failure ->
-        {:error, "Save binary failed. binary_id: #{binary_id}. Failure: #{inspect failure}"}
-    end
-  end
-
-  @doc """
-  Retrieves the binary data associated with the given `binary_id`.
-  This will hash the data against the id to be sure that it is not compromised.
-  """
-  @spec load_binary(String.t) :: {:ok, binary} | {:error, String.t}
-  def load_binary(binary_id) do
-    case get_from_repo(:binary, binary_id) do
-      {:ok, binary_info} ->
-        binary_data_hash = Helper.hash(binary_info[:binary_data])
-        if binary_data_hash == binary_id do
-          {:ok, binary_info[:binary_data]}
-        else
-          {:error, emsg_hash_mismatch}
-        end
-      {:error, :not_found} -> {:error, emsg_not_found}
-      {:error, reason} -> {:error, reason}
-    end
-  end
+  # @doc """
+  # Retrieves the binary data associated with the given `binary_id`.
+  # This will hash the data against the id to be sure that it is not compromised.
+  # """
+  # @spec load_binary(String.t) :: {:ok, binary} | {:error, String.t}
+  # def load_binary(binary_id) do
+  #   case get_from_repo(:binary, binary_id) do
+  #     {:ok, binary_info} ->
+  #       binary_data_hash = Helper.hash(binary_info[:binary_data])
+  #       if binary_data_hash == binary_id do
+  #         {:ok, binary_info[:binary_data]}
+  #       else
+  #         {:error, emsg_hash_mismatch()}
+  #       end
+  #     {:error, :not_found} -> {:error, emsg_not_found()}
+  #     {:error, reason} -> {:error, reason}
+  #   end
+  # end
 
   # ----------------------------------------------------------------------------
   # Private Functions
@@ -321,7 +321,7 @@ defmodule IbGib.Data do
 
         {"with", "ib"} ->
           _ = Logger.debug "with ib. where: #{where}. search_term: #{search_term}"
-          regex = ""
+          # regex = ""
           query
           |> where(fragment("? IN (SELECT substring( jsonb_array_elements_text(rel8ns -> ?) FROM '^[^^]+'))", ^search_term, ^where))
 

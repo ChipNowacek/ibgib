@@ -156,7 +156,7 @@ defmodule WebGib.Web.Components.Details.Query do
   component :query_details do
 
     div [id: "ib-query-details", class: "ib-details-off"] do
-      form [action: "/ibgib/query", method: "post"] do
+      form [action: "/ibgib/query", method: "post", class: "ib-overflow-y-auto ib-height-100"] do
         input [id: "query_form_data_src_ib_gib", name: "query_form_data[src_ib_gib]",type: "hidden", value: ""]
         input [name: "_utf8", type: "hidden", value: "✓"]
         input [name: "_csrf_token", type: "hidden", value: Phoenix.Controller.get_csrf_token]
@@ -169,7 +169,7 @@ defmodule WebGib.Web.Components.Details.Query do
         div [class: "ib-tooltip download_form_submit_btn_div"] do
           button [type: "submit"] do
             span [class: "ib-center-glyph glyphicon glyphicon-search ib-green"]
-            span [class: "ib-tooltiptext"], do: gettext("Go Query Go! Go Spurs Go! err...Go Query Go! :-?")
+          # span [class: "ib-tooltiptext"], do: gettext("Go Spurs Go!")
           end
         end
       end

@@ -224,7 +224,7 @@ defmodule IbGib.Transform.Factory do
     if is_needed do
       # I'm both prepending and appending for visual purposes. When querying,
       # I only need to search for: where gib `LIKE` "#{gib_stamp}%"
-      gib = Helper.stamp_gib!(gib)
+      _gib = Helper.stamp_gib!(gib)
     else
       gib
     end

@@ -53,15 +53,15 @@ defmodule IbGib.Helper do
       {:ok, "some id^some hash ABCDEFGHI123"}
 
       # Disable logging for these error doctests.
-      iex> Logger.disable(self)
+      iex> Logger.disable(self())
       ...> {result, _} = IbGib.Helper.get_ib_gib(:not_a_bitstring, "bitstring here")
-      ...> Logger.enable(self)
+      ...> Logger.enable(self())
       ...> result
       :error
 
-      iex> Logger.disable(self)
+      iex> Logger.disable(self())
       ...> {result, _} = IbGib.Helper.get_ib_gib("bitstring here", :not_a_bitstring)
-      ...> Logger.enable(self)
+      ...> Logger.enable(self())
       ...> result
       :error
   """
@@ -107,9 +107,9 @@ defmodule IbGib.Helper do
       {:ok, {"some id", "some hash ABCDEFGHI123"}}
 
       # Disable logging for these error doctests.
-      iex> Logger.disable(self)
+      iex> Logger.disable(self())
       ...> {result, _} = IbGib.Helper.separate_ib_gib(:not_a_bitstring)
-      ...> Logger.enable(self)
+      ...> Logger.enable(self())
       ...> result
       :error
   """
@@ -404,15 +404,15 @@ defmodule IbGib.Helper do
     iex> IbGib.Helper.gib_stamped?("someGIB")
     false
 
-    iex> Logger.disable(self)
+    iex> Logger.disable(self())
     ...> result = IbGib.Helper.gib_stamped?("")
-    ...> Logger.enable(self)
+    ...> Logger.enable(self())
     ...> result
     false
 
-    iex> Logger.disable(self)
+    iex> Logger.disable(self())
     ...> result = IbGib.Helper.gib_stamped?(%{"not" => "a bitstring"})
-    ...> Logger.enable(self)
+    ...> Logger.enable(self())
     ...> result
     false
   """
@@ -463,4 +463,153 @@ defmodule IbGib.Helper do
     end
   end
 
+
+  @doc """
+  IbGib uses identity claims as opposed to a single "user_id" field. So we will
+  do an aggregate "user_id" hash which is generated based on the current
+  identities.
+
+  ## Examples
+
+    One string
+      iex> identity_ib_gibs = ["a"]
+      ...> {result, _hash} = IbGib.Helper.get_aggregate_id_hash(identity_ib_gibs)
+      ...> result
+      :ok
+
+    Two strings
+      iex> identity_ib_gibs = ["a", "b"]
+      ...> {result, _hash} = IbGib.Helper.get_aggregate_id_hash(identity_ib_gibs)
+      ...> result
+      :ok
+
+    One email identity string
+      iex> identity_ib_gibs = ["email_a"]
+      ...> {result, _hash} = IbGib.Helper.get_aggregate_id_hash(identity_ib_gibs)
+      ...> result
+      :ok
+
+    One email identity string with other non-email string
+      iex> identity_ib_gibs = ["email_a", "b"]
+      ...> {result, _hash} = IbGib.Helper.get_aggregate_id_hash(identity_ib_gibs)
+      ...> result
+      :ok
+
+    Same email with other non-email ids should generate same hash
+      iex> identity_ib_gibs1 = ["email_a", "session_123"]
+      ...> identity_ib_gibs2 = ["email_a", "session_456"]
+      ...> {:ok, hash1} = IbGib.Helper.get_aggregate_id_hash(identity_ib_gibs1)
+      ...> {:ok, hash2} = IbGib.Helper.get_aggregate_id_hash(identity_ib_gibs2)
+      ...> hash1 === hash2
+      true
+
+    To ensure we have consistent hashing (sha256 internals shouldn't change!)
+      iex> identity_ib_gibs = ["email_a", "email_b", "session_123"]
+      ...> {result, hash} = IbGib.Helper.get_aggregate_id_hash(identity_ib_gibs)
+      ...> {result, hash}
+      {:ok, "1174A7BAB4B6A811E8B345DAC5FD50201FD7904362C873D94125F2BAEB75E309"}
+
+    Can't be nil
+      iex> identity_ib_gibs = nil
+      ...> Logger.disable(self())
+      ...> {result, _reason} = IbGib.Helper.get_aggregate_id_hash(identity_ib_gibs)
+      ...> Logger.enable(self())
+      ...> result
+      :error
+
+    Can't be empty list
+      iex> identity_ib_gibs = []
+      ...> Logger.disable(self())
+      ...> {result, _reason} = IbGib.Helper.get_aggregate_id_hash(identity_ib_gibs)
+      ...> Logger.enable(self())
+      ...> result
+      :error
+  """
+  def get_aggregate_id_hash(identity_ib_gibs)
+  def get_aggregate_id_hash(identity_ib_gibs)
+    when is_list(identity_ib_gibs) and
+         length(identity_ib_gibs) > 0 do
+
+    email_identity_ib_gibs =
+      Enum.filter(identity_ib_gibs, &(String.starts_with?(&1, "email")))
+
+    src_identities =
+      if Enum.count(email_identity_ib_gibs) > 0 do
+        email_identity_ib_gibs
+      else
+        identity_ib_gibs
+      end
+
+    agg_hash =
+      src_identities
+      |> Enum.sort()
+      |> Enum.reduce("", fn(identity_ib_gib, acc) -> acc <> identity_ib_gib end)
+      |> hash()
+
+    {:ok, agg_hash}
+  end
+  def get_aggregate_id_hash(unknown_arg) do
+    emsg = "#{emsg_invalid_identity_ib_gibs()} #{emsg_invalid_args([unknown_arg])}"
+    _ = Logger.error(emsg)
+    {:error, emsg}
+  end
+
+  @doc """
+  From [Back to the Future II on IMDB](http://www.imdb.com/title/tt0096874/quotes?item=qt0426637)
+  > Marty McFly: That's right, Doc. November 12, 1955.
+  > Doc: Unbelievable, that old Biff could have chosen that particular date. It could mean that that point in time inherently contains some sort of cosmic significance. Almost as if it were the temporal junction point for the entire space-time continuum. On the other hand, it could just be an amazing coincidence.
+
+  This returns the first (non-root) ib^gib in the given `ib_gib`'s past.
+  This seems to be a useful thing, defining the start of a timeline, i.e. the
+  ib_gib's "birthday".
+
+  Think of child records/tables in a relational database. These records are
+  joined to the parent record via the parent's id/seq value. Well this id/seq
+  value is like the "initial" id/seq value in that record's existence. But with
+  relational databases, there is not a "complete" history kept throughout the
+  lifetime of the thing unless there is an audit trail. If there _is_ an audit
+  trail, then those audit id/seq values are somewhat like the ib^gib pointers.
+
+  So the initial id/seq still ends up being the starting point - the
+  "temporal junction point" where you have to travel back to in order to
+  reference the entire timeline.
+
+  ## Use Case
+
+  I'm creating this specifically for "implied" ibGib rel8ns, which are 1-way
+  rel8ns that are rel8d _to_ an ibGib but are not directly rel8d _on_ an ibGib.
+  So I'm going to "tag" the ibGib at the precise ib^gib pointer in time where
+  the comment occurs, **as well as tagging the temporal junction point**. This
+  way, when I go to look up "Hey, give me the implied ibGibs related to some
+  given ibGib", I know to look at the temporal junction point instead of
+  searching for any possible ib^gib in its "past". (Yes, I have actually been
+  coding this entire "past" querying and it is ludicrously ugly.)
+  """
+  def get_temporal_junction_ib_gib(ib_gib)
+  def get_temporal_junction_ib_gib(ib_gib) when is_bitstring(ib_gib) do
+    case IbGib.Expression.Supervisor.start_expression(ib_gib) do
+      {:ok, ib_gib_pid} -> get_temporal_junction_ib_gib(ib_gib_pid)
+      error -> default_handle_error(error)
+    end
+  end
+  def get_temporal_junction_ib_gib(ib_gib_pid) when is_pid(ib_gib_pid) do
+    case IbGib.Expression.get_info(ib_gib_pid) do
+      {:ok, info} -> get_temporal_junction_ib_gib(info)
+      error -> default_handle_error(error)
+    end
+  end
+  def get_temporal_junction_ib_gib(ib_gib_info) when is_map(ib_gib_info) do
+    past = ib_gib_info[:rel8ns]["past"]
+    if Enum.count(past) > 1 do
+      # position 0 is root, position 1 is the temporal junction
+      {:ok, Enum.at(past, 1)}
+    else
+      # There is no past, so the given `ib_gib_info` itself _is_ the temporal
+      # junction. So get the info's ib^gib
+      get_ib_gib(ib_gib_info)
+    end
+  end
+  def get_temporal_junction_ib_gib(ib_gib) do
+    invalid_args(ib_gib)
+  end
 end

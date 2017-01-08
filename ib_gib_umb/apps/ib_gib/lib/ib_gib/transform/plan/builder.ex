@@ -149,6 +149,44 @@ defmodule IbGib.Transform.Plan.Builder do
     {:ok, result}
   end
 
+  @doc """
+  Adds the given `name` to the plan, e.g. "instance" or "update_rel8n".
+
+  This is optional metadata.
+
+  I'm adding this just to give a little metadata to the plan, since I'm making
+  an `update_rel8n` plan and it would be nice to know that it's that type of
+  plan.
+
+  Would possibly be more extensible to add a metadata field with name if we
+  want to add more metadata in the future, but I think this is fine for now.
+  """
+  @spec add_plan_name(map, String.t) :: {:ok, map} | {:error, String.t}
+  def add_plan_name(plan, name)
+    when is_bitstring(name) and name !== "" do
+    {:ok, Map.put(plan, "name", name)}
+  end
+  def add_plan_name(plan, name) do
+    invalid_args([plan, name])
+  end
+
+  @doc """
+  Adds a unique id to the plan.
+
+  This is optional metadata.
+
+  I'm adding this just to give a little metadata to the plan, since I'm making
+  an `update_rel8n` plan and it would be nice to know that it's that type of
+  plan.
+  """
+  @spec add_plan_uid(map) :: {:ok, map} | {:error, String.t}
+  def add_plan_uid(plan) do
+    {:ok, Map.put(plan, "uid", new_id())}
+  end
+  def add_plan_uid(plan, uid) do
+    invalid_args([plan, uid])
+  end
+
   # ----------------------------------------------------------------------------
   # Plan Add Functions
   # ----------------------------------------------------------------------------
@@ -239,12 +277,15 @@ defmodule IbGib.Transform.Plan.Builder do
   @doc """
   Adds a `mut8` step to the plan.
 
+  If this is called with `new_data` being either nil or an empty map, then
+  this will simply return the plan as-is.
+
   Returns {:ok, plan} | {:error, reason}
   """
   @spec add_mut8(map, String.t, map) :: {:ok, map} | {:error, String.t}
   def add_mut8(plan, name, new_data)
   def add_mut8(plan, name, new_data)
-    when is_map(new_data) do
+    when is_map(new_data) and map_size(new_data) > 0 do
     add_step(
               plan,
               %{
@@ -255,6 +296,14 @@ defmodule IbGib.Transform.Plan.Builder do
                 }
               }
             )
+  end
+  def add_mut8(plan, _name, new_data)
+    when is_nil(new_data) do
+    plan
+  end
+  def add_mut8(plan, _name, new_data)
+    when is_map(new_data) and map_size(new_data) === 0 do
+    plan
   end
   def add_mut8(plan, name, new_data) do
     invalid_args([plan, name, new_data])
@@ -299,7 +348,7 @@ defmodule IbGib.Transform.Plan.Builder do
     if is_needed do
       # I'm both prepending and appending for visual purposes. When querying,
       # I only need to search for: where gib `LIKE` "#{gib_stamp}%"
-      gib = stamp_gib!(gib)
+      _gib = stamp_gib!(gib)
     else
       gib
     end
@@ -308,5 +357,4 @@ defmodule IbGib.Transform.Plan.Builder do
     _ = Logger.warn "Invalid args: #{inspect [gib, is_needed]}"
     gib
   end
-
 end

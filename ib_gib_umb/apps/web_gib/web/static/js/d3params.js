@@ -1,4 +1,4 @@
-var d3CircleRadius = 10;
+var d3CircleRadius = 20;
 var d3LongPressMs = 900;
 var d3DblClickMs = 200;
 
@@ -10,15 +10,17 @@ let d3LinkDistances = {
 }
 
 let d3Scales = {
+  "context": 5,
+  "root": 3,
+  "cmd": 1.5,
+  "virtual": 1,
+  "text": 3,
+  "image": 3,
+  "source": 4,
+  "ibGib": 1.5,
   "rel8n": 1.5,
-  "dna": 1,
-  "ancestor": 1,
-  "past": 2,
-  "ib": 5,
-  "ibGib": 4,
   "result": 2,
-  // "rel8d": 3,
-  "ib^gib": 3,
+  "ib^gib": 2,
   "pic": 3,
   "link": 3,
   "result": 3,
@@ -27,23 +29,25 @@ let d3Scales = {
 };
 
 let d3Colors = {
-  // "rel8n": "#C3ECFA",
+  "context": "#F2EC41",
   "dna": "#C5DADE",
   "ancestor": "lightgray",
   "past": "#A9CBD6",
   "ib": "#F2EC41",
   "ibGib": "#76963e",
   "result": "#86CC6C",
-  // "rel8d": "#FFDFAB",
   "ib^gib": "#73BFAE",
   "comment": "#CCF26B",
-  "text": "#CCF26B",
+  "text": "#A7D169",
   "name": "#FFDFAB",
   "pic": "#DDEDD3",
   "image": "#DDEDD3",
   "img": "#DDEDD3",
   "identity": "#FFFFFF",
-  "default": "#AEA6E3",
+  "huh": "#EBFF0F",
+  "help": "#EBFF0F",
+  "query": "#C7FF4F",
+  "default": "#8EFAD3",
 
   "imageBorder": "#3CAA71",
   "textBorder": "#8F26A3",
@@ -51,14 +55,19 @@ let d3Colors = {
   "defaultBorder": "#ED6DCD"
 };
 
-var d3DefaultCollapsed = [
+var d3BoringRel8ns = [
   "ancestor",
   "past",
   "dna",
   "query",
-  // "rel8d",
   "ib^gib",
   "identity"
+];
+
+/** Rel8ns that should always be showing when user clicks node. */
+var d3AlwaysRel8ns = [
+  "comment",
+  "pic"
 ];
 
 var d3RequireExpandLevel2 = [
@@ -66,11 +75,14 @@ var d3RequireExpandLevel2 = [
   "past",
   "dna",
   "query",
-  // "rel8d",
   "ib^gib",
   "identity"
 ];
 
+/**
+ * For commands with a details view, the corresponding view is located in
+ * `web/components/details/cmdname.ex`.
+ */
 var d3MenuCommands = [
   {
     "id": "menu-pic",
@@ -105,6 +117,17 @@ var d3MenuCommands = [
     "color": "#EBFF0F"
   },
   {
+    "id": "menu-huh",
+    "name": "huh",
+    "text": "Huh?",
+    "icon": "\uf128 \uf12a \uf128",
+    "description": "This is like in-depth help. Click it when you have no idea what is going on.",
+    "color": "#EBFF0F",
+    "huh": [
+      `This command gives you more in-depth guidance as to what is going on with the individual ibGib you're looking at, as well as other possibly related stuff.`
+    ]
+  },
+  {
     "id": "menu-share",
     "name": "share",
     "text": "Share",
@@ -118,7 +141,13 @@ var d3MenuCommands = [
     "text": "Comment",
     "icon": "\uf075",
     "description": "The Comment button adds a comment (or any text really) to the selected ibGib",
-    "color": "#61B9FF"
+    "color": "#61B9FF",
+    "huh": [
+      `Comments are how we add text to ibGib. Right now they're limited to a max of 4096 characters, but this may change in the future.`,
+      ``,
+      `So you can use comments as notes for yourself, or notes for others, or instructions, descriptions, etc.`,
+      // `When you comment on someone else's ibGib, the comment can be  allowed by the owner of the ibGib. (In the future, we will have preferences to auto-allow such things as others' comments, pics, etc.).`
+    ]
   },
   {
     "id": "menu-star",
@@ -133,8 +162,11 @@ var d3MenuCommands = [
     "name": "fork",
     "text": "Fork",
     "icon": "\uf259",
-    "description": "The Fork button will take the selected ibGib and create a new one based on it in your personal ib space. Live Long and Prosper!",
-    "color": "#61B9FF"
+    "description": "The Fork button will take the selected ibGib and create a new one based on it in your personal ib space. It's like making a copy at that point in time and branching off of it. Live Long and Prosper!",
+    "color": "#61B9FF",
+    "huh": [
+      `Forking is fundamental to using ibGib. Whenever you fork something (called the source), you create a new ibGib based on that source. What you choose as your source determines what the new ibGib will be like, much like starting a document from a template. If you fork the root ibGib (the green one when you click the background), then you will be starting from a "blank" template.`,
+    ]
   },
   {
     "id": "menu-flag",
@@ -197,7 +229,7 @@ var d3MenuCommands = [
     "name": "goto",
     "text": "Goto",
     "icon": "\uf0a6",
-    "description": "The Goto button will navigate you to the selected ibGib",
+    "description": "The goto button will navigate you to the selected ibGib. ",
     "color": "#C7FF4F"
   },
   {
@@ -230,7 +262,27 @@ var d3MenuCommands = [
     "text": "Refresh ibGib",
     "icon": "\uf021",
     "description": "The Refresh button refreshes the selected ibGib to the most up-to-date version",
-    "color": "#C7FF4F"
+    "color": "#C7FF4F",
+    "huh": [
+      `Time is a big deal in ibGib.`,
+      ` `,
+      `Every ibGib that you look at is kinda like a cartoon. Each ibGib has a snapshot that is a single frame in time, and at any one point in time you're just looking at that snapshot.`,
+      ``,
+      `Refresh brings you to the most recent snapshot in a timeline.`,
+      ``,
+      `...Wait...timeline? Huh?`,
+      ``,
+      `You can fork ibGib timelines with the "Fork" command. When you do this, you create a **new** timeline for the "same" thing. So when you do a Refresh on an ibGib, it always gets you the most recent version **in that timeline**.`,
+      ``,
+      `For more info on timelines, check out the "Fork" command's Huh?!? (It's the funny "Spock Hand" command).`,
+      ``,
+      `Also, every time you refresh a _Source_ ibGib (The big-ish, non-yellow free-floating ibGibs), any updates will update your current _Context_ ibGib (The BIG yellow ibGib).`,
+      ``,
+      `For more info on the Context ibGib, check out its Huh?!? by clicking on the BIG yellow ibGib and choosing the ""\uf128 \uf12a \uf128" button`,
+      `It's basically like Back To The Future II. If you haven't, go watch that movie (like right now). I'll wait...`,
+      ``,
+      `Now that you've seen that movie and are thus an Alternate Timeline Expert, we can talk using that vocabulary. So when they first go into the Future, that is their current "Hill Valley" ibGib timeline. Then future Old Biff takes the Delorian back in time and **forks`,
+    ]
   },
   {
     "id": "menu-download",
@@ -239,7 +291,70 @@ var d3MenuCommands = [
     "icon": "\uf0ed",
     "description": "The Cloud Download button saves the pic/file to your local device",
     "color": "#CFA1C8"
+  },
+  {
+    "id": "menu-zap",
+    "name": "zap",
+    "text": "Zap",
+    "icon": "\uf0e7",
+    "description": "Zaps virtual ibGib with some juice \u26a1",
+    "color": "yellow"
+  },
+  {
+    "id": "menu-add",
+    "name": "add",
+    "text": "Add ibGib",
+    // http://www.alt-codes.net/plus-sign-symbols
+    "icon": "\uf067",
+    "description": "Creates and adds a new ibGib with a given rel8n.",
+    "color": "#C7FF4F"
+  },
+  {
+    "id": "menu-allow",
+    "name": "allow",
+    "text": "Allow",
+    // http://www.fileformat.info/info/unicode/char/2713/index.htm
+    "icon": "\u2713", // ✓ (check mark)
+    "description": "Allow an ibGib that has been created by someone else to be directly rel8d to your ibGib.",
+    "color": "#C7FF4F",
+    "huh": [
+      `When someone comments or adds a picture to an ibGib that **you** own, you have to accept it in order for it to be directly related to your ibGib.`,
+      ` `,
+      `When you accept an ibGib, this doesn't necessarily mean that you like or even agree with the comment. It's just saying "Ok, let's incorporate this into my ibGib so everyone can see when they come to this ibGib." However you choose to accept or reject ibGib is completely up to you.`,
+      ` `,
+      `If the content is inappropriate, especially if it is illegal, you should NOT accept it; rather, you should flag it as inappropriate.`,
+      ` `,
+      `If you want, you can comment on the ibGib that you are rejecting before actually rejecting it. This way, whoever posted it in the first place can see your reasoning/response to it.`,
+    ]
   }
 ];
 
-export { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3DefaultCollapsed, d3RequireExpandLevel2, d3MenuCommands };
+let d3Rel8nIcons = {
+  "identity": "\uf007",
+  "pic": "\uf03e",
+  "comment": "\uf075",
+  "past": "\uf100",
+  "ancestor": "\uf102",
+  "instance": "\uf107",
+  "result": "\uf1c0",
+  "verse": "\uf30c",
+  // "ib^gib": "\u29c2",
+  "ib^gib": d3RootUnicodeChar,
+  "dna": "➿",
+  "adjunct": "\uf01c", // Font awesome inbox, unicode one is -> 📥
+  "identity_session": "\uf21b"
+};
+
+var d3RootUnicodeChar = "\uf10c";
+// var d3RootUnicodeChar = "\u2723";
+
+// Addable rel8ns are rel8ns that can be added to any ibGib. For example,
+// any ibGib can be commented on, even if there are no existing comment rel8ns.
+// So the "comment" rel8n should always show up with at least an "add" virtual
+// command.
+var d3AddableRel8ns = [
+  "comment",
+  "pic",
+]
+
+export { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3BoringRel8ns, d3AlwaysRel8ns, d3RequireExpandLevel2, d3MenuCommands, d3Rel8nIcons, d3RootUnicodeChar, d3AddableRel8ns };

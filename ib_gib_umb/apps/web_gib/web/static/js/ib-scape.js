@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import * as d3text from 'd3-textwrap';
 
-import { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3DefaultCollapsed, d3RequireExpandLevel2, d3MenuCommands } from './d3params';
+import { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3BoringRel8ns, d3RequireExpandLevel2, d3MenuCommands } from './d3params';
 import { IbScapeMenu } from './ib-scape-menu';
 import * as ibHelper from './services/ibgib-helper';
 
@@ -192,13 +192,21 @@ export class IbScape {
       // inactive means one of the link's endpoints is hidden.
       let modifiedLinks = graph.links.filter(l => l.active);
 
-
-      let graphLinks = svgGroup.append("g")
+      let graphLinksData = svgGroup.append("g")
           .attr("class", "links")
           .selectAll("line")
-          .data(modifiedLinks)
-          .enter().append("line")
+          .data(modifiedLinks);
+
+      let graphLinksEnter = graphLinksData
+          .enter()
+          .append("line")
           .attr("stroke-width", function(d) { return Math.sqrt(d.value); });
+
+      let graphLinksExit = graphLinksData
+          .exit()
+          .remove();
+      graphLinksData = graphLinksEnter.merge(graphLinksData);
+      graphLinksData = graphLinksExit.merge(graphLinksData);
 
       let pressTimer;
 
@@ -285,7 +293,7 @@ export class IbScape {
           .links(graph.links);
 
       function ticked() {
-        graphLinks
+        graphLinksEnter
             .attr("x1", d => d.source.x)
             .attr("y1", d => d.source.y)
             .attr("x2", d => d.target.x)
@@ -907,8 +915,8 @@ export class IbScape {
       nodeChild.visible = shouldShowChild;
 
       let shouldExpandChild = nodeChild.cat === "rel8n" ?
-        d3DefaultCollapsed.some(r => r === nodeChild.id) :
-        d3DefaultCollapsed.some(r => r === nodeChild.cat);
+        d3BoringRel8ns.some(r => r === nodeChild.id) :
+        d3BoringRel8ns.some(r => r === nodeChild.cat);
       if (shouldExpandChild) {
         nodeChild.collapsed = true;
       } else {
