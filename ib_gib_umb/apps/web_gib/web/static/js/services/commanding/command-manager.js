@@ -88,6 +88,9 @@ export class CommandManager {
       case "download":
         t.ibScape.currentCmd = t.getCommand_Download(dIbGib);
         break;
+      case "externallink":
+        t.ibScape.currentCmd = t.getCommand_ExternalLink(dIbGib);
+        break;
       default:
         console.error(`unknown cmdName: ${cmdName}`);
     }
@@ -240,7 +243,10 @@ export class CommandManager {
     return new commands.ViewDetailsCommand(this.ibScape, dIbGib);
   }
   getCommand_Download(dIbGib) {
-    return new commands.DownloadCommand(this.ibScape, dIbGib);
+    return new commands.DownloadDetailsCommand(this.ibScape, dIbGib);
+  }
+  getCommand_ExternalLink(dIbGib) {
+    return new commands.ExternalLinkCommand(this.ibScape, dIbGib);
   }
   // execRefresh(dIbGib) {
   //   location.href = `/ibgib/${dIbGib.ibgib}?latest=true`

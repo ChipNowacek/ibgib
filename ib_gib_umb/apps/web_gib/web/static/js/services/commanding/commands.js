@@ -1524,7 +1524,7 @@ export class ViewDetailsCommand extends HtmlDetailsCommandBase {
 }
 
 /** Download (pic only right now). */
-export class DownloadCommand extends DetailsCommandBase {
+export class DownloadDetailsCommand extends DetailsCommandBase {
   constructor(ibScape, d) {
     const cmdName = "download";
     super(cmdName, ibScape, d);
@@ -1593,6 +1593,29 @@ export class DownloadCommand extends DetailsCommandBase {
       }
 
       $("#download_form_filename").focus().select();
+    });
+  }
+}
+
+/** Opens external link */
+export class ExternalLinkCommand extends CommandBase {
+  constructor(ibScape, d) {
+    const cmdName = "externallink";
+    super(cmdName, ibScape, d);
+  }
+
+  exec() {
+    super.exec();
+    let t = this;
+
+    t.ibScape.ibGibProvider.getIbGibJson(t.d.ibGib, ibGibJson => {
+
+      let url = ibHelper.getDataText(ibGibJson);
+      if (url) {
+        window.open(url,'_blank');
+      } else {
+        alert("Error opening external link... :-/");
+      }
     });
   }
 }
