@@ -20,7 +20,7 @@ defmodule WebGib.Web.Components.Details.Link do
     # Link details
     # This is shown when the user presses the link button on an ibGib.
     div [id: "ib-link-details", class: "ib-details-off"] do
-      form [action: "/ibgib/link", method: "post"] do
+      form [id: "ib-link-details-form", action: "/ibgib/link", method: "post"] do
         input [id: "link_form_data_src_ib_gib", name: "link_form_data[src_ib_gib]",type: "hidden", value: ""]
         input [name: "_utf8", type: "hidden", value: "✓"]
         p "Enter hyperlink URL: "

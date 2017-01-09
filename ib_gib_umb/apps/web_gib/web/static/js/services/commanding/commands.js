@@ -793,6 +793,91 @@ export class Mut8CommentDetailsCommand extends FormDetailsCommandBase {
   }
 }
 
+export class LinkDetailsCommand extends FormDetailsCommandBase {
+  constructor(ibScape, d) {
+    const cmdName = "link";
+    super(cmdName, ibScape, d);
+  }
+
+  init() {
+    let t = this;
+
+    d3.select("#link_form_data_src_ib_gib")
+      .attr("value", t.d.ibGib);
+
+    $("#link_form_data_text").val("").focus();
+  }
+
+  /** Currently just trims whitespace of link. */
+  sanitizeFormFields() {
+    let text = $("#link_form_data_text").val();
+    text = text.trim();
+    $("#link_form_data_text").val(text);
+  }
+
+  addVirtualNode(callback) {
+    let t = this;
+    if (t.d.type === "ibGib") {
+      let rel8nNodes = t.ibScape.getChildren_Rel8ns(t.d).filter(rel8nNode => rel8nNode.rel8nName === "link");
+
+      let linkRel8nNode = null;
+      if (rel8nNodes.length === 0) {
+        t.ibScape.addSpiffyRel8ns(t.d);
+        rel8nNodes = t.ibScape.getChildren_Rel8ns(t.d).filter(rel8nNode => rel8nNode.rel8nName === "link");
+      }
+      linkRel8nNode = rel8nNodes[0];
+
+      if (linkRel8nNode) {
+        t.ibScape.zap(linkRel8nNode, () => {
+          t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ linkRel8nNode, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ d3RootUnicodeChar, /*startPos*/ {x: t.d.x, y: t.d.y});
+          if (callback) { callback(); }
+        });
+      }
+    } else if (t.d.type === "rel8n") {
+      t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ t.d, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ d3RootUnicodeChar, /*startPos*/ {x: t.d.x, y: t.d.y});
+      if (callback) { callback(); }
+    } else {
+      console.error("Unknown t.d.type:", t.d.type);
+      if (callback) { callback(); }
+    }
+  }
+
+  getMessageData() {
+    let t = this;
+
+    return {
+      virtual_id: t.virtualNode.virtualId,
+      src_ib_gib: t.d.type === "rel8n" ? t.d.rel8nSrc.ibGib : t.d.ibGib,
+      link_text: $("#link_form_data_text").val()
+    };
+  }
+
+  handleSubmitResponse(msg) {
+    let t = this;
+
+    if (msg && msg.data && msg.data.link_ib_gib) {
+      if (msg.data.new_src_ib_gib) {
+        // The src was directly linked on, so this user had authz to
+        // do it (it's the ibGib's owner). So set the link ibGib and
+        // zap it.
+        let linkIbGib = msg.data.link_ib_gib;
+        t.virtualNode.ibGib = linkIbGib;
+        t.ibScape.zap(t.virtualNode, /*callback*/ null);
+      } else {
+        // The src was not updated, so this is a user linking on
+        // someone else's ibGib. So a link was created and was rel8d
+        // to the src, but the src has not been inversely rel8d to the
+        // link. So we'll remove the placeholder node and the
+        // :new_adjunct event will create a new node.
+
+        t.ibScape.remove(t.virtualNode);
+      }
+    } else {
+      console.error(`${typeof(t)}: Unknown msg response from channel.`);
+    }
+  }
+}
+
 export class IdentEmailDetailsCommand extends FormDetailsCommandBase {
   constructor(ibScape, d) {
     const cmdName = "identemail";
@@ -809,18 +894,20 @@ export class IdentEmailDetailsCommand extends FormDetailsCommandBase {
   }
 
   getMessageData() {
-    let t = this;
+    // MessageData is not used in ident email. Uses xhr.
 
-    document.getElementById('pic_form_data_file').files[0]
-
-    var formData = new FormData();
-    formData.append("fileToUpload", document.getElementById('fileToUpload').files[0]);
-
-    return {
-      virtual_id: t.virtualNode.virtualId,
-      src_ib_gib: t.d.type === "rel8n" ? t.d.rel8nSrc.ibGib : t.d.ibGib,
-      comment_text: $("#comment_form_data_text").val()
-    };
+    // let t = this;
+    //
+    // document.getElementById('pic_form_data_file').files[0]
+    //
+    // var formData = new FormData();
+    // formData.append("fileToUpload", document.getElementById('fileToUpload').files[0]);
+    //
+    // return {
+    //   virtual_id: t.virtualNode.virtualId,
+    //   src_ib_gib: t.d.type === "rel8n" ? t.d.rel8nSrc.ibGib : t.d.ibGib,
+    //   comment_text: $("#comment_form_data_text").val()
+    // };
   }
 
   /**
@@ -836,9 +923,9 @@ export class IdentEmailDetailsCommand extends FormDetailsCommandBase {
     let form = document.querySelector("#" + t.getFormId());
     let formData = new FormData(form);
 
-    for (let [key, value] of formData.entries()) {
-      console.log(key, value);
-    }
+    // for (let [key, value] of formData.entries()) {
+    //   console.log(key, value);
+    // }
 
     let xhr = new XMLHttpRequest();
     xhr.addEventListener("load", t.xhrComplete, false);

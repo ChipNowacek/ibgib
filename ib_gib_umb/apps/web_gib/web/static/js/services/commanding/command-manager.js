@@ -64,6 +64,9 @@ export class CommandManager {
       case "mut8comment":
         t.ibScape.currentCmd = t.getCommand_Mut8Comment(dIbGib);
         break;
+      case "link":
+        t.ibScape.currentCmd = t.getCommand_Link(dIbGib);
+        break;
       case "identemail":
         t.ibScape.currentCmd = t.getCommand_IdentEmail(dIbGib);
         break;
@@ -125,6 +128,9 @@ export class CommandManager {
         break;
       case "pic":
         return t.getCommand_Pic(dIbGib.rel8nSrc);
+        break;
+      case "link":
+        return t.getCommand_Link(dIbGib.rel8nSrc);
         break;
       default:
         throw new Error(`Unknown rel8n to add: ${dIbGib.rel8nName}`);
@@ -208,6 +214,9 @@ export class CommandManager {
   }
   getCommand_Mut8Comment(dIbGib) {
     return new commands.Mut8CommentDetailsCommand(this.ibScape, dIbGib);
+  }
+  getCommand_Link(dIbGib) {
+    return new commands.LinkDetailsCommand(this.ibScape, dIbGib);
   }
   getCommand_IdentEmail(dIbGib) {
     return new commands.IdentEmailDetailsCommand(this.ibScape, dIbGib);

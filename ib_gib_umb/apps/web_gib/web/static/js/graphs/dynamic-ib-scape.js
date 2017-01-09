@@ -267,7 +267,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.graphNodesEnter_Comments =
       t.graphNodesEnter
         .filter(d => {
-          return t.getNodeRenderType(d) === "text";
+          return ["text", "link"].includes(t.getNodeRenderType(d) || "");
         })
         .append("foreignObject")
           .attr("id", d => t.getUniqueId(d.id, "label", "foreignObject"))
@@ -349,7 +349,13 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
             if (d.ibGibJson) {
               let dataText = ibHelper.getDataText(d.ibGibJson);
               if (dataText) {
-                return md.render(dataText);
+                let html;
+                if (d.render === "link") {
+                  html = `<a href="${dataText}" target="_blank">${dataText}</a>`;
+                } else {
+                  html = md.render(dataText);
+                }
+                return html;
               } else {
                 console.warn("update node label: no dataText?")
                 return "...";
@@ -366,8 +372,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.graphNodesEnter_NonComments =
       t.graphNodesEnter
         .filter(d => {
-          let renderType = t.getNodeRenderType(d);
-          return !renderType || renderType !== "text";
+          return !["text", "link"].includes(t.getNodeRenderType(d) || "");
         })
         .append("text")
         .attr("id", d => t.getNodeLabelId(d))
@@ -425,7 +430,12 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         node.render = "image";
       } else if (node.ibGibJson.ib === "comment") {
         node.render = "text";
-      } else if (node.ibGibJson.rel8ns.instance_of && node.ibGibJson.rel8ns.instance_of[0] === "identity^gib") {
+      } else if ((node.ibGibJson.rel8ns.instance_of &&
+                  node.ibGibJson.rel8ns.instance_of[0] === "link^gib") ||
+                 node.ibGibJson.data.render === "link") {
+        node.render = "link";
+      } else if (node.ibGibJson.rel8ns.instance_of &&
+                 node.ibGibJson.rel8ns.instance_of[0] === "identity^gib") {
         node.render = "identity";
       } else {
         delete node.render;
@@ -1687,9 +1697,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   getNodeLabelText(d) {
     if (d.type === "ibGib" && d.ibGibJson) {
       if (d.ibGibJson && d.ibGibJson.data) {
-        if (d.render === "text" &&
-            d.ibGibJson.data.text) {
+        if (d.render === "text" && d.ibGibJson.data.text) {
           return d.ibGibJson.data.text;
+        } else if (d.render === "link" && d.ibGibJson.data.text) {
+          let url = d.ibGibJson.data.text;
+          return url;
         } else if (d.render === "image") {
           return "";
         } else if (d.render === "identity") {

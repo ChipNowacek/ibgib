@@ -22,7 +22,7 @@ let d3Scales = {
   "result": 2,
   "ib^gib": 2,
   "pic": 3,
-  "link": 3,
+  "link": 4,
   "result": 3,
   "comment": 3,
   "default": 2
@@ -66,8 +66,9 @@ var d3BoringRel8ns = [
 
 /** Rel8ns that should always be showing when user clicks node. */
 var d3AlwaysRel8ns = [
+  "pic",
+  "link",
   "comment",
-  "pic"
 ];
 
 var d3RequireExpandLevel2 = [
@@ -338,6 +339,7 @@ let d3Rel8nIcons = {
   "instance": "\uf107",
   "result": "\uf1c0",
   "verse": "\uf30c",
+  "link": "\uf0c1", // 🔗 (font awesome)
   // "ib^gib": "\u29c2",
   "ib^gib": d3RootUnicodeChar,
   "dna": "➿",
@@ -353,8 +355,9 @@ var d3RootUnicodeChar = "\uf10c";
 // So the "comment" rel8n should always show up with at least an "add" virtual
 // command.
 var d3AddableRel8ns = [
-  "comment",
   "pic",
+  "link",
+  "comment",
 ]
 
 var d3PausedRel8ns = [
