@@ -170,17 +170,21 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
         commands = ["help", /*"view",*/ "fork", "goto", "comment", "pic", "link", "info", "refresh"];
       }
 
-      if (d.render === "image") {
-        // commands.push("fullscreen");
+      if (ibHelper.isImage(d.ibGibJson) || d.render === "image") {
+        commands.push("view");
         // commands.push("download");
       }
 
-      if (d.render === "link") {
+      if (ibHelper.isLink(d.ibGibJson) || d.render === "link") {
         // commands.push("externallink");
       }
 
-      if (ibHelper.isComment(d.ibGibJson) && ibAuthz.isAuthorizedForMut8OrRel8(d.ibGibJson, t.ibScape.currentIdentityIbGibs)) {
-        commands.push("mut8comment");
+      if (ibHelper.isComment(d.ibGibJson)) {
+        commands.push("view");
+
+        if (ibAuthz.isAuthorizedForMut8OrRel8(d.ibGibJson, t.ibScape.currentIdentityIbGibs)) {
+          commands.push("mut8comment");
+        }
       }
     }
 

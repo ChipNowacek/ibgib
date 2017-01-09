@@ -206,15 +206,15 @@ var d3MenuCommands = [
     "name": "mut8comment",
     "text": "Mut8 Comment",
     "icon": "\u2622",
-    "description": "The Mut8 button will allow you to edit the selected ibGib",
+    "description": "The Mut8 button will allow you to edit the ibGib",
     "color": "lightblue"
   },
   {
     "id": "menu-view",
     "name": "view",
     "text": "View",
-    "icon": "\uf06e",
-    "description": "The View button will show/hide the selected ibGib's children",
+    "icon": "\uf06e", // :eye: 
+    "description": "The View button will lets you look more closely at the ibGib.",
     "color": "#CFA1C8"
   },
   {

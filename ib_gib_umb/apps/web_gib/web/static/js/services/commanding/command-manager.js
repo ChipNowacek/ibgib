@@ -82,6 +82,9 @@ export class CommandManager {
       case "allow":
         t.ibScape.currentCmd = t.getCommand_Allow(dIbGib);
         break;
+      case "view":
+        t.ibScape.currentCmd = t.getCommand_View(dIbGib);
+        break;
       default:
         console.error(`unknown cmdName: ${cmdName}`);
     }
@@ -229,6 +232,9 @@ export class CommandManager {
   }
   getCommand_Allow(dIbGib) {
     return new commands.AllowCommand(this.ibScape, dIbGib);
+  }
+  getCommand_View(dIbGib) {
+    return new commands.ViewDetailsCommand(this.ibScape, dIbGib);
   }
   // execRefresh(dIbGib) {
   //   location.href = `/ibgib/${dIbGib.ibgib}?latest=true`

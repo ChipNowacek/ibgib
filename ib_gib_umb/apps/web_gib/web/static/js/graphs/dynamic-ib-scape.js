@@ -342,8 +342,15 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           })
         .append("div")
           .style("width", "100%")
+          .style("overflow", () => {
+            // On mobile, the user must use the view command to view
+            // long comments (there is no mousewheel to scroll, plus
+            // there is a bug with overflow + d3 on mobile).
+            return ibHelper.isMobile() ? "hidden" : "auto";
+          })
           .style("max-height", d => (2 * t.getNodeShapeRadius(d)) + "px")
           .style("text-align", "center")
+          // .style("position", "fixed")
           // .style("overflow-y", "auto")
           .html(d => {
             if (d.ibGibJson) {
@@ -426,16 +433,13 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   }
   updateRender(node) {
     if (node.ibGibJson) {
-      if (node.ibGibJson.ib === "pic") {
+      if (ibHelper.isImage(node.ibGibJson)) {
         node.render = "image";
-      } else if (node.ibGibJson.ib === "comment") {
+      } else if (ibHelper.isComment(node.ibGibJson)) {
         node.render = "text";
-      } else if ((node.ibGibJson.rel8ns.instance_of &&
-                  node.ibGibJson.rel8ns.instance_of[0] === "link^gib") ||
-                 node.ibGibJson.data.render === "link") {
+      } else if (ibHelper.isLink(node.ibGibJson)) {
         node.render = "link";
-      } else if (node.ibGibJson.rel8ns.instance_of &&
-                 node.ibGibJson.rel8ns.instance_of[0] === "identity^gib") {
+      } else if (ibHelper.isIdentity(node.ibGibJson)) {
         node.render = "identity";
       } else {
         delete node.render;

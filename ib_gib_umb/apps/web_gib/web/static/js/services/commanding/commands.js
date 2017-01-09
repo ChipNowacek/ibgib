@@ -112,6 +112,10 @@ export class DetailsCommandBase extends CommandBase {
   repositionView() {
     let t = this;
 
+    if (t.closedEarly) {
+      return;
+    }
+
     // Position the details based on its size.
     let ibScapeDetailsDiv = t.ibScapeDetails.node();
     let detailsRect = ibScapeDetailsDiv.getBoundingClientRect();
@@ -1465,5 +1469,55 @@ export class GetAdjunctsCommand extends CommandBase {
       count: t.d.ibGibs.length,
       local_time: new Date()
     };
+  }
+}
+
+export class ViewDetailsCommand extends HtmlDetailsCommandBase {
+  constructor(ibScape, d) {
+    const cmdName = "view";
+    super(cmdName, ibScape, d);
+  }
+
+  getDetailsViewId() {
+    return `ib-huh-details`;
+  }
+
+  init() {
+    super.init();
+    let t = this;
+
+    t.ibScape.ibGibProvider.getIbGibJson(t.d.ibGib, ibGibJson => {
+      if (!t.d.ibGibJson) { t.d.ibGibJson = ibGibJson; }
+
+      if (ibHelper.isComment(ibGibJson)) {
+        t.addCommentHtml();
+      } else if (ibHelper.isImage(ibGibJson)) {
+        // t.addImageHtml(ibGibJson)
+        let imageUrl =
+          t.ibScape.ibGibImageProvider.getFullImageUrl(t.d.ibGib);
+
+        window.open(imageUrl,'_blank');
+        t.close();
+        t.closedEarly = true;
+      } else {
+        let emsg = `View command only implemented for images and comments. :-/`;
+        console.error(emsg);
+        alert(emsg);
+      }
+    });
+  }
+
+  addCommentHtml() {
+    let t = this;
+
+    let commentText = ibHelper.getDataText(t.d.ibGibJson);
+
+    t.htmlDiv
+      .append("div")
+      .style("padding", "5px")
+      // .style("font-family", "FontAwesome")
+      // .style("font-size", "30px")
+      .html(md.render(commentText));
+    //   t.htmlDiv.append("div").html(md.render(huhText_IbGib));
   }
 }
