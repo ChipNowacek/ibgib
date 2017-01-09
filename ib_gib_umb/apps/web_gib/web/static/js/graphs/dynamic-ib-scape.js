@@ -350,8 +350,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           })
           .style("max-height", d => (2 * t.getNodeShapeRadius(d)) + "px")
           .style("text-align", "center")
-          // .style("position", "fixed")
-          // .style("overflow-y", "auto")
           .html(d => {
             if (d.ibGibJson) {
               let dataText = ibHelper.getDataText(d.ibGibJson);

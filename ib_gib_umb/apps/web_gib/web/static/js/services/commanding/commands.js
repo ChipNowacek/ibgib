@@ -1472,6 +1472,7 @@ export class GetAdjunctsCommand extends CommandBase {
   }
 }
 
+/** View comment or pic */
 export class ViewDetailsCommand extends HtmlDetailsCommandBase {
   constructor(ibScape, d) {
     const cmdName = "view";
@@ -1519,5 +1520,79 @@ export class ViewDetailsCommand extends HtmlDetailsCommandBase {
       // .style("font-size", "30px")
       .html(md.render(commentText));
     //   t.htmlDiv.append("div").html(md.render(huhText_IbGib));
+  }
+}
+
+/** Download (pic only right now). */
+export class DownloadCommand extends DetailsCommandBase {
+  constructor(ibScape, d) {
+    const cmdName = "download";
+    super(cmdName, ibScape, d);
+  }
+
+  init() {
+    let t = this;
+
+    let initialText = "Loading... (slow connection maybe?)";
+    d3.select("#download_form_filetype")
+      .text(initialText);
+
+    d3.select("#download_form_filename")
+      .text(initialText);
+
+    t.ibScape.getIbGibJson(t.d.ibGib, ibGibJson => {
+      if (!t.d.ibGibJson) { t.d.ibGibJson = ibGibJson; }
+
+      let imageUrl =
+        t.ibScape.ibGibImageProvider.getFullImageUrl(t.d.ibGib, ibGibJson);
+      let thumbnailUrl =
+        t.ibScape.ibGibImageProvider.getThumbnailImageUrl(t.d.ibGib, ibGibJson);
+
+      d3.select("#ib-download-thumbnail")
+        .attr("src", thumbnailUrl);
+
+      d3.select("#download_form_url")
+        .text(imageUrl);
+
+      let btn = d3.select("#download_form_submit_btn");
+      btn
+        .attr("href", imageUrl)
+        .attr("download", "");
+
+      if (!btn.node().onclick) {
+        btn.node().onclick = () => {
+          $("#download_form_filename")
+            .unbind("input")
+            .unbind("keypress");
+          t.close();
+        }
+      }
+
+      if (ibGibJson.data) {
+        if (ibGibJson.data.content_type) {
+          d3.select("#download_form_filetype")
+            .text(ibGibJson.data.content_type);
+        }
+        if (ibGibJson.data.filename) {
+          $("#download_form_filename")
+            .val(ibGibJson.data.filename);
+          btn
+            .attr("download", ibGibJson.data.filename);
+        }
+
+        $("#download_form_filename")
+          .on("input", () => {
+            btn
+              .attr("download", $("#download_form_filename").val() || ibGibJson.data.filename);
+          })
+          .on("keypress", e => {
+            if (e.keyCode === 13) {
+              btn.node().click();
+            }
+          });
+      }
+
+      $("#download_form_filename").focus().select();
+    });
   }
 }

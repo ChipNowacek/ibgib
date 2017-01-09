@@ -85,6 +85,9 @@ export class CommandManager {
       case "view":
         t.ibScape.currentCmd = t.getCommand_View(dIbGib);
         break;
+      case "download":
+        t.ibScape.currentCmd = t.getCommand_Download(dIbGib);
+        break;
       default:
         console.error(`unknown cmdName: ${cmdName}`);
     }
@@ -235,6 +238,9 @@ export class CommandManager {
   }
   getCommand_View(dIbGib) {
     return new commands.ViewDetailsCommand(this.ibScape, dIbGib);
+  }
+  getCommand_Download(dIbGib) {
+    return new commands.DownloadCommand(this.ibScape, dIbGib);
   }
   // execRefresh(dIbGib) {
   //   location.href = `/ibgib/${dIbGib.ibgib}?latest=true`

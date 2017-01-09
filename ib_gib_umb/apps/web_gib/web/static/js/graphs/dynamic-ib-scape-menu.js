@@ -172,7 +172,7 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
 
       if (ibHelper.isImage(d.ibGibJson) || d.render === "image") {
         commands.push("view");
-        // commands.push("download");
+        commands.push("download");
       }
 
       if (ibHelper.isLink(d.ibGibJson) || d.render === "link") {
