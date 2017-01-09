@@ -179,3 +179,16 @@ button[name=ib-scape-details-close-btn] {
   height: 65%;
   width: 100%;
 }
+
+#ib-download-details {
+  overflow: auto;
+}
+
+#download_form_filename {
+  width: 55%;
+}
+
+#download_form_url {
+  font-size: 12px;
+  word-break: break-all;
+}

@@ -64,6 +64,9 @@ export class CommandManager {
       case "mut8comment":
         t.ibScape.currentCmd = t.getCommand_Mut8Comment(dIbGib);
         break;
+      case "link":
+        t.ibScape.currentCmd = t.getCommand_Link(dIbGib);
+        break;
       case "identemail":
         t.ibScape.currentCmd = t.getCommand_IdentEmail(dIbGib);
         break;
@@ -78,6 +81,15 @@ export class CommandManager {
         break;
       case "allow":
         t.ibScape.currentCmd = t.getCommand_Allow(dIbGib);
+        break;
+      case "view":
+        t.ibScape.currentCmd = t.getCommand_View(dIbGib);
+        break;
+      case "download":
+        t.ibScape.currentCmd = t.getCommand_Download(dIbGib);
+        break;
+      case "externallink":
+        t.ibScape.currentCmd = t.getCommand_ExternalLink(dIbGib);
         break;
       default:
         console.error(`unknown cmdName: ${cmdName}`);
@@ -125,6 +137,9 @@ export class CommandManager {
         break;
       case "pic":
         return t.getCommand_Pic(dIbGib.rel8nSrc);
+        break;
+      case "link":
+        return t.getCommand_Link(dIbGib.rel8nSrc);
         break;
       default:
         throw new Error(`Unknown rel8n to add: ${dIbGib.rel8nName}`);
@@ -209,6 +224,9 @@ export class CommandManager {
   getCommand_Mut8Comment(dIbGib) {
     return new commands.Mut8CommentDetailsCommand(this.ibScape, dIbGib);
   }
+  getCommand_Link(dIbGib) {
+    return new commands.LinkDetailsCommand(this.ibScape, dIbGib);
+  }
   getCommand_IdentEmail(dIbGib) {
     return new commands.IdentEmailDetailsCommand(this.ibScape, dIbGib);
   }
@@ -220,6 +238,15 @@ export class CommandManager {
   }
   getCommand_Allow(dIbGib) {
     return new commands.AllowCommand(this.ibScape, dIbGib);
+  }
+  getCommand_View(dIbGib) {
+    return new commands.ViewDetailsCommand(this.ibScape, dIbGib);
+  }
+  getCommand_Download(dIbGib) {
+    return new commands.DownloadDetailsCommand(this.ibScape, dIbGib);
+  }
+  getCommand_ExternalLink(dIbGib) {
+    return new commands.ExternalLinkCommand(this.ibScape, dIbGib);
   }
   // execRefresh(dIbGib) {
   //   location.href = `/ibgib/${dIbGib.ibgib}?latest=true`

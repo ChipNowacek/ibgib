@@ -155,7 +155,7 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
    */
   getMenuCommandsJson(d) {
     let t = this;
-    
+
     // TODO: ib-scape.js getMenuCommandsJson: When we have client-side dynamicism (prefs, whatever), then we need to change this to take that into account when building the popup menu.
     let commands;
 
@@ -164,23 +164,27 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
       commands = ["zap"];
     } else {
       // Concrete ibGib
-      if (d.cat === "virtual") {
-        commands = ["help"/*, "view"*/];
-      } else if (d.ibGib && d.ibGib === "ib^gib") {
-        commands = ["help", "fork", "goto", "identemail", /*"fullscreen",*/ "query"];
+      if (d.ibGib && d.ibGib === "ib^gib") {
+        commands = ["help", "fork", "goto", "identemail", "query"];
       } else {
-        commands = ["help", /*"view",*/ "fork", "goto", "comment", "pic", /*"link", */"info", "refresh"];
+        commands = ["help", /*"view",*/ "fork", "goto", "comment", "pic", "link", "info", "refresh"];
       }
 
-      if (d.render && d.render === "image") {
-        commands.push("fullscreen");
+      if (ibHelper.isImage(d.ibGibJson) || d.render === "image") {
+        commands.push("view");
         commands.push("download");
       }
-      if (d.cat === "link") {
+
+      if (ibHelper.isLink(d.ibGibJson) || d.render === "link") {
         commands.push("externallink");
       }
-      if (ibHelper.isComment(d.ibGibJson) && ibAuthz.isAuthorizedForMut8OrRel8(d.ibGibJson, t.ibScape.currentIdentityIbGibs)) {
-        commands.push("mut8comment");
+
+      if (ibHelper.isComment(d.ibGibJson)) {
+        commands.push("view");
+
+        if (ibAuthz.isAuthorizedForMut8OrRel8(d.ibGibJson, t.ibScape.currentIdentityIbGibs)) {
+          commands.push("mut8comment");
+        }
       }
     }
 

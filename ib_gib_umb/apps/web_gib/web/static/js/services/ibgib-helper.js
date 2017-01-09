@@ -111,3 +111,43 @@ export function isComment(ibGibJson) {
 
   return result;
 }
+
+export function isImage(ibGibJson) {
+  let result = false;
+
+  if (ibGibJson.ib === "pic") {
+    result = true;
+  } else if (ibGibJson.data.content_type &&
+             ibGibJson.data.content_type.substring(0,6) === "image/" &&
+             ibGibJson.data.bin_id &&
+             ibGibJson.data.filename &&
+             ibGibJson.data.ext) {
+    result = true;
+  }
+
+  return result;
+}
+
+export function isLink(ibGibJson) {
+  let result = false;
+
+  result = (ibGibJson.rel8ns.instance_of &&
+            ibGibJson.rel8ns.instance_of[0] === "link^gib") ||
+           ibGibJson.data.render === "link";
+
+  return result;
+}
+
+export function isIdentity(ibGibJson) {
+  return ibGibJson.rel8ns.instance_of &&
+         ibGibJson.rel8ns.instance_of[0] === "identity^gib";
+}
+
+/*
+ * Determines if the browser is on a mobile device or not.
+ * Thanks SO!
+ * http://stackoverflow.com/questions/3514784/what-is-the-best-way-to-detect-a-mobile-device-in-jquery
+ */
+export function isMobile() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}

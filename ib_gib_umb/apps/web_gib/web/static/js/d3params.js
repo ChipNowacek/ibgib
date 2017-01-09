@@ -22,7 +22,7 @@ let d3Scales = {
   "result": 2,
   "ib^gib": 2,
   "pic": 3,
-  "link": 3,
+  "link": 4,
   "result": 3,
   "comment": 3,
   "default": 2
@@ -66,8 +66,9 @@ var d3BoringRel8ns = [
 
 /** Rel8ns that should always be showing when user clicks node. */
 var d3AlwaysRel8ns = [
+  "pic",
+  "link",
   "comment",
-  "pic"
 ];
 
 var d3RequireExpandLevel2 = [
@@ -205,15 +206,15 @@ var d3MenuCommands = [
     "name": "mut8comment",
     "text": "Mut8 Comment",
     "icon": "\u2622",
-    "description": "The Mut8 button will allow you to edit the selected ibGib",
+    "description": "The Mut8 button will allow you to edit the ibGib",
     "color": "lightblue"
   },
   {
     "id": "menu-view",
     "name": "view",
     "text": "View",
-    "icon": "\uf06e",
-    "description": "The View button will show/hide the selected ibGib's children",
+    "icon": "\uf06e", // :eye: 
+    "description": "The View button will lets you look more closely at the ibGib.",
     "color": "#CFA1C8"
   },
   {
@@ -338,6 +339,7 @@ let d3Rel8nIcons = {
   "instance": "\uf107",
   "result": "\uf1c0",
   "verse": "\uf30c",
+  "link": "\uf0c1", // 🔗 (font awesome)
   // "ib^gib": "\u29c2",
   "ib^gib": d3RootUnicodeChar,
   "dna": "➿",
@@ -353,8 +355,9 @@ var d3RootUnicodeChar = "\uf10c";
 // So the "comment" rel8n should always show up with at least an "add" virtual
 // command.
 var d3AddableRel8ns = [
-  "comment",
   "pic",
+  "link",
+  "comment",
 ]
 
 var d3PausedRel8ns = [
