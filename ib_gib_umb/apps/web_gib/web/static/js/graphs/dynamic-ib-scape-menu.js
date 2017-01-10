@@ -165,9 +165,9 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
     } else {
       // Concrete ibGib
       if (d.ibGib && d.ibGib === "ib^gib") {
-        commands = ["help", "fork", "goto", "identemail", "query"];
+        commands = [/*"help", */"fork", "goto", "identemail", "query"];
       } else {
-        commands = ["help", /*"view",*/ "fork", "goto", "comment", "pic", "link", "info", "refresh"];
+        commands = [/*"help", *//*"view",*/ "fork", "goto", "comment", "pic", "link", "info", "refresh"];
       }
 
       if (ibHelper.isImage(d.ibGibJson) || d.render === "image") {

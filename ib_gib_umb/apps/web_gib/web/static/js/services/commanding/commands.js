@@ -1,12 +1,19 @@
 import * as d3 from 'd3';
-var md = require('markdown-it')();
+
+var md = require('markdown-it')({
+  html: true,
+  linkify: true,
+  typographer: true,
+});
 var emoji = require('markdown-it-emoji');
 md.use(emoji);
 
 import * as ibHelper from '../ibgib-helper';
 import { d3MenuCommands, d3RootUnicodeChar } from '../../d3params';
-import { huhText_IbGib } from './huh-texts/ibgib';
-import { huhText_Context } from './huh-texts/context';
+import { huhText_IbGib } from '../../huh-texts/ibgib';
+import { huhText_Context } from '../../huh-texts/context';
+import { huhText_Root } from '../../huh-texts/root';
+import { huhText_Source } from '../../huh-texts/source';
 
 // Most (_but not all_) commands are related to menu commands (in `d3params.js`)
 
@@ -280,6 +287,7 @@ export class HtmlDetailsCommandBase extends DetailsCommandBase {
     t.htmlDiv =
       t.detailsView
         .append("div")
+        .attr("class", "ib-details-html-div")
         .style("height", "100%")
         .style("width", "100%")
         .style("overflow", "auto");
@@ -334,70 +342,70 @@ export class InfoDetailsCommand extends DetailsCommandBase {
   }
 }
 
-export class HelpDetailsCommand extends DetailsCommandBase {
-  constructor(ibScape, d) {
-    const cmdName = "help";
-    super(cmdName, ibScape, d);
-  }
-
-  init() {
-    let t = this;
-
-    console.log("initializing help...");
-    let text = "Hrmmm...you shouldn't be seeing this! This means that I " +
-      "haven't included help for this yet. Let me know please :-O";
-
-    if (t.d.virtualId) {
-      text = `This is a virtual ibGib. You can zap this ibGib by clicking on it.`;
-      switch (t.d.type) {
-        case "cmd":
-          text += ` In this case, zapping will execute its command.`;
-          break;
-        case "ibGib":
-          text += ` In this case, zapping will load the full ibGib.`;
-          break;
-        case "rel8n":
-          text += ` In this case, zapping will show all of the ${t.d.name} ibGib.`
-        default:
-          // do nothing
-      }
-    } else if (t.d.ibGib === "ib^gib") {
-      text = `This is the root ibGib. Click anywhere in empty space to bring it up.`;
-    } else {
-      let ib = t.d.ibGibJson.ib;
-      switch (ib) {
-        case "query_result":
-          text = `This is a query result. It contains results from a search query.`
-          break;
-
-        case "identity":
-          text = `This is an identity ibGib. It gives you information about who produced what ibGib. You can add layers of identities to "provide more identification", like showing someone your driver's license, your voter's card, club membership, etc. Each identity's ib should start with either "session" or "email". Session is an anonymous id and should be attached to each and every ibGib. Email ids show the  email that was used to "log in" (but you can log in with multiple emails!). All authenticated identities should be "stamped" (the "gib" starts and ends with "ibGib", e.g. "ibGib_LETTERSandNUMBERS_ibGib").`;
-          break;
-
-        case "link":
-          let linkText = ibHelper.getDataText(t.d.ibGibJson);
-          text = `This is a hyperlink to somewhere outside of ibGib. You can open it in a new tab by clicking the external link button. If you want to goto the link's ibGib, then click the goto navigation. (We're working on an improved experience with adding comments, pictures, etc.) \n\nLink: "${linkText}"`;
-          break;
-
-        default:
-          text = `These are ibGib. Some are pictures, others are comments or links. Just try clicking, long-clicking, and double-clicking stuff. Don't worry, you won't break anything! ʘ‿ʘ`;
-
-      }
-    }
-
-    switch (t.d.render) {
-      case "image":
-        text += ` This ibGib should be shown as an image. You can download the full image, view it fullscreen, and more.`
-        break;
-      case "text":
-        text += ` This ibGib contains text.`
-      default:
-        // do nothing
-    }
-
-    $("#ib-help-details-text").text(text);
-  }
-}
+// export class HelpDetailsCommand extends DetailsCommandBase {
+//   constructor(ibScape, d) {
+//     const cmdName = "help";
+//     super(cmdName, ibScape, d);
+//   }
+//
+//   init() {
+//     let t = this;
+//
+//     console.log("initializing help...");
+//     let text = "Hrmmm...you shouldn't be seeing this! This means that I " +
+//       "haven't included help for this yet. Let me know please :-O";
+//
+//     if (t.d.virtualId) {
+//       text = `This is a virtual ibGib. You can zap this ibGib by clicking on it.`;
+//       switch (t.d.type) {
+//         case "cmd":
+//           text += ` In this case, zapping will execute its command.`;
+//           break;
+//         case "ibGib":
+//           text += ` In this case, zapping will load the full ibGib.`;
+//           break;
+//         case "rel8n":
+//           text += ` In this case, zapping will show all of the ${t.d.name} ibGib.`
+//         default:
+//           // do nothing
+//       }
+//     } else if (t.d.ibGib === "ib^gib") {
+//       text = `This is the root ibGib. Click anywhere in empty space to bring it up. `;
+//     } else {
+//       let ib = t.d.ibGibJson.ib;
+//       switch (ib) {
+//         case "query_result":
+//           text = `This is a query result. It contains results from a search query.`
+//           break;
+//
+//         case "identity":
+//           text = `This is an identity ibGib. It gives you information about who produced what ibGib. You can add layers of identities to "provide more identification", like showing someone your driver's license, your voter's card, club membership, etc. Each identity's ib should start with either "session" or "email". Session is an anonymous id and should be attached to each and every ibGib. Email ids show the  email that was used to "log in" (but you can log in with multiple emails!). All authenticated identities should be "stamped" (the "gib" starts and ends with "ibGib", e.g. "ibGib_LETTERSandNUMBERS_ibGib").`;
+//           break;
+//
+//         case "link":
+//           let linkText = ibHelper.getDataText(t.d.ibGibJson);
+//           text = `This is a hyperlink to somewhere outside of ibGib. You can open it in a new tab by clicking the external link button. If you want to goto the link's ibGib, then click the goto navigation. (We're working on an improved experience with adding comments, pictures, etc.) \n\nLink: "${linkText}"`;
+//           break;
+//
+//         default:
+//           text = `These are ibGib. Some are pictures, others are comments or links. Just try clicking, long-clicking, and double-clicking stuff. Don't worry, you won't break anything! ʘ‿ʘ`;
+//
+//       }
+//     }
+//
+//     switch (t.d.render) {
+//       case "image":
+//         text += ` This ibGib should be shown as an image. You can download the full image, view it fullscreen, and more.`
+//         break;
+//       case "text":
+//         text += ` This ibGib contains text.`
+//       default:
+//         // do nothing
+//     }
+//
+//     $("#ib-help-details-text").text(text);
+//   }
+// }
 
 export class HuhDetailsCommand extends HtmlDetailsCommandBase {
   constructor(ibScape, d) {
@@ -409,30 +417,25 @@ export class HuhDetailsCommand extends HtmlDetailsCommandBase {
     super.init();
     let t = this;
 
-    if (t.d.virtualId) {
-      switch (t.d.type) {
-        case "cmd":
-          t.addCmdHtml();
-          break;
-        case "ibGib":
-          t.addVirtualIbGibHtml();
-          break;
-        case "rel8n":
-          t.addRel8nHtml();
-        default:
-          console.error(`Unknown node type: ${JSON.stringify(t.d)}`);
-      }
-    }
+    t.htmlDiv
+      .style("font-family", "Impact")
+      .style("font-size", "25px");
 
+    if (t.d.type === "cmd") {
+      t.addCmdHtml();
+    }
+    
     if (t.d.isContext) {
       t.addContextHtml();
+    } else if (t.d.isSource) {
+      t.addSourceHtml();
     }
 
     if (t.d.isRoot) {
       t.addRootHtml();
-    } else {
-      t.addIbGibHtml();
-    }
+    } 
+
+    t.addIbGibHtml();
   }
 
   addCmdHtml() {
@@ -500,19 +503,30 @@ export class HuhDetailsCommand extends HtmlDetailsCommandBase {
   addRootHtml() {
     let t = this;
     t.htmlDiv
-      .append("h2")
-      .text("Root")
-    t.htmlDiv
-      .append("p")
-      .text("yo this is some root help text")
+      .append("div")
+      .attr("class", "ib-details-html-div")
+      .html(md.render(huhText_Root));
   }
   addContextHtml() {
     let t = this;
-    t.htmlDiv.append("div").html(md.render(huhText_Context));
+    t.htmlDiv
+      .append("div")
+      .attr("class", "ib-details-html-div")
+      .html(md.render(huhText_Context));
+  }
+  addSourceHtml() {
+    let t = this;
+    t.htmlDiv
+      .append("div")
+      .attr("class", "ib-details-html-div")
+      .html(md.render(huhText_Source));
   }
   addIbGibHtml() {
     let t = this;
-    t.htmlDiv.append("div").html(md.render(huhText_IbGib));
+    t.htmlDiv
+      .append("div")
+      .attr("class", "ib-details-html-div")
+      .html(md.render(huhText_IbGib));
   }
 }
 

@@ -1,7 +1,11 @@
 import * as d3 from 'd3';
 
 // var md = require('markdown-it')('commonmark');
-var md = require('markdown-it')();
+var md = require('markdown-it')({
+  html: true,
+  linkify: true,
+  typographer: true,
+});
 var emoji = require('markdown-it-emoji');
 md.use(emoji);
 
@@ -811,19 +815,19 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     const fadeTimeoutMs = t.config.other.cmdFadeTimeoutMs_Default;
 
     if (d.isAdjunct) {
-      t.addCmdVirtualNode(d, "help", /*fadeTimeoutMs*/ 0);
+      // t.addCmdVirtualNode(d, "help", /*fadeTimeoutMs*/ 0);
       t.addCmdVirtualNode(d, "huh", /*fadeTimeoutMs*/ 0);
       t._addCmdVirtualNodesIfAuthorized_Adjunct(d);
     } else if (d.isRoot) {
       t.addCmdVirtualNode(d, "huh", fadeTimeoutMs);
-      t.addCmdVirtualNode(d, "help", fadeTimeoutMs);
+      // t.addCmdVirtualNode(d, "help", fadeTimeoutMs);
       t.addCmdVirtualNode(d, "query", fadeTimeoutMs);
       t.addCmdVirtualNode(d, "fork", fadeTimeoutMs);
       t.addCmdVirtualNode(d, "identemail", fadeTimeoutMs);
     } else {
       if (d.ibGibJson) {
         t.addCmdVirtualNode(d, "huh", fadeTimeoutMs);
-        t.addCmdVirtualNode(d, "help", fadeTimeoutMs);
+        // t.addCmdVirtualNode(d, "help", fadeTimeoutMs);
         t.addCmdVirtualNode(d, "fork", fadeTimeoutMs);
         t._addCmdVirtualNodesIfAuthorized_Comment(d, fadeTimeoutMs);
       } else {

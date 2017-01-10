@@ -49,9 +49,9 @@ export class CommandManager {
       case "query":
         t.ibScape.currentCmd = t.getCommand_Query(dIbGib);
         break;
-      case "help":
-        t.ibScape.currentCmd = t.getCommand_Help(dIbGib);
-        break;
+      // case "help":
+      //   t.ibScape.currentCmd = t.getCommand_Help(dIbGib);
+      //   break;
       case "huh":
         t.ibScape.currentCmd = t.getCommand_Huh(dIbGib);
         break;
@@ -206,9 +206,9 @@ export class CommandManager {
   //   $("#ident_form_data_text").focus();
   // }
 
-  getCommand_Help(dIbGib) {
-    return new commands.HelpDetailsCommand(this.ibScape, dIbGib);
-  }
+  // getCommand_Help(dIbGib) {
+  //   return new commands.HelpDetailsCommand(this.ibScape, dIbGib);
+  // }
   getCommand_Huh(dIbGib) {
     return new commands.HuhDetailsCommand(this.ibScape, dIbGib);
   }
