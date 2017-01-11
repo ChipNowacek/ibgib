@@ -8,9 +8,15 @@ background. When you're done with it, it fades back into the background.
 
 ### :baby_bottle: :baby:
 
-For starters, just remember that the root is where you can identify yourself
-with your email address, perform searches for ibGib, and create new blank
-ibGibs.
+For starters, just remember that the Green Circle is where you can login, create
+new circles, and search for circles and squares. 
+
+When you want to search for pics, comments, or other circles, click on the Green
+Circle and click on the search button (<span style="background-color: #C7FF4F">:mag:</span>).
+
+In order to upload pics, you'll need to login with at least one email address.
+So bring up the Green Circle and click on the login button (<span style="background-color: #FFFFFF; font-family=FontAwesome"><i class="fa fa-sign-in" aria-hidden="true"></i>
+</span>).
 
 ### :eyeglasses: :grey_question:
 

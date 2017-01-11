@@ -119,12 +119,12 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
     t.ibScape.commandMgr.exec(d, d3MenuCommands.filter(c => c.name === "huh")[0]);
 
   }
-  handleNodeRawTouchstartOrMouseDown(d) {
+  handleNodeRawMouseDownOrTouchstart(d) {
     let t = this;
 
     t.animateNodeBorder(d, /*node*/ null);
 
-    super.handleNodeRawTouchstartOrMouseDown(d);
+    super.handleNodeRawMouseDownOrTouchstart(d);
   }
 
   close() {

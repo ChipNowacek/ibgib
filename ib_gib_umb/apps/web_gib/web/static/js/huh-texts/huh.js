@@ -22,16 +22,19 @@ For starters, just click stuff. Long-click stuff. Double-click stuff.
 
 * Single-click
   * Expands all ibGib.
-  * If ibGib is addable, adds a little "add" addition.
-  * Fixes the position of regular ibGib.
+  * If the ibGib is an addable rel8n, then also shows the "Add" command (<span style="background-color: #C7FF4F; font-family=FontAwesome"><i class="fa fa-plus" aria-hidden="true"></i>
+  </span>).
+  * Will pin a regular ibGib to its current position.
 * Double-click
   * If collapsed, fully expands an ibGib, showing all children.
-    * Includes adjunct comments, pics, etc. (from other users).
+    * Includes comments, pics, etc. from other users ("adjuncts").
   * If expanding, stops expanding.
   * If expanded, collapses.
 * Long-click
-  * On regular ibGib, brings up the popup command menu.
-  * On the command menu, will bring up the help for the command.
+  * On ibGib, pops up command menu.
+  * On command ibGib, pops up the help.
+  * On rel8n ibGib, pins the rel8n to its current position.
+  * On the command menu, shows help for the command.
 
 ### :sunglasses: :sunrise:
 
@@ -43,16 +46,15 @@ For starters, just click stuff. Long-click stuff. Double-click stuff.
 
 For the full docs on ibGib, read the Bible. Start with the 
 book of
-[John](https://www.biblegateway.com/passage/?search=John+1&version=NIV), 
+<a href="https://www.biblegateway.com/passage/?search=John+1&version=NIV" target="_blank">John</a>, 
 then
-[Romans](https://www.biblegateway.com/passage/?search=Romans+1&version=NIV),
+<a href="https://www.biblegateway.com/passage/?search=Romans+1&version=NIV" target="_blank">Romans</a>,
 then
-[1 John](https://www.biblegateway.com/passage/?search=1+John+1&version=NIV)
-(it's a different book than John). 
+<a href="https://www.biblegateway.com/passage/?search=1+John+1&version=NIV" target="_blank">1 John</a>. 
 
 As a segue to the full docs, I suggest learning the
-[Song of ibGib](https://www.ibgib.com/ibgib/Song^FC4C463D0C8F1B653C8CF8AA49EB8A82237E7B0A4BCEB0D088553B55330725C4)
-, which can act as a cliff notes made from ibGib's principles.
+<a href="https://www.ibgib.com/ibgib/Song^FC4C463D0C8F1B653C8CF8AA49EB8A82237E7B0A4BCEB0D088553B55330725C4" target="_blank">Song of ibGib</a>
+, which can act as a CliffsNotes made from ibGib's principles.
 
 It's structured as follows:
 
@@ -64,9 +66,8 @@ It's structured as follows:
 6. Glory, Confidence, Armor
 7. Commandment, Taught, Love
 
-I recite/sing this song each and every day. First thing each morning, I start
-the Song with the corresponding day's section. I progress throughout the day, 
-repeating as necessary. 
+I recite and/or sing this song each and every day. First thing each morning, I
+start the Song with the corresponding day's section.
 
 ---
 `;

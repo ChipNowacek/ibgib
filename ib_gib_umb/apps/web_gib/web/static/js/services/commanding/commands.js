@@ -15,6 +15,7 @@ import { huhText_Context } from '../../huh-texts/context';
 import { huhText_Root } from '../../huh-texts/root';
 import { huhText_Source } from '../../huh-texts/source';
 import { huhText_Huh } from '../../huh-texts/huh';
+import { huhText_Command } from '../../huh-texts/command';
 
 // Most (_but not all_) commands are related to menu commands (in `d3params.js`)
 
@@ -422,10 +423,11 @@ export class HuhDetailsCommand extends HtmlDetailsCommandBase {
       .style("font-family", "Impact")
       .style("font-size", "25px");
 
+    if (t.d.type === "cmd") { t.addCmdHtml(); }
+
     t.addHuhHtml();
 
     if (t.d.isRoot) { t.addRootHtml(); } 
-    if (t.d.type === "cmd") { t.addCmdHtml(); }
     
     if (t.d.isContext) {
       t.addContextHtml();
@@ -439,44 +441,47 @@ export class HuhDetailsCommand extends HtmlDetailsCommandBase {
   addCmdHtml() {
     let t = this;
     let cmd = t.d.cmd;
-    let iconWidth = cmd.icon.length === 1 ? "70px" : "90px";
-
-    t.htmlDiv
-      .append("h2")
-      .text(`Command: ${cmd.text}  `)
-      .append("span")
-        .style("padding", "5px")
-        .style("width", iconWidth)
-        .style("font-family", "FontAwesome")
-        .style("background-color", cmd.color)
-        .style("border-radius", "15px")
-        .text(cmd.icon)
-
-    t.htmlDiv
-      .append("p")
-      .text(cmd.description)
-
-    if (cmd.huh && cmd.huh.length > 0) {
-      t.htmlDiv
-        .append("h3")
-        .text(`Command Details`);
-      cmd.huh.forEach(h => {
-        t.htmlDiv
-          .append("div")
-          .html(md.render(h));
-          // .text(h);
-      });
-    }
-
-    t.htmlDiv
-      .append("h3")
-      .text(`What are Commands?`);
-    t.htmlDiv
-      .append("p")
-      .text(`All of these circles and squares (and lines)...they're all ibGib. And the one you've just chosen is a Command. These are basically buttons that tell ibGib to do something.`)
-    t.htmlDiv
-      .append("p")
-      .text(`You can find common commands for a given ibGib by clicking on it, and a full set of commands in the ibGib's pop-up menu (long-press the ibGib).`);
+    
+    t.addSection(t.d.cmd.name, `${t.d.cmd.text}?`, t.d.cmd.huh);
+    
+    // let iconWidth = cmd.icon.length === 1 ? "70px" : "90px";
+    // 
+    // t.htmlDiv
+    //   .append("h2")
+    //   .text(`Command: ${cmd.text}  `)
+    //   .append("span")
+    //     .style("padding", "5px")
+    //     .style("width", iconWidth)
+    //     .style("font-family", "FontAwesome")
+    //     .style("background-color", cmd.color)
+    //     .style("border-radius", "15px")
+    //     .text(cmd.icon)
+    // 
+    // t.htmlDiv
+    //   .append("p")
+    //   .text(cmd.description)
+    // 
+    // if (cmd.huh && cmd.huh.length > 0) {
+    //   t.htmlDiv
+    //     .append("h3")
+    //     .text(`Command Details`);
+    //   cmd.huh.forEach(h => {
+    //     t.htmlDiv
+    //       .append("div")
+    //       .html(md.render(h));
+    //       // .text(h);
+    //   });
+    // }
+    // 
+    // t.htmlDiv
+    //   .append("h3")
+    //   .text(`What are Commands?`);
+    // t.htmlDiv
+    //   .append("p")
+    //   .text(`All of these circles and squares (and lines)...they're all ibGib. And the one you've just chosen is a Command. These are basically buttons that tell ibGib to do something.`)
+    // t.htmlDiv
+    //   .append("p")
+    //   .text(`You can find common commands for a given ibGib by clicking on it, and a full set of commands in the ibGib's pop-up menu (long-press the ibGib).`);
 
   }
 

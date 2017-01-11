@@ -2,19 +2,25 @@ var huhText_IbGib = `
 
 ### Just what is this ibGib thing?
 
-ibGib is like an automatic, interactive blog generator + forum + photo gallery + 
-group chat + global programming database + .... Every change to every ibGib
-is tracked in timelines and retained, every ibGib is attributed to its owners
-and contributors, and everything is in the open and in the Light. This enables
-massive collaboration, giving appropriate attributions through each and every
-ibGib's evolution.
+The ibGib web app is the ultimate collaboration app that does all the things:
+  * Group Messaging
+  * Forum
+  * Automatic, interactive blogging
+  * Photo Gallery
+  * Global Programming Database
+  * Versioning
+  * And more...
+
+Every change to every ibGib is tracked in timelines and retained, every ibGib
+is attributed to its owners and contributors, and everything is in the open and
+in the Light. This enables massive collaboration, tracking attribution and 
+accreditation, and more through each and every ibGib's evolution.
 
 ### :baby_bottle: :baby:
 
-For starters, you can think of ibGib as "things" or to be more Carlinesque:
-"stuff". So you can add your stuff, change your stuff, and relate your stuff to
-each other. In the future you can be reminded of stuff and helped with stuff,
-learn stuff, and basically do and share stuff.
+For starters, you can think of ibGib as "things" or to be more Carlin-esque: 
+"stuff". So you can add stuff, change stuff, relate stuff, share stuff with 
+each other, help each other learn stuff, help each other do stuff, and more.
 
 ### :eyeglasses: :grey_question:
 
@@ -54,7 +60,7 @@ its own definition: ibGib.
 
 In developing ibGib, I focused on the _infinitely recursive bootstrapping process of definition_, moving beyond axioms to understand that there is really **one root meta-axiom** upon which all other axiomatic/belief systems are built.
 
-Come to find out that this has already been explained in the Bible (now that I've read it). But these terms are difficult to understand with ["human terms"](https://www.biblegateway.com/passage/?search=Romans+6:19&version=ESV). But the word ibGib is the one root axiom, which I later found when reading [Exodus 3:14](https://www.biblegateway.com/passage/?search=Exodus+3:14&version=ESV):
+Come to find out that this has already been explained in the Bible (now that I've read it). But these terms are difficult to understand with <a href="https://www.biblegateway.com/passage/?search=Romans+6:19&version=ESV" target="_blank">"human terms"</a>. But the word ibGib is the one root axiom, which I later found when reading <a href="https://www.biblegateway.com/passage/?search=Exodus+3:14&version=ESV" target="_blank">Exodus 3:14</a>:
 
 > 14 God said to Moses, “I am who I am.”[a] And he said, “Say this to the people of Israel: ‘I am has sent me to you.’”
 > 15 God also said to Moses, “Say to the Israelites, ‘The Lord,[d] the God of

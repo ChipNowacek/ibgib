@@ -1,3 +1,7 @@
+import { huhText_Cmd_Fork } from "./huh-texts/commands/fork";
+import { huhText_Cmd_Pic } from "./huh-texts/commands/pic";
+import { huhText_Cmd_Comment } from "./huh-texts/commands/comment";
+
 var d3CircleRadius = 20;
 var d3LongPressMs = 900;
 var d3DblClickMs = 200;
@@ -86,12 +90,31 @@ var d3RequireExpandLevel2 = [
  */
 var d3MenuCommands = [
   {
+    "id": "menu-fork",
+    "name": "fork",
+    "text": "Fork",
+    "icon": "\uf259",
+    "description": "The Fork button will take the selected ibGib and create a new one based on it in your personal ib space. It's like making a copy at that point in time and branching off of it. Live Long and Prosper!",
+    "color": "#61B9FF",
+    "huh": huhText_Cmd_Fork
+  },
+  {
     "id": "menu-pic",
     "name": "pic",
     "text": "Pic",
     "icon": "\uf03e",
     "description": "The Picture button will add a picture to the selected ibGib. You can choose to upload a file, or take a picture with your camera. You can even add pictures to pictures",
-    "color": "#61B9FF"
+    "color": "#61B9FF",
+    "huh": huhText_Cmd_Pic
+  },
+  {
+    "id": "menu-comment",
+    "name": "comment",
+    "text": "Comment",
+    "icon": "\uf075",
+    "description": "The Comment button adds a comment (or any text really) to the selected ibGib",
+    "color": "#61B9FF",
+    "huh": huhText_Cmd_Comment
   },
   {
     "id": "menu-info",
@@ -137,37 +160,12 @@ var d3MenuCommands = [
     "color": "gold"
   },
   {
-    "id": "menu-comment",
-    "name": "comment",
-    "text": "Comment",
-    "icon": "\uf075",
-    "description": "The Comment button adds a comment (or any text really) to the selected ibGib",
-    "color": "#61B9FF",
-    "huh": [
-      `Comments are how we add text to ibGib. Right now they're limited to a max of 4096 characters, but this may change in the future.`,
-      ``,
-      `So you can use comments as notes for yourself, or notes for others, or instructions, descriptions, etc.`,
-      // `When you comment on someone else's ibGib, the comment can be  allowed by the owner of the ibGib. (In the future, we will have preferences to auto-allow such things as others' comments, pics, etc.).`
-    ]
-  },
-  {
     "id": "menu-star",
     "name": "star",
     "text": "Star",
     "icon": "\uf005",
     "description": "The Star button will rate the selected ibGib",
     "color": "gold"
-  },
-  {
-    "id": "menu-fork",
-    "name": "fork",
-    "text": "Fork",
-    "icon": "\uf259",
-    "description": "The Fork button will take the selected ibGib and create a new one based on it in your personal ib space. It's like making a copy at that point in time and branching off of it. Live Long and Prosper!",
-    "color": "#61B9FF",
-    "huh": [
-      `Forking is fundamental to using ibGib. Whenever you fork something (called the source), you create a new ibGib based on that source. What you choose as your source determines what the new ibGib will be like, much like starting a document from a template. If you fork the root ibGib (the green one when you click the background), then you will be starting from a "blank" template.`,
-    ]
   },
   {
     "id": "menu-flag",
@@ -306,7 +304,7 @@ var d3MenuCommands = [
     "name": "add",
     "text": "Add ibGib",
     // http://www.alt-codes.net/plus-sign-symbols
-    "icon": "\uf067",
+    "icon": "\uf067", // http://fontawesome.io/icon/plus/
     "description": "Creates and adds a new ibGib with a given rel8n.",
     "color": "#C7FF4F"
   },
