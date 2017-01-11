@@ -13,7 +13,7 @@ This command will add a pic to an ibGib.
 
 Adds a circle with a picture in it.
 
-### :eyeglasses: :grey_question:
+### :eyeglasses: :point_up:
 
 * Pic ibGib contain data about the image, including...
   * Filename & extension

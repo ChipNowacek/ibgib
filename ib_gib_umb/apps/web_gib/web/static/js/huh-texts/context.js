@@ -16,7 +16,7 @@ files and folders to your current folder. So if you make a "Home" ibGib, it's
 like creating a "Home" folder where you can store other ibGib. (_But unlike
 files and folders, you're not limited to this approach._)
 
-### :eyeglasses: :grey_question:
+### :eyeglasses: :point_up:
 
 * Any ibGib can be the Context. Just navigate to it via the popup menu and
   choosing the "Goto" command (<span style="background-color: #C7FF4F">:point_up_2:</span>).

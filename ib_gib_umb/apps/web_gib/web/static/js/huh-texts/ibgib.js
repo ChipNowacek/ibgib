@@ -16,13 +16,13 @@ is attributed to its owners and contributors, and everything is in the open and
 in the Light. This enables massive collaboration, tracking attribution and 
 accreditation, and more through each and every ibGib's evolution.
 
-### :baby_bottle: :baby:
+### :baby: :baby_bottle:
 
 For starters, you can think of ibGib as "things" or to be more Carlin-esque: 
 "stuff". So you can add stuff, change stuff, relate stuff, share stuff with 
 each other, help each other learn stuff, help each other do stuff, and more.
 
-### :eyeglasses: :grey_question:
+### :eyeglasses: :point_up:
 
 * The ibGib engine is currently implemented in Elixir which sits on top of
   Erlang's BEAM for its parallel architecture.

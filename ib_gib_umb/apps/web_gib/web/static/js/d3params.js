@@ -1,6 +1,7 @@
 import { huhText_Cmd_Fork } from "./huh-texts/commands/fork";
 import { huhText_Cmd_Pic } from "./huh-texts/commands/pic";
 import { huhText_Cmd_Comment } from "./huh-texts/commands/comment";
+import { huhText_Cmd_Link } from "./huh-texts/commands/link";
 
 var d3CircleRadius = 20;
 var d3LongPressMs = 900;
@@ -117,6 +118,15 @@ var d3MenuCommands = [
     "huh": huhText_Cmd_Comment
   },
   {
+    "id": "menu-link",
+    "name": "link",
+    "text": "Link",
+    "icon": "\uf0c1",
+    "description": "The Link button will add a hyperlink from the World Wide interWeb to the selected ibGib",
+    "color": "#61B9FF",
+    "huh": huhText_Cmd_Link
+  },
+  {
     "id": "menu-info",
     "name": "info",
     "text": "Info",
@@ -182,14 +192,6 @@ var d3MenuCommands = [
     "icon": "\uf087",
     "description": "The Thumbs Up button will let you give the selected ibGib a Thumbs Up",
     "color": "gold"
-  },
-  {
-    "id": "menu-link",
-    "name": "link",
-    "text": "Link",
-    "icon": "\uf0c1",
-    "description": "The Link button will add a hyperlink from the World Wide interWeb to the selected ibGib",
-    "color": "#61B9FF"
   },
   {
     "id": "menu-meta",

@@ -14,7 +14,7 @@ Forking is fundamental to ibGib: It's how you create "new" ibGib.
 For starters, just remember that forking is how you make ibGib babies. Click on
 something, fork it, and voilà - you've just made a baby of that ibGib.
 
-### :eyeglasses: :grey_question:
+### :eyeglasses: :point_up:
 
 * Forking from the Root is like creating a "brand new" ibGib starting with a "blank" template.
 * Forking within your own Context adds a new Source ibGib.

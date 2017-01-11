@@ -6,7 +6,7 @@ var huhText_Root = `
 The "Root" ibGib is the green circle that shows up if you click anywhere in the
 background. When you're done with it, it fades back into the background.
 
-### :baby_bottle: :baby:
+### :baby: :baby_bottle:
 
 For starters, just remember that the Green Circle is where you can login, create
 new circles, and search for circles and squares. 
@@ -18,7 +18,7 @@ In order to upload pics, you'll need to login with at least one email address.
 So bring up the Green Circle and click on the login button (<span style="background-color: #FFFFFF; font-family=FontAwesome"><i class="fa fa-sign-in" aria-hidden="true"></i>
 </span>).
 
-### :eyeglasses: :grey_question:
+### :eyeglasses: :point_up:
 
 * Clicking anywhere on the background will bring up the Root.
 * Forking from the Root creates a new "blank" ibGib.

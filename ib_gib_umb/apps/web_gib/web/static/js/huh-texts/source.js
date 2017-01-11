@@ -12,7 +12,7 @@ For starters, just think of them as the "major" ibGib for the current Context
 (the big yellow ibGib). Oftentimes, they're the pictures, comments, and links 
 for that Context. (See the Context's helps for more info on that.)
 
-### :eyeglasses: :grey_question:
+### :eyeglasses: :point_up:
 
 * Source ibGib are related to the current Context via the Context's \`ib^gib\`
   rel8n.

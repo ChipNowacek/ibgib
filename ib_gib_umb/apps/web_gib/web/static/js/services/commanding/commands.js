@@ -443,6 +443,7 @@ export class HuhDetailsCommand extends HtmlDetailsCommandBase {
     let cmd = t.d.cmd;
     
     t.addSection(t.d.cmd.name, `${t.d.cmd.text}?`, t.d.cmd.huh);
+    t.addSection("commands", `Commands?`, huhText_Command);
     
     // let iconWidth = cmd.icon.length === 1 ? "70px" : "90px";
     // 

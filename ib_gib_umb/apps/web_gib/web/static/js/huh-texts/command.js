@@ -1,56 +1,43 @@
 var huhText_Command = `
 
 ## This ibGib is a "Command"
-### (The Big Yellow ibGib)
 
-The "Command" ibGib is a big yellow circle like Earth's yellow sun. Most of the
-things we do with ibGib will work against the backdrop of our Command.
-:sun_with_face:
+A Command is how you tell ibGib to do things.
 
 ### :baby: :baby_bottle:
 
-For starters, you can think of it as your current folder. The ibGib you see
-on the screen are like the "contents" of your Command folder. Adding ibGib
-to your Command, like commenting or adding a pic, is a lot like adding
-files and folders to your current folder. So if you make a "Home" ibGib, it's
-like creating a "Home" folder where you can store other ibGib. (_But unlike
-files and folders, you're not limited to this approach._)
+For starters, you can just think of commands as buttons. You click a button, and
+it does stuff.
 
-### :eyeglasses: :grey_question:
+### :eyeglasses: :point_up:
 
-* Any ibGib can be the Command. Just navigate to it via the popup menu and
-  choosing the "Goto" command (<span style="background-color: #C7FF4F">:point_up_2:</span>).
-* Forking within your own Command adds a new Source ibGib.
-* Forking within someone else's Command will create a Fork for you and set it as your current context.
-* The current URL is tied to the Command ibGib.
-  * Any added/removed Source ibGib will update your current URL.
-  * This belies the fact that all ibGib are versioned throughout their evolving
-    existence.
-* The free-floating Source ibGib are any ibGib related to the current Command
-  via its \`ib^gib\` rel8n.
+* Single-clicking a command executes it.
+* Long-clicking a command shows its help (what you're reading right now).
 
 ### :sunglasses: :sunrise:
 
-> I believe, as you know, Mrs. Sauskind, in the fundamental interconnectedness
-> of all things.
-> - Dirk Gently
+> 'Love the Lord your God  
+> &nbsp;&nbsp; with all your heart  
+> &nbsp;&nbsp; and with all your soul  
+> &nbsp;&nbsp; and with all your mind.'  
+> This is the first and greatest commandment.  
+> And the second is like it:  
+> &nbsp;&nbsp; 'Love your neighbor as yourself.'  
+> All the Law and the Prophets  
+> &nbsp;&nbsp; hang on these two commandments.  
+>
+> Matthew 22:37-40
 
-Command provides a point-of-view with respect to relationships among all ibGib.
-Since all ibGib have relationships with other ibGib, any ibGib can act as a
-Command. This differs from other strictly hierarchical parent/child paradigms
-such as that with a file/folder or container/content, where only the
-folder/container can have a single relationship (containment) to the
-file/content. In the file/folder paradigm, it is odd for a
-file to contain a folder, or a folder to be used for its intrinsic content. This
-does occur, however, in the form of zip files containing folders, and folders
-being used for the metadata those entities contain. But this was an afterthought
-that came about for the use-case of portability & compression.
+In this passage from Matthew 22, he illuminates the fact that the commandments
+are all relevant, but that there is a "greatest" commandment (command pattern
+btw). This reveals the underlying mechanism that allows him to build upon the
+Law without removing a single period from it (monotonically increasing,
+append-only aggregation). Not only do we have binary "do/don't" commands to
+follow, but we have the possibility of degrees of "greatness" of each command.
+And Jesus is giving us one constraint as to the amount of greatness, that Love
+has precedence over all other commands. 
 
-With ibGib, these strictly conceived roles are relaxed a bit to regain the
-holistic perspective that each one is indeed the "same thing": ibGib. This
-paradigm (re)shift can give us more robust relationships beyond the
-hierarchical, even including relationships that are seemingly and paradoxically
-self-negating, such as the ever-popular "unrelated" relationship.
+So Fear the Lord your God, yes - but Love the Lord your God is greater.
 
 ---
 `;

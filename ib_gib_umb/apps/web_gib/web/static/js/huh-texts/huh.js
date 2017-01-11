@@ -10,15 +10,16 @@ anything! :wink:
 
 But if you wanna read a little bit, I've done up these help sections, 
 categorized by level of maturity with ibGib's concepts: 
-  * :baby_bottle: :baby: == Baby Gloves
-  * :eyeglasses: :grey_question: == Nerd Bullets
+  * :baby: :baby_bottle: == Baby Food
+  * :eyeglasses: :point_up: == Nerd Points
   * :sunglasses: :sunrise: == Seen The Light
 
-### :baby_bottle: :baby:
+### :baby: :baby_bottle:
 
-For starters, just click stuff. Long-click stuff. Double-click stuff. 
+For starters, just click stuff. Long-click stuff. Double-click stuff. Pan and 
+zoom around. 
 
-### :eyeglasses: :grey_question:
+### :eyeglasses: :point_up:
 
 * Single-click
   * Expands all ibGib.
@@ -35,12 +36,17 @@ For starters, just click stuff. Long-click stuff. Double-click stuff.
   * On command ibGib, pops up the help.
   * On rel8n ibGib, pins the rel8n to its current position.
   * On the command menu, shows help for the command.
+* Pan and zoom
+  * Drag the _background_ around to pan.
+  * Mousewheel/pinch zoom the _background_ to zoom in and out.
+* Feedback
+  * :heart: ibGib? Drop me a line at ibgib@ibgib.com. I'd love to hear from you.
 
 ### :sunglasses: :sunrise:
 
 > In the Beginning was the Word,  
-> &nbsp;&nbsp; and the Word was _with_ God,  
-> &nbsp;&nbsp; and the Word **was** God.  
+> &nbsp;&nbsp; and the Word was with God,  
+> &nbsp;&nbsp; and the Word was God.  
 > 
 > John 1:1
 

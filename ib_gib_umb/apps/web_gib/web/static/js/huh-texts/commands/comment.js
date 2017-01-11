@@ -13,7 +13,7 @@ This command will add a comment (or any text really) to an ibGib.
 
 Adds a square with words and stuff in it.
 
-### :eyeglasses: :grey_question:
+### :eyeglasses: :point_up:
 
 * You can use comments as...
   * Remarks
