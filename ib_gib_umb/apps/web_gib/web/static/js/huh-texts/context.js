@@ -1,6 +1,6 @@
 var huhText_Context = `
 
-## Context
+## This ibGib is a "Context"
 ### (The Big Yellow ibGib)
 
 The "Context" ibGib is a big yellow circle like Earth's yellow sun. Most of the
@@ -51,6 +51,7 @@ holistic perspective that each one is indeed the "same thing": ibGib. This
 paradigm (re)shift can give us more robust relationships beyond the
 hierarchical, even including relationships that are seemingly and paradoxically
 self-negating, such as the ever-popular "unrelated" relationship.
+
 ---
 `;
 

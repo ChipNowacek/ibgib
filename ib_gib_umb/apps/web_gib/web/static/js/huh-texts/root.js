@@ -1,12 +1,12 @@
 var huhText_Root = `
 
-## Root
+## This ibGib is the "Root"
 ### (The Disappearing/Reappearing Green ibGib)
 
 The "Root" ibGib is the green circle that shows up if you click anywhere in the
 background. When you're done with it, it fades back into the background.
 
-### :baby: :baby_bottle:
+### :baby_bottle: :baby:
 
 For starters, just remember that the root is where you can identify yourself
 with your email address, perform searches for ibGib, and create new blank

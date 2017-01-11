@@ -2208,7 +2208,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     super.handleNodeContextMenu(d);
 
     if (d.virtualId) {
-      t.commandMgr.exec(d, d3MenuCommands.filter(c => c.name === "huh")[0]);
+      t.clearSelectedNode();
+      t.selectNode(d);
+      // t.commandMgr.exec(d, d3MenuCommands.filter(c => c.name === "huh")[0]);
     } else if (d.type === "ibGib") {
       t.clearSelectedNode();
       t.selectNode(d);

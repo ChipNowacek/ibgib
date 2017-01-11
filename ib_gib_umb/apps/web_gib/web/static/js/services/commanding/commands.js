@@ -14,6 +14,7 @@ import { huhText_IbGib } from '../../huh-texts/ibgib';
 import { huhText_Context } from '../../huh-texts/context';
 import { huhText_Root } from '../../huh-texts/root';
 import { huhText_Source } from '../../huh-texts/source';
+import { huhText_Huh } from '../../huh-texts/huh';
 
 // Most (_but not all_) commands are related to menu commands (in `d3params.js`)
 
@@ -421,19 +422,16 @@ export class HuhDetailsCommand extends HtmlDetailsCommandBase {
       .style("font-family", "Impact")
       .style("font-size", "25px");
 
-    if (t.d.type === "cmd") {
-      t.addCmdHtml();
-    }
+    t.addHuhHtml();
+
+    if (t.d.isRoot) { t.addRootHtml(); } 
+    if (t.d.type === "cmd") { t.addCmdHtml(); }
     
     if (t.d.isContext) {
       t.addContextHtml();
     } else if (t.d.isSource) {
       t.addSourceHtml();
     }
-
-    if (t.d.isRoot) {
-      t.addRootHtml();
-    } 
 
     t.addIbGibHtml();
   }
@@ -500,33 +498,49 @@ export class HuhDetailsCommand extends HtmlDetailsCommandBase {
       .append("p")
       .text("yo this is some rel8n help text")
   }
+  addHuhHtml() {
+    let t = this;
+    t.addSection("huh", "Huh?!?", huhText_Huh);
+  }
   addRootHtml() {
     let t = this;
-    t.htmlDiv
-      .append("div")
-      .attr("class", "ib-details-html-div")
-      .html(md.render(huhText_Root));
+    t.addSection("root", "The Root?", huhText_Root);
   }
   addContextHtml() {
     let t = this;
-    t.htmlDiv
-      .append("div")
-      .attr("class", "ib-details-html-div")
-      .html(md.render(huhText_Context));
+    t.addSection("context", "Context?", huhText_Context);
   }
   addSourceHtml() {
     let t = this;
-    t.htmlDiv
-      .append("div")
-      .attr("class", "ib-details-html-div")
-      .html(md.render(huhText_Source));
+    t.addSection("source", "Sources?", huhText_Source);
   }
   addIbGibHtml() {
     let t = this;
+    t.addSection("ibgib", "ibGib?", huhText_IbGib);
+  }
+  
+  addSection(sectionName, title, contentText) {
+    let t = this;
+    let sectionId = `ib-details-huh-${sectionName}`;
+    t.htmlDiv
+      .append("button")
+        .attr("class", "accordion")
+        .on("click", function() {
+          this.classList.toggle("active");
+          let panel = this.nextElementSibling;
+      	  if (panel.style.maxHeight){
+        	  panel.style.maxHeight = null;
+          } else {
+        	  panel.style.maxHeight = panel.scrollHeight + 'px';
+          } 
+        })
+      .append("h1")
+      .text(title)
     t.htmlDiv
       .append("div")
-      .attr("class", "ib-details-html-div")
-      .html(md.render(huhText_IbGib));
+      .attr("id", sectionId)
+      .attr("class", "ib-details-html-div panel")
+      .html(md.render(contentText));
   }
 }
 
@@ -1631,5 +1645,18 @@ export class ExternalLinkCommand extends CommandBase {
         alert("Error opening external link... :-/");
       }
     });
+  }
+}
+
+export class ZapCommand extends CommandBase {
+  constructor(ibScape, d) {
+    const cmdName = "zap";
+    super(cmdName, ibScape, d);
+  }
+
+  exec() {
+    super.exec();
+    let t = this;
+    t.ibScape.zap(t.d, /*callback*/ null);
   }
 }

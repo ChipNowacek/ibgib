@@ -91,6 +91,9 @@ export class CommandManager {
       case "externallink":
         t.ibScape.currentCmd = t.getCommand_ExternalLink(dIbGib);
         break;
+      case "zap":
+        t.ibScape.currentCmd = t.getCommand_Zap(dIbGib);
+        break;
       default:
         console.error(`unknown cmdName: ${cmdName}`);
     }
@@ -248,6 +251,10 @@ export class CommandManager {
   getCommand_ExternalLink(dIbGib) {
     return new commands.ExternalLinkCommand(this.ibScape, dIbGib);
   }
+  getCommand_Zap(dIbGib) {
+    return new commands.ZapCommand(this.ibScape, dIbGib);
+  }
+
   // execRefresh(dIbGib) {
   //   location.href = `/ibgib/${dIbGib.ibgib}?latest=true`
   // }

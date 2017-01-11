@@ -37,7 +37,7 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
       },
       node: {
         cursorType: "pointer",
-        baseRadiusSize: 20,
+        baseRadiusSize: 25,
         defShapeFill: "pink",
         defBorderStroke: "darkgreen",
         defBorderStrokeWidth: "2px",
@@ -45,8 +45,8 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
           fontFamily: "FontAwesome",
           fontStroke: "darkgreen",
           fontFill: "darkgreen",
-          fontSize: "38px",
-          fontOffset: 14
+          fontSize: "26px",
+          fontOffset: 10
         },
         image: {
           backgroundFill: "yellow"
@@ -157,17 +157,17 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
     let t = this;
 
     // TODO: ib-scape.js getMenuCommandsJson: When we have client-side dynamicism (prefs, whatever), then we need to change this to take that into account when building the popup menu.
-    let commands;
+    let commands = ["huh", "zap"];
 
     if (d.virtualId) {
       // Virtual ibGib
-      commands = ["zap"];
+      // commands.push("zap");
     } else {
       // Concrete ibGib
       if (d.ibGib && d.ibGib === "ib^gib") {
-        commands = [/*"help", */"fork", "goto", "identemail", "query"];
+        commands = commands.concat(["fork", "goto", "identemail", "query"]);
       } else {
-        commands = [/*"help", *//*"view",*/ "fork", "goto", "comment", "pic", "link", "info", "refresh"];
+        commands = commands.concat([/*"view",*/ "fork", "goto", "comment", "pic", "link", "info", "refresh"]);
       }
 
       if (ibHelper.isImage(d.ibGibJson) || d.render === "image") {

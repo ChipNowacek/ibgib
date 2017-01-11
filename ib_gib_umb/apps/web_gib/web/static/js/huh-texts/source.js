@@ -1,6 +1,7 @@
 var huhText_Source = `
 
-## Sources
+## This ibGib is a "Source"
+### (The Large, Free-Floating Shapes)
 
 "Sources" are the ibGib floating around when you first load an ibGib page. They
 are the "source" ibGib within a given Context.
