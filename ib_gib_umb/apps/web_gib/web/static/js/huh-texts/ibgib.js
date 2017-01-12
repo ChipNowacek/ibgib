@@ -2,40 +2,57 @@ var huhText_IbGib = `
 
 ### Just what is this ibGib thing?
 
-The ibGib web app is the ultimate collaboration app that does all the things:
-  * Group Messaging
-  * Forum
-  * Automatic, interactive blogging
+The ibGib web app is the collaboration cloud app that _does all the things_:
+  * Take/Share Notes (comments, pics, links)
+  * Dynamically interactive blogging
+  * Unified forum
   * Photo Gallery
-  * Global Programming Database
-  * Versioning
-  * And more...
+  * :soon: Notifications to enable group messaging
+  * Universal programming abstraction
+    * :construction: State implemented, Behavior is a WIP
+  * And then some...
 
 Every change to every ibGib is tracked in timelines and retained, every ibGib
 is attributed to its owners and contributors, and everything is in the open and
 in the Light. This enables massive collaboration, tracking attribution and 
-accreditation, and more through each and every ibGib's evolution.
+accreditation and then some throughout each and every ibGib's evolution.
+
+It does all of these things through its unique ibGib engine, and currently this
+is made available to users only through the web app (that you're using right now
+reading this). But you don't have to be a computer genius to use it. 
 
 ### :baby: :baby_bottle:
 
-For starters, you can think of ibGib as "things" or to be more Carlin-esque: 
-"stuff". So you can add stuff, change stuff, relate stuff, share stuff with 
-each other, help each other learn stuff, help each other do stuff, and more.
+For starters, you can think of ibGib as "stuff". You can add stuff, change
+stuff, relate stuff, share stuff with each other, help each other learn stuff,
+help each other do stuff, and more.
 
 ### :eyeglasses: :point_up:
 
-* The ibGib engine is currently implemented in Elixir which sits on top of
-  Erlang's BEAM for its parallel architecture.
-* Each ibGib "frame" is the immutable state describing a partial pure function.
-  * Each ibGib timeline allows for mut8ns of state.
-  * Each "new" ibGib frame is created by an ibGib partial pure function frame
-    "coming into contact" with another ibGib partial pure function frame.
-* Every ibGib has DNA, ancestry, and a past.
-  * Each DNA, ancestor, and past is an ibGib as well.
-* ibGib is its own definition.
-* ibGib is both singular and plural (and singuplural and n more neologisms).
-* ibGib is super-symmetrical, fractal, etc., (and not).
-* ibGib concerns the fundamental interconnectedness of all things.
+* In contrast to regular blogs, with ibGib you can interact at a much more granular level.
+  * Comment on comments, comment on pics, pics on comments, ibGib on ibGib, etc.
+  * You don't need to do an explicit "blog"...just use ibGib for your own notes
+    and it will automatically be shared with the world.
+* Similarly, in contrast to normal forums, with ibGib you naturally can respond
+  to each comment/picture. 
+  * There is no "thread hijacking", since there is no "single" thread. They 
+    branch this way and that just like branches in a tree.
+* Nerd ibGib programming details:
+  * The ibGib engine is currently implemented in Elixir which sits on top of
+    Erlang's BEAM for its parallel architecture.
+  * Each ibGib "frame" is the immutable state describing a partial pure function.
+    * Each ibGib timeline allows for mut8ns of state.
+    * Each "new" ibGib frame is created by an ibGib partial pure function frame
+      "coming into contact" with another ibGib partial pure function frame.
+  * Every ibGib has DNA, ancestry, and a past.
+    * Each DNA, ancestor, and past is an ibGib as well.
+* Nerd philosophical details...
+  * ibGib is its own definition.
+  * ibGib is both singular and plural (and singuplural and n more neologisms).
+  * ibGib is super-symmetrical, fractal, etc., (and not).
+  * ibGib concerns the fundamental interconnectedness of all things.
+  * ibGib unifies and reconciles Christianity with science, specifically biology
+    and physics.
 
 ### :sunglasses: :sunrise:
 

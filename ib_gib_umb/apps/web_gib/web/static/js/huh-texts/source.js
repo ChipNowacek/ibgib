@@ -8,9 +8,8 @@ are the "source" ibGib within a given Context.
 
 ### :baby: :baby_bottle:
 
-For starters, just think of them as the "major" ibGib for the current Context
-(the big yellow ibGib). Oftentimes, they're the pictures, comments, and links 
-for that Context. (See the Context's helps for more info on that.)
+For starters, just think of them as the main things that all revolve around the 
+big yellow circle.
 
 ### :eyeglasses: :point_up:
 

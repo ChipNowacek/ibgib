@@ -2,14 +2,15 @@ var huhText_Huh = `
 
 ### I have no idea what is going on... :scream:
 
-**Don't Panic** :smile:
+## Don't Panic :thumbsup:
 
 The best way to learn ibGib is by just going around and clicking,
-double-clicking, and long-clicking stuff. You're not going to break 
-anything! :wink:
+double-clicking, and long-clicking stuff. You're **not** going to break 
+_anything_.
 
-But if you wanna read a little bit, I've done up these help sections, 
-categorized by level of maturity with ibGib's concepts: 
+But if you wanna read a little bit, I've done up these help sections, each 
+having three categories:
+
   * :baby: :baby_bottle: == Baby Food
   * :eyeglasses: :point_up: == Nerd Points
   * :sunglasses: :sunrise: == Seen The Light
@@ -17,7 +18,9 @@ categorized by level of maturity with ibGib's concepts:
 ### :baby: :baby_bottle:
 
 For starters, just click stuff. Long-click stuff. Double-click stuff. Pan and 
-zoom around. 
+zoom around. Just don't worry about it. 
+
+And **Don't Panic**. :pray:
 
 ### :eyeglasses: :point_up:
 
@@ -27,20 +30,23 @@ zoom around.
   </span>).
   * Will pin a regular ibGib to its current position.
 * Double-click
-  * If collapsed, fully expands an ibGib, showing all children.
-    * Includes comments, pics, etc. from other users ("adjuncts").
+  * If collapsed, fully expands an ibGib, showing all children recursively.
+    * Will show comments, pics, etc. from other users ("adjuncts").
   * If expanding, stops expanding.
   * If expanded, collapses.
 * Long-click
-  * On ibGib, pops up command menu.
-  * On command ibGib, pops up the help.
+  * On command ibGib, pops up the help for that specific command.
   * On rel8n ibGib, pins the rel8n to its current position.
-  * On the command menu, shows help for the command.
+  * On regular ibGib, pops up the command _menu_ for that ibGib.
 * Pan and zoom
   * Drag the _background_ around to pan.
   * Mousewheel/pinch zoom the _background_ to zoom in and out.
 * Feedback
-  * :heart: ibGib? Drop me a line at ibgib@ibgib.com. I'd love to hear from you.
+  * :heart: ibGib? Drop me a line :fishing_pole_and_fish: at ibgib@ibgib.com 
+    :email:,
+    <a href="https://github.com/ibgib/ibgib/issues" target="_blank">create an issue on our GitHub repo</a>, or 
+    <a href="https://twitter.com/ibgib" target="_blank">tweet at me</a>.
+    I would love to hear from ya. :smiley:
 
 ### :sunglasses: :sunrise:
 

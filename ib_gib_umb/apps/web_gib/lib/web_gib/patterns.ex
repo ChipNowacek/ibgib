@@ -3,7 +3,7 @@ defmodule WebGib.Patterns do
   Reusable patterns using expat
   """
   
-  import Expat
+  import Expat # https://github.com/vic/expat
   
   defpat ib_gib_         %{"ib_gib" => ib_gib}
   defpat ib_gibs_        %{"ib_gibs" => ib_gibs}

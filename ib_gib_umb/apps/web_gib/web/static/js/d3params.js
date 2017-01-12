@@ -2,6 +2,7 @@ import { huhText_Cmd_Fork } from "./huh-texts/commands/fork";
 import { huhText_Cmd_Pic } from "./huh-texts/commands/pic";
 import { huhText_Cmd_Comment } from "./huh-texts/commands/comment";
 import { huhText_Cmd_Link } from "./huh-texts/commands/link";
+import { huhText_Cmd_Huh } from "./huh-texts/commands/huh";
 
 var d3CircleRadius = 20;
 var d3LongPressMs = 900;
@@ -127,79 +128,13 @@ var d3MenuCommands = [
     "huh": huhText_Cmd_Link
   },
   {
-    "id": "menu-info",
-    "name": "info",
-    "text": "Info",
-    "icon": "\uf05a",
-    "description": "The Information button lets you see the internal gibblies of an ibGib",
-    "color": "#CFA1C8"
-  },
-  {
-    "id": "menu-merge",
-    "name": "merge",
-    "text": "Merge",
-    "icon": "\uf247",
-    "description": "Merging is how we relate existing ibGib to each other",
-    "color": "lightblue"
-  },
-  {
-    "id": "menu-help",
-    "name": "help",
-    "text": "Help",
-    "icon": "\uf29c",
-    "description": "The Help button shows you help about the selected ibGib",
-    "color": "#EBFF0F"
-  },
-  {
     "id": "menu-huh",
     "name": "huh",
     "text": "Huh?",
     "icon": "\uf128 \uf12a \uf128",
     "description": "This is like in-depth help. Click it when you have no idea what is going on.",
     "color": "#EBFF0F",
-    "huh": [
-      `This command gives you more in-depth guidance as to what is going on with the individual ibGib you're looking at, as well as other possibly related stuff.`
-    ]
-  },
-  {
-    "id": "menu-share",
-    "name": "share",
-    "text": "Share",
-    "icon": "\uf1e0",
-    "description": "The Share button will share a link to this ibGib to others",
-    "color": "gold"
-  },
-  {
-    "id": "menu-star",
-    "name": "star",
-    "text": "Star",
-    "icon": "\uf005",
-    "description": "The Star button will rate the selected ibGib",
-    "color": "gold"
-  },
-  {
-    "id": "menu-flag",
-    "name": "flag",
-    "text": "Flag",
-    "icon": "\uf024",
-    "description": "The Flag button will mark the selected ibGib as containing inappropriate content",
-    "color": "#FF4F4F"
-  },
-  {
-    "id": "menu-thumbsup",
-    "name": "thumbs up",
-    "text": "Thumbs up",
-    "icon": "\uf087",
-    "description": "The Thumbs Up button will let you give the selected ibGib a Thumbs Up",
-    "color": "gold"
-  },
-  {
-    "id": "menu-meta",
-    "name": "meta",
-    "text": "Meta",
-    "icon": "\uf013",
-    "description": "The Meta button contains settings, tweaks, preferences, etc",
-    "color": "lightgray"
+    "huh": huhText_Cmd_Huh
   },
   {
     "id": "menu-mut8comment",
@@ -234,11 +169,11 @@ var d3MenuCommands = [
     "color": "#C7FF4F"
   },
   {
-    "id": "menu-fullscreen",
-    "name": "fullscreen",
-    "text": "View Fullscreen",
-    "icon": "\uf0b2",
-    "description": "The Fullscreen button will view something in fullscreen",
+    "id": "menu-info",
+    "name": "info",
+    "text": "Info",
+    "icon": "\uf05a",
+    "description": "The Information button lets you see the internal gibblies of an ibGib",
     "color": "#CFA1C8"
   },
   {
@@ -327,7 +262,71 @@ var d3MenuCommands = [
       ` `,
       `If you want, you can comment on the ibGib that you are rejecting before actually rejecting it. This way, whoever posted it in the first place can see your reasoning/response to it.`,
     ]
-  }
+  },
+  // {
+  //   "id": "menu-merge",
+  //   "name": "merge",
+  //   "text": "Merge",
+  //   "icon": "\uf247",
+  //   "description": "Merging is how we relate existing ibGib to each other",
+  //   "color": "lightblue"
+  // },
+  // {
+  //   "id": "menu-help",
+  //   "name": "help",
+  //   "text": "Help",
+  //   "icon": "\uf29c",
+  //   "description": "The Help button shows you help about the selected ibGib",
+  //   "color": "#EBFF0F"
+  // },
+  // {
+  //   "id": "menu-share",
+  //   "name": "share",
+  //   "text": "Share",
+  //   "icon": "\uf1e0",
+  //   "description": "The Share button will share a link to this ibGib to others",
+  //   "color": "gold"
+  // },
+  // {
+  //   "id": "menu-star",
+  //   "name": "star",
+  //   "text": "Star",
+  //   "icon": "\uf005",
+  //   "description": "The Star button will rate the selected ibGib",
+  //   "color": "gold"
+  // },
+  // {
+  //   "id": "menu-flag",
+  //   "name": "flag",
+  //   "text": "Flag",
+  //   "icon": "\uf024",
+  //   "description": "The Flag button will mark the selected ibGib as containing inappropriate content",
+  //   "color": "#FF4F4F"
+  // },
+  // {
+  //   "id": "menu-thumbsup",
+  //   "name": "thumbs up",
+  //   "text": "Thumbs up",
+  //   "icon": "\uf087",
+  //   "description": "The Thumbs Up button will let you give the selected ibGib a Thumbs Up",
+  //   "color": "gold"
+  // },
+  // {
+  //   "id": "menu-meta",
+  //   "name": "meta",
+  //   "text": "Meta",
+  //   "icon": "\uf013",
+  //   "description": "The Meta button contains settings, tweaks, preferences, etc",
+  //   "color": "lightgray"
+  // },
+  // {
+  //   "id": "menu-fullscreen",
+  //   "name": "fullscreen",
+  //   "text": "View Fullscreen",
+  //   "icon": "\uf0b2",
+  //   "description": "The Fullscreen button will view something in fullscreen",
+  //   "color": "#CFA1C8"
+  // },
 ];
 
 let d3Rel8nIcons = {
