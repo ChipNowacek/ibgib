@@ -10,20 +10,21 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
 
   ## Perseverance
 
-  But the seed on good soil stands for those
-  &nbsp;&nbsp;with a noble and good heart,
-  &nbsp;&nbsp;who hear the word,
-  &nbsp;&nbsp;retain it,
-  &nbsp;&nbsp;and by perseverance produce a crop.
+  But the seed on good soil stands for those  
+  &nbsp;&nbsp; with a noble and good heart,  
+  &nbsp;&nbsp; who hear the word,  
+  &nbsp;&nbsp; retain it,  
+  &nbsp;&nbsp; and by perseverance produce a crop.
   """
 
   require Logger
 
   import IbGib.{Expression, Helper, QueryOptionsFactory}
   import WebGib.Bus.Commanding.Helper
+  import WebGib.Patterns
   use IbGib.Constants, :ib_gib
 
-  def handle_cmd(%{"ib_gibs" => ib_gibs} = data,
+  def handle_cmd(ib_gibs_(...) = data,
                  _metadata,
                  msg,
                  %{assigns:

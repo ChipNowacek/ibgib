@@ -24,7 +24,7 @@ defmodule WebGib.Bus.Commanding.Link do
   tracks a given timeline, otherwise branching timelines for a single ibGib
   will abound.
   """
-
+  import Expat # https://github.com/vic/expat
   require Logger
 
   alias IbGib.Auth.Authz
@@ -32,17 +32,19 @@ defmodule WebGib.Bus.Commanding.Link do
   alias WebGib.Adjunct
   import IbGib.{Expression, Helper}
   import WebGib.Bus.Commanding.Helper
+  import WebGib.Patterns
   use IbGib.Constants, :ib_gib
 
-  def handle_cmd(%{"link_text" => link_text,
-                    "src_ib_gib" => src_ib_gib} = data,
+  defpat link_data_(
+    link_text_() =
+    src_ib_gib_()
+  )
+
+  def handle_cmd(link_data_(...) = data,
                  _metadata,
                  msg,
-                 %{assigns:
-                   %{ib_identity_ib_gibs: identity_ib_gibs}
-                 } = socket) do
+                 assigns_identity_ib_gibs_(...) = socket) do
     _ = Logger.debug("yakker. src_ib_gib: #{src_ib_gib}" |> ExChalk.blue |> ExChalk.bg_white)
-    # Process.sleep(2000);
     with(
       # Validate
       {:link_text, true} <-

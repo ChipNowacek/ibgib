@@ -30,14 +30,14 @@ defmodule WebGib.Bus.Commanding.GetAdjuncts do
 
   import IbGib.{Expression, Helper, QueryOptionsFactory}
   import WebGib.Bus.Commanding.Helper
+  import WebGib.Patterns
   use IbGib.Constants, :ib_gib
 
-  def handle_cmd(%{"ib_gibs" => ib_gibs} = data,
+  def handle_cmd(ib_gibs_(...) = data,
                  _metadata,
                  msg,
-                 %{assigns:
-                   %{ib_identity_ib_gibs: identity_ib_gibs}
-                 } = socket) when is_list(ib_gibs) do
+                 assigns_identity_ib_gibs_(...) = socket) 
+    when is_list(ib_gibs) do
     _ = Logger.debug("snarky. ib_gibs: #{ib_gibs}" |> ExChalk.blue |> ExChalk.bg_yellow)
     with(
       # Validate
