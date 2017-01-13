@@ -79,8 +79,8 @@ export class CommandManager {
       case "refresh":
         t.ibScape.currentCmd = t.getCommand_Refresh(dIbGib);
         break;
-      case "allow":
-        t.ibScape.currentCmd = t.getCommand_Allow(dIbGib);
+      case "ack":
+        t.ibScape.currentCmd = t.getCommand_Ack(dIbGib);
         break;
       case "view":
         t.ibScape.currentCmd = t.getCommand_View(dIbGib);
@@ -239,8 +239,8 @@ export class CommandManager {
   getCommand_Refresh(dIbGib) {
     return new commands.RefreshCommand(this.ibScape, dIbGib);
   }
-  getCommand_Allow(dIbGib) {
-    return new commands.AllowCommand(this.ibScape, dIbGib);
+  getCommand_Ack(dIbGib) {
+    return new commands.AckCommand(this.ibScape, dIbGib);
   }
   getCommand_View(dIbGib) {
     return new commands.ViewDetailsCommand(this.ibScape, dIbGib);

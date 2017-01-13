@@ -1,4 +1,4 @@
-defmodule WebGib.Bus.Commanding.Allow do
+defmodule WebGib.Bus.Commanding.Ack do
   @moduledoc """
   Command-related code for the bus being implemented on Phoenix channels.
 

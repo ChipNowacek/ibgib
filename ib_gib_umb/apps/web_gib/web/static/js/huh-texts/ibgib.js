@@ -3,8 +3,8 @@ var huhText_IbGib = `
 ### Just what is this ibGib thing?
 
 The ibGib web app is the collaboration cloud app that _does all the things_:
-  * Take/Share Notes (comments, pics, links)
-  * Dynamically interactive blogging
+  * Keep track of notes (comments, pics, links)
+  * Collaborative blogging
   * Unified forum
   * Photo Gallery
   * :soon: Notifications to enable group messaging

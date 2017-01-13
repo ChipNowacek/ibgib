@@ -1,11 +1,10 @@
 function getSpan() {
-  let iTag_q = `<i class="fa fa-question" aria-hidden="true"></i>`;
-  let iTag_x = `<i class="fa fa-exclamation" aria-hidden="true"></i>`;
+  let iTag = `<i class="fa fa-hand-o-up" aria-hidden="true"></i>`;
   
-  return `<span style="padding: 5px; width: 70px; font-family: FontAwesome; background-color: #EBFF0F; border-radius: 15px">${iTag_q}${iTag_x}${iTag_q}</span>`;
+  return `<span style="padding: 5px; width: 70px; font-family: FontAwesome; background-color: #C7FF4F; border-radius: 15px">${iTag}</span>`;
 }
 
-var huhText_Cmd_Huh = `
+var huhText_Cmd_Goto = `
 
 ## Huh? ${getSpan()}
 
@@ -43,4 +42,4 @@ _(:construction: I'm working on ibGib messaging so you can contact me directly w
 ---
 `;
 
-export { huhText_Cmd_Huh };
+export { huhText_Cmd_Goto };

@@ -32,12 +32,12 @@ For starters, just think of this as the login.
 ### :sunglasses: :sunrise:
 
 > The city does not need the sun or the moon to shine on it,  
-> &nbsp;&nbsp; for the glory of God gives it Light,
-> &nbsp;&nbsp; and the Lamb is its lamp. 
-> The nations will walk by its Light, 
-> &nbsp;&nbsp; and the kings of the earth will bring their splendor into it.
-> On no day will its gates ever be shut, 
-> &nbsp;&nbsp; for there will be no night there.
+> &nbsp;&nbsp; for the glory of God gives it Light,  
+> &nbsp;&nbsp; and the Lamb is its lamp.  
+> The nations will walk by its Light,  
+> &nbsp;&nbsp; and the kings of the earth will bring their splendor into it.  
+> On no day will its gates ever be shut,  
+> &nbsp;&nbsp; for there will be no night there.  
 >
 > Revelation 21:23-25
 
@@ -59,15 +59,15 @@ Light as possible.
     problems of "us" and not "mine". The more data you get into the Light, the 
     more accurately your contribution can be measured.
 * Afraid of your competition?
-  * **That fear of competition is reliant upon full information not being 
-    available.** If you are providing a service for customers who will tolerate
+  * That fear of competition is reliant upon full information not being 
+    available. If you are providing a service for customers who will tolerate
     brigandry and banditry, then your customers will force you into the same
     mindset and behaviors. What is the use of gaining the world if you lose your
     soul?
-  * We are now at a point in our society where **we need cooperation to address
-    the growing complexity of the technologies that we are creating.**
+  * We are now at a point in our society where we need cooperation to address
+    the growing complexity of the technologies that we are creating.
     * This is already manifest in how Open-Source Software works. The next step
-      is **Universal, Open Data - not encapsulated & encrypted silos.**
+      is Universal, Open Data - not encapsulated & encrypted silos.
 * Afraid of persecution by others abusing this information about you?
   * Get your treatment into the Light. There are countless examples where 
     shedding Light on injustices sparks the fires required for _positive_

@@ -3,6 +3,11 @@ import { huhText_Cmd_Pic } from "./huh-texts/commands/pic";
 import { huhText_Cmd_Comment } from "./huh-texts/commands/comment";
 import { huhText_Cmd_Link } from "./huh-texts/commands/link";
 import { huhText_Cmd_Huh } from "./huh-texts/commands/huh";
+import { huhText_Cmd_Ack } from "./huh-texts/commands/ack";
+import { huhText_Cmd_Add } from "./huh-texts/commands/add";
+import { huhText_Cmd_Download } from "./huh-texts/commands/download";
+import { huhText_Cmd_IdentEmail } from "./huh-texts/commands/ident-email";
+import { huhText_Cmd_Info } from "./huh-texts/commands/info";
 
 var d3CircleRadius = 20;
 var d3LongPressMs = 900;
@@ -174,7 +179,8 @@ var d3MenuCommands = [
     "text": "Info",
     "icon": "\uf05a",
     "description": "The Information button lets you see the internal gibblies of an ibGib",
-    "color": "#CFA1C8"
+    "color": "#CFA1C8",
+    "huh": huhText_Cmd_Info
   },
   {
     "id": "menu-externallink",
@@ -190,7 +196,8 @@ var d3MenuCommands = [
     "text": "Login via email",
     "icon": "\uf090",
     "description": "The Login button will let you identify yourself with an email address",
-    "color": "#FFFFFF"
+    "color": "#FFFFFF",
+    "huh": huhText_Cmd_IdentEmail
   },
   {
     "id": "menu-refresh",
@@ -226,7 +233,8 @@ var d3MenuCommands = [
     "text": "Download from the Cloud",
     "icon": "\uf0ed",
     "description": "The Cloud Download button saves the pic/file to your local device",
-    "color": "#CFA1C8"
+    "color": "#CFA1C8",
+    "huh": huhText_Cmd_Download
   },
   {
     "id": "menu-zap",
@@ -234,7 +242,7 @@ var d3MenuCommands = [
     "text": "Zap",
     "icon": "\uf0e7",
     "description": "Zaps virtual ibGib with some juice \u26a1",
-    "color": "yellow"
+    "color": "yellow",
   },
   {
     "id": "menu-add",
@@ -243,25 +251,18 @@ var d3MenuCommands = [
     // http://www.alt-codes.net/plus-sign-symbols
     "icon": "\uf067", // http://fontawesome.io/icon/plus/
     "description": "Creates and adds a new ibGib with a given rel8n.",
-    "color": "#C7FF4F"
+    "color": "#C7FF4F",
+    "huh": huhText_Cmd_Add
   },
   {
-    "id": "menu-allow",
-    "name": "allow",
-    "text": "Allow",
+    "id": "menu-ack",
+    "name": "ack",
+    "text": "Acknowledge",
     // http://www.fileformat.info/info/unicode/char/2713/index.htm
     "icon": "\u2713", // ✓ (check mark)
-    "description": "Allow an ibGib that has been created by someone else to be directly rel8d to your ibGib.",
+    "description": "Acknowledge an ibGib that has been created by someone else to be directly rel8d to your ibGib.",
     "color": "#C7FF4F",
-    "huh": [
-      `When someone comments or adds a picture to an ibGib that **you** own, you have to accept it in order for it to be directly related to your ibGib.`,
-      ` `,
-      `When you accept an ibGib, this doesn't necessarily mean that you like or even agree with the comment. It's just saying "Ok, let's incorporate this into my ibGib so everyone can see when they come to this ibGib." However you choose to accept or reject ibGib is completely up to you.`,
-      ` `,
-      `If the content is inappropriate, especially if it is illegal, you should NOT accept it; rather, you should flag it as inappropriate.`,
-      ` `,
-      `If you want, you can comment on the ibGib that you are rejecting before actually rejecting it. This way, whoever posted it in the first place can see your reasoning/response to it.`,
-    ]
+    "huh": huhText_Cmd_Ack
   },
   // {
   //   "id": "menu-merge",

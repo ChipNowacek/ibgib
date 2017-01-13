@@ -1298,10 +1298,10 @@ export class RefreshCommand extends CommandBase {
   }
 }
 
-/** Allow an adjunct ibGib to be rel8d directly to its target ibGib. */
-export class AllowCommand extends CommandBase {
+/** Acknowledge an adjunct ibGib to be rel8d directly to its target ibGib. */
+export class AckCommand extends CommandBase {
   constructor(ibScape, d) {
-    const cmdName = "allow";
+    const cmdName = "ack";
     super(cmdName, ibScape, d);
   }
 
@@ -1316,7 +1316,7 @@ export class AllowCommand extends CommandBase {
 
     let msg = t.getMessage();
     t.ibScape.commandMgr.bus.send(msg, (successMsg) => {
-      console.log(`AllowCommand successMsg: ${JSON.stringify(successMsg)}`)
+      console.log(`AckCommand successMsg: ${JSON.stringify(successMsg)}`)
       t.handleSubmitResponse(successMsg);
     }, (errorMsg) => {
       console.error(`${t.cmdName} command errored. Msg: ${JSON.stringify(errorMsg)}`);

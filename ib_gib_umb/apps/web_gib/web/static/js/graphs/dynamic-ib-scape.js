@@ -882,7 +882,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       }
 
       if (ibAuthz.isAuthorizedForMut8OrRel8(adjunctTargetIbGibJson, t.currentIdentityIbGibs)) {
-        t.addCmdVirtualNode(d, "allow", /*fadeTimeoutMs*/ 0)
+        t.addCmdVirtualNode(d, "ack", /*fadeTimeoutMs*/ 0)
       }
     });
   }

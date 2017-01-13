@@ -10,7 +10,7 @@ defmodule WebGib.Bus.Commanding do
 
   require Logger
 
-  alias WebGib.Bus.Commanding.{Fork, Comment, Refresh, BatchRefresh, Allow, GetAdjuncts, Mut8Comment, Link}
+  alias WebGib.Bus.Commanding.{Fork, Comment, Refresh, BatchRefresh, Ack, GetAdjuncts, Mut8Comment, Link}
   import WebGib.Bus.Commanding.Helper
 
   def handle_cmd(cmd_name, data, metadata, msg, socket) do
@@ -31,8 +31,8 @@ defmodule WebGib.Bus.Commanding do
   defp handle_cmd_impl("batchrefresh", data,  metadata, msg, socket) do
     BatchRefresh.handle_cmd(data, metadata, msg, socket)
   end
-  defp handle_cmd_impl("allow", data,  metadata, msg, socket) do
-    Allow.handle_cmd(data, metadata, msg, socket)
+  defp handle_cmd_impl("ack", data,  metadata, msg, socket) do
+    Ack.handle_cmd(data, metadata, msg, socket)
   end
   defp handle_cmd_impl("getadjuncts", data,  metadata, msg, socket) do
     GetAdjuncts.handle_cmd(data, metadata, msg, socket)

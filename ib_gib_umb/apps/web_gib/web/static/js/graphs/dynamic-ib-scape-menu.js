@@ -165,7 +165,7 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
     } else {
       // Concrete ibGib
       if (d.ibGib && d.ibGib === "ib^gib") {
-        commands = commands.concat(["fork", "goto", "identemail", "query"]);
+        commands = commands.concat(["info", "fork", "goto", "identemail", "query"]);
       } else {
         commands = commands.concat([/*"view",*/ "fork", "goto", "comment", "pic", "link", "info", "refresh"]);
       }

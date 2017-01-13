@@ -2,7 +2,7 @@ import * as ibHelper from './ibgib-helper';
 
 /**
  * Checks to see if the given `currentIdentityIbGibs` are authorized to Perform
- * an `AllowCommand` on the `targetIbGibJson`.
+ * an `AckCommand` on the `targetIbGibJson`.
  *
  * This is my only authorization function, so I'm just putting it in this
  * helper file for now. In the future, however, we should refactor this into its
