@@ -5,7 +5,7 @@ function getSpan() {
 
 var huhText_Cmd_IdentEmail = `
 
-## Login via email ${getSpan()}
+## Identify ${getSpan()}
 
 This command will identify you in ibGib with your email address.
 
@@ -15,12 +15,6 @@ For starters, just think of this as the login.
 
 ### :eyeglasses: :point_up:
 
-* The security pin is optional.
-  * This adds a little bit of security when identifying yourself by 
-    your email. 
-  * This is not a "password". It's just a one-time pin that you enter before
-    we send you the email. Then when you click on the link, you'll enter it
-    again. After that, it disappears forever. 
 * You can identify yourself with multiple email addresses. 
   * You can do this with as many email addresses as you want, depending on how
     security-conscious you are.
@@ -28,6 +22,19 @@ For starters, just think of this as the login.
     query for any of those identities.
   * Every time you add an email address, you increase the level of required
     identification when mut8ing or rel8ing that ibGib to other ibGib. 
+* The security pin is optional.
+  * This adds a little bit of security when identifying yourself by 
+    your email. 
+  * This is not a "password". It's just a one-time pin that you enter before
+    we send you the email. Then when you click on the link, you'll enter it
+    again. After that, it disappears forever. 
+* You must open the link in the _same_ browser in which you started the 
+  identification process. 
+  * For example...
+    * You can't click identify on your phone and then open the email link on
+      your laptop. 
+    * You can't click identify in a Firefox browser and then open the email link
+      in Chrome.
 
 ### :sunglasses: :sunrise:
 
@@ -43,12 +50,12 @@ For starters, just think of this as the login.
 
 Right now, almost all services that you do business with record information on
 what you do to improve their services - this makes sense. They want to get 
-better, and you want them to get better to provide better products. They work
+better, and you want them to get better to provide better services. They work
 with diligence to protect your information, but guess what? That's really hard.
-And by that, I mean _really_ hard. And it only takes _one_ entity to leak your
-information in order to have this break - wow. 
+And by that, I mean _really_ hard. And it only takes a single entity to leak
+your information in order to have this break - wow. This is very fragile.
 
-ibGib is taking a different approach to security than other cloud services.
+So ibGib is taking a different approach to security than other cloud services.
 Instead of keeping your info private, the goal is to get as much info into the
 Light as possible. 
 
@@ -72,11 +79,14 @@ Light as possible.
   * Get your treatment into the Light. There are countless examples where 
     shedding Light on injustices sparks the fires required for _positive_
     change.
+* The list goes on...
     
-I could go on and on here, and maybe elsewhere I shall. But this is a key tenet
-of the Bible: bring that which is evil and shameful into the Light so that it 
-may turn into good. Don't be afraid, and have confidence that the Lord is your 
-helper. In the future, all will be brought into the Light.
+This is a key tenet of the Bible: bring that which is evil and shameful into
+the Light so that it may turn into good. This is what the whole thing is working
+towards, the new heaven on earth, _which is in the Light of God_. The ability
+for us to function entirely within the Light with self-control and without
+censorship. Don't be afraid, and have confidence that the Lord is your helper -
+the Truth is your helper. In the future, all will be brought into the Light.
 
 ---
 `;

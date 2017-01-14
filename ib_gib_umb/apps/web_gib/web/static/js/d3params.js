@@ -8,6 +8,14 @@ import { huhText_Cmd_Add } from "./huh-texts/commands/add";
 import { huhText_Cmd_Download } from "./huh-texts/commands/download";
 import { huhText_Cmd_IdentEmail } from "./huh-texts/commands/ident-email";
 import { huhText_Cmd_Info } from "./huh-texts/commands/info";
+import { huhText_Cmd_Zap } from "./huh-texts/commands/zap";
+import { huhText_Cmd_View } from "./huh-texts/commands/view";
+import { huhText_Cmd_Refresh } from "./huh-texts/commands/refresh";
+import { huhText_Cmd_ExternalLink } from "./huh-texts/commands/external-link";
+import { huhText_Cmd_Query } from "./huh-texts/commands/query";
+import { huhText_Cmd_Mut8Comment } from "./huh-texts/commands/mut8-comment";
+import { huhText_Cmd_Goto } from "./huh-texts/commands/goto";
+
 
 var d3CircleRadius = 20;
 var d3LongPressMs = 900;
@@ -147,7 +155,8 @@ var d3MenuCommands = [
     "text": "Mut8 Comment",
     "icon": "\u2622",
     "description": "The Mut8 button will allow you to edit the ibGib",
-    "color": "lightblue"
+    "color": "lightblue",
+    "huh": huhText_Cmd_Mut8Comment
   },
   {
     "id": "menu-view",
@@ -155,23 +164,26 @@ var d3MenuCommands = [
     "text": "View",
     "icon": "\uf06e", // :eye: 
     "description": "The View button will lets you look more closely at the ibGib.",
-    "color": "#CFA1C8"
+    "color": "#CFA1C8",
+    "huh": huhText_Cmd_View
   },
   {
     "id": "menu-query",
     "name": "query",
     "text": "Query",
     "icon": "\uf002",
-    "description": "The Query button will show you a search screen where you can look for other ibGib",
-    "color": "#C7FF4F"
+    "description": "The Query button will show you a search screen where you can look for other ibGib.",
+    "color": "#C7FF4F",
+    "huh": huhText_Cmd_Query
   },
   {
     "id": "menu-goto",
     "name": "goto",
     "text": "Goto",
     "icon": "\uf0a6",
-    "description": "The goto button will navigate you to the selected ibGib. ",
-    "color": "#C7FF4F"
+    "description": "The Goto button will navigate you to the selected ibGib, setting it as the Context.",
+    "color": "#C7FF4F",
+    "huh": huhText_Cmd_Goto
   },
   {
     "id": "menu-info",
@@ -187,15 +199,16 @@ var d3MenuCommands = [
     "name": "externallink",
     "text": "Open external link",
     "icon": "\uf08e",
-    "description": "The Open Link button will open a link in your browser",
-    "color": "#C7FF4F"
+    "description": "The Open External Link button will open a link in a new tab/window of your browser",
+    "color": "#C7FF4F",
+    "huh": huhText_Cmd_ExternalLink
   },
   {
     "id": "menu-identemail",
     "name": "identemail",
-    "text": "Login via email",
+    "text": "Identify",
     "icon": "\uf090",
-    "description": "The Login button will let you identify yourself with an email address",
+    "description": "This lets you identify yourself with an email address",
     "color": "#FFFFFF",
     "huh": huhText_Cmd_IdentEmail
   },
@@ -206,26 +219,7 @@ var d3MenuCommands = [
     "icon": "\uf021",
     "description": "The Refresh button refreshes the selected ibGib to the most up-to-date version",
     "color": "#C7FF4F",
-    "huh": [
-      `Time is a big deal in ibGib.`,
-      ` `,
-      `Every ibGib that you look at is kinda like a cartoon. Each ibGib has a snapshot that is a single frame in time, and at any one point in time you're just looking at that snapshot.`,
-      ``,
-      `Refresh brings you to the most recent snapshot in a timeline.`,
-      ``,
-      `...Wait...timeline? Huh?`,
-      ``,
-      `You can fork ibGib timelines with the "Fork" command. When you do this, you create a **new** timeline for the "same" thing. So when you do a Refresh on an ibGib, it always gets you the most recent version **in that timeline**.`,
-      ``,
-      `For more info on timelines, check out the "Fork" command's Huh?!? (It's the funny "Spock Hand" command).`,
-      ``,
-      `Also, every time you refresh a _Source_ ibGib (The big-ish, non-yellow free-floating ibGibs), any updates will update your current _Context_ ibGib (The BIG yellow ibGib).`,
-      ``,
-      `For more info on the Context ibGib, check out its Huh?!? by clicking on the BIG yellow ibGib and choosing the ""\uf128 \uf12a \uf128" button`,
-      `It's basically like Back To The Future II. If you haven't, go watch that movie (like right now). I'll wait...`,
-      ``,
-      `Now that you've seen that movie and are thus an Alternate Timeline Expert, we can talk using that vocabulary. So when they first go into the Future, that is their current "Hill Valley" ibGib timeline. Then future Old Biff takes the Delorian back in time and **forks`,
-    ]
+    "huh": huhText_Cmd_Refresh
   },
   {
     "id": "menu-download",
@@ -243,6 +237,7 @@ var d3MenuCommands = [
     "icon": "\uf0e7",
     "description": "Zaps virtual ibGib with some juice \u26a1",
     "color": "yellow",
+    "huh": huhText_Cmd_Zap
   },
   {
     "id": "menu-add",

@@ -15,11 +15,11 @@ The ibGib web app is the collaboration cloud app that _does all the things_:
 Every change to every ibGib is tracked in timelines and retained, every ibGib
 is attributed to its owners and contributors, and everything is in the open and
 in the Light. This enables massive collaboration, tracking attribution and 
-accreditation and then some throughout each and every ibGib's evolution.
+accreditation (and more) throughout each and every ibGib's evolution.
 
-It does all of these things through its unique ibGib engine, and currently this
-is made available to users only through the web app (that you're using right now
-reading this). But you don't have to be a computer genius to use it. 
+It does all of these things through its unique ibGib engine, which currently
+is made available to users only through this web app (the one that you're using
+right now to read this). But you don't have to be a computer genius to use it. 
 
 ### :baby: :baby_bottle:
 
