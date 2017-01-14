@@ -103,8 +103,8 @@ defmodule IbGib.Transform.Plan.Builder do
   @doc """
   Starts a plan info statement.
   """
-  def plan(identity_ib_gibs, src, opts)
-    when is_list(identity_ib_gibs) and length(identity_ib_gibs) >= 1 do
+  def plan(identity_ib_gibs, src, opts) do
+    # when is_list(identity_ib_gibs) and length(identity_ib_gibs) >= 1 do
       case validate_identity_ib_gibs(identity_ib_gibs) do
         {:ok, :ok} ->
           plan = %{

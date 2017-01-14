@@ -49,9 +49,9 @@ export class CommandManager {
       case "query":
         t.ibScape.currentCmd = t.getCommand_Query(dIbGib);
         break;
-      case "help":
-        t.ibScape.currentCmd = t.getCommand_Help(dIbGib);
-        break;
+      // case "help":
+      //   t.ibScape.currentCmd = t.getCommand_Help(dIbGib);
+      //   break;
       case "huh":
         t.ibScape.currentCmd = t.getCommand_Huh(dIbGib);
         break;
@@ -79,8 +79,8 @@ export class CommandManager {
       case "refresh":
         t.ibScape.currentCmd = t.getCommand_Refresh(dIbGib);
         break;
-      case "allow":
-        t.ibScape.currentCmd = t.getCommand_Allow(dIbGib);
+      case "ack":
+        t.ibScape.currentCmd = t.getCommand_Ack(dIbGib);
         break;
       case "view":
         t.ibScape.currentCmd = t.getCommand_View(dIbGib);
@@ -90,6 +90,9 @@ export class CommandManager {
         break;
       case "externallink":
         t.ibScape.currentCmd = t.getCommand_ExternalLink(dIbGib);
+        break;
+      case "zap":
+        t.ibScape.currentCmd = t.getCommand_Zap(dIbGib);
         break;
       default:
         console.error(`unknown cmdName: ${cmdName}`);
@@ -206,9 +209,9 @@ export class CommandManager {
   //   $("#ident_form_data_text").focus();
   // }
 
-  getCommand_Help(dIbGib) {
-    return new commands.HelpDetailsCommand(this.ibScape, dIbGib);
-  }
+  // getCommand_Help(dIbGib) {
+  //   return new commands.HelpDetailsCommand(this.ibScape, dIbGib);
+  // }
   getCommand_Huh(dIbGib) {
     return new commands.HuhDetailsCommand(this.ibScape, dIbGib);
   }
@@ -236,8 +239,8 @@ export class CommandManager {
   getCommand_Refresh(dIbGib) {
     return new commands.RefreshCommand(this.ibScape, dIbGib);
   }
-  getCommand_Allow(dIbGib) {
-    return new commands.AllowCommand(this.ibScape, dIbGib);
+  getCommand_Ack(dIbGib) {
+    return new commands.AckCommand(this.ibScape, dIbGib);
   }
   getCommand_View(dIbGib) {
     return new commands.ViewDetailsCommand(this.ibScape, dIbGib);
@@ -248,6 +251,10 @@ export class CommandManager {
   getCommand_ExternalLink(dIbGib) {
     return new commands.ExternalLinkCommand(this.ibScape, dIbGib);
   }
+  getCommand_Zap(dIbGib) {
+    return new commands.ZapCommand(this.ibScape, dIbGib);
+  }
+
   // execRefresh(dIbGib) {
   //   location.href = `/ibgib/${dIbGib.ibgib}?latest=true`
   // }

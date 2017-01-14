@@ -8,6 +8,7 @@ defmodule WebGib.IbGibController do
   # ----------------------------------------------------------------------------
 
   use WebGib.Web, :controller
+  import Expat
 
   use IbGib.Constants, :validation
   use WebGib.Constants, :validation
@@ -20,6 +21,13 @@ defmodule WebGib.IbGibController do
   import IbGib.QueryOptionsFactory
   import WebGib.Validate
 
+  # ----------------------------------------------------------------------------
+  # Expat Reusable Patterns
+  # ----------------------------------------------------------------------------
+  defpat ib_gib_       %{"ib_gib" => ib_gib}
+  defpat dest_ib_      %{"dest_ib" => dest_ib}
+  defpat src_ib_gib_   %{"src_ib_gib" => src_ib_gib}
+  
   # ----------------------------------------------------------------------------
   # Function Plugs
   # ----------------------------------------------------------------------------
@@ -219,7 +227,10 @@ defmodule WebGib.IbGibController do
   # JSON Api
   # ----------------------------------------------------------------------------
 
-  def get(conn, %{"ib_gib" => ib_gib} = params) do
+  # defpat ep_get_params(ep_ib_gib())
+
+  def get(conn, ib_gib_(ib_gib: ib_gib) = params) do
+  # def get(conn, %{"ib_gib" => ib_gib} = params) do
     # _ = Logger.warn "mimicking latency....don't do this in production!"
     # Process.sleep(RandomGib.Get.one_of([1500, 500, 1000, 2000]))
     _ = Logger.debug "JSON get. conn: #{inspect conn}"
@@ -238,12 +249,14 @@ defmodule WebGib.IbGibController do
     json(conn, %{error: @emsg_invalid_ibgib_url})
   end
 
+
   @doc """
   Gets the ib_gib, it's ib, gib, data, and rel8ns in a format for consumption
   by the d3 engine.
 
   It duplicates the plain `get/2` call, but it's the best I got at the moment.
   """
+  # def getd3(conn, ib_gib_(ib_gib: ib_gib) = params) do
   def getd3(conn, %{"ib_gib" => ib_gib} = params) do
     # _ = Logger.warn "mimicking latency....don't do this in production!"
     # Process.sleep(5000)
@@ -484,7 +497,13 @@ defmodule WebGib.IbGibController do
   # Fork
   # ----------------------------------------------------------------------------
 
-  def fork(conn, %{"fork_form_data" => %{"dest_ib" => dest_ib, "src_ib_gib" => src_ib_gib} = form_data} = params) when is_nil(dest_ib) or dest_ib == "" do
+  defpat fork_form_data_(
+    dest_ib_() = 
+    src_ib_gib_()
+  )
+  
+  def fork(conn, %{"fork_form_data" => fork_form_data_(...) = form_data} = params) 
+    when is_nil(dest_ib) or dest_ib == "" do
     Logger.debug "whaaaaat. fork new something"
     dest_ib =
       if valid_ib_gib?(src_ib_gib) do
@@ -497,22 +516,26 @@ defmodule WebGib.IbGibController do
     new_params = Map.put(params, "fork_form_data", new_form_data)
     fork(conn, new_params)
   end
-  def fork(conn, %{"fork_form_data" => %{"dest_ib" => dest_ib, "src_ib_gib" => src_ib_gib}} = params) do
+  def fork(conn, %{"fork_form_data" => fork_form_data_(...) = form_data} = params) do
     _ = Logger.debug "conn: #{inspect conn}"
     _ = Logger.debug "conn.params: #{inspect conn.params}"
     _ = Logger.debug "abxparams: #{inspect params}"
 
-    if validate(:dest_ib, dest_ib) and validate(:ib_gib, src_ib_gib) do
-      do_fork(conn, %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib})
-    else
-      redirect_ib_gib =
-        if valid_ib_gib?(src_ib_gib), do: src_ib_gib, else: @root_ib_gib
-      conn
-      |> put_flash(:error, @emsg_invalid_dest_ib)
-      |> redirect(to: "/ibgib/#{redirect_ib_gib}")
-    end
+
+    fork(conn, form_data)
+
+    # if validate(:dest_ib, dest_ib) and validate(:ib_gib, src_ib_gib) do
+    #   do_fork(conn, %{"src_ib_gib" => src_ib_gib, "dest_ib" => dest_ib})
+    # else
+    #   redirect_ib_gib =
+    #     if valid_ib_gib?(src_ib_gib), do: src_ib_gib, else: @root_ib_gib
+    #   conn
+    #   |> put_flash(:error, @emsg_invalid_dest_ib)
+    #   |> redirect(to: "/ibgib/#{redirect_ib_gib}")
+    # end
   end
-  def fork(conn, %{"dest_ib" => dest_ib, "src_ib_gib" => src_ib_gib} = _params) do
+  def fork(conn, dest_ib_(...) = src_ib_gib_(...) = _params) do
+  # def fork(conn, %{"dest_ib" => dest_ib, "src_ib_gib" => src_ib_gib} = _params) do
     _ = Logger.debug "conn: #{inspect conn}"
 
     if validate(:dest_ib, dest_ib) and validate(:ib_gib, src_ib_gib) do

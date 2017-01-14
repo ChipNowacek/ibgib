@@ -4,7 +4,8 @@ defmodule WebGib.Bus.Commanding.Fork do
 
   (Naming things is hard oy)
   """
-
+  
+  import Expat # https://github.com/vic/expat
   require Logger
 
   alias IbGib.Transform.Plan.Factory, as: PlanFactory
@@ -12,15 +13,22 @@ defmodule WebGib.Bus.Commanding.Fork do
   import IbGib.Expression
   import IbGib.Helper
   import WebGib.Bus.Commanding.Helper
+  import WebGib.Patterns
   use IbGib.Constants, :ib_gib
 
-  def handle_cmd(%{"dest_ib" => dest_ib,
-                   "context_ib_gib" => context_ib_gib,
-                   "src_ib_gib" => src_ib_gib} = data,
-                  metadata,
-                  msg,
-                  socket)
+  defpat fork_data_(
+    dest_ib_() =
+    context_ib_gib_() =
+    src_ib_gib_()
+  )
+  
+  def handle_cmd(fork_data_(...) = data,
+                 metadata,
+                 msg,
+                 socket)
     when is_nil(dest_ib) or dest_ib == "" do
+    _ = Logger.debug("shook this path yo" |> ExChalk.blue |> ExChalk.bg_white)
+
     # dest_ib is empty or nil, so fill it with either the src ib or a new id
     dest_ib =
       if valid_ib_gib?(src_ib_gib) do
@@ -34,15 +42,13 @@ defmodule WebGib.Bus.Commanding.Fork do
 
     handle_cmd(data, metadata, msg, socket)
   end
-  def handle_cmd(%{"dest_ib" => dest_ib,
-                   "context_ib_gib" => context_ib_gib,
-                   "src_ib_gib" => src_ib_gib} = data,
+  def handle_cmd(fork_data_(...) = data,
                  _metadata,
                  msg,
                  %{assigns:
                    %{ib_identity_ib_gibs: identity_ib_gibs}
                  } = socket) do
-    _ = Logger.debug("yakker. src_ib_gib: #{src_ib_gib}" |> ExChalk.blue |> ExChalk.bg_white)
+    _ = Logger.debug("yakkerzz. src_ib_gib: #{src_ib_gib}" |> ExChalk.blue |> ExChalk.bg_white)
     with(
       # Validate
       {:dest_ib, true} <-

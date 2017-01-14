@@ -49,7 +49,8 @@ defmodule WebGib.Mixfile do
      {:ib_gib, in_umbrella: true},
      {:marker, "~> 2.0"},
      {:mailgun, github: "bill-mybiz/mailgun", branch: "master", override: true},
-     {:exchalk, "~> 1.0.1"}
+     {:exchalk, "~> 1.0.1"},
+     {:expat, "~> 0.1"}
     ]
   end
 

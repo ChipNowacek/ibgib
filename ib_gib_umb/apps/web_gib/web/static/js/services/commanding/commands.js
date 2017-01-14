@@ -1,12 +1,21 @@
 import * as d3 from 'd3';
-var md = require('markdown-it')();
+
+var md = require('markdown-it')({
+  html: true,
+  linkify: true,
+  typographer: true,
+});
 var emoji = require('markdown-it-emoji');
 md.use(emoji);
 
 import * as ibHelper from '../ibgib-helper';
 import { d3MenuCommands, d3RootUnicodeChar } from '../../d3params';
-import { huhText_IbGib } from './huh-texts/ibgib';
-import { huhText_Context } from './huh-texts/context';
+import { huhText_IbGib } from '../../huh-texts/ibgib';
+import { huhText_Context } from '../../huh-texts/context';
+import { huhText_Root } from '../../huh-texts/root';
+import { huhText_Source } from '../../huh-texts/source';
+import { huhText_Huh } from '../../huh-texts/huh';
+import { huhText_Command } from '../../huh-texts/command';
 
 // Most (_but not all_) commands are related to menu commands (in `d3params.js`)
 
@@ -280,6 +289,7 @@ export class HtmlDetailsCommandBase extends DetailsCommandBase {
     t.htmlDiv =
       t.detailsView
         .append("div")
+        .attr("class", "ib-details-html-div")
         .style("height", "100%")
         .style("width", "100%")
         .style("overflow", "auto");
@@ -334,70 +344,70 @@ export class InfoDetailsCommand extends DetailsCommandBase {
   }
 }
 
-export class HelpDetailsCommand extends DetailsCommandBase {
-  constructor(ibScape, d) {
-    const cmdName = "help";
-    super(cmdName, ibScape, d);
-  }
-
-  init() {
-    let t = this;
-
-    console.log("initializing help...");
-    let text = "Hrmmm...you shouldn't be seeing this! This means that I " +
-      "haven't included help for this yet. Let me know please :-O";
-
-    if (t.d.virtualId) {
-      text = `This is a virtual ibGib. You can zap this ibGib by clicking on it.`;
-      switch (t.d.type) {
-        case "cmd":
-          text += ` In this case, zapping will execute its command.`;
-          break;
-        case "ibGib":
-          text += ` In this case, zapping will load the full ibGib.`;
-          break;
-        case "rel8n":
-          text += ` In this case, zapping will show all of the ${t.d.name} ibGib.`
-        default:
-          // do nothing
-      }
-    } else if (t.d.ibGib === "ib^gib") {
-      text = `This is the root ibGib. Click anywhere in empty space to bring it up.`;
-    } else {
-      let ib = t.d.ibGibJson.ib;
-      switch (ib) {
-        case "query_result":
-          text = `This is a query result. It contains results from a search query.`
-          break;
-
-        case "identity":
-          text = `This is an identity ibGib. It gives you information about who produced what ibGib. You can add layers of identities to "provide more identification", like showing someone your driver's license, your voter's card, club membership, etc. Each identity's ib should start with either "session" or "email". Session is an anonymous id and should be attached to each and every ibGib. Email ids show the  email that was used to "log in" (but you can log in with multiple emails!). All authenticated identities should be "stamped" (the "gib" starts and ends with "ibGib", e.g. "ibGib_LETTERSandNUMBERS_ibGib").`;
-          break;
-
-        case "link":
-          let linkText = ibHelper.getDataText(t.d.ibGibJson);
-          text = `This is a hyperlink to somewhere outside of ibGib. You can open it in a new tab by clicking the external link button. If you want to goto the link's ibGib, then click the goto navigation. (We're working on an improved experience with adding comments, pictures, etc.) \n\nLink: "${linkText}"`;
-          break;
-
-        default:
-          text = `These are ibGib. Some are pictures, others are comments or links. Just try clicking, long-clicking, and double-clicking stuff. Don't worry, you won't break anything! ʘ‿ʘ`;
-
-      }
-    }
-
-    switch (t.d.render) {
-      case "image":
-        text += ` This ibGib should be shown as an image. You can download the full image, view it fullscreen, and more.`
-        break;
-      case "text":
-        text += ` This ibGib contains text.`
-      default:
-        // do nothing
-    }
-
-    $("#ib-help-details-text").text(text);
-  }
-}
+// export class HelpDetailsCommand extends DetailsCommandBase {
+//   constructor(ibScape, d) {
+//     const cmdName = "help";
+//     super(cmdName, ibScape, d);
+//   }
+//
+//   init() {
+//     let t = this;
+//
+//     console.log("initializing help...");
+//     let text = "Hrmmm...you shouldn't be seeing this! This means that I " +
+//       "haven't included help for this yet. Let me know please :-O";
+//
+//     if (t.d.virtualId) {
+//       text = `This is a virtual ibGib. You can zap this ibGib by clicking on it.`;
+//       switch (t.d.type) {
+//         case "cmd":
+//           text += ` In this case, zapping will execute its command.`;
+//           break;
+//         case "ibGib":
+//           text += ` In this case, zapping will load the full ibGib.`;
+//           break;
+//         case "rel8n":
+//           text += ` In this case, zapping will show all of the ${t.d.name} ibGib.`
+//         default:
+//           // do nothing
+//       }
+//     } else if (t.d.ibGib === "ib^gib") {
+//       text = `This is the root ibGib. Click anywhere in empty space to bring it up. `;
+//     } else {
+//       let ib = t.d.ibGibJson.ib;
+//       switch (ib) {
+//         case "query_result":
+//           text = `This is a query result. It contains results from a search query.`
+//           break;
+//
+//         case "identity":
+//           text = `This is an identity ibGib. It gives you information about who produced what ibGib. You can add layers of identities to "provide more identification", like showing someone your driver's license, your voter's card, club membership, etc. Each identity's ib should start with either "session" or "email". Session is an anonymous id and should be attached to each and every ibGib. Email ids show the  email that was used to "log in" (but you can log in with multiple emails!). All authenticated identities should be "stamped" (the "gib" starts and ends with "ibGib", e.g. "ibGib_LETTERSandNUMBERS_ibGib").`;
+//           break;
+//
+//         case "link":
+//           let linkText = ibHelper.getDataText(t.d.ibGibJson);
+//           text = `This is a hyperlink to somewhere outside of ibGib. You can open it in a new tab by clicking the external link button. If you want to goto the link's ibGib, then click the goto navigation. (We're working on an improved experience with adding comments, pictures, etc.) \n\nLink: "${linkText}"`;
+//           break;
+//
+//         default:
+//           text = `These are ibGib. Some are pictures, others are comments or links. Just try clicking, long-clicking, and double-clicking stuff. Don't worry, you won't break anything! ʘ‿ʘ`;
+//
+//       }
+//     }
+//
+//     switch (t.d.render) {
+//       case "image":
+//         text += ` This ibGib should be shown as an image. You can download the full image, view it fullscreen, and more.`
+//         break;
+//       case "text":
+//         text += ` This ibGib contains text.`
+//       default:
+//         // do nothing
+//     }
+//
+//     $("#ib-help-details-text").text(text);
+//   }
+// }
 
 export class HuhDetailsCommand extends HtmlDetailsCommandBase {
   constructor(ibScape, d) {
@@ -409,73 +419,70 @@ export class HuhDetailsCommand extends HtmlDetailsCommandBase {
     super.init();
     let t = this;
 
-    if (t.d.virtualId) {
-      switch (t.d.type) {
-        case "cmd":
-          t.addCmdHtml();
-          break;
-        case "ibGib":
-          t.addVirtualIbGibHtml();
-          break;
-        case "rel8n":
-          t.addRel8nHtml();
-        default:
-          console.error(`Unknown node type: ${JSON.stringify(t.d)}`);
-      }
-    }
+    t.htmlDiv
+      .style("font-family", "Impact")
+      .style("font-size", "25px");
 
+    if (t.d.type === "cmd") { t.addCmdHtml(); }
+
+    t.addHuhHtml();
+
+    if (t.d.isRoot) { t.addRootHtml(); } 
+    
     if (t.d.isContext) {
       t.addContextHtml();
+    } else if (t.d.isSource) {
+      t.addSourceHtml();
     }
 
-    if (t.d.isRoot) {
-      t.addRootHtml();
-    } else {
-      t.addIbGibHtml();
-    }
+    t.addIbGibHtml();
   }
 
   addCmdHtml() {
     let t = this;
     let cmd = t.d.cmd;
-    let iconWidth = cmd.icon.length === 1 ? "70px" : "90px";
-
-    t.htmlDiv
-      .append("h2")
-      .text(`Command: ${cmd.text}  `)
-      .append("span")
-        .style("padding", "5px")
-        .style("width", iconWidth)
-        .style("font-family", "FontAwesome")
-        .style("background-color", cmd.color)
-        .style("border-radius", "15px")
-        .text(cmd.icon)
-
-    t.htmlDiv
-      .append("p")
-      .text(cmd.description)
-
-    if (cmd.huh && cmd.huh.length > 0) {
-      t.htmlDiv
-        .append("h3")
-        .text(`Command Details`);
-      cmd.huh.forEach(h => {
-        t.htmlDiv
-          .append("div")
-          .html(md.render(h));
-          // .text(h);
-      });
-    }
-
-    t.htmlDiv
-      .append("h3")
-      .text(`What are Commands?`);
-    t.htmlDiv
-      .append("p")
-      .text(`All of these circles and squares (and lines)...they're all ibGib. And the one you've just chosen is a Command. These are basically buttons that tell ibGib to do something.`)
-    t.htmlDiv
-      .append("p")
-      .text(`You can find common commands for a given ibGib by clicking on it, and a full set of commands in the ibGib's pop-up menu (long-press the ibGib).`);
+    
+    t.addSection(t.d.cmd.name, `${t.d.cmd.text}?`, t.d.cmd.huh);
+    t.addSection("commands", `Commands?`, huhText_Command);
+    
+    // let iconWidth = cmd.icon.length === 1 ? "70px" : "90px";
+    // 
+    // t.htmlDiv
+    //   .append("h2")
+    //   .text(`Command: ${cmd.text}  `)
+    //   .append("span")
+    //     .style("padding", "5px")
+    //     .style("width", iconWidth)
+    //     .style("font-family", "FontAwesome")
+    //     .style("background-color", cmd.color)
+    //     .style("border-radius", "15px")
+    //     .text(cmd.icon)
+    // 
+    // t.htmlDiv
+    //   .append("p")
+    //   .text(cmd.description)
+    // 
+    // if (cmd.huh && cmd.huh.length > 0) {
+    //   t.htmlDiv
+    //     .append("h3")
+    //     .text(`Command Details`);
+    //   cmd.huh.forEach(h => {
+    //     t.htmlDiv
+    //       .append("div")
+    //       .html(md.render(h));
+    //       // .text(h);
+    //   });
+    // }
+    // 
+    // t.htmlDiv
+    //   .append("h3")
+    //   .text(`What are Commands?`);
+    // t.htmlDiv
+    //   .append("p")
+    //   .text(`All of these circles and squares (and lines)...they're all ibGib. And the one you've just chosen is a Command. These are basically buttons that tell ibGib to do something.`)
+    // t.htmlDiv
+    //   .append("p")
+    //   .text(`You can find common commands for a given ibGib by clicking on it, and a full set of commands in the ibGib's pop-up menu (long-press the ibGib).`);
 
   }
 
@@ -497,22 +504,49 @@ export class HuhDetailsCommand extends HtmlDetailsCommandBase {
       .append("p")
       .text("yo this is some rel8n help text")
   }
+  addHuhHtml() {
+    let t = this;
+    t.addSection("huh", "Huh?!?", huhText_Huh);
+  }
   addRootHtml() {
     let t = this;
-    t.htmlDiv
-      .append("h2")
-      .text("Root")
-    t.htmlDiv
-      .append("p")
-      .text("yo this is some root help text")
+    t.addSection("root", "The Root?", huhText_Root);
   }
   addContextHtml() {
     let t = this;
-    t.htmlDiv.append("div").html(md.render(huhText_Context));
+    t.addSection("context", "Context?", huhText_Context);
+  }
+  addSourceHtml() {
+    let t = this;
+    t.addSection("source", "Sources?", huhText_Source);
   }
   addIbGibHtml() {
     let t = this;
-    t.htmlDiv.append("div").html(md.render(huhText_IbGib));
+    t.addSection("ibgib", "ibGib?", huhText_IbGib);
+  }
+  
+  addSection(sectionName, title, contentText) {
+    let t = this;
+    let sectionId = `ib-details-huh-${sectionName}`;
+    t.htmlDiv
+      .append("button")
+        .attr("class", "accordion")
+        .on("click", function() {
+          this.classList.toggle("active");
+          let panel = this.nextElementSibling;
+      	  if (panel.style.maxHeight){
+        	  panel.style.maxHeight = null;
+          } else {
+        	  panel.style.maxHeight = panel.scrollHeight + 'px';
+          } 
+        })
+      .append("h1")
+      .text(title)
+    t.htmlDiv
+      .append("div")
+      .attr("id", sectionId)
+      .attr("class", "ib-details-html-div panel")
+      .html(md.render(contentText));
   }
 }
 
@@ -1264,10 +1298,10 @@ export class RefreshCommand extends CommandBase {
   }
 }
 
-/** Allow an adjunct ibGib to be rel8d directly to its target ibGib. */
-export class AllowCommand extends CommandBase {
+/** Acknowledge an adjunct ibGib to be rel8d directly to its target ibGib. */
+export class AckCommand extends CommandBase {
   constructor(ibScape, d) {
-    const cmdName = "allow";
+    const cmdName = "ack";
     super(cmdName, ibScape, d);
   }
 
@@ -1282,7 +1316,7 @@ export class AllowCommand extends CommandBase {
 
     let msg = t.getMessage();
     t.ibScape.commandMgr.bus.send(msg, (successMsg) => {
-      console.log(`AllowCommand successMsg: ${JSON.stringify(successMsg)}`)
+      console.log(`AckCommand successMsg: ${JSON.stringify(successMsg)}`)
       t.handleSubmitResponse(successMsg);
     }, (errorMsg) => {
       console.error(`${t.cmdName} command errored. Msg: ${JSON.stringify(errorMsg)}`);
@@ -1361,10 +1395,11 @@ export class BatchRefreshCommand extends CommandBase {
     // super.exec();
 
     let t = this;
-    // console.log(`${t.cmdName} cmd exec`);
+    console.log(`${t.cmdName} cmd exec`);
 
     let msg = t.getMessage();
     t.ibScape.commandMgr.bus.send(msg, (successMsg) => {
+      console.log(`${t.cmdName} successMsg: ${JSON.stringify(successMsg)}`);
       if (t.successCallback) {
          t.successCallback(successMsg);
        }
@@ -1617,5 +1652,18 @@ export class ExternalLinkCommand extends CommandBase {
         alert("Error opening external link... :-/");
       }
     });
+  }
+}
+
+export class ZapCommand extends CommandBase {
+  constructor(ibScape, d) {
+    const cmdName = "zap";
+    super(cmdName, ibScape, d);
+  }
+
+  exec() {
+    super.exec();
+    let t = this;
+    t.ibScape.zap(t.d, /*callback*/ null);
   }
 }

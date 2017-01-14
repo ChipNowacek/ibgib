@@ -1,4 +1,4 @@
-defmodule WebGib.Bus.Commanding.Allow do
+defmodule WebGib.Bus.Commanding.Ack do
   @moduledoc """
   Command-related code for the bus being implemented on Phoenix channels.
 
@@ -12,9 +12,10 @@ defmodule WebGib.Bus.Commanding.Allow do
   alias IbGib.Auth.Authz
   import IbGib.{Expression, Helper}
   import WebGib.Bus.Commanding.Helper
+  import WebGib.Patterns
   use IbGib.Constants, :ib_gib
 
-  def handle_cmd(%{"adjunct_ib_gib" => adjunct_ib_gib} = data,
+  def handle_cmd(adjunct_ib_gib_(...) = data,
                  _metadata,
                  msg,
                  %{assigns:

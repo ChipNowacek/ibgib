@@ -28,7 +28,8 @@ defmodule IbGib.Transform.Plan.Factory do
   Returns {:ok, plan} | {:error, reason}
   """
   @spec fork(list(String.t), String.t, map) :: {:ok, map} | {:error, String.t}
-  def fork(identity_ib_gibs, dest_ib, opts) do
+  def fork(identity_ib_gibs, dest_ib, opts) 
+    when is_list(identity_ib_gibs) and length(identity_ib_gibs) >= 1 do
     {:ok, identity_ib_gibs}
     ~>> PB.plan("[src]", opts)
     ~>> PB.add_fork("fork1", dest_ib)

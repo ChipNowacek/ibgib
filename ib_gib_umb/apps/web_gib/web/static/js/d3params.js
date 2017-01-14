@@ -1,3 +1,22 @@
+import { huhText_Cmd_Fork } from "./huh-texts/commands/fork";
+import { huhText_Cmd_Pic } from "./huh-texts/commands/pic";
+import { huhText_Cmd_Comment } from "./huh-texts/commands/comment";
+import { huhText_Cmd_Link } from "./huh-texts/commands/link";
+import { huhText_Cmd_Huh } from "./huh-texts/commands/huh";
+import { huhText_Cmd_Ack } from "./huh-texts/commands/ack";
+import { huhText_Cmd_Add } from "./huh-texts/commands/add";
+import { huhText_Cmd_Download } from "./huh-texts/commands/download";
+import { huhText_Cmd_IdentEmail } from "./huh-texts/commands/ident-email";
+import { huhText_Cmd_Info } from "./huh-texts/commands/info";
+import { huhText_Cmd_Zap } from "./huh-texts/commands/zap";
+import { huhText_Cmd_View } from "./huh-texts/commands/view";
+import { huhText_Cmd_Refresh } from "./huh-texts/commands/refresh";
+import { huhText_Cmd_ExternalLink } from "./huh-texts/commands/external-link";
+import { huhText_Cmd_Query } from "./huh-texts/commands/query";
+import { huhText_Cmd_Mut8Comment } from "./huh-texts/commands/mut8-comment";
+import { huhText_Cmd_Goto } from "./huh-texts/commands/goto";
+
+
 var d3CircleRadius = 20;
 var d3LongPressMs = 900;
 var d3DblClickMs = 200;
@@ -86,55 +105,22 @@ var d3RequireExpandLevel2 = [
  */
 var d3MenuCommands = [
   {
+    "id": "menu-fork",
+    "name": "fork",
+    "text": "Fork",
+    "icon": "\uf259",
+    "description": "The Fork button will take the selected ibGib and create a new one based on it in your personal ib space. It's like making a copy at that point in time and branching off of it. Live Long and Prosper!",
+    "color": "#61B9FF",
+    "huh": huhText_Cmd_Fork
+  },
+  {
     "id": "menu-pic",
     "name": "pic",
     "text": "Pic",
     "icon": "\uf03e",
     "description": "The Picture button will add a picture to the selected ibGib. You can choose to upload a file, or take a picture with your camera. You can even add pictures to pictures",
-    "color": "#61B9FF"
-  },
-  {
-    "id": "menu-info",
-    "name": "info",
-    "text": "Info",
-    "icon": "\uf05a",
-    "description": "The Information button lets you see the internal gibblies of an ibGib",
-    "color": "#CFA1C8"
-  },
-  {
-    "id": "menu-merge",
-    "name": "merge",
-    "text": "Merge",
-    "icon": "\uf247",
-    "description": "Merging is how we relate existing ibGib to each other",
-    "color": "lightblue"
-  },
-  {
-    "id": "menu-help",
-    "name": "help",
-    "text": "Help",
-    "icon": "\uf29c",
-    "description": "The Help button shows you help about the selected ibGib",
-    "color": "#EBFF0F"
-  },
-  {
-    "id": "menu-huh",
-    "name": "huh",
-    "text": "Huh?",
-    "icon": "\uf128 \uf12a \uf128",
-    "description": "This is like in-depth help. Click it when you have no idea what is going on.",
-    "color": "#EBFF0F",
-    "huh": [
-      `This command gives you more in-depth guidance as to what is going on with the individual ibGib you're looking at, as well as other possibly related stuff.`
-    ]
-  },
-  {
-    "id": "menu-share",
-    "name": "share",
-    "text": "Share",
-    "icon": "\uf1e0",
-    "description": "The Share button will share a link to this ibGib to others",
-    "color": "gold"
+    "color": "#61B9FF",
+    "huh": huhText_Cmd_Pic
   },
   {
     "id": "menu-comment",
@@ -143,47 +129,7 @@ var d3MenuCommands = [
     "icon": "\uf075",
     "description": "The Comment button adds a comment (or any text really) to the selected ibGib",
     "color": "#61B9FF",
-    "huh": [
-      `Comments are how we add text to ibGib. Right now they're limited to a max of 4096 characters, but this may change in the future.`,
-      ``,
-      `So you can use comments as notes for yourself, or notes for others, or instructions, descriptions, etc.`,
-      // `When you comment on someone else's ibGib, the comment can be  allowed by the owner of the ibGib. (In the future, we will have preferences to auto-allow such things as others' comments, pics, etc.).`
-    ]
-  },
-  {
-    "id": "menu-star",
-    "name": "star",
-    "text": "Star",
-    "icon": "\uf005",
-    "description": "The Star button will rate the selected ibGib",
-    "color": "gold"
-  },
-  {
-    "id": "menu-fork",
-    "name": "fork",
-    "text": "Fork",
-    "icon": "\uf259",
-    "description": "The Fork button will take the selected ibGib and create a new one based on it in your personal ib space. It's like making a copy at that point in time and branching off of it. Live Long and Prosper!",
-    "color": "#61B9FF",
-    "huh": [
-      `Forking is fundamental to using ibGib. Whenever you fork something (called the source), you create a new ibGib based on that source. What you choose as your source determines what the new ibGib will be like, much like starting a document from a template. If you fork the root ibGib (the green one when you click the background), then you will be starting from a "blank" template.`,
-    ]
-  },
-  {
-    "id": "menu-flag",
-    "name": "flag",
-    "text": "Flag",
-    "icon": "\uf024",
-    "description": "The Flag button will mark the selected ibGib as containing inappropriate content",
-    "color": "#FF4F4F"
-  },
-  {
-    "id": "menu-thumbsup",
-    "name": "thumbs up",
-    "text": "Thumbs up",
-    "icon": "\uf087",
-    "description": "The Thumbs Up button will let you give the selected ibGib a Thumbs Up",
-    "color": "gold"
+    "huh": huhText_Cmd_Comment
   },
   {
     "id": "menu-link",
@@ -191,15 +137,17 @@ var d3MenuCommands = [
     "text": "Link",
     "icon": "\uf0c1",
     "description": "The Link button will add a hyperlink from the World Wide interWeb to the selected ibGib",
-    "color": "#61B9FF"
+    "color": "#61B9FF",
+    "huh": huhText_Cmd_Link
   },
   {
-    "id": "menu-meta",
-    "name": "meta",
-    "text": "Meta",
-    "icon": "\uf013",
-    "description": "The Meta button contains settings, tweaks, preferences, etc",
-    "color": "lightgray"
+    "id": "menu-huh",
+    "name": "huh",
+    "text": "Huh?",
+    "icon": "\uf128 \uf12a \uf128",
+    "description": "This is like in-depth help. Click it when you have no idea what is going on.",
+    "color": "#EBFF0F",
+    "huh": huhText_Cmd_Huh
   },
   {
     "id": "menu-mut8comment",
@@ -207,7 +155,8 @@ var d3MenuCommands = [
     "text": "Mut8 Comment",
     "icon": "\u2622",
     "description": "The Mut8 button will allow you to edit the ibGib",
-    "color": "lightblue"
+    "color": "lightblue",
+    "huh": huhText_Cmd_Mut8Comment
   },
   {
     "id": "menu-view",
@@ -215,47 +164,53 @@ var d3MenuCommands = [
     "text": "View",
     "icon": "\uf06e", // :eye: 
     "description": "The View button will lets you look more closely at the ibGib.",
-    "color": "#CFA1C8"
+    "color": "#CFA1C8",
+    "huh": huhText_Cmd_View
   },
   {
     "id": "menu-query",
     "name": "query",
     "text": "Query",
     "icon": "\uf002",
-    "description": "The Query button will show you a search screen where you can look for other ibGib",
-    "color": "#C7FF4F"
+    "description": "The Query button will show you a search screen where you can look for other ibGib.",
+    "color": "#C7FF4F",
+    "huh": huhText_Cmd_Query
   },
   {
     "id": "menu-goto",
     "name": "goto",
     "text": "Goto",
     "icon": "\uf0a6",
-    "description": "The goto button will navigate you to the selected ibGib. ",
-    "color": "#C7FF4F"
+    "description": "The Goto button will navigate you to the selected ibGib, setting it as the Context.",
+    "color": "#C7FF4F",
+    "huh": huhText_Cmd_Goto
   },
   {
-    "id": "menu-fullscreen",
-    "name": "fullscreen",
-    "text": "View Fullscreen",
-    "icon": "\uf0b2",
-    "description": "The Fullscreen button will view something in fullscreen",
-    "color": "#CFA1C8"
+    "id": "menu-info",
+    "name": "info",
+    "text": "Info",
+    "icon": "\uf05a",
+    "description": "The Information button lets you see the internal gibblies of an ibGib",
+    "color": "#CFA1C8",
+    "huh": huhText_Cmd_Info
   },
   {
     "id": "menu-externallink",
     "name": "externallink",
     "text": "Open external link",
     "icon": "\uf08e",
-    "description": "The Open Link button will open a link in your browser",
-    "color": "#C7FF4F"
+    "description": "The Open External Link button will open a link in a new tab/window of your browser",
+    "color": "#C7FF4F",
+    "huh": huhText_Cmd_ExternalLink
   },
   {
     "id": "menu-identemail",
     "name": "identemail",
-    "text": "Login via email",
+    "text": "Identify",
     "icon": "\uf090",
-    "description": "The Login button will let you identify yourself with an email address",
-    "color": "#FFFFFF"
+    "description": "This lets you identify yourself with an email address",
+    "color": "#FFFFFF",
+    "huh": huhText_Cmd_IdentEmail
   },
   {
     "id": "menu-refresh",
@@ -264,26 +219,7 @@ var d3MenuCommands = [
     "icon": "\uf021",
     "description": "The Refresh button refreshes the selected ibGib to the most up-to-date version",
     "color": "#C7FF4F",
-    "huh": [
-      `Time is a big deal in ibGib.`,
-      ` `,
-      `Every ibGib that you look at is kinda like a cartoon. Each ibGib has a snapshot that is a single frame in time, and at any one point in time you're just looking at that snapshot.`,
-      ``,
-      `Refresh brings you to the most recent snapshot in a timeline.`,
-      ``,
-      `...Wait...timeline? Huh?`,
-      ``,
-      `You can fork ibGib timelines with the "Fork" command. When you do this, you create a **new** timeline for the "same" thing. So when you do a Refresh on an ibGib, it always gets you the most recent version **in that timeline**.`,
-      ``,
-      `For more info on timelines, check out the "Fork" command's Huh?!? (It's the funny "Spock Hand" command).`,
-      ``,
-      `Also, every time you refresh a _Source_ ibGib (The big-ish, non-yellow free-floating ibGibs), any updates will update your current _Context_ ibGib (The BIG yellow ibGib).`,
-      ``,
-      `For more info on the Context ibGib, check out its Huh?!? by clicking on the BIG yellow ibGib and choosing the ""\uf128 \uf12a \uf128" button`,
-      `It's basically like Back To The Future II. If you haven't, go watch that movie (like right now). I'll wait...`,
-      ``,
-      `Now that you've seen that movie and are thus an Alternate Timeline Expert, we can talk using that vocabulary. So when they first go into the Future, that is their current "Hill Valley" ibGib timeline. Then future Old Biff takes the Delorian back in time and **forks`,
-    ]
+    "huh": huhText_Cmd_Refresh
   },
   {
     "id": "menu-download",
@@ -291,7 +227,8 @@ var d3MenuCommands = [
     "text": "Download from the Cloud",
     "icon": "\uf0ed",
     "description": "The Cloud Download button saves the pic/file to your local device",
-    "color": "#CFA1C8"
+    "color": "#CFA1C8",
+    "huh": huhText_Cmd_Download
   },
   {
     "id": "menu-zap",
@@ -299,35 +236,93 @@ var d3MenuCommands = [
     "text": "Zap",
     "icon": "\uf0e7",
     "description": "Zaps virtual ibGib with some juice \u26a1",
-    "color": "yellow"
+    "color": "yellow",
+    "huh": huhText_Cmd_Zap
   },
   {
     "id": "menu-add",
     "name": "add",
     "text": "Add ibGib",
     // http://www.alt-codes.net/plus-sign-symbols
-    "icon": "\uf067",
+    "icon": "\uf067", // http://fontawesome.io/icon/plus/
     "description": "Creates and adds a new ibGib with a given rel8n.",
-    "color": "#C7FF4F"
+    "color": "#C7FF4F",
+    "huh": huhText_Cmd_Add
   },
   {
-    "id": "menu-allow",
-    "name": "allow",
-    "text": "Allow",
+    "id": "menu-ack",
+    "name": "ack",
+    "text": "Acknowledge",
     // http://www.fileformat.info/info/unicode/char/2713/index.htm
     "icon": "\u2713", // ✓ (check mark)
-    "description": "Allow an ibGib that has been created by someone else to be directly rel8d to your ibGib.",
+    "description": "Acknowledge an ibGib that has been created by someone else to be directly rel8d to your ibGib.",
     "color": "#C7FF4F",
-    "huh": [
-      `When someone comments or adds a picture to an ibGib that **you** own, you have to accept it in order for it to be directly related to your ibGib.`,
-      ` `,
-      `When you accept an ibGib, this doesn't necessarily mean that you like or even agree with the comment. It's just saying "Ok, let's incorporate this into my ibGib so everyone can see when they come to this ibGib." However you choose to accept or reject ibGib is completely up to you.`,
-      ` `,
-      `If the content is inappropriate, especially if it is illegal, you should NOT accept it; rather, you should flag it as inappropriate.`,
-      ` `,
-      `If you want, you can comment on the ibGib that you are rejecting before actually rejecting it. This way, whoever posted it in the first place can see your reasoning/response to it.`,
-    ]
-  }
+    "huh": huhText_Cmd_Ack
+  },
+  // {
+  //   "id": "menu-merge",
+  //   "name": "merge",
+  //   "text": "Merge",
+  //   "icon": "\uf247",
+  //   "description": "Merging is how we relate existing ibGib to each other",
+  //   "color": "lightblue"
+  // },
+  // {
+  //   "id": "menu-help",
+  //   "name": "help",
+  //   "text": "Help",
+  //   "icon": "\uf29c",
+  //   "description": "The Help button shows you help about the selected ibGib",
+  //   "color": "#EBFF0F"
+  // },
+  // {
+  //   "id": "menu-share",
+  //   "name": "share",
+  //   "text": "Share",
+  //   "icon": "\uf1e0",
+  //   "description": "The Share button will share a link to this ibGib to others",
+  //   "color": "gold"
+  // },
+  // {
+  //   "id": "menu-star",
+  //   "name": "star",
+  //   "text": "Star",
+  //   "icon": "\uf005",
+  //   "description": "The Star button will rate the selected ibGib",
+  //   "color": "gold"
+  // },
+  // {
+  //   "id": "menu-flag",
+  //   "name": "flag",
+  //   "text": "Flag",
+  //   "icon": "\uf024",
+  //   "description": "The Flag button will mark the selected ibGib as containing inappropriate content",
+  //   "color": "#FF4F4F"
+  // },
+  // {
+  //   "id": "menu-thumbsup",
+  //   "name": "thumbs up",
+  //   "text": "Thumbs up",
+  //   "icon": "\uf087",
+  //   "description": "The Thumbs Up button will let you give the selected ibGib a Thumbs Up",
+  //   "color": "gold"
+  // },
+  // {
+  //   "id": "menu-meta",
+  //   "name": "meta",
+  //   "text": "Meta",
+  //   "icon": "\uf013",
+  //   "description": "The Meta button contains settings, tweaks, preferences, etc",
+  //   "color": "lightgray"
+  // },
+  // {
+  //   "id": "menu-fullscreen",
+  //   "name": "fullscreen",
+  //   "text": "View Fullscreen",
+  //   "icon": "\uf0b2",
+  //   "description": "The Fullscreen button will view something in fullscreen",
+  //   "color": "#CFA1C8"
+  // },
 ];
 
 let d3Rel8nIcons = {

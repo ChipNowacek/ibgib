@@ -9,14 +9,13 @@ defmodule WebGib.Bus.Commanding.Refresh do
   alias WebGib.Bus.Channels.Event, as: EventChannel
   import IbGib.{Expression, Helper, QueryOptionsFactory}
   import WebGib.Bus.Commanding.Helper
+  import WebGib.Patterns
   use IbGib.Constants, :ib_gib
 
-  def handle_cmd(%{"src_ib_gib" => src_ib_gib} = data,
+  def handle_cmd(src_ib_gib_(...) = data,
                  _metadata,
                  msg,
-                 %{assigns:
-                   %{ib_identity_ib_gibs: identity_ib_gibs}
-                 } = socket) do
+                 assigns_identity_ib_gibs_(...) = socket) do
     _ = Logger.debug("yakker. src_ib_gib: #{src_ib_gib}" |> ExChalk.blue |> ExChalk.bg_yellow)
     with(
       # Validate
