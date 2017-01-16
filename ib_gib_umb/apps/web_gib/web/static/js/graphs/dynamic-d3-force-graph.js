@@ -839,7 +839,7 @@ export class DynamicD3ForceGraph {
     if (nIndex > -1) {
       currentNodes.splice(nIndex, 1);
     } else {
-      console.warn("remove not found")
+      // console.warn("remove not found")
     }
 
     let toRemoveLinks = currentLinks.filter(l => {

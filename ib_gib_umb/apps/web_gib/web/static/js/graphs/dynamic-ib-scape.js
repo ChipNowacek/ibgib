@@ -109,6 +109,57 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.initContext();
     t.initIdentities();
   }
+  initSvg() {
+    super.initSvg();
+    let t = this;
+    t.initSvgGradients();
+  }
+  initSvgGradients() {
+    let t = this;
+    
+    t.svgGradientId_Context = "context" + ibHelper.getRandomString();
+    t.addSvgGradient_Simple(t.svgGradientId_Context, "#F7FF9E", "#F2EC41", "gold");
+    
+    t.svgGradientId_Root = "root" + ibHelper.getRandomString();
+    t.addSvgGradient_Simple(t.svgGradientId_Root, "#30B315", "green", "darkgreen");
+
+    t.svgGradientId_Comment = "comment" + ibHelper.getRandomString();
+    t.addSvgGradient_Simple(t.svgGradientId_Comment, "#D8EB6E", "#AFD147", "#91BD1A");
+    
+    t.svgGradientId_Background = "background" + ibHelper.getRandomString();
+    t.addSvgGradient_Simple(t.svgGradientId_Background, "#108201", "#128C01", "#3FA132", "50%", "50%", "50%", "60%", "70%");
+  }
+  /**
+   * Adds a simple radialGradient to t.svg.
+   * Thanks! https://jsfiddle.net/IPWright83/f76zL96e/
+   */
+  addSvgGradient_Simple(id, color1, color2, color3, cXY, fXY, offset1, offset2, offset3) {
+    let t = this;
+    let gradient = t.svg
+      .append("radialGradient")
+      .attr("xmlns", "http://www.w3.org/2000/svg")
+      .attr("id", id)
+      .attr("cx", cXY || "10%")
+      .attr("cy", cXY || "10%")
+      .attr("r", "100%")
+      .attr("fx", fXY || "30%")
+      .attr("fy", fXY || "30%");
+    gradient
+      .append("stop")
+      // .attr("stop-color", "rgb(192,0,0)")
+      .attr("stop-color", color1)
+      .attr("offset", offset1 || "0%");
+    gradient
+      .append("stop")
+      // .attr("stop-color", "rgb(127,0,0)")
+      .attr("stop-color", color2)
+      .attr("offset", offset2 || "10%");
+    gradient
+      .append("stop")
+      // .attr("stop-color", "rgb(64,0,0)")
+      .attr("stop-color", color3)
+      .attr("offset", offset3 || "85%");
+  }
   initNoScrollHtmlAndBody() {
     d3.select("html")
       .style("overflow-x", "hidden")
@@ -1638,6 +1689,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
   }
   getNodeShapeFill(d) {
+    let t = this;
     let color;
 
     switch (d.type) {
@@ -1645,10 +1697,13 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         let index;
 
         if (d.isContext) {
+          return `url(#${t.svgGradientId_Context})`;
           index = "context";
         } else if (d.ibGib === "ib^gib") {
+          return `url(#${t.svgGradientId_Root})`;
           index = "ibGib";
         } else if (d.render && d.render === "text") {
+          return `url(#${t.svgGradientId_Comment})`;
           index = "text";
         } else if (d.render && d.render === "image") {
           index = "image";
@@ -1839,6 +1894,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
   // Other get functions ------------------------------------
 
+  getBackgroundFill() {
+    let t = this;
+    return `url(#${t.svgGradientId_Background})`;
+    // return this.config.background.fill;
+  }
   /**
    * The first init of adjunct infos will talk to the server and get all
    * of the adjuncts for the given `tempJuncIbGib`. Any subsequent
@@ -2135,6 +2195,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   }
   handleNodeDblClicked(d) {
     let t = this;
+
+    if (d.isRoot) {
+      return;
+    }
 
     let isCancelledFunc = () => {
       return !d.fullyExpanding;
