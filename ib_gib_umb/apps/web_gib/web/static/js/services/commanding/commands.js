@@ -1014,7 +1014,7 @@ export class PicDetailsCommand extends FormDetailsCommandBase {
 
   close() {
     let t = this;
-    t.htmlDiv.remove();
+    if (t.htmlDiv) { t.htmlDiv.remove(); }
     super.close();
   }
 
