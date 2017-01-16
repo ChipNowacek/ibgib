@@ -7,7 +7,9 @@ var huhText_Cmd_IdentEmail = `
 
 ## Identify ${getSpan()}
 
-This command will identify you in ibGib with your email address.
+This command will identify you in ibGib with your email address. 
+
+_This email address will be publicly visible._
 
 ### :baby: :baby_bottle:
 

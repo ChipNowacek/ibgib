@@ -79,16 +79,25 @@ In developing ibGib, I focused on the _infinitely recursive bootstrapping proces
 
 Come to find out that this has already been explained in the Bible (now that I've read it). But these terms are difficult to understand with <a href="https://www.biblegateway.com/passage/?search=Romans+6:19&version=ESV" target="_blank">"human terms"</a>. But the word ibGib is the one root axiom, which I later found when reading <a href="https://www.biblegateway.com/passage/?search=Exodus+3:14&version=ESV" target="_blank">Exodus 3:14</a>:
 
-> 14 God said to Moses, “I am who I am.”[a] And he said, “Say this to the people of Israel: ‘I am has sent me to you.’”
-> 15 God also said to Moses, “Say to the Israelites, ‘The Lord,[d] the God of
-> your fathers—the God of Abraham, the God of Isaac and the God of Jacob—has
-> sent me to you.’
+> God said to Moses,  
+> &nbsp;&nbsp; “I am who I am.”[a]  
+> And he said,  
+> &nbsp;&nbsp; “Say this to the people of Israel:  
+> &nbsp;&nbsp; ‘I am has sent me to you.’”  
+> God also said to Moses,  
+> &nbsp;&nbsp; “Say to the Israelites,  
+> &nbsp;&nbsp; ‘The Lord,[b] the God of your fathers —  
+> &nbsp;&nbsp; the God of Abraham,  
+> &nbsp;&nbsp; the God of Isaac  
+> &nbsp;&nbsp; and the God of Jacob —  
+> &nbsp;&nbsp; has sent me to you.’  
 >
 > “This is my name forever,  
-> &nbsp;&nbsp; the name you shall call me
-> &nbsp;&nbsp; from generation to generation.
+> &nbsp;&nbsp; the name you shall call me  
+> &nbsp;&nbsp; from generation to generation.  
 >
 > a. Exodus 3:14 Or I am what I am, or I will be what I will be
+> b. Exodus 3:15 The Hebrew for Lord sounds like and may be related to the Hebrew for I am in verse 14.
 >
 > Exodus 3:14-15  
 
@@ -96,16 +105,16 @@ So he calls himself "I am" for short, but his full name is "I am who I am"
 (and/or "I am what I am" and/or "I will be what I will be"). And his name is 
 his name _forever_. So, we're talking about a _name_ that is an infinite,
 self-describing, recursive _process_ which is also self-similar and stays 
-constant in an evolutionary, generational context. Wow.
+constant in an evolutionary context ("from generation to generation").
 
-> It is written in the Prophets: 
-> &nbsp;&nbsp; 'They will all be taught by God.'
-> Everyone who has heard the Father,
-> &nbsp;&nbsp; and learned from him,
-> &nbsp;&nbsp; comes to me.
-> No one has seen the Father
-> &nbsp;&nbsp; except the one who is from God;
-> &nbsp;&nbsp; only he has seen the Father.
+> It is written in the Prophets:  
+> &nbsp;&nbsp; 'They will all be taught by God.'  
+> Everyone who has heard the Father,  
+> &nbsp;&nbsp; and learned from him,  
+> &nbsp;&nbsp; comes to me.  
+> No one has seen the Father  
+> &nbsp;&nbsp; except the one who is from God;  
+> &nbsp;&nbsp; only he has seen the Father.  
 > 
 > John 6:45-46
 

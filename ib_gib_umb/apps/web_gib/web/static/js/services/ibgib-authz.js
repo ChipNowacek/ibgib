@@ -46,6 +46,11 @@ export function isAuthorizedForMut8OrRel8(targetIbGibJson, currentIdentityIbGibs
   }
 }
 
+export function isIdentifiedByEmail(currentIdentityIbGibs) {
+  let highestAuthTier = _getHighestAuthTier(currentIdentityIbGibs);
+  return highestAuthTier === "email";
+}
+
 function _isAuthorizedForMut8OrRel8_Session(targetIdentityIbGibs, currentIdentityIbGibs) {
   let lc = `_isAuthorizedForMut8OrRel8_Session`;
 

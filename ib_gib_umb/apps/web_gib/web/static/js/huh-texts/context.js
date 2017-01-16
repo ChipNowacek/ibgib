@@ -33,7 +33,8 @@ files and folders, you're not limited to this approach._)
 
 > I believe, as you know, Mrs. Sauskind, in the fundamental interconnectedness
 > of all things.
-> - Dirk Gently
+>
+> Dirk Gently
 
 Context provides a point-of-view with respect to relationships among all ibGib.
 Since all ibGib have relationships with other ibGib, any ibGib can act as a
