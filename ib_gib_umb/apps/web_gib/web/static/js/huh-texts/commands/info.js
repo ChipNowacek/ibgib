@@ -29,31 +29,32 @@ Don't look at this! :see_no_evil:
   * The \`gib\` field on all user-generated ibGib is a SHA-256 hash of the \`ib\`,
     \`data\`, and \`rel8ns\` fields.
     * The \`gib\` field on some built-in ibGib is just \`gib\`.
-    * The \`gib\` field on some built-in ibGib is "stamped" with an "ibGib"
-      prefix & suffix.
+    * The \`gib\` field on some special ibGib, like your identity ibGib, is
+      "stamped" with an "ibGib" prefix & suffix.
+      * This is an attempt at ensuring certain ibGib are "official", i.e. made
+        by our engine.
   * The \`data\` field contains internal information to the ibGib.
-    * Internal data is actually still ibGib, but at some point the value of 
-      acknowledging the \`ib\` and \`gib\` aspects seemed to be less valuable.
-      * For example, the letter "a" could be represented by \`a^gib\` with 
-        rel8ns to other letters, etc. This may be a valid thing to do, but I 
-        don't have a use case for it immediately. 
-      * With this in mind, all ibGib and data boil down to a name (the
-        \`ib^gib\`) and its \`rel8ns\` - but we use \`data\` for convenience.
+    * This is where comment text is stored for comments.
+    * This is where picture information is stored for pics (but not the actual
+      pic binary itself).
   * The \`rel8ns\` field keeps track of other ibGib via rel8n names and their
     corresponding list of \`ib^gib\`.
-    * For example, you could have a rel8n of "member" and then have a list
-      of member ibGib that are members of the ibGib.
+    * For example, you could have a rel8n of "ingredient" and then have a list
+      of ingredient ibGibs like \`["egg^gib", "milk^gib", etc.]\`.
+  * Ideally, all ibGib boil down to only the \`ib\`, \`gib\`, and the
+    \`rel8ns\` (and these _may_ actually just boil down to the \`ib^gib\` 
+    itself), but we use \`data\` for convenience.
   * The \`ib\` and \`gib\` fields together combine to form an \`ib^gib\`
-    location that is unique to that ibGib in space and time.
+    "URL" that is unique to that ibGib in space and time.
     * These act analogously to "reference pointers" in local programming models,
       but instead of a local addressable space it is a "universal" sized 
       address space (limited to the size of SHA-256 hashes).
     * One of the core tenets of ibGib's code is that reference pointers are 
       cheap, data content and files are expensive.
-      * This is similar to why cells in body contain _copies_ of the DNA
-        (pointers) that are then _expressed in time_ into proteins (the flesh
-        acts as a caching mechanism): The DNA molecules are "cheap", but the 
-        "proteins" (and ensuing biological beings) are "expensive".
+      * This is similar to why _every_ cell in body contain a _complete_ copy 
+        of the DNA (pointers) that are then _expressed in time_ into proteins
+        (the flesh acts as a caching mechanism): The DNA molecules are "cheap",
+        but the "proteins" (and ensuing biological beings) are "expensive".
 * Looking at the Root info is pretty enlightening.
   * Its \`ib\` field is "ib", and its \`gib\` field is "gib".
   * It has no intrinsic \`data\`, only \`rel8ns\`.
