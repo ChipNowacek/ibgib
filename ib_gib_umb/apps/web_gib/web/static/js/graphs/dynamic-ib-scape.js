@@ -124,10 +124,12 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.addSvgGradient_Simple(t.svgGradientId_Root, "#30B315", "green", "darkgreen");
 
     t.svgGradientId_Comment = "comment" + ibHelper.getRandomString();
-    t.addSvgGradient_Simple(t.svgGradientId_Comment, "#D8EB6E", "#AFD147", "#91BD1A");
+    t.addSvgGradient_Simple(t.svgGradientId_Comment, "#D8EB6E", "#AFD147", "#91BD1A", "50%", "50%", "40%", "50%", "90%");
+    // t.addSvgGradient_Simple(t.svgGradientId_Comment, "#D8EB6E", "#AFD147", "#91BD1A");
 
     t.svgGradientId_Image = "image" + ibHelper.getRandomString();
-    t.addSvgGradient_Simple(t.svgGradientId_Image, "#AD9DFA", "#AD9DFA", "#6E368A");
+    t.addSvgGradient_Simple(t.svgGradientId_Image, "#590782", "#0FF21E", "#0FF21E", "50%", "50%", "40%", "50%", "90%");
+    // t.addSvgGradient_Simple(t.svgGradientId_Image, "#AD9DFA", "#9B2ED1", "#6E368A");
 
     t.svgGradientId_Rel8n = "rel8n" + ibHelper.getRandomString();
     t.addSvgGradient_Simple(t.svgGradientId_Rel8n, "#90C3D4", "#71A3EB", "#61A1FA");
@@ -136,7 +138,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.addSvgGradient_Simple(t.svgGradientId_Background, "#108201", "#128C01", "#3FA132", "50%", "50%", "50%", "60%", "70%");
     
     t.svgGradientId_Default = "default" + ibHelper.getRandomString();
-    t.addSvgGradient_Simple(t.svgGradientId_Default, "#D1AFFA", "#C69FF5", "#AB7DF5");
+    t.addSvgGradient_Simple(t.svgGradientId_Default, "#72DFED", "#56CCDB", "#31C1D4");
   }
   /**
    * Adds a simple radialGradient to t.svg.
