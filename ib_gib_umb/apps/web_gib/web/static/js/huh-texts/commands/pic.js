@@ -7,11 +7,16 @@ var huhText_Cmd_Pic = `
 
 ## Pic ${getSpan()}
 
-This command will add a pic to an ibGib.
+This command will add a pic to an ibGib. You must first be identified by an 
+email address in order to upload pics.
 
 ### :baby: :baby_bottle:
 
-Adds a circle with a picture in it.
+Adds a circle with a picture in it. 
+
+Gotta login in order to do this! :love_letter: In order to login, click on the
+background, then click on the green circle, then click on the white circle to
+start the login.
 
 ### :eyeglasses: :point_up:
 

@@ -37,7 +37,6 @@ export class CommandManager {
       case "add":
         let blah = dIbGib;
         if (dIbGib.type === "rel8n") {
-          // debugger;
           t.ibScape.currentCmd = t.getCommand_rel8nAdd(dIbGib);
         } else {
           console.error("unknown cmd add non-rel8n");

@@ -50,7 +50,6 @@ defmodule IbGib.Auth.Authz do
   # Note also that this will **ADD** any other identities that are passed in,
   # thus raising the level of authorization required for future mut8ns/rel8ns.
   # Returns b_identities if authorized.
-  # Raises exception if unauthorized (fail fast is proper).
   # b must always have at least one identity
   @spec authorize_apply_b(atom, map, map) :: {:ok, list(String.t)} | {:error, String.t}
   def authorize_apply_b(which, a_rel8ns, b_rel8ns)

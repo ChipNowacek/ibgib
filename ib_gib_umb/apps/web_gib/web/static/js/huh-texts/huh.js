@@ -11,14 +11,21 @@ _anything_.
 But if you wanna read a little bit, I've done up these help sections, each 
 having three categories:
 
-  * :baby: :baby_bottle: == Baby Food
-  * :eyeglasses: :point_up: == Nerd Points
-  * :sunglasses: :sunrise: == Seen The Light
+  * :baby: :baby_bottle: == Baby Food  
+    * Normal people read this.
+  * :eyeglasses: :point_up: == Nerd Points  
+    * Nerds read this. 
+    * :warning: Be prepared for nerdspeak and such!
+  * :sunglasses: :sunrise: == Seen The Light  
 
 ### :baby: :baby_bottle:
 
 For starters, just click stuff. Long-click stuff. Double-click stuff. Pan and 
 zoom around. Just don't worry about it. 
+
+In order to upload pics, you have to first login with an email address. To do
+this, click on the background, then the green circle, then the white circle.
+**Your email will be publicly viewable.**
 
 And **Don't Panic**. :pray:
 

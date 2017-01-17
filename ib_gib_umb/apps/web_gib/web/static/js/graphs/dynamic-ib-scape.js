@@ -109,6 +109,68 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.initContext();
     t.initIdentities();
   }
+  initSvg() {
+    super.initSvg();
+    let t = this;
+    t.initSvgGradients();
+  }
+  initSvgGradients() {
+    let t = this;
+    
+    t.svgGradientId_Context = "context" + ibHelper.getRandomString();
+    t.addSvgGradient_Simple(t.svgGradientId_Context, "#F7FF9E", "#F2EC41", "gold");
+    
+    t.svgGradientId_Root = "root" + ibHelper.getRandomString();
+    t.addSvgGradient_Simple(t.svgGradientId_Root, "#30B315", "green", "darkgreen");
+
+    t.svgGradientId_Comment = "comment" + ibHelper.getRandomString();
+    t.addSvgGradient_Simple(t.svgGradientId_Comment, "#D8EB6E", "#AFD147", "#91BD1A", "50%", "50%", "40%", "50%", "90%");
+    // t.addSvgGradient_Simple(t.svgGradientId_Comment, "#D8EB6E", "#AFD147", "#91BD1A");
+
+    t.svgGradientId_Image = "image" + ibHelper.getRandomString();
+    t.addSvgGradient_Simple(t.svgGradientId_Image, "#590782", "#0FF21E", "#0FF21E", "50%", "50%", "40%", "50%", "90%");
+    // t.addSvgGradient_Simple(t.svgGradientId_Image, "#AD9DFA", "#9B2ED1", "#6E368A");
+
+    t.svgGradientId_Rel8n = "rel8n" + ibHelper.getRandomString();
+    t.addSvgGradient_Simple(t.svgGradientId_Rel8n, "#90C3D4", "#71A3EB", "#61A1FA");
+    
+    t.svgGradientId_Background = "background" + ibHelper.getRandomString();
+    t.addSvgGradient_Simple(t.svgGradientId_Background, "#108201", "#128C01", "#3FA132", "50%", "50%", "50%", "60%", "70%");
+    
+    t.svgGradientId_Default = "default" + ibHelper.getRandomString();
+    t.addSvgGradient_Simple(t.svgGradientId_Default, "#72DFED", "#56CCDB", "#31C1D4");
+  }
+  /**
+   * Adds a simple radialGradient to t.svg.
+   * Thanks! https://jsfiddle.net/IPWright83/f76zL96e/
+   */
+  addSvgGradient_Simple(id, color1, color2, color3, cXY, fXY, offset1, offset2, offset3) {
+    let t = this;
+    let gradient = t.svg
+      .append("radialGradient")
+      .attr("xmlns", "http://www.w3.org/2000/svg")
+      .attr("id", id)
+      .attr("cx", cXY || "10%")
+      .attr("cy", cXY || "10%")
+      .attr("r", "100%")
+      .attr("fx", fXY || "30%")
+      .attr("fy", fXY || "30%");
+    gradient
+      .append("stop")
+      // .attr("stop-color", "rgb(192,0,0)")
+      .attr("stop-color", color1)
+      .attr("offset", offset1 || "0%");
+    gradient
+      .append("stop")
+      // .attr("stop-color", "rgb(127,0,0)")
+      .attr("stop-color", color2)
+      .attr("offset", offset2 || "10%");
+    gradient
+      .append("stop")
+      // .attr("stop-color", "rgb(64,0,0)")
+      .attr("stop-color", color3)
+      .attr("offset", offset3 || "85%");
+  }
   initNoScrollHtmlAndBody() {
     d3.select("html")
       .style("overflow-x", "hidden")
@@ -818,6 +880,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       // t.addCmdVirtualNode(d, "help", /*fadeTimeoutMs*/ 0);
       t.addCmdVirtualNode(d, "huh", /*fadeTimeoutMs*/ 0);
       t._addCmdVirtualNodesIfAuthorized_Adjunct(d);
+      if (d.ibGibJson) {
+        if (ibHelper.isComment(d.ibGibJson) || ibHelper.isImage(d.ibGibJson)) {
+          t.addCmdVirtualNode(d, "view", fadeTimeoutMs);
+        }
+      }
     } else if (d.isRoot) {
       t.addCmdVirtualNode(d, "huh", fadeTimeoutMs);
       // t.addCmdVirtualNode(d, "help", fadeTimeoutMs);
@@ -830,6 +897,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         // t.addCmdVirtualNode(d, "help", fadeTimeoutMs);
         t.addCmdVirtualNode(d, "fork", fadeTimeoutMs);
         t._addCmdVirtualNodesIfAuthorized_Comment(d, fadeTimeoutMs);
+        if (ibHelper.isComment(d.ibGibJson) || ibHelper.isImage(d.ibGibJson)) {
+          t.addCmdVirtualNode(d, "view", fadeTimeoutMs);
+        }
       } else {
         // not a loaded ibGibJson, so no virtual nodes to add.
         // So we are assuming this is a virtual node itself.
@@ -1039,7 +1109,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   /** Adds the root */
   addRootNode() {
     let t = this;
-    console.log("addRootNode");
+    // console.log("addRootNode");
 
     // Remove existing rootNode (if exists)
     if (t.rootNode) {
@@ -1638,44 +1708,40 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
   }
   getNodeShapeFill(d) {
-    let color;
+    let t = this;
 
     switch (d.type) {
       case "ibGib":
-        let index;
 
         if (d.isContext) {
-          index = "context";
+          return `url(#${t.svgGradientId_Context})`;
         } else if (d.ibGib === "ib^gib") {
-          index = "ibGib";
+          return `url(#${t.svgGradientId_Root})`;
         } else if (d.render && d.render === "text") {
-          index = "text";
+          return `url(#${t.svgGradientId_Comment})`;
         } else if (d.render && d.render === "image") {
-          index = "image";
+          return `url(#${t.svgGradientId_Image})`;
         } else if (d.render && d.render === "identity") {
-          index = "identity";
+          return "white";
         } else {
-          index = d.id;
+          return `url(#${t.svgGradientId_Default})`;
         }
 
-        color = d3Colors[index] || d3Colors["default"];
-        break;
-
       case "cmd":
-        color = d.cmd.color;
-        break;
+        return d.cmd.color || `url(#${t.svgGradientId_Default})`;
 
       case "rel8n":
-        // todo: d.type === rel8n
-        // color = d3Colors[d.name];
-        color = d3Colors["default"];
-        break;
+        return `url(#${t.svgGradientId_Rel8n})`;
 
       default:
-        color = d3Colors["default"];
+        return `url(#${t.svgGradientId_Default})`;
     }
 
     return color;
+  }
+  getNodeImageBackgroundFill(d) { 
+    let t = this;
+    return `url(#${t.svgGradientId_Image})`;
   }
   getNodeBorderStroke(d) {
     // for some reason this doesn't work. It should, but it doesn't.
@@ -1839,6 +1905,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
   // Other get functions ------------------------------------
 
+  getBackgroundFill() {
+    let t = this;
+    return `url(#${t.svgGradientId_Background})`;
+    // return this.config.background.fill;
+  }
   /**
    * The first init of adjunct infos will talk to the server and get all
    * of the adjuncts for the given `tempJuncIbGib`. Any subsequent
@@ -2135,6 +2206,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   }
   handleNodeDblClicked(d) {
     let t = this;
+
+    if (d.isRoot) {
+      return;
+    }
 
     let isCancelledFunc = () => {
       return !d.fullyExpanding;
