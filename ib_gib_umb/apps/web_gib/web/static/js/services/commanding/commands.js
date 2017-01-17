@@ -477,6 +477,7 @@ export class ForkDetailsCommand extends FormDetailsCommandBase {
   init() {
     let t = this;
 
+
     d3.select("#fork_form_data_src_ib_gib")
       .attr("value", t.d.ibGib);
 
@@ -490,6 +491,9 @@ export class ForkDetailsCommand extends FormDetailsCommandBase {
 
   addVirtualNode(callback) {
     let t = this;
+    
+
+    
     t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ null, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ d3RootUnicodeChar, /*startPos*/ {x: t.d.x, y: t.d.y});
     if (callback) { callback(); }
   }
@@ -511,21 +515,32 @@ export class ForkDetailsCommand extends FormDetailsCommandBase {
   handleSubmitResponse(msg) {
     let t = this;
 
-    if (msg && msg.data && msg.data.forked_ib_gib) {
-      let forkedIbGib = msg.data.forked_ib_gib;
-      if (t.ibScape.contextIbGib === "ib^gib") {
-        // If we've just forked on an ibScape that has no context (the
-        // contextIbGib is the root), then we will actually navigate to the
-        // new fork
-        location.href = `/ibgib/${msg.data.forked_ib_gib}`;
+    // let contextIbGibJson = t.ibScape.contextNode.ibGibJson;
+    // if (ibAuthz.isAuthorizedForMut8OrRel8(contextIbGibJson)) {
+      if (msg && msg.data && msg.data.forked_ib_gib) {
+        
+        if (msg.data.new_context_ib_gib_or_nil) {
+          // User was authzd to rel8 to non-Root Context.
+          // So just zap the virtual node.
+          t.virtualNode.ibGib = msg.data.forked_ib_gib;
+          t.ibScape.zap(t.virtualNode);
+        } else {
+          if (t.ibScape.contextIbGib === "ib^gib") {
+            // Context was the root
+            location.href = `/ibgib/${msg.data.forked_ib_gib}`;
+          } else {
+            // User was NOT authzd to rel8 to non-Root Context
+            // Maybe do this in a new tab (in case the user didn't
+            // know what was going to happen).
+            // location.href = `/ibgib/${msg.data.forked_ib_gib}`;
+            t.ibScape.remove(t.virtualNode);
+            window.open(`/ibgib/${msg.data.forked_ib_gib}`, "_blank");
+          }
+        }
+        
       } else {
-        // Our ibScape already has a context, so just zap the virtual node.
-        t.virtualNode.ibGib = forkedIbGib;
-        t.ibScape.zap(t.virtualNode);
+        console.error("ForkDetailsCommand: Unknown msg response from channel.");
       }
-    } else {
-      console.error("ForkDetailsCommand: Unknown msg response from channel.");
-    }
   }
 }
 

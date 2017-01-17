@@ -35,8 +35,8 @@ defmodule WebGib.Adjunct do
   """
   def rel8_target_to_other_if_authorized(target, adjunct, identity_ib_gibs, rel8ns) do
     with(
-      {:ok, src_info} <- target |> get_info(),
-      {authz_result, _} <- Authz.authorize_apply_b(:rel8, src_info[:rel8ns], identity_ib_gibs),
+      {:ok, target_info} <- target |> get_info(),
+      {authz_result, _} <- Authz.authorize_apply_b(:rel8, target_info[:rel8ns], identity_ib_gibs),
       {:ok, new_target_or_nil} <-
         (
           if authz_result === :ok do
