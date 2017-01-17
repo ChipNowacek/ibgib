@@ -67,17 +67,31 @@ understand the relationship we have with DNA, evolution, neurons, information,
 etc.
 
 More abstractly, ibGib is/are anything and everything - It's the fundamental
-"unit" of life and existence. It's more fundamental than a particle or a wave,
-more fundamental than an atom, a quark, a bit, a qubit, or a neuron. It's even
-more fundamental than a number, an idea or even a concept. It's so different
-than other words that it can never be fully described by them, rather, ibGib is
-its own definition: ibGib.
+"unit" of life and existence. It's more fundamental than a particle or a wave;
+more fundamental than an atom, a proton, neutron or electron; a quark, a
+lepton, or a boson; a string or a brane; a bit, a qubit, or even a number, an 
+idea or a concept. It is more fundamental than these things, and simultaneously
+it is more robust, as it is an expression that "contains" each of them. It's so
+different than other words that it can never be fully described by them,
+rather, ibGib is its own definition: ibGib. 
+
+It allows for an answer to be both an answer _and_ not an answer, e.g.
+\`1 + 1 = 2\` _and_ \`1 + 1 != 2\`. It's very much related to the process of
+zero and the process of infinity. So it is much like a bit, that allows for a 0
+or a 1, but at the same time it represents _its own interpretation of its
+existence as a bit_. For this strangeness, we shift our focus from finding
+little truths and organize a monotonically-increasing _collective_ single Truth.
 
 ### ibGib and :scroll:
 
-In developing ibGib, I focused on the _infinitely recursive bootstrapping process of definition_, moving beyond axioms to understand that there is really **one root meta-axiom** upon which all other axiomatic/belief systems are built.
+So in developing ibGib, I focused on the _infinitely recursive bootstrapping
+process of definition_, moving beyond axioms to understand that there is really
+**one root meta-axiom** upon which all other axiomatic/belief systems are built.
 
-Come to find out that this has already been explained in the Bible (now that I've read it). But these terms are difficult to understand with <a href="https://www.biblegateway.com/passage/?search=Romans+6:19&version=ESV" target="_blank">"human terms"</a>. But the word ibGib is the one root axiom, which I later found when reading <a href="https://www.biblegateway.com/passage/?search=Exodus+3:14&version=ESV" target="_blank">Exodus 3:14</a>:
+Come to find out that this has already been explained in the Bible (now that
+I've read it), and that this root axiom is clearly and most beautifully 
+established in
+<a href="https://www.biblegateway.com/passage/?search=Exodus+3:14&version=ESV" target="_blank">Exodus 3:14</a>:
 
 > God said to Moses,  
 > &nbsp;&nbsp; “I am who I am.”[a]  
