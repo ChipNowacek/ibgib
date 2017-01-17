@@ -1376,11 +1376,11 @@ export class BatchRefreshCommand extends CommandBase {
     // super.exec();
 
     let t = this;
-    console.log(`${t.cmdName} cmd exec`);
+    // console.log(`${t.cmdName} cmd exec`);
 
     let msg = t.getMessage();
     t.ibScape.commandMgr.bus.send(msg, (successMsg) => {
-      console.log(`${t.cmdName} successMsg: ${JSON.stringify(successMsg)}`);
+      // console.log(`${t.cmdName} successMsg: ${JSON.stringify(successMsg)}`);
       if (t.successCallback) {
          t.successCallback(successMsg);
        }

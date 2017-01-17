@@ -125,9 +125,18 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     t.svgGradientId_Comment = "comment" + ibHelper.getRandomString();
     t.addSvgGradient_Simple(t.svgGradientId_Comment, "#D8EB6E", "#AFD147", "#91BD1A");
+
+    t.svgGradientId_Image = "image" + ibHelper.getRandomString();
+    t.addSvgGradient_Simple(t.svgGradientId_Image, "#AD9DFA", "#AD9DFA", "#6E368A");
+
+    t.svgGradientId_Rel8n = "rel8n" + ibHelper.getRandomString();
+    t.addSvgGradient_Simple(t.svgGradientId_Rel8n, "#90C3D4", "#71A3EB", "#61A1FA");
     
     t.svgGradientId_Background = "background" + ibHelper.getRandomString();
     t.addSvgGradient_Simple(t.svgGradientId_Background, "#108201", "#128C01", "#3FA132", "50%", "50%", "50%", "60%", "70%");
+    
+    t.svgGradientId_Default = "default" + ibHelper.getRandomString();
+    t.addSvgGradient_Simple(t.svgGradientId_Default, "#D1AFFA", "#C69FF5", "#AB7DF5");
   }
   /**
    * Adds a simple radialGradient to t.svg.
@@ -1098,7 +1107,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   /** Adds the root */
   addRootNode() {
     let t = this;
-    console.log("addRootNode");
+    // console.log("addRootNode");
 
     // Remove existing rootNode (if exists)
     if (t.rootNode) {
@@ -1698,47 +1707,39 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   }
   getNodeShapeFill(d) {
     let t = this;
-    let color;
 
     switch (d.type) {
       case "ibGib":
-        let index;
 
         if (d.isContext) {
           return `url(#${t.svgGradientId_Context})`;
-          index = "context";
         } else if (d.ibGib === "ib^gib") {
           return `url(#${t.svgGradientId_Root})`;
-          index = "ibGib";
         } else if (d.render && d.render === "text") {
           return `url(#${t.svgGradientId_Comment})`;
-          index = "text";
         } else if (d.render && d.render === "image") {
-          index = "image";
+          return `url(#${t.svgGradientId_Image})`;
         } else if (d.render && d.render === "identity") {
-          index = "identity";
+          return "white";
         } else {
-          index = d.id;
+          return `url(#${t.svgGradientId_Default})`;
         }
 
-        color = d3Colors[index] || d3Colors["default"];
-        break;
-
       case "cmd":
-        color = d.cmd.color;
-        break;
+        return d.cmd.color || `url(#${t.svgGradientId_Default})`;
 
       case "rel8n":
-        // todo: d.type === rel8n
-        // color = d3Colors[d.name];
-        color = d3Colors["default"];
-        break;
+        return `url(#${t.svgGradientId_Rel8n})`;
 
       default:
-        color = d3Colors["default"];
+        return `url(#${t.svgGradientId_Default})`;
     }
 
     return color;
+  }
+  getNodeImageBackgroundFill(d) { 
+    let t = this;
+    return `url(#${t.svgGradientId_Image})`;
   }
   getNodeBorderStroke(d) {
     // for some reason this doesn't work. It should, but it doesn't.
