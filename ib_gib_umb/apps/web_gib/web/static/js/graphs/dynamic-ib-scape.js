@@ -869,6 +869,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       // t.addCmdVirtualNode(d, "help", /*fadeTimeoutMs*/ 0);
       t.addCmdVirtualNode(d, "huh", /*fadeTimeoutMs*/ 0);
       t._addCmdVirtualNodesIfAuthorized_Adjunct(d);
+      if (d.ibGibJson) {
+        if (ibHelper.isComment(d.ibGibJson) || ibHelper.isImage(d.ibGibJson)) {
+          t.addCmdVirtualNode(d, "view", fadeTimeoutMs);
+        }
+      }
     } else if (d.isRoot) {
       t.addCmdVirtualNode(d, "huh", fadeTimeoutMs);
       // t.addCmdVirtualNode(d, "help", fadeTimeoutMs);
@@ -881,6 +886,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         // t.addCmdVirtualNode(d, "help", fadeTimeoutMs);
         t.addCmdVirtualNode(d, "fork", fadeTimeoutMs);
         t._addCmdVirtualNodesIfAuthorized_Comment(d, fadeTimeoutMs);
+        if (ibHelper.isComment(d.ibGibJson) || ibHelper.isImage(d.ibGibJson)) {
+          t.addCmdVirtualNode(d, "view", fadeTimeoutMs);
+        }
       } else {
         // not a loaded ibGibJson, so no virtual nodes to add.
         // So we are assuming this is a virtual node itself.
