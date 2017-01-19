@@ -119,46 +119,8 @@ defmodule IbGib.Data do
     models_array
   end
 
-  # @doc """
-  # Hashes the given `binary` to create the `binary_id`. Inserts the binary
-  # into the repo using the `IbGib.Data.Schemas.BinaryModel`.
-  #
-  # Returns {:ok, binary_id} (hash) or {:error, reason}
-  # """
-  # @spec save_binary(binary) :: {:ok, String.t} | {:error, String.t}
-  # def save_binary(binary_data) do
-  #   binary_id = Helper.hash(binary_data)
-  #   with(
-  #     {:ok, _model} <- insert_into_repo({binary_id, binary_data})
-  #   ) do
-  #     {:ok, binary_id}
-  #   else
-  #     {:error, :already} ->
-  #       Logger.debug "Tried to save info data that already exists. binary_id: #{binary_id}"
-  #       {:ok, binary_id}
-  #
-  #     failure ->
-  #       {:error, "Save binary failed. binary_id: #{binary_id}. Failure: #{inspect failure}"}
-  #   end
-  # end
-
-  # @doc """
-  # Retrieves the binary data associated with the given `binary_id`.
-  # This will hash the data against the id to be sure that it is not compromised.
-  # """
-  # @spec load_binary(String.t) :: {:ok, binary} | {:error, String.t}
-  # def load_binary(binary_id) do
-  #   case get_from_repo(:binary, binary_id) do
-  #     {:ok, binary_info} ->
-  #       binary_data_hash = Helper.hash(binary_info[:binary_data])
-  #       if binary_data_hash == binary_id do
-  #         {:ok, binary_info[:binary_data]}
-  #       else
-  #         {:error, emsg_hash_mismatch()}
-  #       end
-  #     {:error, :not_found} -> {:error, emsg_not_found()}
-  #     {:error, reason} -> {:error, reason}
-  #   end
+  # def get_ib_gib(_ib_gib) do
+  #   get_from_repo(:ibgib, :ibgib)
   # end
 
   # ----------------------------------------------------------------------------
@@ -466,18 +428,37 @@ defmodule IbGib.Data do
       {:ok, %{:ib => ib, :gib => gib, :data => data, :rel8ns => rel8ns}}
     end
   end
-  defp get_from_repo(:binary, binary_id) do
-    model =
-      BinaryModel
-      |> where(binary_id: ^binary_id)
-      |> Repo.one
-
-      if model == nil do
-        {:error, :not_found}
-      else
-        {:ok, %{:binary_id => binary_id, :binary_data => model.binary_data}}
-      end
-  end
+  # defp get_from_repo(:ibgib, :ibgib) do
+  #   _ = Logger.warn("get_from_repo called...whooooa")
+  #   result = 
+  #     IbGibModel 
+  #     |> order_by(asc: :inserted_at)
+  #     |> Repo.all()
+  #     |> Enum.map(fn(item) -> 
+  #          %{
+  #             :ib => item.ib, 
+  #             :gib => item.gib, 
+  #             :data => item.data, 
+  #             :rel8ns => item.rel8ns
+  #           } 
+  #        end)
+  #   
+  #   _ = Logger.warn("get_from_repo result count: #{Enum.count(result)}")
+  #   
+  #   {:ok, result}
+  # end
+  # defp get_from_repo(:binary, binary_id) do
+  #   model =
+  #     BinaryModel
+  #     |> where(binary_id: ^binary_id)
+  #     |> Repo.one
+  # 
+  #     if model == nil do
+  #       {:error, :not_found}
+  #     else
+  #       {:ok, %{:binary_id => binary_id, :binary_data => model.binary_data}}
+  #     end
+  # end
 
 
   # Wraps the search_term in `%`s for use with LIKE clauses, but only if it
