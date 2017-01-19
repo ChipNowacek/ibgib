@@ -1,11 +1,16 @@
 defmodule IbGibUmb.Mixfile do
+  @moduledoc """
+  Umbrella mix config. 
+  Not much here, except bare umbrella stuff and distillery!
+  """
+  
   use Mix.Project
 
   def project() do
     [apps_path: "apps",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
-     deps: deps]
+     deps: deps()]
   end
 
   # Dependencies can be Hex packages:

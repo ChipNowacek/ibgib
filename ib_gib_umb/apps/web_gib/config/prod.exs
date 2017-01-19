@@ -17,6 +17,30 @@ config :web_gib, WebGib.Endpoint,
   # run after static files are built.
   cache_static_manifest: "priv/static/manifest.json",
 
+  
+  # Needed for the websocket with phoenix channels
+  # https://github.com/phoenixframework/phoenix/issues/1359
+  check_origin: false,
+  # Couldn't get this to work
+  # check_origin: [
+  #   "//ibgib.com", "//www.ibgib.com", # not sure if these do anything
+  #   # "//192.168.99.1", # for local docker-machine
+  #   # "//192.168.99.100", # for local docker-machine
+  #   "//192.168.99.101", # for local docker-machine
+  #   
+  #   # Shotgunning the following IPs to try to ensure that they are allowed
+  #   # for phoenix channels, because I don't want to troubleshoot it in prod
+  #   # and I figure this is already better than check_origin: false.
+  #   "//172.17.0.1", # These are the ips that are assigned per docker networks...
+  #   "//172.17.0.2", # These are the ips that are assigned per docker networks...
+  #   "//172.17.0.3", # These are the ips that are assigned per docker networks...
+  #   "//172.18.0.1", # shotgun approach...
+  #   "//172.18.0.2", # shotgun approach...
+  #   "//172.18.0.3", # shotgun approach...
+  #   "//172.19.0.1",  # ...
+  #   "//172.19.0.2",  # ...
+  #   "//172.19.0.3"  # ...
+  # ],
 
   # For hot code upgrading (?)
   root: ".",
