@@ -17,6 +17,10 @@ config :web_gib, WebGib.Endpoint,
   pubsub: [name: WebGib.PubSub,
            adapter: Phoenix.PubSub.PG2]
 
+# Configure node secret for node identity
+config :web_gib, 
+  node_id_secret: "SupEr Dup3r S3cr3t"
+
 # Configures Elixir's Logger
 config :logger, :console,
   format: "\n[$time $level] $levelpad$metadata\n$message\n",

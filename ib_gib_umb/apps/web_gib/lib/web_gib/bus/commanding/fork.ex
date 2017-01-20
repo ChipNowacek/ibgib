@@ -66,9 +66,12 @@ defmodule WebGib.Bus.Commanding.Fork do
 
       # Broadcast updated src_ib_gib if different
       _ <- (if context_ib_gib !== new_context_ib_gib_or_nil and
-            new_context_ib_gib_or_nil != nil,
-            do: EventChannel.broadcast_ib_gib_event(:update, {context_ib_gib, new_context_ib_gib_or_nil}),
-            else: :ok),
+            new_context_ib_gib_or_nil != nil do
+              EventChannel.broadcast_ib_gib_event(:update, {context_ib_gib, new_context_ib_gib_or_nil})
+            else
+              _ = Logger.debug("new context is nil. not broadcasting.")
+              :ok
+            end),
 
       # Reply
       {:ok, reply_msg} <- get_reply_msg(forked_ib_gib, new_context_ib_gib_or_nil)
@@ -138,6 +141,7 @@ defmodule WebGib.Bus.Commanding.Fork do
       {:ok, new_context_ib_gib_or_nil} <-
         (if new_context_info, do: get_ib_gib(new_context_info), else: {:ok, nil})
     ) do
+      _ = Logger.debug("yooo what up...new_context_ib_gib_or_nil: #{inspect new_context_ib_gib_or_nil}")
       {:ok, new_context_ib_gib_or_nil}
     else
       error -> default_handle_error(error)

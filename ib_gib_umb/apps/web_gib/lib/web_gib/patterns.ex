@@ -5,6 +5,8 @@ defmodule WebGib.Patterns do
   
   import Expat # https://github.com/vic/expat
   
+  use WebGib.Constants, :keys
+  
   defpat ib_gib_         %{"ib_gib" => ib_gib}
   defpat ib_gibs_        %{"ib_gibs" => ib_gibs}
   defpat dest_ib_        %{"dest_ib" => dest_ib}
@@ -13,6 +15,10 @@ defmodule WebGib.Patterns do
   defpat adjunct_ib_gib_ %{"adjunct_ib_gib" => adjunct_ib_gib}
   defpat comment_text_   %{"comment_text" => comment_text}
   defpat link_text_      %{"link_text" => link_text}
+  defpat ib_username_    %{@ib_username_key => ib_username}
+  
+  defpat params_         %{params: params}
+  defpat conn_           %Plug.Conn{params: params}
   
   defpat ib_identity_ib_gibs_ %{ib_identity_ib_gibs: identity_ib_gibs}
   defpat assigns_identity_ib_gibs_ %{assigns: ib_identity_ib_gibs_()}

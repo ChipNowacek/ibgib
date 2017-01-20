@@ -27,10 +27,10 @@ defmodule IbGib.Constants do
       @max_data_size 10_240_000 # max internal data size in MB
       # defp max_data_size, do: @max_data_size
       # one or more word chars, underscore, dash
-      @regex_valid_ib ~r/^[\w\d_-\s]+$/
+      @regex_valid_ib ~r/^\w[\w\d \-]*(?<![\s])$/
       @regex_valid_gib ~r/^[\w\d]+$/
       # delim hardcoded in!!!!
-      @regex_valid_ib_gib ~r/^[\w\d_-\s]+\^[\w\d]+$/
+      @regex_valid_ib_gib ~r/^\w[\w\d \-]+(?<![\s])[\^]+[\w\d]+$/
 
       @default_dna [@root_ib_gib]
       @default_past [@root_ib_gib]

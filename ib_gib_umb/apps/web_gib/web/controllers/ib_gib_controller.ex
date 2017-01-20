@@ -19,15 +19,8 @@ defmodule WebGib.IbGibController do
   alias WebGib.Adjunct
   alias WebGib.Bus.Channels.Event, as: EventChannel
   import IbGib.QueryOptionsFactory
-  import WebGib.Validate
+  import WebGib.{Patterns, Validate}
 
-  # ----------------------------------------------------------------------------
-  # Expat Reusable Patterns
-  # ----------------------------------------------------------------------------
-  defpat ib_gib_       %{"ib_gib" => ib_gib}
-  defpat dest_ib_      %{"dest_ib" => dest_ib}
-  defpat src_ib_gib_   %{"src_ib_gib" => src_ib_gib}
-  
   # ----------------------------------------------------------------------------
   # Function Plugs
   # ----------------------------------------------------------------------------
@@ -37,6 +30,7 @@ defmodule WebGib.IbGibController do
   # ----------------------------------------------------------------------------
   # Controller Commands
   # ----------------------------------------------------------------------------
+
 
   @doc """
   This should show the "Home" ib^gib.

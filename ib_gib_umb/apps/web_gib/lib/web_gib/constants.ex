@@ -12,6 +12,10 @@ defmodule WebGib.Constants do
       # See `WebGib.Plugs.IbGibSession`
       @ib_session_id_key "ib_session_id"
       @ib_session_ib_gib_key "ib_session_ib_gib"
+      @ib_node_id_key "ib_node_id"
+      @ib_node_secret_key "ib_node_secret"
+      @ib_node_ib_gib_key "ib_node_ib_gib"
+      @ib_username_key "ib_username"
 
       @path_before_redirect_key "path_before_redirect"
 
