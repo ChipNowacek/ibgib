@@ -19,6 +19,7 @@ config :web_gib, WebGib.Endpoint,
 
 # Configure node secret for node identity
 config :web_gib, 
+  node_id: "default",
   node_id_secret: "SupEr Dup3r S3cr3t"
 
 # Configures Elixir's Logger
