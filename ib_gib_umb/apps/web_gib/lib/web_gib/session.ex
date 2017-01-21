@@ -17,6 +17,7 @@ defmodule WebGib.Session do
   Gets the current node's identity.
   """
   def get_current_session_identity(conn) do
+    _ = Logger.debug("get_current_session_identity. conn: #{inspect conn}")
     with(
       {:ok, identity_ib_gib} <- get_current_session_identity_ib_gib(conn),
       {:ok, identity} <-
@@ -29,9 +30,10 @@ defmodule WebGib.Session do
   end
 
   def get_current_session_identity_ib_gib(conn) do
+    _ = Logger.debug("get_current_session_identity_ib_gib. conn: #{inspect conn}")
     with(
       {:ok, {priv_data, pub_data}} <- get_priv_and_pub_data(conn),
-      {:ok, identity_ib_gib} <- get_current_session_identity(conn)
+      {:ok, ib_gib} <- Identity.get_identity(priv_data, pub_data)
     ) do
       {:ok, ib_gib}
     else
@@ -40,6 +42,7 @@ defmodule WebGib.Session do
   end
 
   def get_ib_session_id(conn) do
+    _ = Logger.debug("get_ib_session_id. conn: #{inspect conn}")
     ib_session_id = get_session(conn, @ib_session_id_key)
     
     if ib_session_id === nil do
@@ -54,6 +57,7 @@ defmodule WebGib.Session do
   end
   
   def set_ib_session_id(conn, ib_session_id) do
+    _ = Logger.debug("set_ib_session_id. conn: #{inspect conn}")
     {:ok, put_session(conn, @ib_session_id_key, ib_session_id)}
   end
 
@@ -62,6 +66,7 @@ defmodule WebGib.Session do
   end
 
   def get_ib_username(conn) do
+    _ = Logger.debug("get_ib_username. conn: #{inspect conn}")
     ib_username = get_session(conn, @ib_username_key)
     
     if ib_username === nil do
@@ -78,9 +83,12 @@ defmodule WebGib.Session do
   defp get_priv_and_pub_data(conn) do
     _ = Logger.debug("get_priv_and_pub_data. conn: #{inspect conn}")
     with(
+      # priv_data
       {:ok, ib_session_id} <- get_ib_session_id(conn),
-      {:ok, ib_username} <- get_ib_username(conn),
       {:ok, priv_data} <- {:ok, %{@ib_session_id_key => ib_session_id}},
+
+      # pub_data
+      {:ok, ib_username} <- get_ib_username(conn),
       {:ok, pub_data} <- 
         {:ok, %{"type" => "session",
                 "username" => ib_username}}
