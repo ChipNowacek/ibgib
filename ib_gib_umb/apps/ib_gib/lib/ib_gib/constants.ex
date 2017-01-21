@@ -28,9 +28,9 @@ defmodule IbGib.Constants do
       # defp max_data_size, do: @max_data_size
       # one or more word chars, underscore, dash
       @regex_valid_ib ~r/^\w[\w\d \-]*(?<![\s])$/
-      @regex_valid_gib ~r/^[\w\d]+$/
+      @regex_valid_gib ~r/^\w+$/
       # delim hardcoded in!!!!
-      @regex_valid_ib_gib ~r/^\w[\w\d \-]+(?<![\s])[\^]+[\w\d]+$/
+      @regex_valid_ib_gib ~r/^\w[\w\d \-]*(?<![\s])[\^][\w\d]+$/
 
       @default_dna [@root_ib_gib]
       @default_past [@root_ib_gib]
@@ -100,10 +100,12 @@ defmodule IbGib.Constants do
     quote do
       @test_identities_1 [
         @bootstrap_identity_ib_gib,
+        "node_test identity1#{@delim}ibGib_gibyo_ibGib",
         "session_test identity1#{@delim}ibGib_gib_ibGib"
       ]
       @test_identities_2 [
         @bootstrap_identity_ib_gib,
+        "node_test identity1#{@delim}ibGib_gibyo_ibGib",
         "session_test identity1#{@delim}ibGib_gib_ibGib",
         "session_test identity2222222222#{@delim}ibGib_gib_ibGib"
       ]
