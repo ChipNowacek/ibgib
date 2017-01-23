@@ -532,9 +532,12 @@ export class ForkDetailsCommand extends FormDetailsCommandBase {
             // User was NOT authzd to rel8 to non-Root Context
             // Maybe do this in a new tab (in case the user didn't
             // know what was going to happen).
-            // location.href = `/ibgib/${msg.data.forked_ib_gib}`;
-            t.ibScape.remove(t.virtualNode);
-            window.open(`/ibgib/${msg.data.forked_ib_gib}`, "_blank");
+            // t.ibScape.remove(t.virtualNode);
+            // window.open(`/ibgib/${msg.data.forked_ib_gib}`, "_blank");
+
+            // I'm changing to this because it does popup blocking and that's
+            // annoying. So just redirecting to new fork.
+            location.href = `/ibgib/${msg.data.forked_ib_gib}`;
           }
         }
         

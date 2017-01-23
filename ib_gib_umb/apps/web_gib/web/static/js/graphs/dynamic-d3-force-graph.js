@@ -315,6 +315,8 @@ export class DynamicD3ForceGraph {
         .attr("height", d => t.getNodeShapeHeight(d))
         .attr("x", d => Math.trunc(-1/2 * t.getNodeShapeWidth(d)))
         .attr("y", d => Math.trunc(-1/2 * t.getNodeShapeHeight(d)))
+        .attr("rx", 10) // hard-coding for now.
+        .attr("ry", 10)
         .attr("fill", d => t.getNodeShapeFill(d))
         .attr("stroke", d => t.getNodeBorderStroke(d))
         .attr("stroke-width", d => t.getNodeBorderStrokeWidth(d))

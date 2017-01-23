@@ -18,6 +18,9 @@ defmodule WebGib.Validate do
   # ----------------------------------------------------------------------------
 
   def validate(type, instance)
+  def validate(:ib, ib) do
+    valid_ib?(ib)
+  end
   def validate(:dest_ib, dest_ib) do
     valid_ib?(dest_ib) or
       # empty or nil dest_ib will be set automatically.

@@ -6,7 +6,7 @@ erl_crash.dump
 npm-debug.log
 
 rel/ib_gib_umb
-/postgresqldata
+/postgres/postgresqldata
 
 *.crt
 *.key

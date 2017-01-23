@@ -1641,13 +1641,19 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   // Node get functions -------------------------------------
 
   getNodeShape(d) {
-    if (d.ibGibJson && d.ibGibJson.data && d.ibGibJson.data.shape) {
-      if (d.ibGibJson.data.shape === "circle") {
-        return "circle";
-      } else if (d.ibGibJson.data.shape === "rect") {
+    if (d.ibGibJson) {
+      if (d.ibGibJson.data && d.ibGibJson.data.shape) {
+        switch (d.ibGibJson.data.shape) {
+          case "circle": return "circle";
+          case "rect":   return "rect";
+          case "oval":   return "circle";
+          case "square": return "rect";
+          default:       return "circle";
+        }
+      } else if (ibHelper.isComment(d.ibGibJson)) {
         return "rect";
       } else {
-        return super.getNodeShape(d);
+        return "circle";
       }
     } else {
       return super.getNodeShape(d);

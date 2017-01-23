@@ -1,8 +1,8 @@
-defmodule WebGib.Plugs.EnsureIbGibSession do
+defmodule WebGib.Plugs.EnsureIbSessionId do
   @moduledoc """
-  Ensures that there is an existing ib_gib session (not just a "proper" session
-  which every request has). If none is found, then redirects to the home page
-  for the user to read.
+  Ensures that there is an existing ib_gib session id (not just a "proper"
+  session which every request has). If none is found, then redirects to the
+  home page for the user to read.
   """
 
   require Logger
@@ -29,17 +29,17 @@ defmodule WebGib.Plugs.EnsureIbGibSession do
     If it doesn't exist, redirect the user to the home page.
   """
   def call(conn, options) do
-    _ = Logger.debug "ensure plug yo."
-    current_ib_session = conn |> get_session(@ib_session_id_key)
-    if current_ib_session == nil do
+    _ = Logger.debug "ensure ib_gib_identity plug yo."
+    ib_session_id = conn |> get_session(@ib_session_id_key)
+    if ib_session_id == nil do
       _ = Logger.debug "current ib session is nil"
       conn
-      |> put_flash(:error, gettext "Please read ibGib's Vision and Privacy Caution before continuing. Thanks :-)")
+      |> put_flash(:info, gettext "Please read ibGib's Vision and Privacy Caution before continuing. Thanks :-)")
       |> put_session(@path_before_redirect_key, conn.request_path)
       |> redirect(to: "/")
       |> halt
     else
-      _ = Logger.debug "current ib session exists"
+      _ = Logger.debug "current ib session id exists"
       conn
     end
   end

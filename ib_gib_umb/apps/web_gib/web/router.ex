@@ -15,10 +15,11 @@ defmodule WebGib.Router do
   end
 
   pipeline :ib_gib_pipe do
-    plug WebGib.Plugs.EnsureIbGibSession
+    plug WebGib.Plugs.EnsureIbSessionId
+    plug WebGib.Plugs.EnsureIbGibUsername
     plug WebGib.Plugs.IbGibIdentity
     # plug WebGib.Plugs.AggregateIDHash
-    plug WebGib.Plugs.EnsureMetaQuery
+    # plug WebGib.Plugs.EnsureMetaQuery
     plug WebGib.Plugs.IbGibRoot
   end
 
