@@ -21,7 +21,8 @@ services:
       - back
 
   postgres:
-    image: postgres:9.5
+    build:
+      context: ./postgres
     container_name: postgres
     environment:
       POSTGRES_USER: "${POSTGRES_USER}"
@@ -30,7 +31,8 @@ services:
     # container image itself. (The "local machine" may be a vm if using
     # `docker-machine`.)
     volumes:
-      - "./postgresqldata:/var/lib/postgresql/data"
+      - "postgresqldatavolume:/var/lib/postgresql/data"
+    #   - "./postgresqldata:/var/lib/postgresql/data"
     restart: always
     networks:
       - back
@@ -49,6 +51,7 @@ services:
 
 volumes:
   uploadedfiles:
+  postgresqldatavolume:
 
 networks:
   front:
