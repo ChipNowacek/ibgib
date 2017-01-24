@@ -89,11 +89,8 @@ defmodule IbGib.Transform.Factory do
   gib was done by our engine and not by a user.
   """
   @spec mut8(String.t, list(String.t), map, map) :: {:ok, map} | {:error, String.t}
-  def mut8(src_ib_gib,
-           identity_ib_gibs,
-           new_data,
-           opts)
- def mut8(src_ib_gib, identity_ib_gibs, new_data, opts)
+  def mut8(src_ib_gib, identity_ib_gibs, new_data, opts)
+  def mut8(src_ib_gib, identity_ib_gibs, new_data, opts)
     when is_bitstring(src_ib_gib) and is_list(identity_ib_gibs) and
          is_map(new_data) and is_map(opts) do
 
