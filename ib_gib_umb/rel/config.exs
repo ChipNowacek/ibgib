@@ -1,6 +1,6 @@
 use Mix.Releases.Config,
     # This sets the default release built by `mix release`
-    default_release: :default,
+    default_release: :ib_gib_umb,
     # This sets the default environment used by `mix release`
     default_environment: :dev
 
@@ -14,20 +14,23 @@ use Mix.Releases.Config,
 # and environment configuration is called a profile
 
 environment :dev do
-  set dev_mode: true
-  set include_erts: false
+  set dev_mode:     false # b/c we want it to create tar file
+  set include_erts: true
+  set include_src:  false
   set cookie: :":ALx<_H|[~3W,LmaHKd/BE0^vn!GoW.ZaP6&mGo0tz3&BzaeQp;s<N+:_n_q6*bd"
 end
 
 environment :staging do
-  set dev_mode: false
+  set dev_mode:     false
   set include_erts: true
+  set include_src:  false
   set cookie: :":ALx<_H|[~3W,LmaHKd/BE0^vn!GoW.ZaP6&mGo0tz3&BzaeQp;s<N+:_n_q6*bd"
 end
 
 environment :prod do
+  set dev_mode:     false
   set include_erts: true
-  set include_src: false
+  set include_src:  false
   set cookie: :":ALx<_H|[~3W,LmaHKd/BE0^vn!GoW.ZaP6&mGo0tz3&BzaeQp;s<N+:_n_q6*bd"
 end
 
@@ -37,7 +40,7 @@ end
 # will be used by default
 
 release :ib_gib_umb do
-  set version: "0.2.0"
+  set version: "0.2.1"
   set applications: [
     ib_gib: :permanent,
     random_gib: :permanent,
