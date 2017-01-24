@@ -55,24 +55,24 @@ defmodule WebGib.IbGibController do
     |> assign(:ib, "ib")
     |> assign(:gib, "gib")
     |> assign(:ib_gib, target)
-    |> add_meta_query
+    # |> add_meta_query
     # |> redirect(to: ib_gib_path(WebGib.Endpoint, :show, get_session(conn, @meta_query_result_ib_gib_key)))
     |> redirect(to: ib_gib_path(WebGib.Endpoint, :show, target))
   end
 
-  defp add_meta_query(conn) do
-    _ = Logger.debug "meta_query_ib_gib: #{@meta_query_ib_gib_key}"
-    _ = Logger.debug "meta_query_result_ib_gib: #{@meta_query_result_ib_gib_key}"
-
-    meta_query_ib_gib =
-      conn |> get_session(@meta_query_ib_gib_key)
-    meta_query_result_ib_gib =
-      conn |> get_session(@meta_query_result_ib_gib_key)
-
-    conn
-    |> assign(:meta_query_ib_gib, meta_query_ib_gib)
-    |> assign(:meta_query_result_ib_gib, meta_query_result_ib_gib)
-  end
+  # defp add_meta_query(conn) do
+  #   _ = Logger.debug "meta_query_ib_gib: #{@meta_query_ib_gib_key}"
+  #   _ = Logger.debug "meta_query_result_ib_gib: #{@meta_query_result_ib_gib_key}"
+  # 
+  #   meta_query_ib_gib =
+  #     conn |> get_session(@meta_query_ib_gib_key)
+  #   meta_query_result_ib_gib =
+  #     conn |> get_session(@meta_query_result_ib_gib_key)
+  # 
+  #   conn
+  #   |> assign(:meta_query_ib_gib, meta_query_ib_gib)
+  #   |> assign(:meta_query_result_ib_gib, meta_query_result_ib_gib)
+  # end
 
   @doc """
   This should show the given `ib^gib`. If only the `ib` is given, then this
@@ -119,7 +119,7 @@ defmodule WebGib.IbGibController do
         _ = Logger.debug "thing_relations: #{inspect thing_relations}"
         conn =
           conn
-          |> add_meta_query
+          # |> add_meta_query
           |> assign(:ib, ib)
           |> assign(:gib, gib)
           |> assign(:ib_gib, ib_gib)
@@ -190,10 +190,17 @@ defmodule WebGib.IbGibController do
   end
 
   defp build_query_opts_latest(identity_ib_gibs, ib_gib) do
-    non_root_identities = Enum.filter(identity_ib_gibs, &(&1 != @root_ib_gib))
+    query_identities = 
+      identity_ib_gibs
+      |> Enum.filter(&(&1 != @root_ib_gib))
+      |> Enum.filter(fn(identity_ib_gib) -> 
+           {ib, _gib} = separate_ib_gib!(identity_ib_gib)
+           [type, _hash] = String.split(ib, "_")
+           type !== "node" 
+         end)
 
     do_query()
-    |> where_rel8ns("identity", "withany", "ibgib", non_root_identities)
+    |> where_rel8ns("identity", "withany", "ibgib", query_identities)
     |> where_rel8ns("past", "withany", "ibgib", [ib_gib])
     |> most_recent_only()
   end
@@ -1393,15 +1400,24 @@ defmodule WebGib.IbGibController do
 
     # We're searching only for the user's ibgib, and we're going to do a
     # "withany" query. If we kept in the root, then it would return everything
-    # since everybody has the root in its identity_ib_gibs.
-    non_root_identities = Enum.filter(identity_ib_gibs, &(&1 != @root_ib_gib))
+    # since everybody has the root in its identity_ib_gibs. 
+    # We also don't want any node identities in the query. We're looking only
+    # for session and email identities.
+    query_identities = 
+      identity_ib_gibs
+      |> Enum.filter(&(&1 != @root_ib_gib))
+      |> Enum.filter(fn(identity_ib_gib) -> 
+           {ib, _gib} = separate_ib_gib!(identity_ib_gib)
+           [type, _hash] = String.split(ib, "_")
+           type !== "node" 
+         end)
 
-    _ = Logger.debug("non_root_identities: #{inspect non_root_identities}" |> ExChalk.bg_green |> ExChalk.black)
+    _ = Logger.debug("query_identities: #{inspect query_identities}" |> ExChalk.bg_green |> ExChalk.black)
 
     # All queries (currently) look only within the current user's identities.
     query_opts =
       do_query()
-      |> where_rel8ns("identity", "withany", "ibgib", non_root_identities)
+      |> where_rel8ns("identity", "withany", "ibgib", query_identities)
 
     _ = Logger.debug("query_opts: #{inspect query_opts}" |> ExChalk.bg_green |> ExChalk.black)
 
