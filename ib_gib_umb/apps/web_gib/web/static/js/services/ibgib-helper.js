@@ -16,11 +16,22 @@ export function getIbAndGib(ibGib) {
 /**
  * Returns the first non-root ib^gib in the given ibGibJson past.
  * If there are no previous ib^gib in the past besides the root ib^gib, then
- * this returns
+ * this returns the current ibGib (i.e. "no past", so return the present)
  */
 export function getTemporalJunctionIbGib(ibGibJson) {
-  let past = ibGibJson.rel8ns.past;
-  return past.length > 1 ? past[1] : getFull_ibGib(ibGibJson);
+  // makes a copy, splice off the head which is the root (and never the temporal junction point)
+  let past = ibGibJson.rel8ns.past.concat().splice(1); 
+  
+  if (isImage(ibGibJson) || isComment(ibGibJson) || isLink(ibGibJson)) {
+    // We need special handling for pics, comments, links, because the first
+    // non-root in the history is actually a "blank", with empty `data`. So,
+    // in older versions, it is the same thing. In the current version they're
+    // unique, but we don't want to count on that at the moment. So we'll just 
+    // ignore this first "blank" anyway
+    past = past.splice(1);
+  }
+  
+  return past.length > 0 ? past[0] : getFull_ibGib(ibGibJson);
 }
 
 /** For safe access to ibGibJson.data.text */

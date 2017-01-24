@@ -300,6 +300,13 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   }
   refreshIbGibs(ibGibs, callback) {
     let t = this, lc = `refreshIbGibs(ibGibs: ${JSON.stringify(ibGibs)})`;
+    if (t.busyRefreshing) {
+      let intervalClosure = setTimeout(() => {
+        t.refreshIbGibs(ibGibs, callback);
+      }, 5000);
+    } else {
+      t.busyRefreshing = true;
+    }
 
     t.backgroundRefresher.exec(ibGibs, successMsg => {
       // console.log(`${lc} Initial refresh source nodes complete. successMsg: ${JSON.stringify(successMsg)}`);
@@ -318,9 +325,13 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         } else {
           console.error(`${lc} successMsg.data problem.`);
         }
+        
+        delete t.busyRefreshing;
+        
         if (callback) { callback(); }
     }, errorMsg => {
       console.error(`Error on refresh ibGibs. errorMsg: ${JSON.stringify(errorMsg)}`);
+      if (t.busyRefreshing) { delete t.busyRefreshing; }
       if (callback) { callback(); }
     });
   }
