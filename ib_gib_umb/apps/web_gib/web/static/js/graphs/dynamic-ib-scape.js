@@ -1661,7 +1661,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           case "square": return "rect";
           default:       return "circle";
         }
-      } else if (ibHelper.isComment(d.ibGibJson)) {
+      } else if (ibHelper.isComment(d.ibGibJson) || ibHelper.isLink(d.ibGibJson)) {
         return "rect";
       } else {
         return "circle";

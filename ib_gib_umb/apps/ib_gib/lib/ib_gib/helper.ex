@@ -612,4 +612,8 @@ defmodule IbGib.Helper do
   def get_temporal_junction_ib_gib(ib_gib) do
     invalid_args(ib_gib)
   end
+  
+  def get_timestamp_str() do
+    DateTime.utc_now |> DateTime.to_string
+  end
 end

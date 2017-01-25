@@ -140,7 +140,8 @@ defmodule WebGib.Bus.Commanding.Link do
       state <- %{
                   "text" => link_text,
                   "render" => "link",
-                  "shape" => "rect"
+                  "shape" => "rect",
+                  "when" => get_timestamp_str()
                 },
       {:ok, link} <- link |> mut8(identity_ib_gibs, state),
       {:ok, link} <-

@@ -847,7 +847,8 @@ defmodule WebGib.IbGibController do
                              "ext" => ext,
                              "thumb_bin_id" => thumb_bin_id,
                              "thumb_filename" => thumb_filename,
-                             "thumb_size" => "#{@pic_thumb_size}"
+                             "thumb_size" => "#{@pic_thumb_size}",
+                             "when" => get_timestamp_str()
                             }),
       {:ok, pic} <-
         pic |> Expression.rel8(latest_src, identity_ib_gibs, ["pic_"])

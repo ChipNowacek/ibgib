@@ -139,7 +139,8 @@ defmodule WebGib.Bus.Commanding.Comment do
       state <- %{
                   "text" => comment_text,
                   "render" => "text",
-                  "shape" => "rect"
+                  "shape" => "rect",
+                  "when" => get_timestamp_str()
                 },
       {:ok, comment} <- comment |> mut8(identity_ib_gibs, state),
       {:ok, comment} <-
@@ -150,6 +151,7 @@ defmodule WebGib.Bus.Commanding.Comment do
       error -> default_handle_error(error)
     end
   end
+  
 
   defp rel8_adjunct_if_necessary(nil, identity_ib_gibs, latest_src, comment) do
     _ = Logger.debug("rel8_adjunct necessary. new_src is nil." |> ExChalk.bg_cyan |> ExChalk.black)
