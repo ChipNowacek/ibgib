@@ -559,9 +559,13 @@ defmodule IbGib.Helper do
   > Marty McFly: That's right, Doc. November 12, 1955.
   > Doc: Unbelievable, that old Biff could have chosen that particular date. It could mean that that point in time inherently contains some sort of cosmic significance. Almost as if it were the temporal junction point for the entire space-time continuum. On the other hand, it could just be an amazing coincidence.
 
-  This returns the first (non-root) ib^gib in the given `ib_gib`'s past.
-  This seems to be a useful thing, defining the start of a timeline, i.e. the
-  ib_gib's "birthday".
+  This returns the first (non-root) ib^gib in the given `ib_gib`'s past, 
+  ** unless the ib_gib is a blank pic, comment, or link, in which case this 
+  skips the _very_ first past ibGib and returns the next **. This is because
+  with these, the very first one is a "blank" with an empty data, and old
+  ibGib will all share the exact same temporal junction point, which isn't 
+  useful. The utility of the temporal junction point is to define the start of
+  a "single" ibGib's timeline, like it's birthday.
 
   Think of child records/tables in a relational database. These records are
   joined to the parent record via the parent's id/seq value. Well this id/seq
@@ -576,7 +580,7 @@ defmodule IbGib.Helper do
 
   ## Use Case
 
-  I'm creating this specifically for "implied" ibGib rel8ns, which are 1-way
+  I'm creating this specifically for "adjunct" ibGib rel8ns, which are 1-way
   rel8ns that are rel8d _to_ an ibGib but are not directly rel8d _on_ an ibGib.
   So I'm going to "tag" the ibGib at the precise ib^gib pointer in time where
   the comment occurs, **as well as tagging the temporal junction point**. This
@@ -584,6 +588,32 @@ defmodule IbGib.Helper do
   given ibGib", I know to look at the temporal junction point instead of
   searching for any possible ib^gib in its "past". (Yes, I have actually been
   coding this entire "past" querying and it is ludicrously ugly.)
+  
+  ## Examples
+    
+    # By default, the temporal junction point is the _first_ ib^gib (a^123) in
+    # the ibGib's past rel8n.
+    iex> past = ["ib^gib", "a^123", "a^456"]
+    ...> ancestors = ["ib^gib","A^gib"]
+    ...> info = %{ib: "a", gib: "XYZ", data: %{}, rel8ns: %{"past" => past, "ancestor" => ancestors}}
+    ...> IbGib.Helper.get_temporal_junction_ib_gib(info)
+    {:ok, "a^123"}
+  
+    # Some, e.g. links, skip the first past (link^123) and return the second
+    # (link^456) because the first one is a "blank".
+    iex> past = ["ib^gib", "link^123", "link^456"]
+    ...> ancestors = ["ib^gib","text^gib","link^gib"]
+    ...> info = %{ib: "ibyo", gib: "gibyo", data: %{}, rel8ns: %{"past" => past, "ancestor" => ancestors}}
+    ...> IbGib.Helper.get_temporal_junction_ib_gib(info)
+    {:ok, "link^456"}
+    
+    # If an ibGib has no past (only the root), then the **current** ibGib _is_
+    # the temporal junction point.
+    iex> past = ["ib^gib"]
+    ...> ancestors = ["ib^gib","A^gib"]
+    ...> info = %{ib: "a", gib: "XYZ", data: %{}, rel8ns: %{"past" => past, "ancestor" => ancestors}}
+    ...> IbGib.Helper.get_temporal_junction_ib_gib(info)
+    {:ok, "a^XYZ"}
   """
   def get_temporal_junction_ib_gib(ib_gib)
   def get_temporal_junction_ib_gib(ib_gib) when is_bitstring(ib_gib) do
@@ -599,18 +629,92 @@ defmodule IbGib.Helper do
     end
   end
   def get_temporal_junction_ib_gib(ib_gib_info) when is_map(ib_gib_info) do
-    past = ib_gib_info[:rel8ns]["past"]
-    if Enum.count(past) > 1 do
-      # position 0 is root, position 1 is the temporal junction
-      {:ok, Enum.at(past, 1)}
+    with(
+      {:ok, past} <- get_rel8ns(ib_gib_info, "past"),
+      # Remove the root, since the root is never the temporal junction point
+      [@root_ib_gib | past_sans_root] = past,
+      
+      {:ok, ancestors} <- get_rel8ns(ib_gib_info, "ancestor"),
+      
+      {:ok, temp_junc_ib_gib} <- 
+        (if skip_first_past?(ancestors) do
+          # Assume that if we're skipping the first past, then there will be at
+          # least another entry in the past. I believe this is true ATOW
+          # (2017/01/25) for comments, pics, links.
+          {:ok, Enum.at(past_sans_root, 1)}
+         else
+           if Enum.count(past_sans_root) > 0 do
+             {:ok, Enum.at(past_sans_root, 0)}
+           else
+             # There is no past, so the given `ib_gib_info` itself _is_ the temporal
+             # junction. So get the info's ib^gib
+             get_ib_gib(ib_gib_info)
+           end
+         end)
+    ) do
+      {:ok, temp_junc_ib_gib}
     else
-      # There is no past, so the given `ib_gib_info` itself _is_ the temporal
-      # junction. So get the info's ib^gib
-      get_ib_gib(ib_gib_info)
+      error -> default_handle_error(error)
     end
   end
   def get_temporal_junction_ib_gib(ib_gib) do
     invalid_args(ib_gib)
+  end
+  
+  @doc """
+    If the ibGib is a comment, pic, or link, we must skip the first "blank"
+    past ib_gib because this will have no data. 
+    See https://github.com/ibgib/ibgib/issues/143 for details
+  
+    ## Examples
+
+    iex> ancestors = ["ib^gib","text^gib","link^gib"]
+    ...> IbGib.Helper.skip_first_past?(ancestors)
+    true
+    iex> ancestors = ["ib^gib","text^gib","pic^gib"]
+    ...> IbGib.Helper.skip_first_past?(ancestors)
+    true
+    iex> ancestors = ["ib^gib","text^gib","comment^gib"]
+    ...> IbGib.Helper.skip_first_past?(ancestors)
+    true
+    iex> ancestors = ["ib^gib","a^gib","b^gib"]
+    ...> IbGib.Helper.skip_first_past?(ancestors)
+    false
+  """
+  def skip_first_past?(ancestors) when is_list(ancestors) do
+    ancestors
+    |> Enum.any?(fn(ancestor_ib_gib) -> 
+         ancestor_ib_gib === "binary^gib" or 
+         ancestor_ib_gib === "text^gib"
+       end)
+  end
+  def skip_first_past?(ancestors) do
+    false
+  end
+  
+  @doc """
+  Gets the `rel8n_name` rel8ns for a given `info`.
+  
+    iex> info = %{rel8ns: %{"past" => ["ib^gib", "1^gib"]}}
+    ...> IbGib.Helper.get_rel8ns(info, "past")
+    {:ok, ["ib^gib", "1^gib"]}
+    
+    iex> info = %{rel8ns: %{"past" => ["ib^gib", "1^gib"]}}
+    ...> {:error, _} = IbGib.Helper.get_rel8ns(info, "x")
+    ...> :ok
+    :ok
+  """
+  def get_rel8ns(info, rel8n_name) 
+    when is_map(info) and is_bitstring(rel8n_name) do
+    rel8ns = info[:rel8ns][rel8n_name]
+    if rel8ns === nil do
+      {:error, "Rel8n #{rel8n_name} not found in info."}
+    else
+      {:ok, rel8ns}
+    end
+  end
+  def get_rel8n(info, rel8n_name) do
+    invalid_args([info, rel8n_name])
   end
   
   def get_timestamp_str() do
