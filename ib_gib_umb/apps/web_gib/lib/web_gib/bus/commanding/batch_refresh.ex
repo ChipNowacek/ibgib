@@ -17,12 +17,15 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
   &nbsp;&nbsp; and by perseverance produce a crop.
   """
 
+  import Expat # https://github.com/vic/expat
   require Logger
 
   import IbGib.{Expression, Helper, QueryOptionsFactory}
   import WebGib.Bus.Commanding.Helper
   import WebGib.Patterns
   use IbGib.Constants, :ib_gib
+  use WebGib.Constants, :config
+  use WebGib.Constants, :keys
 
   def handle_cmd(ib_gibs_(...) = data,
                  _metadata,
@@ -108,6 +111,37 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
   # **that** ibgib's identities, i.e. in that timeline.
   defp get_latest(identity_ib_gibs, query_src, ib_gib) do
     with(
+    {:ok, latest_ib_gib_or_nil} <- try_get_cached_latest_ib_gib(ib_gib),
+    {:ok, latest_ib_gib} <- 
+      latest_ib_gib_or_nil || query_latest(identity_ib_gibs, query_src, ib_gib),
+    ) do
+      {:ok, result_ib_gib}
+    else
+      error -> default_handle_error(error)
+    end
+  end
+  
+
+  defp try_get_cached_latest_ib_gib(ib_gib) do
+    with(
+      key <- @query_cache_prefix_key <> ib_gib,
+      {:ok, [latest_ib_gib | timestamp_ms]} <- IbGib.Data.Cache.get(key),
+      now <- :erlang.system_time(:milli_seconds),
+      latest_ib_gib <- 
+        (if now - timestamp_ms < @query_cache_expiry_ms, do
+          latest_ib_gib
+         else
+           nil
+         end)
+    ) do
+      {:ok, latest_ib_gib}
+    else
+      _not_found -> {:ok, nil}
+    end
+  end
+  
+  defp query_latest(identity_ib_gibs, query_src, ib_gib) do
+    with(
       {:ok, ib_gib_process} <-
         IbGib.Expression.Supervisor.start_expression(ib_gib),
       {:ok, ib_gib_info} <- ib_gib_process |> get_info(),
@@ -124,7 +158,11 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
       # Return the query_result result ib^gib
       {:ok, query_result_info} <- query_result |> get_info(),
       {:ok, result_ib_gib} <-
-        extract_latest_ib_gib(ib_gib, query_result_info)
+        extract_latest_ib_gib(ib_gib, query_result_info),
+        
+      # Store in cache with timestamp
+      key <- @query_cache_prefix_key <> ib_gib,
+      
     ) do
       {:ok, result_ib_gib}
     else
