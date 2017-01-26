@@ -33,6 +33,5 @@ defmodule IbGib.Data.Schemas.IbGibModel do
     |> validate_change(:rel8ns, &ValidateHelper.do_validate_change(&1,&2))
     |> validate_change(:data, &ValidateHelper.do_validate_change(&1,&2))
     |> unique_constraint(:ib, name: :ibgibs_ib_gib_index)
-    # |> unique_constraint(:gib, name: :ibgibs_ib_gib_index)
   end
 end

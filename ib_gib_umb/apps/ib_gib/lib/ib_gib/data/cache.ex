@@ -95,8 +95,10 @@ defmodule IbGib.Data.Cache do
     if insert_result do
       {:ok, :ok}
     else
-      _ = Logger.warn "Attempted to insert duplicate key in cache. key: #{key}"
-      {:error, :already}
+      _ = Logger.debug "Attempted to insert duplicate key in cache. key: #{key}"
+      # {:error, :already}
+      # I don't really care if it's already in the cache (I think)
+      {:ok, :ok}
     end
   end
   

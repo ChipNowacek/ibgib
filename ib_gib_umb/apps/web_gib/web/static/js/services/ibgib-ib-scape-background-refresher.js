@@ -8,10 +8,12 @@ import { BatchRefreshCommand } from './commanding/commands';
  * To defer, use `enqueue`.
  */
 export class IbGibIbScapeBackgroundRefresher {
-  constructor(ibScape) {
+  constructor(ibScape, cachedRefreshExpiryMs) {
     let t = this;
     t.ibScape = ibScape;
     t.queue = [];
+    t.cachedRefreshes = {};
+    t.cachedRefreshExpiryMs = cachedRefreshExpiryMs || 30000;
   }
   destroy() {
     this.stop();
@@ -89,16 +91,71 @@ export class IbGibIbScapeBackgroundRefresher {
     // console.log("BackgroundRefresher.exec")
 
     if (ibGibs && ibGibs.length && ibGibs.length > 0) {
-      let d = { ibGibs: ibGibs };
+  
+      let cachedIbGibs = ibGibs.filter(ibGib => {
+        if (t.cachedRefreshes[ibGib]) {
+          let { timestamp, refreshedIbGib } = t.cachedRefreshes[ibGib];
+          return timestamp && Date.now() - timestamp < t.cachedRefreshExpiryMs;
+        } else {
+          return false;
+        }
+      });
+      let prunedIbGibs = ibGibs.filter(ibGib => !cachedIbGibs.includes(ibGib));
+      
+      if (prunedIbGibs && prunedIbGibs.length > 0) {
+        let d = { ibGibs:  prunedIbGibs };
+        
+        let cmd =
+          new BatchRefreshCommand(t.ibScape, d, successMsg => {
+              if (successCallback) {
+                if (!successMsg.data) { successMsg.data = {}; }
+                
+                // add any results to cache
+                if (successMsg.data.latest_ib_gibs) {
+                  Object.keys(successMsg.data.latest_ib_gibs)
+                    .forEach(oldIbGib => {
+                      console.log(`Adding cached refresh ibGib for oldIbGib: ${oldIbGib}`)
+                      let cacheEntry = {
+                        timestamp: Date.now(),
+                        refreshedIbGib: successMsg.data.latest_ib_gibs[oldIbGib]
+                      };
+                      t.cachedRefreshes[oldIbGib] = cacheEntry;
+                    });
+                }
+    
+                t._addCachedEntriesToSuccessMsg(cachedIbGibs, successMsg);
+                
+                successCallback(successMsg); 
+              }
+            }, errorCallback);
 
-      let cmd =
-        new BatchRefreshCommand(t.ibScape, d, successCallback, errorCallback);
-
-      cmd.exec();
+        cmd.exec();
+      } else {
+        if (successCallback) {
+          let successMsg = { data: {latest_ib_gibs: null} }
+          t._addCachedEntriesToSuccessMsg(cachedIbGibs, successMsg);
+          successCallback(successMsg);
+        }
+      }
     } else {
       console.log(`nothing to refresh.`);
       if (successCallback) { successCallback(null); }
     }
+  }
+
+  _addCachedEntriesToSuccessMsg(cachedIbGibs, successMsg) {
+    let t = this;
+    cachedIbGibs.forEach(cachedIbGib => {
+      // We skipped refreshing the cached ibGibs on the server, so 
+      // add these cached entries back into the results before
+      // returning to the caller.
+      let { refreshedIbGib } = t.cachedRefreshes[cachedIbGib];
+      if (!successMsg.data.latest_ib_gibs) {
+        successMsg.data.latest_ib_gibs = {}; 
+      }
+      
+      successMsg.data.latest_ib_gibs[cachedIbGib] = refreshedIbGib;
+    });
   }
 
   /**

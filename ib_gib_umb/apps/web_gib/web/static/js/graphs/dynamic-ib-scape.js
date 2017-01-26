@@ -267,8 +267,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     if (t.contextNode) {
       t.backgroundRefresher.exec([t.contextNode.ibGib], successMsg => {
-        let newContextIbGib = successMsg.latest_ib_gibs ?
-          successMsg.latest_ib_gibs[t.contextNode.ibGib] :
+        let newContextIbGib = successMsg.data && successMsg.data.latest_ib_gibs ?
+          successMsg.data.latest_ib_gibs[t.contextNode.ibGib] :
           t.contextNode.ibGib;
 
         t.updateIbGib(t.contextNode, newContextIbGib, /*skipUpdateUrl*/ false, () => {
@@ -309,7 +309,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
 
     t.backgroundRefresher.exec(ibGibs, successMsg => {
-      // console.log(`${lc} Initial refresh source nodes complete. successMsg: ${JSON.stringify(successMsg)}`);
+      console.log(`${lc} Initial refresh source nodes complete. successMsg: ${JSON.stringify(successMsg)}`);
         if (successMsg && successMsg.data) {
           let latestIbGibs = successMsg.data.latest_ib_gibs || {};
           Object.keys(latestIbGibs)
