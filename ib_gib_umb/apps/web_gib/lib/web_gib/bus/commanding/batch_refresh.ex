@@ -64,6 +64,7 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
     with(
       {:ok, identity} <-
         (identity_ib_gibs
+         |> Enum.reverse
          |> Enum.at(0)
          |> IbGib.Expression.Supervisor.start_expression()),
 
@@ -113,11 +114,18 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
     with(
     {:ok, latest_ib_gib_or_nil} <- try_get_cached_latest_ib_gib(ib_gib),
     {:ok, latest_ib_gib} <- 
-      latest_ib_gib_or_nil || query_latest(identity_ib_gibs, query_src, ib_gib),
+      (if latest_ib_gib_or_nil === nil do
+         query_latest(identity_ib_gibs, query_src, ib_gib)
+       else
+         {:ok, latest_ib_gib_or_nil}
+       end)
     ) do
-      {:ok, result_ib_gib}
+      _ = Logger.debug("fizzbomb latest_ib_gib: #{latest_ib_gib}")
+      {:ok, latest_ib_gib}
     else
-      error -> default_handle_error(error)
+      error -> 
+        _ = Logger.error("Error get_latest: #{inspect error}")
+        default_handle_error(error)
     end
   end
   
@@ -125,15 +133,20 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
   defp try_get_cached_latest_ib_gib(ib_gib) do
     with(
       key <- @query_cache_prefix_key <> ib_gib,
-      {:ok, [latest_ib_gib | timestamp_ms]} <- IbGib.Data.Cache.get(key),
+      {:ok, %{latest: latest_ib_gib, timestamp: timestamp_ms}} <- IbGib.Data.Cache.get(key),
+      _ = Logger.debug("Fizzley latest_ib_gib: #{latest_ib_gib}\ntimestamp_ms: #{timestamp_ms}" |> ExChalk.bg_green |> ExChalk.blue),
       now <- :erlang.system_time(:milli_seconds),
       latest_ib_gib <- 
-        (if now - timestamp_ms < @query_cache_expiry_ms, do
+        (if now - (timestamp_ms || 0) < @query_cache_expiry_ms do
+          _ = Logger.debug("Using cached query.")
           latest_ib_gib
          else
+           _ = Logger.debug("Cached query expired. Doing new query.")
+           _ = IbGib.Data.Cache.delete(key)
            nil
          end)
     ) do
+      _ = Logger.debug("fizzdoodle latest_ib_gib: #{latest_ib_gib}")
       {:ok, latest_ib_gib}
     else
       _not_found -> {:ok, nil}
@@ -162,7 +175,9 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
         
       # Store in cache with timestamp
       key <- @query_cache_prefix_key <> ib_gib,
+      now <- :erlang.system_time(:milli_seconds),
       
+      IbGib.Data.Cache.put(key, %{latest: result_ib_gib, timestamp: now})
     ) do
       {:ok, result_ib_gib}
     else

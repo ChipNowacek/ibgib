@@ -46,6 +46,11 @@ defmodule IbGib.Data.Cache do
     GenServer.call(name, {:get, key})
   end
 
+  def delete(key, name \\ @srv_name) do
+    _ = Logger.debug "deleting from cache..."
+    GenServer.call(name, {:delete, key})
+  end
+
 
   # ----------------------------------------------------------------------------
   # Server Callbacks
@@ -69,6 +74,11 @@ defmodule IbGib.Data.Cache do
 
     {:reply, get_impl(items, key), {items}}
   end
+  def handle_call({:delete, key}, _from, {items}) do
+    _ = Logger.debug "inspect items: #{inspect items}"
+
+    {:reply, delete_impl(items, key), {items}}
+  end
 
   defp get_impl(items, key) do
     _ = Logger.debug "key: #{key}"
@@ -80,7 +90,8 @@ defmodule IbGib.Data.Cache do
 
   defp put_impl(items, key, value) do
     _ = Logger.debug "key: #{key}\nvalue: #{inspect value}"
-    insert_result = :ets.insert_new(items, {key, value})
+    insert_result = :ets.insert(items, {key, value})
+    # insert_result = :ets.insert_new(items, {key, value})
     if insert_result do
       {:ok, :ok}
     else
@@ -88,4 +99,11 @@ defmodule IbGib.Data.Cache do
       {:error, :already}
     end
   end
+  
+  defp delete_impl(items, key) do
+    _ = Logger.debug "key: #{key}"
+    _ = :ets.delete(items, key) 
+    {:ok, :ok}
+  end
+
 end

@@ -35,7 +35,7 @@ defmodule WebGib.Constants do
       @ident_email_src_ib_gib_key "ident_email_src_ib_gib"
       @ident_email_pin_provided_key "ident_email_pin_provided"
       
-      # pipe is disallowed in ib
+      # pipe is disallowed in ib, so this guarantees not to be duped in ib.
       @query_cache_prefix_key "|qry|" 
     end
   end
