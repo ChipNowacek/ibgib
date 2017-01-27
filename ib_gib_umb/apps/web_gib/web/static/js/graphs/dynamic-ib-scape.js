@@ -38,6 +38,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.isPrimaryIbScape = isPrimaryIbScape;
     t.ibGibProvider = ibGibProvider;
     t.currentIdentityIbGibs = currentIdentityIbGibs;
+    t.getAdjunctInfosCallbacksInProgress = {};
 
     let defaults = {
       background: {
@@ -1651,7 +1652,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
                 }, isCancelledFunc);
                 
               });
-          }, 500);
+          }, 700);
         } else {
           finalize();
         }
@@ -1950,6 +1951,18 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     return `url(#${t.svgGradientId_Background})`;
     // return this.config.background.fill;
   }
+  _dispatchGetAdjunctInfosCallbacksInProgress(tempJuncIbGib, adjunctInfos) {
+    let t = this;
+    let callbacksCount = 0;
+    do {
+      let callbacks = t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib];
+      t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib] = callbacks.splice(1);
+      let callback = callbacks[0];
+      callback(adjunctInfos);
+      callbacksCount = t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib].length;
+    } while (callbacksCount > 0);
+    delete t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib];
+  }
   /**
    * The first init of adjunct infos will talk to the server and get all
    * of the adjuncts for the given `tempJuncIbGib`. Any subsequent
@@ -1964,8 +1977,12 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       // console.log(`adjunctInfos gotten from cache: ${adjunctInfos.length}`);
       // console.log(`adjunctInfos gotten from cache: ${JSON.stringify(adjunctInfos)}`);
       callback(adjunctInfos);
+    } else if (t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib]) {
+      t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib].push(callback);
     } else {
       // console.log(`No adjunctInfos in cache. Getting from server...`);
+      
+      t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib] = [callback];
 
       let data = { ibGibs: [tempJuncIbGib] };
       let cmdGetAdjuncts = new commands.GetAdjunctsCommand(t, data, successMsg => {
@@ -1980,19 +1997,14 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
                 t.ibGibCache.addAdjunctInfo(tempJuncIbGib, tempJuncIbGib, adjunctIbGib, adjunctIbGibJson);
               });
             adjunctInfos = t.ibGibCache.getAdjunctInfos(tempJuncIbGib);
-            if (callback) {
-              callback(adjunctInfos);
-            } else {
-              console.error(`Callback isn't defined?`);
-            }
+
+            t._dispatchGetAdjunctInfosCallbacksInProgress(tempJuncIbGib, adjunctInfos);
+            // callback(adjunctInfos);
           });
         } else {
           // console.log(`GetAdjunctsCommand did not have successMsg.data && successMsg.data.adjunct_ib_gibs. Probably has no adjuncts.)`);
-          if (callback) {
-            callback([]);
-          } else {
-            console.error(`Callback isn't defined?`);
-          }
+          t._dispatchGetAdjunctInfosCallbacksInProgress(tempJuncIbGib, []);
+            // callback([]);
         }
       }, errorMsg => {
         console.error(`getAdjuncts error: ${JSON.stringify(errorMsg)}`);
