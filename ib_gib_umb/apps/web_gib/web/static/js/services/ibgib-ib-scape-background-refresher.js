@@ -95,33 +95,45 @@ export class IbGibIbScapeBackgroundRefresher {
       let cachedIbGibs = ibGibs.filter(ibGib => {
         if (t.cachedRefreshes[ibGib]) {
           let { timestamp, refreshedIbGib } = t.cachedRefreshes[ibGib];
-          return timestamp && Date.now() - timestamp < t.cachedRefreshExpiryMs;
+          return timestamp && (Date.now() - timestamp < t.cachedRefreshExpiryMs);
         } else {
           return false;
         }
       });
-      let prunedIbGibs = ibGibs.filter(ibGib => !cachedIbGibs.includes(ibGib));
+      let serverIbGibs = ibGibs.filter(ibGib => !cachedIbGibs.includes(ibGib));
       
-      if (prunedIbGibs && prunedIbGibs.length > 0) {
-        let d = { ibGibs:  prunedIbGibs };
+      if (serverIbGibs && serverIbGibs.length > 0) {
+        let d = { ibGibs:  serverIbGibs };
         
+        console.log(`hitting server for refresh ibGibs. cached ibGibs: ${JSON.stringify(cachedIbGibs)}.   server ibGibs: ${JSON.stringify(serverIbGibs)}`);
         let cmd =
           new BatchRefreshCommand(t.ibScape, d, successMsg => {
               if (successCallback) {
                 if (!successMsg.data) { successMsg.data = {}; }
                 
+                let latestIbGibs = successMsg.data.latest_ib_gibs || {};
                 // add any results to cache
-                if (successMsg.data.latest_ib_gibs) {
-                  Object.keys(successMsg.data.latest_ib_gibs)
-                    .forEach(oldIbGib => {
-                      console.log(`Adding cached refresh ibGib for oldIbGib: ${oldIbGib}`)
-                      let cacheEntry = {
-                        timestamp: Date.now(),
-                        refreshedIbGib: successMsg.data.latest_ib_gibs[oldIbGib]
-                      };
-                      t.cachedRefreshes[oldIbGib] = cacheEntry;
-                    });
-                }
+                Object.keys(latestIbGibs)
+                  .forEach(oldIbGib => {
+                    console.log(`Adding cached refresh ibGib for oldIbGib: ${oldIbGib}`)
+                    let cacheEntry = {
+                      timestamp: Date.now(),
+                      refreshedIbGib: latestIbGibs[oldIbGib]
+                    };
+                    t.cachedRefreshes[oldIbGib] = cacheEntry;
+                  });
+                
+                // latest only includes those with actual updates. We need
+                // to cache also the ones that have no updates.
+                serverIbGibs
+                  .filter(serverIbGib => !Object.keys(latestIbGibs).includes(serverIbGib))
+                  .forEach(ibGibWithoutUpdate => { 
+                    let cacheEntry = {
+                      timestamp: Date.now(),
+                      refreshedIbGib: null
+                    };
+                    t.cachedRefreshes[ibGibWithoutUpdate] = cacheEntry;
+                  });
     
                 t._addCachedEntriesToSuccessMsg(cachedIbGibs, successMsg);
                 
