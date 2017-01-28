@@ -19,19 +19,24 @@ export function getIbAndGib(ibGib) {
  * this returns the current ibGib (i.e. "no past", so return the present)
  */
 export function getTemporalJunctionIbGib(ibGibJson) {
-  // makes a copy, splice off the head which is the root (and never the temporal junction point)
-  let past = ibGibJson.rel8ns.past.concat().splice(1); 
-  
-  if (isImage(ibGibJson) || isComment(ibGibJson) || isLink(ibGibJson)) {
-    // We need special handling for pics, comments, links, because the first
-    // non-root in the history is actually a "blank", with empty `data`. So,
-    // in older versions, it is the same thing. In the current version they're
-    // unique, but we don't want to count on that at the moment. So we'll just 
-    // ignore this first "blank" anyway
-    past = past.splice(1);
+  let ibGib = getFull_ibGib(ibGibJson);
+  if (ibGib === "ib^gib") {
+    return ibGib;
+  } else {
+    // makes a copy, splice off the head which is the root (and never the temporal junction point)
+    let past = ibGibJson.rel8ns.past.concat().splice(1); 
+    
+    if (isImage(ibGibJson) || isComment(ibGibJson) || isLink(ibGibJson)) {
+      // We need special handling for pics, comments, links, because the first
+      // non-root in the history is actually a "blank", with empty `data`. So,
+      // in older versions, it is the same thing. In the current version they're
+      // unique, but we don't want to count on that at the moment. So we'll just 
+      // ignore this first "blank" anyway
+      past = past.splice(1);
+    }
+    
+    return past.length > 0 ? past[0] : ibGib;
   }
-  
-  return past.length > 0 ? past[0] : getFull_ibGib(ibGibJson);
 }
 
 /** For safe access to ibGibJson.data.text */

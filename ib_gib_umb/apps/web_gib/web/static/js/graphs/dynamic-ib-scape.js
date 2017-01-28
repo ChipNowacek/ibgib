@@ -479,6 +479,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
   updateIbGib(node, newIbGib, skipUpdateUrl, callback) {
     let t = this;
+    
+    // In case the incoming newIbGib is null, which is what happens when we
+    // broadcast locally an ibGib update
+    newIbGib = newIbGib || node.ibGib;
 
     if (node.ibGib === newIbGib) {
       if (callback) { callback(); }
