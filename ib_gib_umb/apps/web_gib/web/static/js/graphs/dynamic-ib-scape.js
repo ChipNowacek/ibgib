@@ -262,6 +262,20 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         t.connectToEventBus_Identity(identityIbGib)
       );
   }
+  initSimulation() {
+    let t = this;
+
+    t.simulation =
+        d3.forceSimulation()
+          .velocityDecay(t.getVelocityDecay())
+          .alphaTarget(0.1)
+          .force("link", t.getForceLink())
+          .force("charge", t.getForceCharge())
+          .force("collide", t.getForceCollide())
+          .force("center", t.getForceCenter())
+          // .force("sourceOutwards", t.getForceSourceOutwards())
+          ;
+  }
 
   refreshContextNode() {
     let t = this, lc = `refreshContextNode`;
@@ -479,6 +493,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
   updateIbGib(node, newIbGib, skipUpdateUrl, callback) {
     let t = this;
+    
+    // In case the incoming newIbGib is null, which is what happens when we
+    // broadcast locally an ibGib update
+    newIbGib = newIbGib || node.ibGib;
 
     if (node.ibGib === newIbGib) {
       if (callback) { callback(); }
@@ -623,6 +641,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
       // console.log(`syncAdjuncts: prunedAdjunctTempJuncIbGibs: ${JSON.stringify(prunedAdjunctTempJuncIbGibs)}`)
 
+      // This syncs rel8ns that are being shown. But if there are ibGib nodes
+      // that are not expanded at all, then this will not auto-expand them.
+      // For example, if a node has already expanded and is 
       t.graphData.nodes
         .filter(n => n.type === "rel8n" &&
                      !n.virtualId &&
@@ -1943,7 +1964,16 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       return 5 * this.config.simulation.chargeStrength;
     }
   }
-
+  // getForceSourceOutwards() {
+  //   let t = this;
+  //   return d3.forceManyBody()
+  //     .strength((a,b,c) => {
+  //       debugger;
+  //     })
+  //     .distanceMin(this.config.simulation.chargeDistanceMin)
+  //     .distanceMax(this.config.simulation.chargeDistanceMax);
+  //     
+  // }
   // Other get functions ------------------------------------
 
   getBackgroundFill() {
@@ -2287,41 +2317,15 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         let children = t.getAllChildrenRecursively(d);
         children.forEach(n => t.setBusy(n));
         setTimeout(() => {
-          children.forEach(c => t.clearBusy(c));
-          t.fadeOutChildlessRel8ns(4000);
+          children.forEach(c => {
+            // pinning doesn't work well with larger graphs.
+            // if (c.type === "rel8n") { t.pin(c); }
+            t.clearBusy(c);
+          });
+          t.fadeOutChildlessRel8ns(2000);
           if (d.fullyExpanding) { delete d.fullyExpanding; }
           t.clearBusy(d);
-        }, 5000);
-      
-        // t.removeVirtualCmdNodes();
-        // let allIbGibChildren =
-        //   t.getAllChildrenRecursively(d, /*childrenSoFar*/ [])
-        //   .filter(n => n.type && n.type === "ibGib" && n.ibGib);
-        // if (allIbGibChildren.length > 0) {
-        //   allIbGibChildren
-        //     .forEach(n => t.setBusy(n));
-        //   t.refreshIbGibs(allIbGibChildren.map(n => n.ibGib), () => {
-        //     allIbGibChildren
-        //       .forEach(n => {
-        //         // setTimeout => visual cue that the expansion is done.
-        //         setTimeout(() => {
-        //           t.clearBusy(n);
-        // 
-        //           // Calls this for each n - at this point I don't mind.
-        //           
-        //           if (d.fullyExpanding) { delete d.fullyExpanding; }
-        //           if (d.busy) { t.clearBusy(d); }
-        //         }, 2000);
-        //       });
-        //       // setTimeout hack here. Not the end of the world if we don't get
-        //       // every single childless rel8n right now.
-        //       setTimeout(() => t.fadeOutChildlessRel8ns(4000), 2000);
-        //   });
-        // } else {
-        //   // no children, so we're done.
-        //   if (d.fullyExpanding) { delete d.fullyExpanding; }
-        //   // t.clearBusy(d);
-        // }
+        }, 3000);
       }, isCancelledFunc);
     }
   }

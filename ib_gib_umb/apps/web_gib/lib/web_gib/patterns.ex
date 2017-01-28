@@ -22,4 +22,13 @@ defmodule WebGib.Patterns do
   
   defpat ib_identity_ib_gibs_ %{ib_identity_ib_gibs: identity_ib_gibs}
   defpat assigns_identity_ib_gibs_ %{assigns: ib_identity_ib_gibs_()}
+  
+  # Connection with a username
+  defpat conn_ib_username_   conn_(ib_username_())
+  defpat login_form_data_ %{"login_form_data" => ib_username_()}
+  # Connection with a login form with the username
+  defpat conn_login_form_data_ %Plug.Conn{
+    body_params: (login_form_data_() = body_params)
+  }
+
 end

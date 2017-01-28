@@ -4,4 +4,7 @@ config/*
 data/*
 deps/*
 
+postgres/postgresqldata*
+tmpdata/*
+
 **/*.secret.exs

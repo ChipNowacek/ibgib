@@ -10,6 +10,7 @@ defmodule WebGib.Constants do
       # I'm prepending ib to differentiate from any other possible name
       # conflict.
       # See `WebGib.Plugs.IbGibSession`
+      @ib_read_privacy_and_logged_in_session_key "ib_read_privacy_and_logged_in_session"
       @ib_session_id_key "ib_session_id"
       @ib_session_ib_gib_key "ib_session_ib_gib"
       @ib_node_id_key "ib_node_id"
