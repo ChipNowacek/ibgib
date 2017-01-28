@@ -18,8 +18,6 @@ defmodule WebGib.Router do
     plug WebGib.Plugs.EnsureIbSessionId
     plug WebGib.Plugs.EnsureIbGibUsername
     plug WebGib.Plugs.IbGibIdentity
-    # plug WebGib.Plugs.AggregateIDHash
-    # plug WebGib.Plugs.EnsureMetaQuery
     plug WebGib.Plugs.IbGibRoot
   end
 

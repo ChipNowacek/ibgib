@@ -11,7 +11,7 @@ defmodule WebGib.Web.Components.Login do
       div do
         p do
           span [class: "ib-bold"], do: gettext("Instructions:  ")
-          "This will be your public session name. It does not have to be unique."
+          "This will be your public session name. It does not have to be unique and you can change it from session to session."
         end
       end
 

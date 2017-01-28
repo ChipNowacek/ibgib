@@ -23,15 +23,6 @@ defmodule WebGib.Plugs.EnsureIbGibUsername do
   def init(options) do
     options
   end
-
-  # Connection with a username
-  defpat conn_ib_username_   conn_(ib_username_())
-
-  defpat login_form_data_ %{"login_form_data" => ib_username_()}
-  # Connection with a login form with the username
-  defpat conn_login_form_data_ %Plug.Conn{
-    body_params: (login_form_data_() = body_params)
-  }
   
   @doc """
   The connection should either have a username stored in it or a login form
@@ -63,7 +54,7 @@ defmodule WebGib.Plugs.EnsureIbGibUsername do
       # and halt
       _ = Logger.debug("current ib_username not supplied. redirecting home. conn: #{inspect conn}" |> ExChalk.bg_cyan |> ExChalk.black)
       conn
-      |> put_flash(:info, gettext "After reading ibGib's Vision and Privacy Caution, please login with your username for the session. It does not need to be unique! You will then be redirected to your URL or taken to the Root. Thanks :-)")
+      |> put_flash(:info, gettext "Please read ibGib's Vision and Privacy Caution and then identify your session with a username. It does not need to be unique! You will then be redirected to your URL or taken to the Root. Thanks :-)")
       |> put_session(@path_before_redirect_key, conn.request_path)
       |> redirect(to: "/")
       |> halt
