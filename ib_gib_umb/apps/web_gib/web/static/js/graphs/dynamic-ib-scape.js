@@ -38,6 +38,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.isPrimaryIbScape = isPrimaryIbScape;
     t.ibGibProvider = ibGibProvider;
     t.currentIdentityIbGibs = currentIdentityIbGibs;
+    t.getAdjunctInfosCallbacksInProgress = {};
 
     let defaults = {
       background: {
@@ -267,8 +268,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     if (t.contextNode) {
       t.backgroundRefresher.exec([t.contextNode.ibGib], successMsg => {
-        let newContextIbGib = successMsg.latest_ib_gibs ?
-          successMsg.latest_ib_gibs[t.contextNode.ibGib] :
+        let newContextIbGib = successMsg.data && successMsg.data.latest_ib_gibs ?
+          successMsg.data.latest_ib_gibs[t.contextNode.ibGib] :
           t.contextNode.ibGib;
 
         t.updateIbGib(t.contextNode, newContextIbGib, /*skipUpdateUrl*/ false, () => {
@@ -309,7 +310,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
 
     t.backgroundRefresher.exec(ibGibs, successMsg => {
-      // console.log(`${lc} Initial refresh source nodes complete. successMsg: ${JSON.stringify(successMsg)}`);
+      console.log(`${lc} Initial refresh source nodes complete. successMsg: ${JSON.stringify(successMsg)}`);
         if (successMsg && successMsg.data) {
           let latestIbGibs = successMsg.data.latest_ib_gibs || {};
           Object.keys(latestIbGibs)
@@ -1311,6 +1312,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
   zap(node, callback) {
     let t = this, lc = `zap`;
+    console.log(`zap node.id: ${node.id}`)
 
     t.clearFadeTimeout(node);
 
@@ -1507,7 +1509,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       if (callback) { callback(); }
     };
 
-    if (children.some(c => autoExpandRel8ns.includes(c.rel8nName))) {
+    if (!node.autoExpanding && children.some(c => autoExpandRel8ns.includes(c.rel8nName))) {
       // hack to execute after all callbacks execute (ick).
       t.expandIbGibCallbackAgg = t.expandIbGibCallbackAgg || {};
 
@@ -1517,10 +1519,12 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           .forEach(rel8n => {
             // hack
             if (autoExpandRel8ns.includes(rel8n.rel8nName)) {
+              rel8n.autoExpanding = true;
               t.zap(rel8n, () => {
                 // dec callback count after zap
                 t.expandIbGibCallbackAgg[node.id] = t.expandIbGibCallbackAgg[node.id] - 1;
                 if (t.expandIbGibCallbackAgg[node.id] === 0) {
+                  console.log(`deleting expand callback for rel8n: ${rel8n.rel8nName}`)
                   delete t.expandIbGibCallbackAgg[node.id];
                   finalize();
                 }
@@ -1529,6 +1533,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
               // dec callback count immediately
               t.expandIbGibCallbackAgg[node.id] = t.expandIbGibCallbackAgg[node.id] - 1;
               if (t.expandIbGibCallbackAgg[node.id] === 0) {
+                delete t.expandIbGibCallbackAgg[node.id];
                 finalize();
               }
             }
@@ -1602,9 +1607,22 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   _expandNodeFully(node, autoExpandRel8ns, callback, isCancelledFunc) {
     let t = this, lc = `_expandNodeFully(${node.id})`
 
-    if (isCancelledFunc && isCancelledFunc()) {
+    if (!node.virtualId) { t.setBusy(node); }
+
+    let finalize = () => {
+      if (node.autoExpanding) { 
+        // t.getAllChildrenRecursively(node)
+        //  .forEach(n => { if (n.autoExpanding) { delete n.autoExpanding; } });
+        delete node.autoExpanding;
+      }
+      if (!node.virtualId) { t.clearBusy(node); }
       callback();
+    }
+
+    if (isCancelledFunc && isCancelledFunc()) {
+      finalize();
     } else {
+      node.autoExpanding = true;
       t.zap(node, () => {
         let nodeChildren =
           t.getChildren(node)
@@ -1617,20 +1635,26 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           if (!t.nodeChildCountHack) { t.nodeChildCountHack = {}; }
           t.nodeChildCountHack[node.id] = nodeChildCount;
 
-          nodeChildren
-            .forEach(nodeChild => t._expandNodeFully(nodeChild, autoExpandRel8ns, () => {
-              t.removeVirtualCmdNodes();
-              let count = t.nodeChildCountHack[node.id] - 1;
-              if (count === 0) {
-                delete t.nodeChildCountHack[node.id];
-
-                callback();
-              } else {
-                t.nodeChildCountHack[node.id] = count;
-              }
-            }, isCancelledFunc))
+          // Give it a little time between expanding nested levels.
+          setTimeout(() => {
+            nodeChildren
+              .forEach(nodeChild => {
+                
+                t._expandNodeFully(nodeChild, autoExpandRel8ns, () => {
+                  t.removeVirtualCmdNodes();
+                  let count = t.nodeChildCountHack[node.id] - 1;
+                  if (count === 0) {
+                    delete t.nodeChildCountHack[node.id];
+                    finalize();
+                  } else {
+                    t.nodeChildCountHack[node.id] = count;
+                  }
+                }, isCancelledFunc);
+                
+              });
+          }, 700);
         } else {
-          callback();
+          finalize();
         }
       });
     }
@@ -1927,6 +1951,18 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     return `url(#${t.svgGradientId_Background})`;
     // return this.config.background.fill;
   }
+  _dispatchGetAdjunctInfosCallbacksInProgress(tempJuncIbGib, adjunctInfos) {
+    let t = this;
+    let callbacksCount = 0;
+    do {
+      let callbacks = t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib];
+      t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib] = callbacks.splice(1);
+      let callback = callbacks[0];
+      callback(adjunctInfos);
+      callbacksCount = t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib].length;
+    } while (callbacksCount > 0);
+    delete t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib];
+  }
   /**
    * The first init of adjunct infos will talk to the server and get all
    * of the adjuncts for the given `tempJuncIbGib`. Any subsequent
@@ -1941,8 +1977,12 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       // console.log(`adjunctInfos gotten from cache: ${adjunctInfos.length}`);
       // console.log(`adjunctInfos gotten from cache: ${JSON.stringify(adjunctInfos)}`);
       callback(adjunctInfos);
+    } else if (t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib]) {
+      t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib].push(callback);
     } else {
       // console.log(`No adjunctInfos in cache. Getting from server...`);
+      
+      t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib] = [callback];
 
       let data = { ibGibs: [tempJuncIbGib] };
       let cmdGetAdjuncts = new commands.GetAdjunctsCommand(t, data, successMsg => {
@@ -1957,19 +1997,14 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
                 t.ibGibCache.addAdjunctInfo(tempJuncIbGib, tempJuncIbGib, adjunctIbGib, adjunctIbGibJson);
               });
             adjunctInfos = t.ibGibCache.getAdjunctInfos(tempJuncIbGib);
-            if (callback) {
-              callback(adjunctInfos);
-            } else {
-              console.error(`Callback isn't defined?`);
-            }
+
+            t._dispatchGetAdjunctInfosCallbacksInProgress(tempJuncIbGib, adjunctInfos);
+            // callback(adjunctInfos);
           });
         } else {
           // console.log(`GetAdjunctsCommand did not have successMsg.data && successMsg.data.adjunct_ib_gibs. Probably has no adjuncts.)`);
-          if (callback) {
-            callback([]);
-          } else {
-            console.error(`Callback isn't defined?`);
-          }
+          t._dispatchGetAdjunctInfosCallbacksInProgress(tempJuncIbGib, []);
+            // callback([]);
         }
       }, errorMsg => {
         console.error(`getAdjuncts error: ${JSON.stringify(errorMsg)}`);
@@ -2007,6 +2042,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   }
   getChildren(node) {
     let t = this;
+    if (!node) { debugger; }
     return t.graphData.links
       .filter(l => l.source.id === node.id)
       .map(l => l.target);
@@ -2014,7 +2050,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   getChildrenCount_All(node) {
     return this.getChildren(node).length;
   }
-  getAllChildrenRecursively(node, childrenSoFar) {
+  getAllChildrenRecursively(node, childrenSoFar = []) {
     let t = this;
     let children = t.getChildren(node);
     if (children && children.length > 0) {
@@ -2245,35 +2281,47 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       t.pin(d);
 
       d.fullyExpanding = true;
-      t.setBusy(d);
-      t._expandNodeFully(d, ["pic", "comment"], () => {
-        // t.fadeOutChildlessRel8ns(t.config.other.rel8nFadeTimeoutMs_Spiffy);
+      t._expandNodeFully(d, ["pic", "comment", "link"], () => {
+        t.setBusy(d);
         t.removeVirtualCmdNodes();
-        t.fadeOutChildlessRel8ns(4000);
-        let allIbGibChildren =
-          t.getAllChildrenRecursively(d, /*childrenSoFar*/ [])
-          .filter(n => n.type && n.type === "ibGib" && n.ibGib);
-        if (allIbGibChildren.length > 0) {
-          allIbGibChildren
-            .forEach(n => t.setBusy(n));
-          t.refreshIbGibs(allIbGibChildren.map(n => n.ibGib), () => {
-            allIbGibChildren
-              .forEach(n => {
-                // setTimeout => visual cue that the expansion is done.
-                setTimeout(() => {
-                  t.clearBusy(n);
-
-                  // Calls this for each n - at this point I don't mind.
-                  if (d.fullyExpanding) { delete d.fullyExpanding; }
-                  t.clearBusy(d);
-                }, 2000);
-              });
-          });
-        } else {
-          // no children, so we're done.
+        let children = t.getAllChildrenRecursively(d);
+        children.forEach(n => t.setBusy(n));
+        setTimeout(() => {
+          children.forEach(c => t.clearBusy(c));
+          t.fadeOutChildlessRel8ns(4000);
           if (d.fullyExpanding) { delete d.fullyExpanding; }
           t.clearBusy(d);
-        }
+        }, 5000);
+      
+        // t.removeVirtualCmdNodes();
+        // let allIbGibChildren =
+        //   t.getAllChildrenRecursively(d, /*childrenSoFar*/ [])
+        //   .filter(n => n.type && n.type === "ibGib" && n.ibGib);
+        // if (allIbGibChildren.length > 0) {
+        //   allIbGibChildren
+        //     .forEach(n => t.setBusy(n));
+        //   t.refreshIbGibs(allIbGibChildren.map(n => n.ibGib), () => {
+        //     allIbGibChildren
+        //       .forEach(n => {
+        //         // setTimeout => visual cue that the expansion is done.
+        //         setTimeout(() => {
+        //           t.clearBusy(n);
+        // 
+        //           // Calls this for each n - at this point I don't mind.
+        //           
+        //           if (d.fullyExpanding) { delete d.fullyExpanding; }
+        //           if (d.busy) { t.clearBusy(d); }
+        //         }, 2000);
+        //       });
+        //       // setTimeout hack here. Not the end of the world if we don't get
+        //       // every single childless rel8n right now.
+        //       setTimeout(() => t.fadeOutChildlessRel8ns(4000), 2000);
+        //   });
+        // } else {
+        //   // no children, so we're done.
+        //   if (d.fullyExpanding) { delete d.fullyExpanding; }
+        //   // t.clearBusy(d);
+        // }
       }, isCancelledFunc);
     }
   }
@@ -2372,27 +2420,29 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     if (msg && msg.data &&
         // possibly redundant (unnecessary)
-        msg.metadata.temp_junc_ib_gib === tempJuncIbGib &&
-        msg.data.new_ib_gib) {
-      t.graphData.nodes
-        .filter(n => n.ibGib === ibGib)
-        .forEach(n => {
-          // console.log(`updating ibGib node`)
-          t.clearBusy(n);
-          // ibGib in the "past" rel8n will be paused, because we don't want to
-          // update those, rather we want to keep them at that particular frame
-          // in time. There may be other use cases for pausing (e.g. user
-          // pauses the ibGib for whatever reason, or possibly when we navigate
-          // to an ibGib in the past rel8n).
-          if (n.isPaused) {
-            console.log(`msg received, but node ${n.id} is paused.`);
-          } else {
-            t.updateIbGib(n,
-                          msg.data.new_ib_gib,
-                          /*skipUpdateUrl*/ false,
-                          /*callback*/ null);
-          }
-        });
+        msg.metadata.temp_junc_ib_gib === tempJuncIbGib) {
+      
+      if (msg.data.new_ib_gib) {
+        t.graphData.nodes
+          .filter(n => n.ibGib === ibGib)
+          .forEach(n => {
+            // console.log(`updating ibGib node`)
+            t.clearBusy(n);
+            // ibGib in the "past" rel8n will be paused, because we don't want to
+            // update those, rather we want to keep them at that particular frame
+            // in time. There may be other use cases for pausing (e.g. user
+            // pauses the ibGib for whatever reason, or possibly when we navigate
+            // to an ibGib in the past rel8n).
+            if (n.isPaused) {
+              console.log(`msg received, but node ${n.id} is paused.`);
+            } else {
+              t.updateIbGib(n,
+                            msg.data.new_ib_gib,
+                            /*skipUpdateUrl*/ false,
+                            /*callback*/ null);
+            }
+          });
+      }
     } else {
       console.warn(`Unused msg(?): ${JSON.stringify(msg)}`);
     }

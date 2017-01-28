@@ -30,6 +30,10 @@ defmodule IbGib.Data do
   ```
 
   _(J/k. ATOW: 2016/08/04)_
+  
+  2017/01/26 I'm now changing this to not care if we're trying to save 
+  duplicates. This should only error on some other reason. 
+  See https://elixirforum.com/t/avoiding-ecto-postgrex-logging-unique-constraint-failure/3419/3
 
   Returns `{:ok, :ok}` if succeeds **or if the ib+gib already exists**. It will
   log the fact that it tried to save data that already existed. If fails,
@@ -38,9 +42,10 @@ defmodule IbGib.Data do
   @spec save(map) :: {:ok, :ok} | {:error, any()}
   def save(info) when is_map(info) do
     with(
-      {:ok, _model} <- insert_into_repo(info),
-      {:ok, :ok} <-
-        IbGib.Data.Cache.put(Helper.get_ib_gib!(info[:ib], info[:gib]), info)
+      {:ok, exists} <- exists?(info[:ib], info[:gib]),
+      {:ok, _model} <- insert_into_repo({exists, info}),
+      {:ok, ib_gib} <- Helper.get_ib_gib(info[:ib], info[:gib]),
+      {:ok, :ok} <- IbGib.Data.Cache.put(ib_gib, info)
     ) do
       {:ok, :ok}
     else
@@ -92,6 +97,19 @@ defmodule IbGib.Data do
       {:ok, value} -> value
       {:error, reason} -> raise reason
     end
+  end
+
+  @spec exists?(String.t, String.t) :: {:ok, true|false} | {:error, String.t}
+  def exists?(ib, gib) when is_bitstring(ib) and is_bitstring(gib) do
+    datum_or_nil = 
+      IbGibModel 
+      |> where(ib: ^ib, gib: ^gib)
+      |> select([:id])
+      |> Repo.one()
+      
+    result = if datum_or_nil, do: true, else: false
+    
+    {:ok, result}
   end
 
   @doc """
@@ -358,7 +376,7 @@ defmodule IbGib.Data do
   # Inserts ib_gib info into the repo.
   #
   # Returns {:ok, model} or {:error, changeset}
-  defp insert_into_repo(info) when is_map(info) do
+  defp insert_into_repo({_exists = false, info}) when is_map(info) do
     _ = Logger.debug "inserting into repo. info: #{inspect info}"
     insert_result =
       %IbGibModel{}
@@ -386,33 +404,37 @@ defmodule IbGib.Data do
         end
     end
   end
-  defp insert_into_repo({binary_id, binary_data})
-    when is_bitstring(binary_id) and is_binary(binary_data) do
-      _ = Logger.debug "inserting into repo. binary_id: #{binary_id}"
-      insert_result =
-        %BinaryModel{}
-        |> BinaryModel.changeset(%{
-             binary_id: binary_id,
-             binary_data: binary_data
-           })
-       |> Repo.insert
-      case insert_result do
-        {:ok, model} ->
-          _ = Logger.debug "Inserted changeset.\nbinary_id: #{binary_id}"
-          {:ok, model}
-
-        {:error, changeset} ->
-          already_error = {"has already been taken", []}
-          if Enum.count(changeset.errors) == 1 and
-             changeset.errors[:binary_id] == already_error do
-            _ = Logger.debug "Did NOT insert changeset. Already exists.\nbinary_id: #{binary_id}"
-            {:error, :already}
-          else
-            _ = Logger.error "Error inserting changeset.\nbinary_id: #{binary_id}"
-            {:error, changeset}
-          end
-      end
+  defp insert_into_repo({_exists = true, info}) do
+    _ = Logger.debug("skipping insert into repo, info already exists. ib^gib: #{Helper.get_ib_gib!(info)}")
+    {:ok, nil}
   end
+  # defp insert_into_repo({binary_id, binary_data})
+  #   when is_bitstring(binary_id) and is_binary(binary_data) do
+  #     _ = Logger.debug "inserting into repo. binary_id: #{binary_id}"
+  #     insert_result =
+  #       %BinaryModel{}
+  #       |> BinaryModel.changeset(%{
+  #            binary_id: binary_id,
+  #            binary_data: binary_data
+  #          })
+  #      |> Repo.insert
+  #     case insert_result do
+  #       {:ok, model} ->
+  #         _ = Logger.debug "Inserted changeset.\nbinary_id: #{binary_id}"
+  #         {:ok, model}
+  # 
+  #       {:error, changeset} ->
+  #         already_error = {"has already been taken", []}
+  #         if Enum.count(changeset.errors) == 1 and
+  #            changeset.errors[:binary_id] == already_error do
+  #           _ = Logger.debug "Did NOT insert changeset. Already exists.\nbinary_id: #{binary_id}"
+  #           {:error, :already}
+  #         else
+  #           _ = Logger.error "Error inserting changeset.\nbinary_id: #{binary_id}"
+  #           {:error, changeset}
+  #         end
+  #     end
+  # end
 
   defp get_from_repo(:ibgib, {ib, gib}) do
     model =
@@ -425,6 +447,7 @@ defmodule IbGib.Data do
       {:error, :not_found}
     else
       %{:ib => ^ib, :gib => ^gib, :data => data, :rel8ns => rel8ns} = model
+      
       {:ok, %{:ib => ib, :gib => gib, :data => data, :rel8ns => rel8ns}}
     end
   end

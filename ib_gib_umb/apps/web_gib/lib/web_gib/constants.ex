@@ -34,6 +34,9 @@ defmodule WebGib.Constants do
       @ident_email_token_key "ident_email_token"
       @ident_email_src_ib_gib_key "ident_email_src_ib_gib"
       @ident_email_pin_provided_key "ident_email_pin_provided"
+      
+      # pipe is disallowed in ib, so this guarantees not to be duped in ib.
+      @query_cache_prefix_key "|qry|" 
     end
   end
 
@@ -53,6 +56,8 @@ defmodule WebGib.Constants do
       @pic_thumb_size "300x300"
       @ib_identity_token_salt "8eymmTYgMlKzeGH0JmThq0tJ56uBBPS6"
       @ib_identity_token_max_age 604_800 # seconds in 1 week
+      
+      @query_cache_expiry_ms 60_000
     end
   end
 

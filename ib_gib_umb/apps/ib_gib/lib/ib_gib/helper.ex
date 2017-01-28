@@ -635,21 +635,15 @@ defmodule IbGib.Helper do
       [@root_ib_gib | past_sans_root] = past,
       
       {:ok, ancestors} <- get_rel8ns(ib_gib_info, "ancestor"),
+      {:ok, ib_gib} <- get_ib_gib(ib_gib_info),
       
       {:ok, temp_junc_ib_gib} <- 
         (if skip_first_past?(ancestors) do
-          # Assume that if we're skipping the first past, then there will be at
-          # least another entry in the past. I believe this is true ATOW
-          # (2017/01/25) for comments, pics, links.
-          {:ok, Enum.at(past_sans_root, 1)}
+           {:ok, Enum.at(past_sans_root, 1) || 
+                 Enum.at(past_sans_root, 0) || 
+                 ib_gib}
          else
-           if Enum.count(past_sans_root) > 0 do
-             {:ok, Enum.at(past_sans_root, 0)}
-           else
-             # There is no past, so the given `ib_gib_info` itself _is_ the temporal
-             # junction. So get the info's ib^gib
-             get_ib_gib(ib_gib_info)
-           end
+           {:ok, Enum.at(past_sans_root, 0) || ib_gib}
          end)
     ) do
       {:ok, temp_junc_ib_gib}

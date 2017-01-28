@@ -67,10 +67,10 @@ defmodule WebGib.Bus.Commanding.GetAdjuncts do
 
   defp exec_impl(identity_ib_gibs, ib_gibs) do
     with(
-      # Will use identity in possibly tight loop, so brought out here, which
-      # is why...
+      # Will use identity in possibly tight loop, so brought out here
       {:ok, identity} <-
         (identity_ib_gibs
+         |> Enum.reverse
          |> Enum.at(0)
          |> IbGib.Expression.Supervisor.start_expression()),
 
@@ -118,7 +118,8 @@ defmodule WebGib.Bus.Commanding.GetAdjuncts do
       {:ok, ib_gib_process} <-
         IbGib.Expression.Supervisor.start_expression(ib_gib),
       {:ok, ib_gib_info} <- ib_gib_process |> get_info(),
-      {:ok, temporal_junction_ib_gib} <-
+      _ <- Logger.debug("ib_gib_info yoyo: #{inspect ib_gib_info, pretty: true}" |> ExChalk.bg_green |> ExChalk.blue),
+      {:ok, temporal_junction_ib_gib} when temporal_junction_ib_gib !== nil <-
         get_temporal_junction_ib_gib(ib_gib_info),
 
       # Build the query options

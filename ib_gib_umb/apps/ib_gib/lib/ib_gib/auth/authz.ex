@@ -260,7 +260,10 @@ defmodule IbGib.Auth.Authz do
       # unauthorized: a requires auth, b does not have any/all
       expected = a_email_identities
       actual = b_identities
-      _ = Logger.error "DOH! Unidentified transform apply attempt. Hack or mistake or what? \na_rel8ns:#{inspect a_rel8ns}\nb_identities:#{inspect b_identities}"
+      # We don't need to log an error, since this could be called from 
+      # determining if we are doing an adjunct or not. The bang (!) version 
+      # raises and logs error if unauthorized 
+      _ = Logger.debug "Unauthorized. Checking for adjunct, allow, etc.?\na_rel8ns:#{inspect a_rel8ns}\nb_identities:#{inspect b_identities}"
       {:error, emsg_invalid_authorization(expected, actual)}
     end
   end

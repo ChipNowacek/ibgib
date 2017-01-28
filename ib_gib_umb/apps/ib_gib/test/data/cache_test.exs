@@ -88,6 +88,37 @@ defmodule IbGib.Data.CacheTest do
     assert get_value === value
   end
 
+  @tag :capture_log
+  test "put value, delete value", %{test_name: test_name} do
+    key = "some_key#{test_name}"
+    value = %{"abc" => 123}
+
+    # Put it
+    {:ok, :ok} = IbGib.Data.Cache.put(key, value)
+    # Verify it was put
+    {:ok, _value} = IbGib.Data.Cache.get(key)
+    # Delete it
+    {:ok, :ok} = IbGib.Data.Cache.delete(key)
+    
+    {get_result, get_value} = IbGib.Data.Cache.get(key)
+
+    assert get_result === :error
+    assert get_value === :not_found
+  end
+
+  @tag :capture_log
+  test "DONT put value, delete value, should error", %{test_name: test_name} do
+    key = "some_key#{test_name}"
+    # value = %{"abc" => 123}
+
+    # DONT Put it
+    # {:ok, :ok} = IbGib.Data.Cache.put(key, value)
+    # Verify it was put
+    {:error, :not_found} = IbGib.Data.Cache.get(key)
+    # Delete it still returns ok
+    {:ok, :ok} = IbGib.Data.Cache.delete(key)
+  end
+
   #
   # @tag :capture_log
   # test "register then get process", %{test_name: test_name} do

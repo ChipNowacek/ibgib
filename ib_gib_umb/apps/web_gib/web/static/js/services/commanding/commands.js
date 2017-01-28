@@ -990,7 +990,8 @@ export class PicDetailsCommand extends FormDetailsCommandBase {
       .append("div")
       .attr("class", "ib-height-100 ib-overflow-y-auto");
     
-    let errorText = `---\n\n<span style="color: red">:no_entry:</span> To upload a pic, you gotta identify yourself with an email address!\n\n---`;
+    let noEntry = `<span style="color: red">:no_entry:</span>`;
+    let errorText = `---\n\n${noEntry} To upload a pic, you must first identify yourself with an email address :-) ${noEntry}\n\n---`;
     t.htmlDiv
       .append("h2")
       .html(md.render(errorText))
