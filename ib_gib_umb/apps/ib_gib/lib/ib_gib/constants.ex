@@ -87,7 +87,7 @@ defmodule IbGib.Constants do
       @min_email_addr_size 5
       @max_email_addr_size 63
       @regex_valid_email_addr ~r/^[\w][\w+\.]*(?<=[\w])[]@[\w][\w\.]*\.[\w]+$/
-      @max_comment_text_size 4096
+      @max_comment_text_size 16_384
       @min_link_text_size 10 # http://a.b
       @max_link_text_size 255
       @min_query_data_text_size 0
