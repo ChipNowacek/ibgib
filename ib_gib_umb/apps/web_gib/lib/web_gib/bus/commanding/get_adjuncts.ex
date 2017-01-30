@@ -114,13 +114,18 @@ defmodule WebGib.Bus.Commanding.GetAdjuncts do
 
   defp get_adjuncts(identity_ib_gibs, query_src, ib_gib) do
     with(
-      # Get the temporal junction for the given ib_gib
-      {:ok, ib_gib_process} <-
-        IbGib.Expression.Supervisor.start_expression(ib_gib),
-      {:ok, ib_gib_info} <- ib_gib_process |> get_info(),
-      _ <- Logger.debug("ib_gib_info yoyo: #{inspect ib_gib_info, pretty: true}" |> ExChalk.bg_green |> ExChalk.blue),
+      # Need to get the latest ib_gib in order to ensure that we get the 
+      # proper temporal junction point.
+      {:ok, latest_ib_gib} <-
+        IbGib.Common.get_latest_ib_gib(identity_ib_gibs, ib_gib),
+
+      # Get the temporal junction for the **latest** ib_gib
+      {:ok, latest_ib_gib_process} <-
+        IbGib.Expression.Supervisor.start_expression(latest_ib_gib),
+      {:ok, latest_ib_gib_info} <- latest_ib_gib_process |> get_info(),
+      _ <- Logger.debug("latest_ib_gib_info yoyo: #{inspect latest_ib_gib_info, pretty: true}" |> ExChalk.bg_green |> ExChalk.blue),
       {:ok, temporal_junction_ib_gib} when temporal_junction_ib_gib !== nil <-
-        get_temporal_junction_ib_gib(ib_gib_info),
+        get_temporal_junction_ib_gib(latest_ib_gib_info),
 
       # Build the query options
       query_opts <- build_query_opts_adjunct(temporal_junction_ib_gib),

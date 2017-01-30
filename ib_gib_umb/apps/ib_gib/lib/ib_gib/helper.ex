@@ -606,6 +606,12 @@ defmodule IbGib.Helper do
     ...> info = %{ib: "ibyo", gib: "gibyo", data: %{}, rel8ns: %{"past" => past, "ancestor" => ancestors}}
     ...> IbGib.Helper.get_temporal_junction_ib_gib(info)
     {:ok, "link^456"}
+
+    iex> past = ["ib^gib", "pic^5349835F0D03EEC0DFC13FC8777683331E613F4977EA55E663463C97FBC3936B", "pic^D6C742A8135841E23310C980EBAB3D341FB274D45A96BDD993DC70009EA37999"]
+    ...> ancestors = ["ib^gib", "binary^gib", "pic^gib"]
+    ...> info = %{ib: "ibyo", gib: "gibyo", data: %{}, rel8ns: %{"past" => past, "ancestor" => ancestors}}
+    ...> IbGib.Helper.get_temporal_junction_ib_gib(info)
+    {:ok, "pic^D6C742A8135841E23310C980EBAB3D341FB274D45A96BDD993DC70009EA37999"}
     
     # If an ibGib has no past (only the root), then the **current** ibGib _is_
     # the temporal junction point.
@@ -674,6 +680,9 @@ defmodule IbGib.Helper do
     iex> ancestors = ["ib^gib","a^gib","b^gib"]
     ...> IbGib.Helper.skip_first_past?(ancestors)
     false
+    iex> ancestors = ["ib^gib","binary^gib","pic^gib"]
+    ...> IbGib.Helper.skip_first_past?(ancestors)
+    true
   """
   def skip_first_past?(ancestors) when is_list(ancestors) do
     ancestors
