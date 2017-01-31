@@ -609,15 +609,21 @@ export class CommentDetailsCommand extends FormDetailsCommandBase {
 
   handleSubmitResponse(msg) {
     let t = this;
-
+    console.log("new comment handle submit response");
     if (msg && msg.data && msg.data.comment_ib_gib) {
       if (msg.data.new_src_ib_gib) {
+        // Update the cache with the new src_ib_gib
+        console.log(`new comment. src tempJuncIbGib: ${t.d.tempJuncIbGib}. new: ${msg.data.new_src_ib_gib}`)
+        
         // The src was directly commented on, so this user had authz to
         // do it (it's the ibGib's owner). So set the comment ibGib and
         // zap it.
+        // debugger;
         let commentIbGib = msg.data.comment_ib_gib;
         t.virtualNode.ibGib = commentIbGib;
-        t.ibScape.zap(t.virtualNode, /*callback*/ null);
+        t.ibScape.zap(t.virtualNode, () => {
+          t.ibScape.ibGibEventBus.broadcastIbGibUpdate_LocallyOnly(t.d.tempJuncIbGib, msg.data.new_src_ib_gib);
+        });
       } else {
         // The src was not updated, so this is a user commenting on
         // someone else's ibGib. So a comment was created and was rel8d

@@ -13,6 +13,33 @@ defmodule WebGib.PageView do
       div [class: "diy-slideshow"] do
         figure [class: "show"] do
           span do
+            img [class: "diy-slideshow-image", src: "images/coffee/coffee1.png"]
+          end
+          figcaption do
+            "Coffee"
+          end
+        end
+
+        figure [class: "show"] do
+          span do
+            img [class: "diy-slideshow-image", src: "images/coffee/coffee2.png"]
+          end
+          figcaption do
+            "Coffee"
+          end
+        end
+        
+        figure [class: "show"] do
+          span do
+            img [class: "diy-slideshow-image", src: "images/coffee/coffee3.png"]
+          end
+          figcaption do
+            "Coffee"
+          end
+        end
+        
+        figure [class: "show"] do
+          span do
             img [class: "diy-slideshow-image", src: "images/ibgib_yellow.png"]
           end
           figcaption do

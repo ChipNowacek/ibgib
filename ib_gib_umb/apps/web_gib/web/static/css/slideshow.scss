@@ -24,7 +24,7 @@
 figure{
   position: absolute;
   opacity: 0;
-  transition: 3s opacity;
+  transition: 0.2s opacity;
 }
 figcaption{
   position: absolute;
@@ -36,7 +36,7 @@ figcaption{
   color: #fff;
   background-color: $ibgib_green;
   border-radius: 2px;
-  transition: 3s background-color;
+  transition: 0.2s background-color;
 }
 figcaption a{
   color: #fff;
@@ -44,7 +44,7 @@ figcaption a{
 figure.show{
   opacity: 1;
   position: static;
-  transition: 2s opacity;
+  transition: 0.2s opacity;
 }
 .next, .prev{
   color: #fff;

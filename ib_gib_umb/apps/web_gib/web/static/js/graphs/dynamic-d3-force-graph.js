@@ -880,6 +880,8 @@ export class DynamicD3ForceGraph {
   swap(existingNode, newNode, updateParentOrChild) {
     let t = this;
 
+    t.swapping = true;
+    
     // find links to existing node
     let linksA = t.graphData.links
       .filter(l => l.source.id === existingNode.id)
@@ -896,6 +898,8 @@ export class DynamicD3ForceGraph {
     newNode.x = x;
     newNode.y = y;
     t.add([newNode], newLinks, updateParentOrChild);
+    
+    delete t.swapping;
   }
   addChildGraph(child, shareDataReference) {
     let t = this;

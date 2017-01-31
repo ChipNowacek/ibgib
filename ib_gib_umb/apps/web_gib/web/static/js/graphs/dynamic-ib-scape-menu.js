@@ -104,7 +104,7 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
 
   handleNodeNormalClicked(d) {
     let t = this;
-    console.log(`menu node clicked. d: ${JSON.stringify(d)}`);
+    // console.log(`menu node clicked. d: ${JSON.stringify(d)}`);
 
     t.animateNodeBorder(d, /*node*/ null);
 

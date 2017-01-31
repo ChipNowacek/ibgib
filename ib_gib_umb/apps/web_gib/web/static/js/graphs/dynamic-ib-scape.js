@@ -324,7 +324,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
 
     t.backgroundRefresher.exec(ibGibs, successMsg => {
-      console.log(`${lc} Initial refresh source nodes complete. successMsg: ${JSON.stringify(successMsg)}`);
+      console.log(`${lc} backgroundRefresher.exec successMsg: ${JSON.stringify(successMsg)}`);
         if (successMsg && successMsg.data) {
           let latestIbGibs = successMsg.data.latest_ib_gibs || {};
           Object.keys(latestIbGibs)
@@ -506,6 +506,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
       t.swap(node, node, /*updateParentOrChild*/ true);
       node.virtualId = ibHelper.getRandomString();
+      // reconnect with the new ibGib?
       t.zap(node, () => {
         if (!skipUpdateUrl) {
           if (node.isContext) {
@@ -1124,8 +1125,17 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.remove(node, /*updateParentOrChild*/ true);
   }
 
+  // add(nodesToAdd, linksToAdd, updateParentOrChild) { 
+  //   let t= this;
+  //   
+  //   super.add(nodesToAdd, linksToAdd, updateParentOrChild);
+  // }
   remove(dToRemove, updateParentOrChild) {
     let t = this;
+
+    if (!t.expanding && !t.fullyExpanding) {
+      t.ibGibEventBus.disconnect(dToRemove.id);
+    }
 
     super.remove(dToRemove, updateParentOrChild);
 
@@ -1333,7 +1343,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
   zap(node, callback) {
     let t = this, lc = `zap`;
-    console.log(`zap node.id: ${node.id}`)
+    // console.log(`zap node.id: ${node.id}`)
 
     t.clearFadeTimeout(node);
 
@@ -1525,7 +1535,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     // Do this whenever done (after zapping children if required).
     let finalize = () => {
-      t.addCmdVirtualNodes_Default(node);
+      // t.addCmdVirtualNodes_Default(node);
       delete node.expanding;
       if (callback) { callback(); }
     };
@@ -1625,6 +1635,32 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     rel8nNode.expandLevel = 1;
   }
+  _refreshIbGibsForAutoExpansion(node, autoExpandRel8ns, callback) {
+    let t = this;
+    
+    // callback();
+    
+    let ibGibsToRefresh = [];
+    if (node.type === "ibGib") {
+      ibGibsToRefresh.push(node.ibGib);
+      let rel8ns = node.ibGibJson.rel8ns;
+      let rel8nNames = Object.keys(rel8ns);
+      rel8nNames.forEach(rel8nName => {
+        if (!d3BoringRel8ns.includes(rel8nName)) { 
+          let rel8dIbGibs = rel8ns[rel8nName];
+          rel8dIbGibs.forEach(rel8dIbGib => {
+            if (rel8dIbGib !== "ib^gib" && !ibGibsToRefresh.includes(rel8dIbGib)) {
+              ibGibsToRefresh.push(rel8dIbGib);
+            }
+          });
+        }
+      });
+      
+      t.refreshIbGibs(ibGibsToRefresh, callback);
+    } else {
+      callback();
+    }
+  }
   _expandNodeFully(node, autoExpandRel8ns, callback, isCancelledFunc) {
     let t = this, lc = `_expandNodeFully(${node.id})`
 
@@ -1644,39 +1680,42 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       finalize();
     } else {
       node.autoExpanding = true;
-      t.zap(node, () => {
-        let nodeChildren =
-          t.getChildren(node)
-            .filter(n => n.type)
-            .filter(n => n.type === "ibGib" ||
-                         (n.type === "rel8n" && autoExpandRel8ns.includes(n.rel8nName)));
-        let nodeChildCount = nodeChildren.length;
-        if (nodeChildCount > 0) {
-          // hack to know when all callbacks are done (depth-first)
-          if (!t.nodeChildCountHack) { t.nodeChildCountHack = {}; }
-          t.nodeChildCountHack[node.id] = nodeChildCount;
+      // First refresh the node itself and all of its children ibGib
+      t._refreshIbGibsForAutoExpansion(node, autoExpandRel8ns, () => {
+        t.zap(node, () => {
+          let nodeChildren =
+            t.getChildren(node)
+              .filter(n => n.type)
+              .filter(n => n.type === "ibGib" ||
+                           (n.type === "rel8n" && autoExpandRel8ns.includes(n.rel8nName)));
+          let nodeChildCount = nodeChildren.length;
+          if (nodeChildCount > 0) {
+            // hack to know when all callbacks are done (depth-first)
+            if (!t.nodeChildCountHack) { t.nodeChildCountHack = {}; }
+            t.nodeChildCountHack[node.id] = nodeChildCount;
 
-          // Give it a little time between expanding nested levels.
-          setTimeout(() => {
-            nodeChildren
-              .forEach(nodeChild => {
-                
-                t._expandNodeFully(nodeChild, autoExpandRel8ns, () => {
-                  t.removeVirtualCmdNodes();
-                  let count = t.nodeChildCountHack[node.id] - 1;
-                  if (count === 0) {
-                    delete t.nodeChildCountHack[node.id];
-                    finalize();
-                  } else {
-                    t.nodeChildCountHack[node.id] = count;
-                  }
-                }, isCancelledFunc);
-                
-              });
-          }, 700);
-        } else {
-          finalize();
-        }
+            // Give it a little time between expanding nested levels.
+            setTimeout(() => {
+              nodeChildren
+                .forEach(nodeChild => {
+                  
+                  t._expandNodeFully(nodeChild, autoExpandRel8ns, () => {
+                    t.removeVirtualCmdNodes();
+                    let count = t.nodeChildCountHack[node.id] - 1;
+                    if (count === 0) {
+                      delete t.nodeChildCountHack[node.id];
+                      finalize();
+                    } else {
+                      t.nodeChildCountHack[node.id] = count;
+                    }
+                  }, isCancelledFunc);
+                  
+                });
+            }, 700);
+          } else {
+            finalize();
+          }
+        });
       });
     }
   }
@@ -2397,6 +2436,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.ibGibEventBus.connect(/*connectionId*/ node.id, tempJuncIbGib, msg => {
       switch (msg.metadata.name) {
         case "update":
+          t.backgroundRefresher.handleEventBusMsg_Update(msg);
           t.handleEventBusMsg_Update(tempJuncIbGib, node.ibGib, msg);
           break;
         case "adjuncts":
@@ -2421,6 +2461,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   handleEventBusMsg_Update(tempJuncIbGib, ibGib, msg) {
     let t = this;
     // console.log(`handleEventBusMsg_Update msg:\n${JSON.stringify(msg)}`)
+
 
     if (msg && msg.data &&
         // possibly redundant (unnecessary)

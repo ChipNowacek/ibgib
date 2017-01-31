@@ -178,4 +178,30 @@ export class IbGibIbScapeBackgroundRefresher {
   enqueue(ibGibs) {
     this.queue = this.queue.concat(ibGibs);
   }
+  
+  /*
+   * I'm hacking this on to be able to update the refresher.
+   * Currently, the event bus is designed for the ibScape to connect/disconnect.
+   * It doesn't accept just any ol' subscribers for all messages or anything.
+   * So this function is called from within the
+   * ibScape.connectToEventBus_IbGibNode function. eesh. :-/
+   */ 
+  handleEventBusMsg_Update(msg) {
+    let t = this;
+    // console.log(`handleEventBusMsg_Update msg:\n${JSON.stringify(msg)}`)
+
+    if (msg && msg.data && msg.data.new_ib_gib && 
+        msg.metadata && msg.metadata.temp_junc_ib_gib) {
+
+      console.log(`background refresher.handleEventBusMsg_Update. old: ${msg.metadata.temp_junc_ib_gib}. new: ${msg.data.new_ib_gib}`)
+      
+      let cacheEntry = {
+        timestamp: Date.now(),
+        refreshedIbGib: msg.data.new_ib_gib
+      };
+      t.cachedRefreshes[msg.metadata.temp_junc_ib_gib] = cacheEntry;
+    } else {
+      // console.warn(`background refresher: improperly formatted update event. msg: ${JSON.stringify(msg)}`);
+    }
+  }
 }
