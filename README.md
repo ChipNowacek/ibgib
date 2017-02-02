@@ -5,7 +5,7 @@
 [![Demo 02 - Basics](https://github.com/ibgib/ibgib/blob/master/images/screenshots/03%20demo%20ibgib/demo02-basics-screenshot.png)](https://youtu.be/5qfoePRqLss)
 
 ## ibGib is ibGib
-#### _(It's also a graph-ish, merkle-ish, database-ish, functional-language-ish engine, and a web app interfacing with that engine.)_
+#### _(It's also a graph-ish, [merkle-ish](https://www.ibgib.com/ibgib/comment%5E2A35C15E95E108992A93CF80631D76B480DD62747C907DF19CE7899AF7FE3B08), database-ish, functional-language-ish engine, and a web app interfacing with that engine.)_
 
 Right now, the ibGib's incarnation is basically two-fold: The ibGib web app and the ibGib engine that it uses.
 
