@@ -1,6 +1,36 @@
 # Don't Panic.
+### Here, watch some videos...maybe up the speed to 2X.
 
-![Querying Waffles](/images/animated/2016-10-31-query-waffle.gif)
+[![Demo 01 - Login](https://github.com/ibgib/ibgib/blob/master/images/screenshots/03%20demo%20ibgib/demo01-login-screenshot.png)](https://youtu.be/rYUGE-bqR6s)
+[![Demo 02 - Basics](https://github.com/ibgib/ibgib/blob/master/images/screenshots/03%20demo%20ibgib/demo02-basics-screenshot.png)](https://youtu.be/5qfoePRqLss)
+
+## ibGib is ibGib
+#### _(It's also a graph-ish, merkle-ish, database-ish, functional-language-ish engine, and a web app interfacing with that engine.)_
+
+Right now, the ibGib's incarnation is basically two-fold: The ibGib web app and the ibGib engine that it uses.
+
+## ibGib the Web App
+
+The web app is a web-realtime application built with Phoenix (Elixir) using channels/sockets. The app's functionality is pretty "simple" at the moment, but still very powerful and useful. (I'm dogfooding it and I :heart: it.) 
+
+Currently, here is the gist of it:
+
+  * "Log in" via email magic link  
+    * Additional security pin optional  
+  * Create ibGib nodes  
+    * "Folder-like" ibGib nodes that are intended for relationships among ibGib  
+    * "File-like" ibGib nodes via comments (markdown), pics, and hyperlinks  
+  * Query for ibGib
+    * Via the `ib` (like folder/category names)
+    * Via internal `data` properties (like words within comments)
+
+## ibGib the Engine
+
+The engine is created in Elixir (and the BEAM!), and it is all about creating, relating, and evolving immutable snapshots of ibGib in a monotonically increasing ibGib universe. Each datum has the following very "simple" structure: `ib`, `gib`, `rel8ns`, and `data`. 
+
+The `ib` acts like the name of the ibGib. The `rel8ns` make it a graph-like structure, allowing for named relationships among all ibGib frames. The `data` contains the intrinsic content of the ibGib, similar to a file's contents. And the `gib` is a SHA-256 hash that verifies the integrity of the `ib`, `rel8ns`, and `data`.
+
+So each ibGib frame is an immutable snapshot with an `ib^gib` URL that uniquely identifies that frame. Because of how the engine works, this effectively makes the `ib^gib` to act as reference pointers and the ibGib themselves act as pure functions: The same input will produce the same output.
 
 ## :point_up: Thank You :+1:
 
