@@ -202,7 +202,7 @@ $(document).ready(function(){
     $items.eq(itemToShow).addClass('show');
   };
 
-  const intervalMs = 3000;
+  const intervalMs = 6000;
   setInterval(() => {
     counter++;
     showCurrent();

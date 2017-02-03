@@ -42,7 +42,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     let defaults = {
       background: {
-        fill: "green",
+        fill: "#76963e",
         opacity: 1,
         shape: "rect"
       },

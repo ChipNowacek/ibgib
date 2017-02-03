@@ -100,6 +100,8 @@
     .container-fluid {
       max-width: ibfn-size-given-screen($screen-size);
     }
+    
+    
   }
 }
 
@@ -109,21 +111,70 @@
 @include ibmx-container-fluid($ib_xl);
 @include ibmx-container-fluid($ib_xl2);
 
+.ib-nav {
+  margin-bottom: 0px !important;
+}
+
+#ib-navbar-container {
+  margin: 0px;
+}
+
+.navbar-btn {
+  background-color: $ibgib_green_very_light !important;
+}
+
+#ib-navbar-icon-div {
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  background-image: url("/favicon-32x32.png");
+  background-repeat: no-repeat;
+  background-color: $ibgib_green_very_light;
+  // margin: 1px;
+  // display: flex;
+  // align-items: center;
+  // position: relative;
+  // left: 0px;
+}
+
+.navbar-brand {
+  // color: $ibgib_green !important;
+  // background-color: $ibgib_green_light !important;
+  border-radius: 10px;
+  // position: absolute;
+  // top: -5px;
+  // left: -5px;
+
+  // margin: 0px;
+}
+
+#ib-main-header {
+  height: 105px !important;
+  width: 100% !important;
+  margin: 0px !important;
+  padding: 0px !important;
+}
+
+.ib-flex-centerable {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+}
 
 .logo {
-  width: 100%;
+  width: 50%;
+  // width: 200px;
   height: 100px;
   display: inline-block;
-  margin-bottom: 1em;
+  margin-bottom: 0em;
   background-image: url("/images/ibgib_100x200.png");
   background-size: 200px 100px;
   background-repeat: no-repeat;
   background-position: center;
-  border-width: 1px;
-  border-color: $ibgib_green;
-  border-radius: 5px;
-  border-style: solid;
-  padding: 5px;
+  padding: 0px !important;
+  // padding: 5px;
 }
 
 /* Remove the bottom border on the jumbotron for visual effect */
@@ -186,6 +237,7 @@ html {
   // overflow-y: hidden;
   height: 100%;
   width: 100%;
+  background-color: $ibgib_app_background_color;
 }
 
 body {
@@ -197,10 +249,20 @@ body {
   margin-top: 0px !important;
 }
 
+.ib-layout-body {
+  background-color: $ibgib_app_background_color !important;
+  // padding-top: 70px; // for use with bootstrap navbar fixed top
+}
+
 body > .container-fluid {
   padding: 0px 0px 0;
   min-width: 300px;
   height: 100%;
+  background-color: $ibgib_app_background_color;
+}
+
+nav {
+  background-color: $ibgib_app_background_color !important;
 }
 
 form {
@@ -227,6 +289,16 @@ ul {
 /*---------------------------------------------------------------------------*/
 /* Other */
 /*---------------------------------------------------------------------------*/
+
+.ib-container-section {
+  background-color: $ibgib_green_very_light;
+  border-width: 0.1px;
+  border-color: $ibgib_green;
+  border-style: solid;
+  border-radius: 25px;
+  padding: 10px;
+  margin: 5px;
+}
 
 .container .text-muted {
   margin: 20px 0;
@@ -305,4 +377,11 @@ ul {
   border-color: $ibgib_green;
   // border-color: $ibgib_orange;
   border-width: medium;
+}
+
+.ib-youtube-vid {
+  padding: 10px;
+  width: 100%;
+  max-width: 560px;
+  height: 315px;
 }

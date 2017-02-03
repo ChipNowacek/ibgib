@@ -5,8 +5,6 @@
   position: relative;
   display: block;
   overflow: hidden;
-  background-color: $ibgib_green_very_light;
-  border-radius: 20px;
   max-height: 300px;
   // height: 100px;
   align-content: center;
@@ -15,7 +13,7 @@
 
 .diy-slideshow-image {
   align-self: center;
-  max-width: 300px;
+  // max-width: 300px;
   max-height: 300px;
   margin: auto;
   display: block;
@@ -23,16 +21,26 @@
 
 figure{
   position: absolute;
+  left: 0px;
   opacity: 0;
-  transition: 0.2s opacity;
+  transition: 1s opacity;
+  transition: 1s left;
+}
+.ib-figcaptiondiv {
+  position: absolute;
+  display: flex;
+  overflow: hidden;
+  align-items: center;
+  width: 100%;
+  bottom: 0.75em;
 }
 figcaption{
-  position: absolute;
-  font-family: sans-serif;
-  font-size: .8em;
-  bottom: .75em;
-  right: .35em;
-  padding: .25em;
+  // position: absolute;
+  font-family: monospace;
+  font-size: .9em;
+  display: block;
+  margin: 0 auto;
+  padding: .15em 1em .15em 1em;
   color: #fff;
   background-color: $ibgib_green;
   border-radius: 2px;
@@ -44,7 +52,8 @@ figcaption a{
 figure.show{
   opacity: 1;
   position: static;
-  transition: 0.2s opacity;
+  transition: 2s opacity;
+  transition: 2s position;
 }
 .next, .prev{
   color: #fff;

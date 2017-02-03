@@ -14,7 +14,7 @@ export class DynamicD3ForceGraph {
     // work. That's why I'm duplicating the entire structure on all descendants.
     let defaults = {
       background: {
-        fill: "#F2F7F0",
+        fill: "pink",
         opacity: 1,
         shape: "rect"
       },
