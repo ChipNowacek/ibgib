@@ -30,42 +30,42 @@ defmodule WebGib.LayoutView do
       end
       
       body [class: "ib-layout-body ib-height-100"] do
-        nav [class: "navbar navbar-default ib-nav"] do
-          div [id: "ib-navbar-container", class: "container-fluid"] do
-            
-            div [class: "navbar-header"] do
-              
-              # div [id: "ib-navbar-icon-div"] do
-              # end
-              # a [class: "navbar-brand navbar-left", href: "/"] do
-              #   # img [alt: "ibGib Logo", src: "/favicon-32x32.png"]
-              # end
-              
-              # button [type: "button", class: "navbar-toggle collapsed navbar-right", "data-toggle": "collapse", "data-target": "#ib-navbar-collapse-div", "aria-expanded": "false"] do
-              #   span [class: "icon-bar"]
-              #   span [class: "icon-bar"]
-              #   span [class: "icon-bar"]
-              # end
-              
-              a [class: "navbar-brand", href: "/"] do 
-                "ibGib"
-                # img [alt: "ibGib Logo", src: "/favicon-32x32.png"]
-                # "Brand" 
-              end
-            end
-
-            button [type: "button", class: "btn btn-default navbar-btn"] do
-              "Button1"
-            end
-            button [type: "button", class: "btn btn-default navbar-btn"] do
-              "Button2"
-            end
-            button [type: "button", class: "btn btn-default navbar-btn"] do
-              "Button3"
-            end
-            
-          end
-        end
+        # nav [class: "navbar navbar-default ib-nav"] do
+        #   div [id: "ib-navbar-container", class: "container-fluid"] do
+        #     
+        #     div [class: "navbar-header"] do
+        #       
+        #       # div [id: "ib-navbar-icon-div"] do
+        #       # end
+        #       # a [class: "navbar-brand navbar-left", href: "/"] do
+        #       #   # img [alt: "ibGib Logo", src: "/favicon-32x32.png"]
+        #       # end
+        #       
+        #       # button [type: "button", class: "navbar-toggle collapsed navbar-right", "data-toggle": "collapse", "data-target": "#ib-navbar-collapse-div", "aria-expanded": "false"] do
+        #       #   span [class: "icon-bar"]
+        #       #   span [class: "icon-bar"]
+        #       #   span [class: "icon-bar"]
+        #       # end
+        #       
+        #       a [class: "navbar-brand", href: "/"] do 
+        #         "ibGib"
+        #         # img [alt: "ibGib Logo", src: "/favicon-32x32.png"]
+        #         # "Brand" 
+        #       end
+        #     end
+        # 
+        #     button [type: "button", class: "btn btn-default navbar-btn"] do
+        #       "Button1"
+        #     end
+        #     button [type: "button", class: "btn btn-default navbar-btn"] do
+        #       "Button2"
+        #     end
+        #     button [type: "button", class: "btn btn-default navbar-btn"] do
+        #       "Button3"
+        #     end
+        #     
+        #   end
+        # end
         div [class: "container-fluid ib-width-100 ib-height-100"] do
           div [class: "ib-container-section"] do
             header [id: "ib-main-header", class: "ib-flex-centerable"] do

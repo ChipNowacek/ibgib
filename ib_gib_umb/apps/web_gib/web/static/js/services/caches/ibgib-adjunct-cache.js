@@ -1,4 +1,4 @@
-import * as ibHelper from './ibgib-helper';
+import * as ibHelper from '../ibgib-helper';
 
 /**
  * ibGibJson cache stores ibGibJson per ibGib.
@@ -8,36 +8,10 @@ import * as ibHelper from './ibgib-helper';
  * am too unsure of the overall approach for the updateEventMsg cache to
  * refactor right now.
  */
-export class IbGibCache {
-  /** `latestExpiryMs` is invalidation timeout for calls to `getLatest`. */
-  constructor(latestExpiryMs) {
+export class IbGibAdjunctCache {
+  constructor() {
     let t = this;
-    t.naiveCache = {};
     t.adjunctNaiveCache = {};
-    t.updateEventMsgInfos = {};
-    t.latestExpiryMs = latestExpiryMs;
-  }
-
-  /**
-   * True if ibGibJson exists for given `ibGib`.
-   *
-   * This has nothing to do with the `getLatest` mechanism. :nose:
-   */
-  exists(ibGib) {
-    return ibGib in this.naiveCache;
-  }
-
-  add(ibGibJson) {
-    let ibGib = ibHelper.getFull_ibGib(ibGibJson);
-    this.naiveCache[ibGib] = ibGibJson;
-  }
-
-  get(ibGib) {
-    if (ibGib in this.naiveCache) {
-      return this.naiveCache[ibGib];
-    } else {
-      return null;
-    }
   }
 
   addAdjunctInfo(tempJuncIbGib, ibGib, adjunctIbGib, adjunctIbGibJson) {
@@ -109,8 +83,5 @@ export class IbGibCache {
     }
 
     return result;
-    // if (adjunctInfos.length === 0) {
-    //   return null;
-    // } else
   }
 }

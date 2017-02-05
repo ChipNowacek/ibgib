@@ -1,10 +1,12 @@
 import * as d3 from 'd3';
 
 export class IbGibProvider {
-  constructor(ibGibCache, baseJsonPath) {
+  constructor(ibGibCache, ibGibAdjunctCache, ibGibLatestCache, baseJsonPath) {
     let t = this;
 
     t.ibGibCache = ibGibCache;
+    t.ibGibAdjunctCache = ibGibAdjunctCache;
+    t.ibGibLatestCache = ibGibLatestCache;
     t.baseJsonPath = baseJsonPath;
   }
 
@@ -71,6 +73,24 @@ export class IbGibProvider {
 
   getAdjunctInfo_ByAdjunctIbGib(adjunctIbGib) {
     let t = this;
-    return t.ibGibCache.getAdjunctInfo_ByAdjunctIbGib(adjunctIbGib);
+    return t.ibGibAdjunctCache.getAdjunctInfo_ByAdjunctIbGib(adjunctIbGib);
+  }
+  
+  getLatestIbGib(ibGib) {
+    let t = this;
+    if (!ibGib) {
+      return null;
+    } else if (ibGib === "ib^gib") {
+      return "ib^gib";
+    } else {
+      return t.ibGibLatestCache.get(ibGib) || ibGib;
+    }
+  }
+  
+  setLatestIbGib(ibGib, latest) {
+    let t = this;
+    if (ibGib && ibGib !== "ib^gib") {
+      t.ibGibLatestCache.set(ibGib, latest);
+    }
   }
 }

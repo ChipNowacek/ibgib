@@ -9,7 +9,7 @@ var md = require('markdown-it')({
 var emoji = require('markdown-it-emoji');
 md.use(emoji);
 
-import { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3BoringRel8ns, d3AlwaysRel8ns, d3RequireExpandLevel2, d3MenuCommands, d3Rel8nIcons, d3RootUnicodeChar, d3AddableRel8ns, d3PausedRel8ns } from '../d3params';
+import { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3BoringRel8ns, d3AlwaysRel8ns, d3RequireExpandLevel2, d3MenuCommands, d3Rel8nIcons, d3RootUnicodeChar, /*d3AddableRel8ns,*/ d3PausedRel8ns } from '../d3params';
 
 import { DynamicD3ForceGraph } from './dynamic-d3-force-graph';
 import { DynamicIbScapeMenu } from './dynamic-ib-scape-menu';
@@ -24,12 +24,13 @@ import { IbGibIbScapeBackgroundRefresher } from '../services/ibgib-ib-scape-back
  * data interaction. So on the client side, this is the big enchilada.
  */
 export class DynamicIbScape extends DynamicD3ForceGraph {
-  constructor(graphDiv, svgId, config, baseJsonPath, ibGibCache, ibGibImageProvider, sourceIbGib, ibGibSocketManager, ibGibEventBus, isPrimaryIbScape, ibGibProvider, currentIdentityIbGibs) {
+  constructor(graphDiv, svgId, config, baseJsonPath, ibGibCache, ibGibAdjunctCache, ibGibImageProvider, sourceIbGib, ibGibSocketManager, ibGibEventBus, isPrimaryIbScape, ibGibProvider, currentIdentityIbGibs) {
     super(graphDiv, svgId, {});
     let t = this;
 
     t.baseJsonPath = baseJsonPath;
     t.ibGibCache = ibGibCache;
+    t.ibGibAdjunctCache = ibGibAdjunctCache;
     t.ibGibImageProvider = ibGibImageProvider;
     t.ibGibSocketManager = ibGibSocketManager;
     t.ibGibEventBus = ibGibEventBus;
@@ -87,7 +88,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
     t.config = $.extend({}, defaults, config || {});
 
-    t.contextIbGib = sourceIbGib || "ib^gib";
+    t.contextIbGib = t.ibGibProvider.getLatestIbGib(sourceIbGib) || "ib^gib";
   }
   destroy() {
     let t = this;
@@ -222,11 +223,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     t.backgroundRefresher
       .start(
-        successMsg => {
-          if (successMsg && successMsg.data && successMsg.data.latest_ib_gibs) {
-            console.log(`Background refresher found newer ibGibs. latest_ib_gibs:  ${JSON.stringify(successMsg.data.latest_ib_gibs)}`);
-          }
-        },
+        successMsg => { t.handleBackgroundRefresherSuccess(successMsg); },
         errorMsg => {
           console.error(`Error background refresher: ${JSON.stringify(errorMsg)}`);
         },
@@ -246,10 +243,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       let leadingTrimLength = window.location.pathname[0] === "/" ? 7 : 6;
       let newContextIbGib = window.location.pathname.replace("%5E", "^").substring(leadingTrimLength);
 
-      t.updateIbGib(t.contextNode,
-                    newContextIbGib,
-                    /*skipUpdateUrl*/ true,
-                    () => t.syncContextChildren());
+      t.updateIbGib(t.contextNode, newContextIbGib, /*skipUpdateUrl*/ true,
+        /*callback*/ () => {
+        t.syncContextChildren();
+        t.syncAdjuncts(t.contextNode.tempJuncIbGib, /*callback*/ null);
+      });
     }
 
     t.refreshContextNode();
@@ -281,74 +279,14 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     let t = this, lc = `refreshContextNode`;
 
     if (t.contextNode) {
-      t.backgroundRefresher.exec([t.contextNode.ibGib], successMsg => {
-        let newContextIbGib = successMsg.data && successMsg.data.latest_ib_gibs ?
-          successMsg.data.latest_ib_gibs[t.contextNode.ibGib] :
-          t.contextNode.ibGib;
-
-        t.updateIbGib(t.contextNode, newContextIbGib, /*skipUpdateUrl*/ false, () => {
-
-          // now we can refresh the source nodes.
-          t.getIbGibJson(t.contextNode.ibGib, ibGibJson => {
-            let ibGibsToRefresh =
-              Object.keys(ibGibJson.rel8ns)
-                .filter(rel8nName => rel8nName === "ib^gib" || !d3BoringRel8ns.includes(rel8nName))
-                .map(rel8nName => ibGibJson.rel8ns[rel8nName])
-                .reduce((acc, rel8nIbGibs) => {
-                  rel8nIbGibs.forEach(rel8nIbGib => {
-                    if (!acc.includes(rel8nIbGib) && rel8nIbGib !== "ib^gib") {
-                      acc.push(rel8nIbGib)
-                    }
-                  });
-                  return acc;
-                }, []);
-            console.log(`${lc} Initial source node ibGibs to refresh: ${JSON.stringify(ibGibsToRefresh)}`);
-            t.refreshIbGibs(ibGibsToRefresh, /*callback*/ null);
-          });
-
+      t.getIbGibJson(t.contextNode.ibGib, ibGibJson => {
+        t.backgroundRefresher.enqueue([t.contextNode.ibGib]);
+        t.backgroundRefresher.flushQueue(successMsg => {
+          t.syncContextChildren();
+          t.syncAdjuncts(t.contextNode.tempJuncIbGib, /*callback*/ null);
         });
-      },
-      errorMsg => { // error refreshing contextNode
-        console.error("Error on context node initial refresh.")
       });
     }
-  }
-  refreshIbGibs(ibGibs, callback) {
-    let t = this, lc = `refreshIbGibs(ibGibs: ${JSON.stringify(ibGibs)})`;
-    if (t.busyRefreshing) {
-      let intervalClosure = setTimeout(() => {
-        t.refreshIbGibs(ibGibs, callback);
-      }, 5000);
-    } else {
-      t.busyRefreshing = true;
-    }
-
-    t.backgroundRefresher.exec(ibGibs, successMsg => {
-      console.log(`${lc} backgroundRefresher.exec successMsg: ${JSON.stringify(successMsg)}`);
-        if (successMsg && successMsg.data) {
-          let latestIbGibs = successMsg.data.latest_ib_gibs || {};
-          Object.keys(latestIbGibs)
-            .forEach(oldIbGib => {
-              t.getIbGibJson(oldIbGib, oldIbGibJson => {
-                let oldTempJunc = ibHelper.getTemporalJunctionIbGib(oldIbGibJson);
-                let newIbGib = latestIbGibs[oldIbGib];
-                t.ibGibEventBus.broadcastIbGibUpdate_LocallyOnly(oldTempJunc, newIbGib);
-              });
-            });
-        } else if (successMsg === null) {
-          console.log(`${lc} Nothing to refresh.`);
-        } else {
-          console.error(`${lc} successMsg.data problem.`);
-        }
-        
-        delete t.busyRefreshing;
-        
-        if (callback) { callback(); }
-    }, errorMsg => {
-      console.error(`Error on refresh ibGibs. errorMsg: ${JSON.stringify(errorMsg)}`);
-      if (t.busyRefreshing) { delete t.busyRefreshing; }
-      if (callback) { callback(); }
-    });
   }
 
   // Updates -------------------------------
@@ -614,8 +552,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         if (!rel8nNames.includes("ib^gib")) {
           t.syncContextSourceNodes(/*rel8nIbGibs*/ []);
         }
-
-        // t.syncAdjuncts(t.contextNode.tempJuncIbGib);
       } catch (e) {
         console.error(`error syncing context children: ${e}`)
       } finally {
@@ -671,7 +607,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
               // Don't add ones that already exist.
               if (!childrenTempJuncIbGibs.includes(info.adjunctTempJuncIbGib)) {
                 childrenTempJuncIbGibs.push(info.adjunctTempJuncIbGib);
-                t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ info.adjunctIbGib, /*srcNode*/ rel8nNode, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y}, /*isAdjunct*/ true);
+                t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.ibGibProvider.getLatestIbGib(info.adjunctIbGib), /*srcNode*/ rel8nNode, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y}, /*isAdjunct*/ true);
               }
             });
         });
@@ -731,7 +667,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           return sn.tempJuncIbGib === adjTempJuncIbGib;
         }))
         .forEach(info => {
-          t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ info.adjunctIbGib, /*srcNode*/ null, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: t.contextNode.x, y: t.contextNode.y}, /*isAdjunct*/ true);
+          t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.ibGibProvider.getLatestIbGib(info.adjunctIbGib), /*srcNode*/ null, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: t.contextNode.x, y: t.contextNode.y}, /*isAdjunct*/ true);
         });
     } else {
       // console.log(`syncContextAdjuncts: no adjunctInfos.`)
@@ -744,33 +680,46 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
    */
   syncContextSourceNodes(ibGibs) {
     let t = this;
-    let sourceNodes =
-      t.graphData.nodes.filter(n => n.isSource && n.id !== t.contextNode.id && !n.isRoot);
+    if (t.syncingContextSourceNodes) {
+      console.log(`already syncing context source nodes.`);
+      return;
+    } else {
+      t.syncingContextSourceNodes = true;
+      try {
+        let sourceNodes =
+          t.graphData.nodes.filter(n => n.isSource && n.id !== t.contextNode.id && !n.isRoot);
+          // debugger;
+        // not optimized :scream:
 
-    // not optimized :scream:
+        // prune
+        sourceNodes
+          .filter(sourceNode => !ibGibs.includes(sourceNode.ibGib))
+          .forEach(nodeNotFound => {
+            console.log(`removing nodeNotFound.id & ibGib: ${nodeNotFound.id} ${nodeNotFound.ibGib}`)
+            t.removeNodeAndChildren(nodeNotFound);
+          });
 
-    // prune
-    sourceNodes
-      .filter(sourceNode => !ibGibs.includes(sourceNode.ibGib))
-      .forEach(nodeNotFound => t.removeNodeAndChildren(nodeNotFound));
+        // add
+        let newIbGibs =
+          ibGibs
+            .filter(ibGib => !sourceNodes.some(sn => sn.ibGib === ibGib))
+            .map(ibGib => t.ibGibProvider.getLatestIbGib(ibGib));
 
-    // add
-    let newIbGibs =
-      ibGibs.filter(ibGib => !sourceNodes.some(sn => sn.ibGib === ibGib));
-
-    newIbGibs
-      .forEach(ibGib => {
-        t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ ibGib, /*srcNode*/ null, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: t.contextNode.x, y: t.contextNode.y}, /*isAdjunct*/ false);
-      });
-
-    if (newIbGibs && newIbGibs.length > 0) {
-      t.backgroundRefresher.exec(newIbGibs,
-        successMsg => {
-          console.log("syncContextSourceNodes: refresh newIbGibs succeeded.")
-        },
-        errorMsg => {
-          console.error(`syncContextSourceNodes: refresh newIbGibs failed. Error: ${JSON.stringify(errorMsg)}`)
-        });
+        newIbGibs
+          .forEach(ibGib => {
+            // adding this if statement because some kind of race condition
+            // that I can't pin down. This should already be true b/c of above
+            // filter clause.
+            // if (!sourceNodes.some(sn => sn.ibGib === ibGib)) {
+              t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ ibGib, /*srcNode*/ null, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: t.contextNode.x, y: t.contextNode.y}, /*isAdjunct*/ false);
+            // }
+          });
+          t.backgroundRefresher.enqueue(newIbGibs);
+      } catch (e) {
+        console.error(`{lc} error: ${JSON.stringify(e)}`)
+      } finally {
+        t.syncingContextSourceNodes = false;
+      }
     }
   }
   /**
@@ -792,11 +741,13 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           .forEach(nodeNotFound => t.removeNodeAndChildren(nodeNotFound));
 
         // add
-        ibGibs
+        let latestIbGibs = ibGibs.map(ibGib => t.ibGibProvider.getLatestIbGib(ibGib));
+        latestIbGibs
           .filter(ibGib => !children.some(child => child.ibGib === ibGib))
           .forEach(ibGib => {
             t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ ibGib, /*srcNode*/ rel8nNode, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y}, /*isAdjunct*/ false);
           });
+        t.backgroundRefresher.enqueue(latestIbGibs);
       }
     } else {
       // rel8nNode does not yet exist.
@@ -996,6 +947,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     let title = rel8nName in d3Rel8nIcons ? d3Rel8nIcons[rel8nName] : "";
     let node = t.addVirtualNode(t.getUniqueId(`${dSrc.id}_${rel8nName}`), /*type*/ "rel8n", `rel8n^gib`, /*srcNode*/ dSrc, "circle", /*autoZap*/ false, fadeTimeoutMs, /*cmd*/ null, title, /*label*/ rel8nName, /*startPos*/ {x: dSrc.x, y: dSrc.y}, /*isAdjunct*/ false);
     node.rel8nSrc = dSrc;
+    node.parentNode = dSrc;
 
     return node;
   }
@@ -1028,10 +980,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       });
 
     // Update children again
-    childrenRel8nNames = t.getChildren_Rel8ns(node).map(child => child.rel8nName);
-    d3AddableRel8ns
-      .filter(rel8nName => !childrenRel8nNames.includes(rel8nName))
-      .forEach(rel8nName => t.addRel8nVirtualNode(node, rel8nName, fadeTimeoutMs));
+    // childrenRel8nNames = t.getChildren_Rel8ns(node).map(child => child.rel8nName);
+    // d3AddableRel8ns
+    //   .filter(rel8nName => !childrenRel8nNames.includes(rel8nName))
+    //   .forEach(rel8nName => t.addRel8nVirtualNode(node, rel8nName, fadeTimeoutMs));
   }
   /**
    * Adds "boring" rel8ns that are not collapsed by default.
@@ -1125,19 +1077,27 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.remove(node, /*updateParentOrChild*/ true);
   }
 
-  // add(nodesToAdd, linksToAdd, updateParentOrChild) { 
-  //   let t= this;
-  //   
-  //   super.add(nodesToAdd, linksToAdd, updateParentOrChild);
-  // }
+  add(nodesToAdd, linksToAdd, updateParentOrChild) { 
+    let t= this, lc = `add`;
+    
+    // console.log(`${lc} start. nodesToAdd: ${JSON.stringify(nodesToAdd.map(n => { return {id: n.id, ibGib: n.ibGib} }))}`)
+    super.add(nodesToAdd, linksToAdd, updateParentOrChild);
+  }
   remove(dToRemove, updateParentOrChild) {
-    let t = this;
+    let t = this, lc = `remove`;
+    
+    // console.log(`${lc} start. dToRemove.id & ibGib: ${dToRemove.id} ${dToRemove.ibGib}`);
 
     if (!t.expanding && !t.fullyExpanding) {
       t.ibGibEventBus.disconnect(dToRemove.id);
     }
 
-    super.remove(dToRemove, updateParentOrChild);
+    let removed = super.remove(dToRemove, updateParentOrChild);
+    
+    if (!removed) {
+      console.warn(`remove not found. ibGib: ${dToRemove.ibGib}`)
+      // debugger;
+    }
 
     if (t.graphData.nodes.length === 0) {
       t.rootPulseTimer = setTimeout(() => {
@@ -1147,6 +1107,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         }
       }, t.config.other.rootPulseMs);
     }
+    
+    return removed;
+    
+    // console.log(`${lc} end. dToRemove.ibGib: ${dToRemove.ibGib}`);
   }
 
   /** Adds the root */
@@ -1242,7 +1206,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
    * @see `DynamicIbScape.zapVirtualNode`
    */
   addVirtualNode(id, type, nameOrIbGib, srcNode, shape, autoZap, fadeTimeoutMs, cmd, title, label, startPos, isAdjunct) {
-    let t = this;
+    let t = this, lc = `addVirtualNode`;
+
+    // console.log(`${lc} start. nameOrIbGib: ${nameOrIbGib}`);
 
     let virtualNode = t.createVirtualNode(id, type, nameOrIbGib, shape, cmd, title, label, isAdjunct);
     if (startPos) {
@@ -1254,6 +1220,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.add([virtualNode], links, /*updateParentOrChild*/ true);
 
     if (srcNode) {
+      virtualNode.parentNode = srcNode;
       t.animateNodeBorder(/*d*/ srcNode, /*nodeShape*/ null);
     } else {
       virtualNode.isSource = true;
@@ -1268,6 +1235,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     } else if (fadeTimeoutMs) {
       t.fadeOutNode(virtualNode, fadeTimeoutMs);
     }
+
+    // console.log(`${lc} end. nameOrIbGib: ${nameOrIbGib}`);
 
     return virtualNode;
   }
@@ -1433,34 +1402,53 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     } else {
       t.getIbGibJson(node.ibGib, ibGibJson => {
         // console.log(`got json: ${JSON.stringify(ibGibJson)}`);
-        node.ibGibJson = ibGibJson;
         node.tempJuncIbGib = ibHelper.getTemporalJunctionIbGib(ibGibJson);
+        
+        let latestIbGib = t.ibGibProvider.getLatestIbGib(node.ibGib);
+        t.getIbGibJson(latestIbGib, latestIbGibJson => {
+          node.ibGib = latestIbGib;
+          node.ibGibJson = latestIbGibJson;
+          
+          t.updateRender(node);
 
-        t.updateRender(node);
+          t.removeVirtualNode(node, /*keepInGraph*/ true);
+          delete node.virtualId;
+          t.swap(node, node, /*updateParentOrChild*/ true);
 
-        t.removeVirtualNode(node, /*keepInGraph*/ true);
-        delete node.virtualId;
-        t.swap(node, node, /*updateParentOrChild*/ true);
+          if (node.ibGib !== "ib^gib") {
+            t.connectToEventBus_IbGibNode(node)
+          }
 
-        if (node.ibGib !== "ib^gib") {
-          t.connectToEventBus_IbGibNode(node)
-        }
+          // If we're not paused, then give our node the green light.
+          // this will let it be 
+          if (!node.isSource && !node.isContext) {
+            if (!node.parentNode) {
+              debugger;
+            }
+            if (node.parentNode.isGreen && !node.isPaused) {
+              node.isGreen = true;
+            }
+          }
 
-        t.clearBusy(node);
-        t.animateNodeBorder(node, /*nodeShape*/ null);
-        if (callback) { callback(); }
+          t.clearBusy(node);
+          t.animateNodeBorder(node, /*nodeShape*/ null);
+          if (callback) { callback(); }
+        });
       });
     }
   }
-  zapVirtualNode_Rel8n(rel8nNode, callback) {
+  zapVirtualNode_Rel8n(node, callback) {
     let t = this;
 
-    t.clearFadeTimeout(rel8nNode);
-    t.clearBusy(rel8nNode);
-    t.removeVirtualNode(rel8nNode);
-    delete rel8nNode.virtualId;
-    t.add([rel8nNode], [{source: rel8nNode.rel8nSrc.id, target: rel8nNode.id}], /*updateParentOrChild*/ true);
-    t.expandNode(rel8nNode, callback);
+    t.clearFadeTimeout(node);
+    t.clearBusy(node);
+    t.removeVirtualNode(node);
+    delete node.virtualId;
+    t.add([node], [{source: node.rel8nSrc.id, target: node.id}], /*updateParentOrChild*/ true);
+    if (node.parentNode.isGreen && !node.isPaused) {
+      node.isGreen = true;
+    }
+    t.expandNode(node, callback);
   }
   zapVirtualNode_Errored(node, callback) {
     let t = this, lc = `zapVirtualNode_Errored`;
@@ -1582,17 +1570,17 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   _expandNode_Rel8n(rel8nNode, callback) {
     let t = this;
     // add the Add cmd if it's an addable rel8n
-    if (d3AddableRel8ns.includes(rel8nNode.rel8nName)) {
-      t.addCmdVirtualNode(rel8nNode, "add", t.config.other.cmdFadeTimeoutMs_Specialized);
-      rel8nNode.showingAdd = true;
-      if (rel8nNode.toggleExpandTimer) {
-        clearTimeout(rel8nNode.toggleExpandTimer);
-      }
-      rel8nNode.toggleExpandTimer = setTimeout(() => {
-        // console.log("clearing rel8nNode.showingAdd")
-        delete rel8nNode.showingAdd;
-      }, t.config.other.cmdFadeTimeoutMs_Specialized);
-    }
+    // if (d3AddableRel8ns.includes(rel8nNode.rel8nName)) {
+    //   t.addCmdVirtualNode(rel8nNode, "add", t.config.other.cmdFadeTimeoutMs_Specialized);
+    //   rel8nNode.showingAdd = true;
+    //   if (rel8nNode.toggleExpandTimer) {
+    //     clearTimeout(rel8nNode.toggleExpandTimer);
+    //   }
+    //   rel8nNode.toggleExpandTimer = setTimeout(() => {
+    //     // console.log("clearing rel8nNode.showingAdd")
+    //     delete rel8nNode.showingAdd;
+    //   }, t.config.other.cmdFadeTimeoutMs_Specialized);
+    // }
 
     let existingChildrenIbGibs =
       t.getChildren(rel8nNode)
@@ -1609,8 +1597,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       let rel8dIbGibNodes = [];
       rel8dIbGibs
         .forEach(rel8dIbGib => {
-          let rel8dIbGibNode = t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ rel8dIbGib, /*srcNode*/ rel8nNode, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y}, /*isAdjunct*/ false);
+          let rel8dIbGibNode = t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.ibGibProvider.getLatestIbGib(rel8dIbGib), /*srcNode*/ rel8nNode, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y}, /*isAdjunct*/ false);
           rel8dIbGibNodes.push(rel8dIbGibNode);
+          rel8dIbGibNode.parentNode = rel8nNode;
         });
 
       if (d3PausedRel8ns.includes(rel8nNode.rel8nName)) {
@@ -1621,15 +1610,12 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       } else {
         // Refresh children ibGibs.
         let ibGibsToRefresh = rel8dIbGibs.concat([rel8nSrc.ibGib]);
-        t.refreshIbGibs(ibGibsToRefresh, () => {
-          // Sync adjuncts, passing callback.
-          t.syncAdjuncts(rel8nNode.rel8nSrc.tempJuncIbGib, () => {
-            if (callback) { callback(); }
-          });
-          }, errorMsg => {
-            console.error(`expandNode_Rel8n: refresh toRefresh failed. Error: ${JSON.stringify(errorMsg)}`)
-            if (callback) { callback(); }
-          });
+        t.backgroundRefresher.enqueue(ibGibsToRefresh);
+
+        // Sync adjuncts, passing callback.
+        t.syncAdjuncts(rel8nNode.rel8nSrc.tempJuncIbGib, () => {
+          if (callback) { callback(); }
+        });
       }
     }
 
@@ -1656,7 +1642,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         }
       });
       
-      t.refreshIbGibs(ibGibsToRefresh, callback);
+      t.backgroundRefresher.enqueue(ibGibsToRefresh);
+      callback();
+      // t.refreshIbGibs(ibGibsToRefresh, callback);
     } else {
       callback();
     }
@@ -1711,7 +1699,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
                   }, isCancelledFunc);
                   
                 });
-            }, 700);
+            }, 1500);
           } else {
             finalize();
           }
@@ -2041,7 +2029,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   getAdjunctInfos(tempJuncIbGib, callback) {
     let t = this;
 
-    let adjunctInfos = t.ibGibCache.getAdjunctInfos(tempJuncIbGib);
+    let adjunctInfos = t.ibGibAdjunctCache.getAdjunctInfos(tempJuncIbGib);
     if (adjunctInfos) {
       // console.log(`adjunctInfos gotten from cache: ${adjunctInfos.length}`);
       // console.log(`adjunctInfos gotten from cache: ${JSON.stringify(adjunctInfos)}`);
@@ -2055,7 +2043,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
       let data = { ibGibs: [tempJuncIbGib] };
       let cmdGetAdjuncts = new commands.GetAdjunctsCommand(t, data, successMsg => {
-        t.ibGibCache.clearAdjunctInfos(tempJuncIbGib);
+        t.ibGibAdjunctCache.clearAdjunctInfos(tempJuncIbGib);
         if (successMsg.data && successMsg.data.adjunct_ib_gibs) {
           let adjunctIbGibs = successMsg.data.adjunct_ib_gibs[tempJuncIbGib];
           t.getIbGibJsons(adjunctIbGibs, adjunctIbGibJsons => {
@@ -2063,9 +2051,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
               .map(key => adjunctIbGibJsons[key])
               .forEach(adjunctIbGibJson => {
                 let adjunctIbGib = ibHelper.getFull_ibGib(adjunctIbGibJson);
-                t.ibGibCache.addAdjunctInfo(tempJuncIbGib, tempJuncIbGib, adjunctIbGib, adjunctIbGibJson);
+                t.ibGibAdjunctCache.addAdjunctInfo(tempJuncIbGib, tempJuncIbGib, adjunctIbGib, adjunctIbGibJson);
               });
-            adjunctInfos = t.ibGibCache.getAdjunctInfos(tempJuncIbGib);
+            adjunctInfos = t.ibGibAdjunctCache.getAdjunctInfos(tempJuncIbGib);
 
             t._dispatchGetAdjunctInfosCallbacksInProgress(tempJuncIbGib, adjunctInfos);
             // callback(adjunctInfos);
@@ -2111,7 +2099,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   }
   getChildren(node) {
     let t = this;
-    if (!node) { debugger; }
+    if (!node) { 
+      console.error("getChildren called with null node.")
+      return []; 
+    }
     return t.graphData.links
       .filter(l => l.source.id === node.id)
       .map(l => l.target);
@@ -2360,6 +2351,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
             // pinning doesn't work well with larger graphs.
             // if (c.type === "rel8n") { t.pin(c); }
             t.clearBusy(c);
+            // always pin the node, source or no?
+            setTimeout(() => t.pin(c), 5000);
           });
           t.fadeOutChildlessRel8ns(2000);
           if (d.fullyExpanding) { delete d.fullyExpanding; }
@@ -2458,34 +2451,52 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     });
   }
 
+  handleBackgroundRefresherSuccess(successMsg) {
+    let t = this, lc = `handleBackgroundRefresherSuccess`;
+    if (successMsg && successMsg.data && successMsg.data.latest_ib_gibs) {
+      console.log(`${lc} successMsg.data.latest_ib_gibs:  ${JSON.stringify(successMsg.data.latest_ib_gibs)}`);
+      
+      Object.keys(successMsg.data.latest_ib_gibs)
+        .forEach(tempJuncIbGib => {
+          let latestIbGib = successMsg.data.latest_ib_gibs[tempJuncIbGib];
+          let existingLatest = t.ibGibProvider.getLatestIbGib(tempJuncIbGib);
+          let existingNodesNotUpdated = 
+            t.graphData.nodes
+              .some(node => {
+                return node.type === "ibGib" && 
+                       !node.isPaused &&
+                       node.tempJuncIbGib === tempJuncIbGib && 
+                       node.ibGib !== latestIbGib;
+              });
+          if ((latestIbGib !== existingLatest) || existingNodesNotUpdated) {
+            console.log(`${lc} found newer ibGib. tempJuncIbGib: ${tempJuncIbGib}. latestIbGib: ${latestIbGib}. previousLatest: ${existingLatest}`)
+            t.ibGibEventBus.broadcastIbGibUpdate_LocallyOnly(tempJuncIbGib, latestIbGib);
+          }
+        });
+    }
+  }
   handleEventBusMsg_Update(tempJuncIbGib, ibGib, msg) {
     let t = this;
     // console.log(`handleEventBusMsg_Update msg:\n${JSON.stringify(msg)}`)
-
-
     if (msg && msg.data &&
         // possibly redundant (unnecessary)
         msg.metadata.temp_junc_ib_gib === tempJuncIbGib) {
       
       if (msg.data.new_ib_gib) {
+        t.ibGibProvider.setLatestIbGib(tempJuncIbGib, msg.data.new_ib_gib);
         t.graphData.nodes
-          .filter(n => n.ibGib === ibGib)
+          .filter(node => {
+            return !node.virtualId && 
+                    node.type === "ibGib" && 
+                    !node.isPaused &&
+                    node.tempJuncIbGib === tempJuncIbGib &&
+                    node.ibGib !== msg.data.new_ib_gib; })
           .forEach(n => {
             // console.log(`updating ibGib node`)
             t.clearBusy(n);
-            // ibGib in the "past" rel8n will be paused, because we don't want to
-            // update those, rather we want to keep them at that particular frame
-            // in time. There may be other use cases for pausing (e.g. user
-            // pauses the ibGib for whatever reason, or possibly when we navigate
-            // to an ibGib in the past rel8n).
-            if (n.isPaused) {
-              console.log(`msg received, but node ${n.id} is paused.`);
-            } else {
-              t.updateIbGib(n,
-                            msg.data.new_ib_gib,
-                            /*skipUpdateUrl*/ false,
-                            /*callback*/ null);
-            }
+
+            // debugger;
+            t.updateIbGib(n, msg.data.new_ib_gib, /*skipUpdateUrl*/ false, /*callback*/ null);
           });
       }
     } else {
@@ -2503,7 +2514,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         msg.data.adjunct_ib_gibs
           .forEach(adjunctIbGib => {
             let adjunctIbGibJson = adjunctIbGibJsons[adjunctIbGib];
-            t.ibGibCache.addAdjunctInfo(tempJuncIbGib, ibGib, adjunctIbGib, adjunctIbGibJson);
+            t.ibGibAdjunctCache.addAdjunctInfo(tempJuncIbGib, ibGib, adjunctIbGib, adjunctIbGibJson);
           });
         // At this point, we have loaded all adjunctInfos and are ready to sync
         // the tempJuncIbGib
@@ -2525,7 +2536,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       t.getIbGibJson(adjunctIbGib, adjunctIbGibJson => {
         console.log(`${lc} adjunctIbGibJson: ${JSON.stringify(adjunctIbGibJson)}`)
 
-        t.ibGibCache.addAdjunctInfo(tempJuncIbGib, ibGib, adjunctIbGib, adjunctIbGibJson);
+        t.ibGibAdjunctCache.addAdjunctInfo(tempJuncIbGib, ibGib, adjunctIbGib, adjunctIbGibJson);
         console.log(`${lc} calling syncAdjuncts...`);
         t.syncAdjuncts(tempJuncIbGib, /*callback*/ () => {
           console.log(`${lc} completed syncAdjuncts.`);
