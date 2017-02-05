@@ -35,10 +35,10 @@ export class IbGibEventBus {
       let existingInfos =
         t.connectionInfos.filter(info => info.ibGib === ibGib);
       if (existingInfos.length === 0) {
-        // console.log(`connecting to ibGib channel: ${ibGib}`)
+        console.log(`connecting to ibGib channel: ${ibGib}`)
         channel = t.initChannel(ibGib);
       } else {
-        // console.log(`already connected to ibGib channel: ${ibGib}`)
+        console.log(`already connected to ibGib channel: ${ibGib}`)
         channel = existingInfos[0].channel;
       }
 
@@ -107,7 +107,8 @@ export class IbGibEventBus {
 
       // If we don't have a corresponding info, then log & immediately return.
       if (!connectionInfo) {
-        console.error(`EventBus.disconnect(${connectionId}) called, but no connections associated to this id.`);
+        // console.error(`EventBus.disconnect(${connectionId}) called, but no connections associated to this id.`);
+        // this happens frequently and it's ok (I think).
         return;
       }
 

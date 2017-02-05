@@ -14,7 +14,7 @@ export class DynamicD3ForceGraph {
     // work. That's why I'm duplicating the entire structure on all descendants.
     let defaults = {
       background: {
-        fill: "#F2F7F0",
+        fill: "pink",
         opacity: 1,
         shape: "rect"
       },
@@ -842,6 +842,7 @@ export class DynamicD3ForceGraph {
       currentNodes.splice(nIndex, 1);
     } else {
       // console.warn("remove not found")
+      return false;
     }
 
     let toRemoveLinks = currentLinks.filter(l => {
@@ -875,11 +876,15 @@ export class DynamicD3ForceGraph {
       // Update children that do share data
       t.updateChildrenYo(/*onlyChildrenSharingData*/ true);
     }
+    
+    return true;
   }
   /** Untested. I ended up not using this...but keeping it here for now */
   swap(existingNode, newNode, updateParentOrChild) {
     let t = this;
-
+    
+    t.swapping = true;
+    
     // find links to existing node
     let linksA = t.graphData.links
       .filter(l => l.source.id === existingNode.id)
@@ -892,10 +897,17 @@ export class DynamicD3ForceGraph {
     // remove the old node and add the new one with the adjusted links.
     let x = existingNode.x;
     let y = existingNode.y;
-    t.remove(existingNode, updateParentOrChild);
-    newNode.x = x;
-    newNode.y = y;
-    t.add([newNode], newLinks, updateParentOrChild);
+    let removed = t.remove(existingNode, updateParentOrChild);
+    if (removed) {
+      // can be a race condition that in the middle of swapping the node is
+      // removed already. So we need to only add the node again if 
+      // it was successfully removed? :-?
+      newNode.x = x;
+      newNode.y = y;
+      t.add([newNode], newLinks, updateParentOrChild);
+    }
+    
+    delete t.swapping;
   }
   addChildGraph(child, shareDataReference) {
     let t = this;

@@ -25,23 +25,57 @@ export class IbGibIbScapeBackgroundRefresher {
     t.successCallback = successCallback;
     t.errorCallback = errorCallback;
     t.intervalMs = intervalMs;
-    t.pollInterval = setInterval(() => {
-      if (t.queue && t.queue.length > 0) {
-        if (t.busy) {
-          console.warn("Background refresher is still busy. Cannot exec.")
-        } else {
-          t.busy = true;
-          try {
-            t.exec(t.queue, t.successCallback, t.errorCallback);
-            t.queue = [];
-          } catch (e) {
-            console.error(`refresh error: ${e}`);
-          } finally {
-            t.busy = false;
-          }
+    t.pollInterval = setInterval(() => { t.flushQueue(); }, t.intervalMs);
+  }
+  
+  flushQueue(callback) {
+    let t = this, lc = `Refresher.flushQueue`;
+    // console.log(`${lc}`);
+    if (t.queue && t.queue.length > 0) {
+      if (t.busy) {
+        console.warn("Background refresher is still busy. Cannot exec.")
+      } else {
+        t.busy = true;
+        try {
+          let mainCallback = t.successCallback;
+          t.exec(t.queue, successMsg => {
+            if (mainCallback) {
+              mainCallback(successMsg);
+            } else if (t.successCallback) {
+              t.successCallback(successMsg);
+            } else {
+              console.error(`why is successCallback falsy? :-?`)
+              // huge hack
+              let count = 5;
+              let interval = setInterval(() => {
+                if (count > 0) {
+                  if (mainCallback) {
+                    clearInterval(interval);
+                    mainCallback(successMsg);
+                  } else if (t.successCallback) {
+                    clearInterval(interval);
+                    t.successCallback(successMsg);
+                  } else {
+                    count = count - 1;
+                  }
+                } else {
+                  clearInterval(interval);
+                  console.error(`${lc} I give up.`);
+                }
+              }, 3000);
+            }
+            if (callback) { callback(successMsg); }
+          }, t.errorCallback);
+          t.queue = [];
+        } catch (e) {
+          console.error(`refresh error: ${e}`);
+        } finally {
+          t.busy = false;
         }
       }
-    }, t.intervalMs);
+    } else {
+      // console.log(`nada to flush.`)
+    }
   }
 
   /** Stops the refresh poll. Deletes the internal queue and callbacks. */
@@ -90,84 +124,34 @@ export class IbGibIbScapeBackgroundRefresher {
     let t = this;
     // console.log("BackgroundRefresher.exec")
 
-    if (ibGibs && ibGibs.length && ibGibs.length > 0) {
-  
-      let cachedIbGibs = ibGibs.filter(ibGib => {
-        if (t.cachedRefreshes[ibGib]) {
-          let { timestamp, refreshedIbGib } = t.cachedRefreshes[ibGib];
-          return timestamp && (Date.now() - timestamp < t.cachedRefreshExpiryMs);
-        } else {
-          return false;
-        }
-      });
-      let serverIbGibs = ibGibs.filter(ibGib => !cachedIbGibs.includes(ibGib));
-      
-      if (serverIbGibs && serverIbGibs.length > 0) {
-        let d = { ibGibs:  serverIbGibs };
-        
-        console.log(`hitting server for refresh ibGibs. cached ibGibs: ${JSON.stringify(cachedIbGibs)}.   server ibGibs: ${JSON.stringify(serverIbGibs)}`);
-        let cmd =
-          new BatchRefreshCommand(t.ibScape, d, successMsg => {
-              if (successCallback) {
-                if (!successMsg.data) { successMsg.data = {}; }
-                
-                let latestIbGibs = successMsg.data.latest_ib_gibs || {};
-                // add any results to cache
-                Object.keys(latestIbGibs)
-                  .forEach(oldIbGib => {
-                    console.log(`Adding cached refresh ibGib for oldIbGib: ${oldIbGib}`)
-                    let cacheEntry = {
-                      timestamp: Date.now(),
-                      refreshedIbGib: latestIbGibs[oldIbGib]
-                    };
-                    t.cachedRefreshes[oldIbGib] = cacheEntry;
-                  });
-                
-                // latest only includes those with actual updates. We need
-                // to cache also the ones that have no updates.
-                serverIbGibs
-                  .filter(serverIbGib => !Object.keys(latestIbGibs).includes(serverIbGib))
-                  .forEach(ibGibWithoutUpdate => { 
-                    let cacheEntry = {
-                      timestamp: Date.now(),
-                      refreshedIbGib: null
-                    };
-                    t.cachedRefreshes[ibGibWithoutUpdate] = cacheEntry;
-                  });
-    
-                t._addCachedEntriesToSuccessMsg(cachedIbGibs, successMsg);
-                
-                successCallback(successMsg); 
-              }
-            }, errorCallback);
+    ibGibs = t._pruneIbGibs(ibGibs);
 
-        cmd.exec();
-      } else {
-        if (successCallback) {
-          let successMsg = { data: {latest_ib_gibs: null} }
-          t._addCachedEntriesToSuccessMsg(cachedIbGibs, successMsg);
-          successCallback(successMsg);
-        }
-      }
+    if (ibGibs && ibGibs.length && ibGibs.length > 0) {
+      let d = { ibGibs:  ibGibs };
+      
+      console.log(`hitting server for refresh ibGibs. ibGibs: ${JSON.stringify(ibGibs)}`);
+      let cmd =
+        new BatchRefreshCommand(t.ibScape, d, successMsg => {
+            if (successCallback) {
+              if (!successMsg.data) { successMsg.data = {}; }
+              
+              let latestIbGibs = successMsg.data.latest_ib_gibs || {};
+              // add any results to cache
+              Object.keys(latestIbGibs)
+                .forEach(oldIbGib => {
+                  console.log(`Adding cached refresh ibGib for oldIbGib: ${oldIbGib}`);
+                  t.ibScape.ibGibProvider.setLatestIbGib(oldIbGib, latestIbGibs[oldIbGib]);
+                });
+              
+              successCallback(successMsg); 
+            }
+          }, errorCallback);
+
+      cmd.exec();
     } else {
       console.log(`nothing to refresh.`);
       if (successCallback) { successCallback(null); }
     }
-  }
-
-  _addCachedEntriesToSuccessMsg(cachedIbGibs, successMsg) {
-    let t = this;
-    cachedIbGibs.forEach(cachedIbGib => {
-      // We skipped refreshing the cached ibGibs on the server, so 
-      // add these cached entries back into the results before
-      // returning to the caller.
-      let { refreshedIbGib } = t.cachedRefreshes[cachedIbGib];
-      if (!successMsg.data.latest_ib_gibs) {
-        successMsg.data.latest_ib_gibs = {}; 
-      }
-      
-      successMsg.data.latest_ib_gibs[cachedIbGib] = refreshedIbGib;
-    });
   }
 
   /**
@@ -176,6 +160,63 @@ export class IbGibIbScapeBackgroundRefresher {
    * time.
    */
   enqueue(ibGibs) {
-    this.queue = this.queue.concat(ibGibs);
+    let t = this;
+    ibGibs.forEach(ibGib => {
+      if (!t.queue.includes(ibGib)) {
+        t.queue.push(ibGib);
+      }
+    })
+  }
+
+  /*
+   * I'm hacking this on to be able to update the refresher.
+   * Currently, the event bus is designed for the ibScape to connect/disconnect.
+   * It doesn't accept just any ol' subscribers for all messages or anything.
+   * So this function is called from within the
+   * ibScape.connectToEventBus_IbGibNode function. eesh. :-/
+   */ 
+  handleEventBusMsg_Update(msg) {
+    let t = this;
+    // console.log(`handleEventBusMsg_Update msg:\n${JSON.stringify(msg)}`)
+
+    if (msg && msg.data && msg.data.new_ib_gib && 
+        msg.metadata && msg.metadata.temp_junc_ib_gib) {
+
+      console.log(`background refresher.handleEventBusMsg_Update. old: ${msg.metadata.temp_junc_ib_gib}. new: ${msg.data.new_ib_gib}`)
+
+      t.ibScape.ibGibProvider.setLatestIbGib(msg.metadata.temp_junc_ib_gib, msg.data.new_ib_gib);
+      if (msg.data.old_ib_gib) {
+        t.ibScape.ibGibProvider.setLatestIbGib(msg.data.old_ib_gib, msg.data.new_ib_gib);
+      }
+    } else {
+      // console.warn(`background refresher: improperly formatted update event. msg: ${JSON.stringify(msg)}`);
+    }
+  }
+  
+  _pruneIbGibs(ibGibs = []) {
+    let t = this;
+    let toRefresh = [];
+    // let pruned = [];
+    
+    let addRefresh = (ibGib) => {
+      toRefresh.push(ibGib);
+      t.cachedRefreshes[ibGib] = Date.now();
+    }
+    
+    ibGibs.forEach(ibGib => {
+      let lastRefreshTimestamp = t.cachedRefreshes[ibGib];
+      if (lastRefreshTimestamp) {
+        if (Date.now() - lastRefreshTimestamp > t.cachedRefreshExpiryMs) {
+          addRefresh(ibGib);
+        } else {
+          // pruned.push(ibGib);
+          console.log(`skipping refresh ibGib: ${ibGib}`)
+        }
+      } else {
+        addRefresh(ibGib);
+      }
+    });
+    
+    return toRefresh;
   }
 }

@@ -1,7 +1,9 @@
 import { DynamicIbScape } from "./graphs/dynamic-ib-scape";
 import { DynamicD3ForceGraph } from "./graphs/dynamic-d3-force-graph";
 import { DynamicD3ForceGraph2 } from "./graphs/dynamic-d3-force-graph2";
-import { IbGibCache } from "./services/ibgib-cache";
+import { IbGibCache } from "./services/caches/ibgibjson-cache";
+import { IbGibAdjunctCache } from "./services/caches/ibgib-adjunct-cache";
+import { IbGibLatestCache } from "./services/caches/ibgib-latest-cache";
 import { IbGibImageProvider } from "./services/ibgib-image-provider";
 import { IbGibSocketManager } from "./services/ibgib-socket-manager";
 import { IbGibEventBus } from "./services/ibgib-event-bus";
@@ -15,6 +17,8 @@ class App {
     let divIbGibData = document.querySelector("#ibgib-data");
     if (divIbGibData) {
       let ibGibCache = new IbGibCache();
+      let ibGibAdjunctCache = new IbGibAdjunctCache();
+      let ibGibLatestCache = new IbGibLatestCache();
       let ibGibImageProvider = new IbGibImageProvider(ibGibCache);
       let ibIdentityToken = document.getElementsByName("ib_identity_token")[0].content;
       let ibAggregateIdentityHash =
@@ -30,7 +34,7 @@ class App {
       let baseD3JsonPath = divIbGibData.getAttribute("d3-data-path");
       let currentIdentityIbGibs = divIbGibData.getAttribute("data-identityibgibs").split("|");
 
-      let ibGibProvider = new IbGibProvider(ibGibCache, baseJsonPath);
+      let ibGibProvider = new IbGibProvider(ibGibCache, ibGibAdjunctCache, ibGibLatestCache, baseJsonPath);
       let ibGibEventBus = new IbGibEventBus(ibGibSocket.socket, ibGibProvider);
 
       // Create the ibScape, which is the d3 "landscape" for the ibGib.
@@ -42,7 +46,7 @@ class App {
       // let data = baseD3JsonPath + ibGib;
       // this.ibScape.update(data);
 
-      this.ibScape = new DynamicIbScape(graphDiv, "mainIbScapeSvg", /*config*/ null, baseJsonPath, ibGibCache, ibGibImageProvider, ibGib, ibGibSocket, ibGibEventBus, /*isPrimaryIbScape*/ true, ibGibProvider, currentIdentityIbGibs);
+      this.ibScape = new DynamicIbScape(graphDiv, "mainIbScapeSvg", /*config*/ null, baseJsonPath, ibGibCache, ibGibAdjunctCache, ibGibImageProvider, ibGib, ibGibSocket, ibGibEventBus, /*isPrimaryIbScape*/ true, ibGibProvider, currentIdentityIbGibs);
       // this.ibScape.init();
       this.ibScape.toggleFullScreen();
 
@@ -202,7 +206,7 @@ $(document).ready(function(){
     $items.eq(itemToShow).addClass('show');
   };
 
-  const intervalMs = 10000;
+  const intervalMs = 6000;
   setInterval(() => {
     counter++;
     showCurrent();

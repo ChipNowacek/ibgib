@@ -349,16 +349,15 @@ var d3RootUnicodeChar = "\uf10c";
 // any ibGib can be commented on, even if there are no existing comment rel8ns.
 // So the "comment" rel8n should always show up with at least an "add" virtual
 // command.
-var d3AddableRel8ns = [
-  "pic",
-  "link",
-  "comment",
-]
+// var d3AddableRel8ns = [
+//   "pic",
+//   "link",
+//   "comment",
+// ]
 
 var d3PausedRel8ns = [
   "past",
   "dna"
 ]
 
-export { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3BoringRel8ns, d3AlwaysRel8ns, d3RequireExpandLevel2, d3MenuCommands, d3Rel8nIcons, d3RootUnicodeChar, d3AddableRel8ns, d3PausedRel8ns };
-0
+export { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3BoringRel8ns, d3AlwaysRel8ns, d3RequireExpandLevel2, d3MenuCommands, d3Rel8nIcons, d3RootUnicodeChar, /*d3AddableRel8ns,*/ d3PausedRel8ns };

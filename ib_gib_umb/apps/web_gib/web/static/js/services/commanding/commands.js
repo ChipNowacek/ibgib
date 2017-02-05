@@ -570,7 +570,8 @@ export class CommentDetailsCommand extends FormDetailsCommandBase {
   }
 
   addVirtualNode(callback) {
-    let t = this;
+    let t = this, lc = `Comment addVirtualNode`;
+    console.log(`${lc} start. t.d.type: ${t.d.type}`)
     if (t.d.type === "ibGib") {
       let rel8nNodes = t.ibScape.getChildren_Rel8ns(t.d).filter(rel8nNode => rel8nNode.rel8nName === "comment");
 
@@ -609,15 +610,21 @@ export class CommentDetailsCommand extends FormDetailsCommandBase {
 
   handleSubmitResponse(msg) {
     let t = this;
-
+    console.log("new comment handle submit response");
     if (msg && msg.data && msg.data.comment_ib_gib) {
       if (msg.data.new_src_ib_gib) {
+        // Update the cache with the new src_ib_gib
+        console.log(`new comment. src tempJuncIbGib: ${t.d.tempJuncIbGib}. new: ${msg.data.new_src_ib_gib}`)
+        
         // The src was directly commented on, so this user had authz to
         // do it (it's the ibGib's owner). So set the comment ibGib and
         // zap it.
+        // debugger;
         let commentIbGib = msg.data.comment_ib_gib;
         t.virtualNode.ibGib = commentIbGib;
-        t.ibScape.zap(t.virtualNode, /*callback*/ null);
+        t.ibScape.zap(t.virtualNode, () => {
+          t.ibScape.ibGibEventBus.broadcastIbGibUpdate_LocallyOnly(t.d.tempJuncIbGib, msg.data.new_src_ib_gib);
+        });
       } else {
         // The src was not updated, so this is a user commenting on
         // someone else's ibGib. So a comment was created and was rel8d
@@ -816,7 +823,11 @@ export class LinkDetailsCommand extends FormDetailsCommandBase {
         // zap it.
         let linkIbGib = msg.data.link_ib_gib;
         t.virtualNode.ibGib = linkIbGib;
-        t.ibScape.zap(t.virtualNode, /*callback*/ null);
+        debugger;
+        t.ibScape.zap(t.virtualNode, () => {
+          t.ibScape.ibGibEventBus.broadcastIbGibUpdate_LocallyOnly(t.d.tempJuncIbGib, msg.data.new_src_ib_gib);
+        });
+        // t.ibScape.zap(t.virtualNode, /*callback*/ null);
       } else {
         // The src was not updated, so this is a user linking on
         // someone else's ibGib. So a link was created and was rel8d
