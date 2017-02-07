@@ -274,7 +274,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           // .force("sourceOutwards", t.getForceSourceOutwards())
           ;
   }
-
+  
   refreshContextNode() {
     let t = this, lc = `refreshContextNode`;
 
@@ -722,7 +722,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
               t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ ibGib, /*srcNode*/ null, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: t.contextNode.x, y: t.contextNode.y}, /*isAdjunct*/ false);
             // }
           });
-          t.backgroundRefresher.enqueue(newIbGibs);
+          t.backgroundRefresher.enqueue(ibGibs);
+          t.backgroundRefresher.flushQueue(successMsg => {
+            console.log(`refreshed source nodes`)
+          });
       } catch (e) {
         console.error(`{lc} error: ${JSON.stringify(e)}`)
       } finally {
@@ -2465,20 +2468,25 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       console.log(`${lc} successMsg.data.latest_ib_gibs:  ${JSON.stringify(successMsg.data.latest_ib_gibs)}`);
       
       Object.keys(successMsg.data.latest_ib_gibs)
-        .forEach(tempJuncIbGib => {
-          let latestIbGib = successMsg.data.latest_ib_gibs[tempJuncIbGib];
-          let existingLatest = t.ibGibProvider.getLatestIbGib(tempJuncIbGib);
+        .forEach(ibGib => {
+          let latestIbGib = successMsg.data.latest_ib_gibs[ibGib];
+          let existingLatest = t.ibGibProvider.getLatestIbGib(ibGib);
+          
           let existingNodesNotUpdated = 
             t.graphData.nodes
               .some(node => {
                 return node.type === "ibGib" && 
                        !node.isPaused &&
-                       node.tempJuncIbGib === tempJuncIbGib && 
+                       (node.tempJuncIbGib === ibGib || 
+                        node.ibGib === ibGib) && 
                        node.ibGib !== latestIbGib;
               });
           if ((latestIbGib !== existingLatest) || existingNodesNotUpdated) {
-            console.log(`${lc} found newer ibGib. tempJuncIbGib: ${tempJuncIbGib}. latestIbGib: ${latestIbGib}. previousLatest: ${existingLatest}`)
-            t.ibGibEventBus.broadcastIbGibUpdate_LocallyOnly(tempJuncIbGib, latestIbGib);
+            t.getIbGibJson(latestIbGib, latestIbGibJson => {
+              let tempJuncIbGib = ibHelper.getTemporalJunctionIbGib(latestIbGibJson);
+              console.log(`${lc} found newer ibGib. ibGib: ${ibGib}. latestIbGib: ${latestIbGib}. previousLatest: ${existingLatest}`)
+              t.ibGibEventBus.broadcastIbGibUpdate_LocallyOnly(tempJuncIbGib, latestIbGib);
+            })
           }
         });
     }
