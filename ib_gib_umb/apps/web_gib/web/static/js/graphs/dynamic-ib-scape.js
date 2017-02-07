@@ -693,7 +693,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
         // prune
         sourceNodes
-          .filter(sourceNode => !ibGibs.includes(sourceNode.ibGib))
+          .filter(sourceNode => {
+            // remove source nodes where they don't have a matching ibGib 
+            // or past ibGib in the given ibGibs.
+            return !ibGibs.some(ibGib => ibGib === sourceNode.ibGib || ibHelper.isInPast(sourceNode.ibGibJson, ibGib))
+          })
           .forEach(nodeNotFound => {
             console.log(`removing nodeNotFound.id & ibGib: ${nodeNotFound.id} ${nodeNotFound.ibGib}`)
             t.removeNodeAndChildren(nodeNotFound);
@@ -702,7 +706,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         // add
         let newIbGibs =
           ibGibs
-            .filter(ibGib => !sourceNodes.some(sn => sn.ibGib === ibGib))
+            .filter(ibGib => {
+              return !sourceNodes.some(sn => {
+                return sn.ibGib == ibGib || ibHelper.isInPast(sn.ibGibJson, ibGib);
+              });
+            })
             .map(ibGib => t.ibGibProvider.getLatestIbGib(ibGib));
 
         newIbGibs

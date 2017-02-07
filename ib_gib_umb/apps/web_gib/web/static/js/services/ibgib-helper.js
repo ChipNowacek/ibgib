@@ -39,6 +39,10 @@ export function getTemporalJunctionIbGib(ibGibJson) {
   }
 }
 
+export function isInPast(ibGibJson, ibGib) {
+  return ibGibJson && ibGibJson.rel8ns && ibGibJson.rel8ns["past"] && ibGibJson.rel8ns["past"].includes(ibGib);
+}
+
 /** For safe access to ibGibJson.data.text */
 export function getDataText(ibGibJson) {
   return (ibGibJson && ibGibJson.data && ibGibJson.data.text) ?
