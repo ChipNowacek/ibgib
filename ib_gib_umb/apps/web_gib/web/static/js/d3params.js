@@ -327,6 +327,7 @@ var d3MenuCommands = [
 
 let d3Rel8nIcons = {
   "identity": "\uf007",
+  "current identity": "\uf007",
   "pic": "\uf03e",
   "comment": "\uf075",
   "past": "\uf100",
