@@ -79,6 +79,7 @@ export class IbGibEventBus {
     channel.on("adjuncts", msg => t.handleMsg(ibGib, msg));
     channel.on("new_adjunct", msg => t.handleMsg(ibGib, msg));
     channel.on("ident_email", msg => t.handleMsg(ibGib, msg));
+    channel.on("unident_email", msg => t.handleMsg(ibGib, msg));
 
     return channel;
   }

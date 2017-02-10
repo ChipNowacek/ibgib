@@ -189,6 +189,27 @@ defmodule WebGib.Bus.Channels.Event do
       error -> default_handle_error(error)
     end
   end
+  def broadcast_ib_gib_event(:unident_email = msg_type,
+                             {session_ib_gib,
+                              ident_ib_gib} = msg_info) do
+    _ = Logger.debug("Broadcasting unident_email sir. session_ib_gib: #{session_ib_gib}\nident_ib_gib: #{ident_ib_gib}" |> ExChalk.yellow |> ExChalk.bg_blue)
+    with(
+      {:ok, msg} <- get_broadcast_msg(msg_type,
+                                      {session_ib_gib,
+                                       ident_ib_gib}),
+      # Not interested if the broadcast errors. It is possible that the topic
+      # doesn't even exist (no one is signed up to hear it).
+      result <-
+        WebGib.Endpoint.broadcast("event:" <> session_ib_gib, Atom.to_string(msg_type), msg),
+      _ <- Logger.debug("broadcast result: #{inspect result}" |> ExChalk.yellow |> ExChalk.bg_blue)
+    ) do
+      {:ok, :ok}
+    else
+      error -> 
+        Logger.error("whaaa funkfunk")
+        default_handle_error(error)
+    end
+  end
 
 
   defp get_broadcast_msg(:update = msg_type,
@@ -272,6 +293,23 @@ defmodule WebGib.Bus.Channels.Event do
     {:ok, msg}
   end
   defp get_broadcast_msg(:ident_email = msg_type,
+                         {session_ib_gib,
+                          ident_ib_gib} = _msg_info) do
+    msg = %{
+      "data" => %{
+        "session_ib_gib" => session_ib_gib,
+        "ident_ib_gib" => ident_ib_gib
+      },
+      "metadata" => %{
+        "name" => Atom.to_string(msg_type),
+        "session_ib_gib" => session_ib_gib,
+        "src" => "server",
+        "timestamp" => "#{:erlang.system_time(:milli_seconds)}"
+      }
+    }
+    {:ok, msg}
+  end
+  defp get_broadcast_msg(:unident_email = msg_type,
                          {session_ib_gib,
                           ident_ib_gib} = _msg_info) do
     msg = %{

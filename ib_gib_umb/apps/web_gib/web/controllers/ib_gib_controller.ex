@@ -1045,7 +1045,19 @@ defmodule WebGib.IbGibController do
 
   def unident(conn, %{"unidentemail_form_data" => unidentemail_form_data_(...) = form_data} = params) do
     with(
-      {:ok, {conn, new_identity_ib_gibs}} <- remove_identity_from_session(conn, src_ib_gib)
+      {:ok, {conn, new_identity_ib_gibs}} <- 
+        remove_identity_from_session(conn, src_ib_gib),
+
+      session_identity_ib_gib <-
+        conn |> get_session(@ib_session_ib_gib_key),
+        # publish
+      _ <- EventChannel.broadcast_ib_gib_event(:unident_email,
+                                              {session_identity_ib_gib,
+                                               src_ib_gib})
+      # # publish
+      # _ <- EventChannel.broadcast_ib_gib_event(:unident_email,
+      #                                          {session_identity_ib_gib,
+      #                                           src_ib_gib})
     ) do
       conn
       |> send_resp(200, "ok")

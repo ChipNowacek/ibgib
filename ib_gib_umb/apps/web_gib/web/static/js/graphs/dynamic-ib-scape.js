@@ -2660,11 +2660,17 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   handleEventBusMsg_Identity(identityIbGib, msg) {
     let t = this, lc = `handleEventBusMsg_Identity(${identityIbGib})`;
 
-    if (!t.currentIdentityIbGibs.includes(identityIbGib)) {
-      console.log(`Adding identityIbGib to currentIdentityIbGibs`);
-      t.currentIdentityIbGibs.push(identityIbGib);
+    if (msg.metadata.name === "ident_email") {
+      console.log(`ident_email msg: ${JSON.stringify(msg)}`)
+    } else if (msg.metadata.name === "unident_email") {
+      console.log(`unident_email msg: ${JSON.stringify(msg)}`)
+    } else {
+      console.error(`Unknown identity msg. identityIbGib: ${identityIbGib}. msg: ${JSON.stringify(msg)}`)
     }
 
+    // reload the entire app to ensure that we start fresh from the current
+    // identities in the connection cookie.
+    
     // Thanks SO! http://stackoverflow.com/a/28171425/4275029
     setTimeout(() => window.location.reload());
   }

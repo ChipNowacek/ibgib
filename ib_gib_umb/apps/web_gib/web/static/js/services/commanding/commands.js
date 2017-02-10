@@ -948,8 +948,10 @@ export class UnIdentEmailDetailsCommand extends FormDetailsCommandBase {
     if (evt.target.status === 200) {
       alert(`${emailAddress} has been removed from your current identity. The page must now reload.`);
       
-      // Thanks SO! http://stackoverflow.com/a/28171425/4275029
-      setTimeout(() => window.location.reload());
+      // Do we even get here?
+      
+      // // Thanks SO! http://stackoverflow.com/a/28171425/4275029
+      // setTimeout(() => window.location.reload());
     } else {
       alert(`Logging out ${emailAddress} had an error: ${evt.target.responseText}}`);
     }
