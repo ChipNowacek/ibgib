@@ -858,23 +858,6 @@ export class IdentEmailDetailsCommand extends FormDetailsCommandBase {
     $("#identemail_form_data_text").focus();
   }
 
-  getMessageData() {
-    // MessageData is not used in ident email. Uses xhr.
-
-    // let t = this;
-    //
-    // document.getElementById('pic_form_data_file').files[0]
-    //
-    // var formData = new FormData();
-    // formData.append("fileToUpload", document.getElementById('fileToUpload').files[0]);
-    //
-    // return {
-    //   virtual_id: t.virtualNode.virtualId,
-    //   src_ib_gib: t.d.type === "rel8n" ? t.d.rel8nSrc.ibGib : t.d.ibGib,
-    //   comment_text: $("#comment_form_data_text").val()
-    // };
-  }
-
   /**
    * Default implementation is for a command that will produce a single virtual
    * node that will be busy while the message is sent to the server via the
@@ -899,28 +882,6 @@ export class IdentEmailDetailsCommand extends FormDetailsCommandBase {
     xhr.open("POST", "/ibgib/ident");
     xhr.send(formData);
 
-    // if (form.checkValidity()) {
-    //   console.log("form is valid");
-    //   t.addVirtualNode();
-    //   t.ibScape.setBusy(t.virtualNode);
-    //
-    //   let msg = t.getMessage();
-    //   t.ibScape.commandMgr.bus.send(msg, (successMsg) => {
-    //     t.ibScape.clearBusy(t.virtualNode);
-    //     if (t.handleSubmitResponse) {
-    //       t.handleSubmitResponse(successMsg);
-    //     }
-    //   }, (errorMsg) => {
-    //     console.error(`Command errored. Msg: ${JSON.stringify(errorMsg)}`);
-    //     t.ibScape.clearBusy(t.virtualNode);
-    //     t.virtualNode.type = "error";
-    //     t.virtualNode.errorMsg = JSON.stringify(errorMsg);
-    //     t.ibScape.zap(t.virtualNode, /*callback*/ null);
-    //   });
-    // } else {
-    //   console.log("form is invalid");
-    // }
-
     t.close();
   }
 
@@ -936,32 +897,73 @@ export class IdentEmailDetailsCommand extends FormDetailsCommandBase {
   xhrCanceled(evt) {
     console.log(`xhrCanceled. The upload has been canceled by the user or the browser dropped the connection.`);
   }
+}
 
-  // handleSubmitResponse(msg) {
-  //   let t = this;
-  //
-  //   if (msg && msg.data && msg.data.comment_ib_gib) {
-  //     if (msg.data.new_src_ib_gib) {
-  //       // The src was directly commented on, so this user had authz to
-  //       // do it (it's the ibGib's owner). So set the comment ibGib and
-  //       // zap it.
-  //       let commentIbGib = msg.data.comment_ib_gib;
-  //       t.virtualNode.ibGib = commentIbGib;
-  //       t.ibScape.zap(t.virtualNode, /*callback*/ null);
-  //     } else {
-  //       // The src was not updated, so this is a user commenting on
-  //       // someone else's ibGib. So a comment was created and was rel8d
-  //       // to the src, but the src has not been inversely rel8d to the
-  //       // comment. So we'll remove the placeholder node and the
-  //       // :new_adjunct event will create a new node.
-  //
-  //       t.ibScape.remove(t.virtualNode);
-  //     }
-  //   } else {
-  //     console.error(`${typeof(t)}: Unknown msg response from channel.`);
-  //   }
-  // }
+export class UnIdentEmailDetailsCommand extends FormDetailsCommandBase {
+  constructor(ibScape, d) {
+    const cmdName = "unidentemail";
+    super(cmdName, ibScape, d);
+  }
 
+  init() {
+    let t = this;
+
+    d3.select("#unidentemail_form_data_src_ib_gib")
+      .attr("value", t.d.ibGib);
+
+    d3.select("#unidentemail_form_data_email_addr")
+      .text(t.d.ibGibJson.data.email_addr);
+
+    $("#ib-unidentemail-details-submit-btn").focus();
+  }
+
+  submitFunc() {
+    let t = this;
+    console.log(`${t.cmdName} cmd submitFunc`);
+    
+    let form = document.querySelector("#" + t.getFormId());
+    let formData = new FormData(form);
+
+    for (let [key, value] of formData.entries()) {
+      console.log(key, value);
+    }
+
+    let xhr = new XMLHttpRequest();
+    xhr.addEventListener("load", (evt) => t.xhrComplete(evt, t.d.ibGibJson.data.email_addr), false);
+    xhr.addEventListener("error", t.xhrFailed, false);
+    xhr.addEventListener("abort", t.xhrCanceled, false);
+    xhr.open("POST", "/ibgib/unident");
+    xhr.send(formData);
+
+    t.close();
+  }
+
+  /* 
+   * This event is raised when the server send back a response (even if it's an
+   * error response 500, 400, etc.)
+   */
+  xhrComplete(evt, emailAddress) {
+    let t = this;
+    console.log(`xhrComplete. response status: ${evt.target.status}`)
+    if (evt.target.status === 200) {
+      alert(`${emailAddress} has been removed from your current identity. The page must now reload.`);
+      
+      // Do we even get here?
+      
+      // // Thanks SO! http://stackoverflow.com/a/28171425/4275029
+      // setTimeout(() => window.location.reload());
+    } else {
+      alert(`Logging out ${emailAddress} had an error: ${evt.target.responseText}}`);
+    }
+  }
+
+  xhrFailed(evt) {
+    console.log(`xhrFailed. evt: ${JSON.stringify(evt)}`);
+  }
+
+  xhrCanceled(evt) {
+    console.log(`xhrCanceled. evt: ${JSON.stringify(evt)}`);
+  }
 }
 
 export class PicDetailsCommand extends FormDetailsCommandBase {

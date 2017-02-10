@@ -1039,6 +1039,68 @@ defmodule WebGib.IbGibController do
   # "log" invalid login attempts as well.
   # ----------------------------------------------------------------------------
 
+  defpat unidentemail_form_data_(
+    src_ib_gib_()
+  )
+
+  def unident(conn, %{"unidentemail_form_data" => unidentemail_form_data_(...) = form_data} = params) do
+    with(
+      {:ok, {conn, new_identity_ib_gibs}} <- 
+        remove_identity_from_session(conn, src_ib_gib),
+
+      session_identity_ib_gib <-
+        conn |> get_session(@ib_session_ib_gib_key),
+        # publish
+      _ <- EventChannel.broadcast_ib_gib_event(:unident_email,
+                                              {session_identity_ib_gib,
+                                               src_ib_gib})
+      # # publish
+      # _ <- EventChannel.broadcast_ib_gib_event(:unident_email,
+      #                                          {session_identity_ib_gib,
+      #                                           src_ib_gib})
+    ) do
+      conn
+      |> send_resp(200, "ok")
+    else
+      {:error, reason} ->
+        _ = Logger.error reason
+        # This still sends the status 
+        conn
+        |> send_resp(500, reason)
+        |> halt()
+        
+      error -> 
+        _ = Logger.error(inspect error)
+        conn
+        |> send_resp(500, inspect error)
+        |> halt()
+    end
+  end
+
+  # idempotent removal of identity_ib_gib from connection session.
+  defp remove_identity_from_session(conn, identity_ib_gib)
+    when identity_ib_gib !== @root_ib_gib do
+    with(
+      _ <- Logger.debug("BEFORE conn: #{inspect conn}\nidentity_ib_gib: #{identity_ib_gib}" |> ExChalk.bg_blue |> ExChalk.yellow),
+      
+      identity_ib_gibs <- conn |> get_session(@ib_identity_ib_gibs_key),
+      new_identity_ib_gibs <- 
+        identity_ib_gibs 
+        |> Enum.filter(&(&1 !== identity_ib_gib)),
+      
+      conn <-
+        conn
+        |> put_session(@ib_identity_ib_gibs_key, new_identity_ib_gibs),
+
+      _ <- Logger.debug("AFTER conn: #{inspect conn}\nidentity_ib_gib: #{identity_ib_gib}" |> ExChalk.bg_blue |> ExChalk.yellow)
+    ) do
+      {:ok, {conn, new_identity_ib_gibs}}
+    else
+      {:error, reason} when is_bitstring(reason) -> {:error, reason}
+      {:error, reason} -> {:error, inspect reason}
+      error -> {:error, inspect error}
+    end
+  end
 
   # Email identity clause
   def ident(conn,

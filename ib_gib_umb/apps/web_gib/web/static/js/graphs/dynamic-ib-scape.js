@@ -212,7 +212,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   initRoot() {
     let t = this;
     t.rootPos = {x: t.center.x, y: t.center.y};
-    t.addRootNode();
+    t.showRootNode();
   }
   initBackgroundRefresher() {
     let t = this;
@@ -959,8 +959,14 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     let node = t.addVirtualNode(t.getUniqueId(`${dSrc.id}_${rel8nName}`), /*type*/ "rel8n", `rel8n^gib`, /*srcNode*/ dSrc, "circle", /*autoZap*/ false, fadeTimeoutMs, /*cmd*/ null, title, /*label*/ rel8nName, /*startPos*/ {x: dSrc.x, y: dSrc.y}, /*isAdjunct*/ false);
     node.rel8nSrc = dSrc;
     node.parentNode = dSrc;
+    
+    if (dSrc.isMeta) { node.isMeta = true; }
 
     return node;
+  }
+  addRootRel8ns() {
+    let t = this;
+    t.addRootRel8n_Identity();
   }
   /**
    * Adds "important" rel8ns that are not collapsed by default.
@@ -1042,14 +1048,14 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   removeChildren(node, durationMs) {
     let t = this;
 
-    if (durationMs) {
+    let transition =
+      d3.transition()
+        .duration(durationMs)
+        .ease(d3.easeLinear);
 
-      let transition =
-        d3.transition()
-          .duration(durationMs)
-          .ease(d3.easeLinear);
-
-      t.getChildren(node).forEach(child => {
+    t.getChildren(node).forEach(child => {
+      if (durationMs) {
+      
         let radius = t.getNodeShapeRadius(child);
         let cx = node.x - child.x - radius;
         let cy = node.y - child.y - radius;
@@ -1075,17 +1081,19 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           // d3.select("#" + t.getNodeImageGroupId(child)),
 
         setTimeout(() => t.removeNodeAndChildren(child), durationMs);
-      });
-    } else {
-      t.removeNodeAndChildren(child)
-    }
-
+      } else {
+        t.removeNodeAndChildren(child)
+      }
+    });
   }
   removeNodeAndChildren(node) {
     let t = this;
     let children = t.getChildren(node);
     children.forEach(child => t.removeNodeAndChildren(child));
     t.remove(node, /*updateParentOrChild*/ true);
+    if (t.virtualNodes[node.id]) {
+      delete t.virtualNodes[node.id];
+    }
   }
 
   add(nodesToAdd, linksToAdd, updateParentOrChild) { 
@@ -1099,7 +1107,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     
     // console.log(`${lc} start. dToRemove.id & ibGib: ${dToRemove.id} ${dToRemove.ibGib}`);
 
-    if (!t.expanding && !t.fullyExpanding) {
+    if (dToRemove.type === "ibGib" && !t.expanding && !t.fullyExpanding) {
       t.ibGibEventBus.disconnect(dToRemove.id);
     }
 
@@ -1114,7 +1122,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       t.rootPulseTimer = setTimeout(() => {
         // if still no nodes
         if (t.graphData.nodes.length === 0) {
-          t.addRootNode();
+          t.showRootNode();
         }
       }, t.config.other.rootPulseMs);
     }
@@ -1127,17 +1135,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   /** Adds the root */
   addRootNode() {
     let t = this;
-    // console.log("addRootNode");
-
-    // Remove existing rootNode (if exists)
-    if (t.rootNode) {
-      t.rootPos.x = t.rootNode.x;
-      t.rootPos.y = t.rootNode.y;
-
-      t.clearFadeTimeout(t.rootNode);
-      t.remove(t.rootNode);
-    }
-
+    
     // Setup the rootNode params based on environment.
     let nonRootNodeCount = t.graphData.nodes.length;
     let rootId = t.getUniqueId("root"),
@@ -1158,16 +1156,87 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       fadeTimeoutMs = t.config.other.rootFadeTimeoutMs;
     }
 
-    // Add the rootNode
-    t.rootNode = t.addVirtualNode(rootId, rootType, rootIbGib, /*srcNode*/ null, rootShape, autoZap, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ null, /*label*/ null, /*startPos*/ null, /*isAdjunct*/ false);
-
-    if (!t.contextIbGib || t.contextIbGib === "ib^gib") {
-      t.rootNode.isSource = true;
+    if (t.rootNode) {
+      // Root node is already created. Just re-add to the graph.
+      t.add([t.rootNode], [], /*updateParentOrChild*/ true);
+    } else {
+      // Root node has not yet been created. Create it and then add.
+      t.rootNode = t.addVirtualNode(
+        rootId, 
+        rootType, 
+        rootIbGib, 
+        /*srcNode*/ null, 
+        rootShape, 
+        autoZap, 
+        /*fadeTimeoutMs*/ 0, 
+        /*cmd*/ null, 
+        /*title*/ null, 
+        /*label*/ null, 
+        /*startPos*/ null, 
+        /*isAdjunct*/ false
+      );
+      
+      if (!t.contextIbGib || t.contextIbGib === "ib^gib") {
+        t.rootNode.isSource = true;
+      }
+      t.rootNode.isRoot = true;
+      t.rootNode.isMeta = true;
+      // Restore the rootNode's position if we were replacing an existing one.
+      t.rootNode.x = t.rootPos.x;
+      t.rootNode.y = t.rootPos.y;
     }
-    t.rootNode.isRoot = true;
-    // Restore the rootNode's position if we were replacing an existing one.
-    t.rootNode.x = t.rootPos.x;
-    t.rootNode.y = t.rootPos.y;
+  }
+  showRootNode() {
+    let t = this;
+    // console.log("showRootNode");
+
+    // Remove existing rootNode (if exists)
+    if (t.rootNode && t.rootNode.inGraph) {
+      t.rootPos.x = t.rootNode.x;
+      t.rootPos.y = t.rootNode.y;
+
+      t.clearFadeTimeout(t.rootNode);
+      t.remove(t.rootNode);
+      t.rootNode.inGraph = false;
+    }
+
+    t.addRootNode();
+  }
+  addRootRel8n_Identity() {
+    let t = this;
+
+    if (t.rootRel8nNode_Identity) {
+      t.clearFadeTimeout(t.rootRel8nNode_Identity);
+      t.removeNodeAndChildren(t.rootRel8nNode_Identity);
+      delete t.rootRel8nNode_Identity; 
+    }
+    
+    t.rootRel8nNode_Identity = t.addRel8nVirtualNode(t.rootNode, "current identity", /*fadeTimeoutMs*/ t.config.other.cmdFadeTimeoutMs_Default);
+    t.rootRel8nNode_Identity.isMeta = true;
+  }
+  expandRootRel8n_Identity() {
+    let t = this;
+    let rel8nNode = t.rootRel8nNode_Identity;
+    t.clearFadeTimeout(rel8nNode);
+    
+    t.currentIdentityIbGibs.forEach(identityIbGib => {
+      if (identityIbGib === "ib^gib") { return; }
+      let identityNode = t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ identityIbGib, /*srcNode*/ rel8nNode, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y}, /*isAdjunct*/ false);
+      identityNode.isMeta = true;
+      identityNode.isPaused = true;
+      identityNode.parentNode = rel8nNode;
+    });
+  }
+  removeRootNode() {
+    let t = this;
+    t.graphData.nodes
+      .filter(n => n.isMeta)
+      .forEach(n => t.fadeOutNode(n, t.config.other.rootFadeTimeoutMs_Fast));
+      
+    if (t.rootRel8nNode_Identity) { 
+      t.clearFadeTimeout(t.rootRel8nNode_Identity);
+      delete t.rootRel8nNode_Identity; 
+    }
   }
   addContextNode() {
     let t = this;
@@ -1456,8 +1525,13 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.removeVirtualNode(node);
     delete node.virtualId;
     t.add([node], [{source: node.rel8nSrc.id, target: node.id}], /*updateParentOrChild*/ true);
-    if (node.parentNode.isGreen && !node.isPaused) {
-      node.isGreen = true;
+    if (node.isMeta) {
+      t.showRootNode();
+      t.clearFadeTimeout(t.rootNode);
+    } else {
+      if (node.parentNode.isGreen && !node.isPaused) {
+        node.isGreen = true;
+      }
     }
     t.expandNode(node, callback);
   }
@@ -1507,12 +1581,13 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   _expandNode_Root(node, callback) {
     let t = this;
     t.addCmdVirtualNodes_Default(node);
+    t.addRootRel8ns();
     if (callback) { callback(); }
   }
   _expandNode_IbGib(node, callback) {
     let t = this;
 
-    if (node.expanding) {
+    if (node.expanding || node.isMeta) {
       if (callback) { callback(); }
       return;
     } else {
@@ -1534,7 +1609,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     // Do this whenever done (after zapping children if required).
     let finalize = () => {
-      // t.addCmdVirtualNodes_Default(node);
       delete node.expanding;
       if (callback) { callback(); }
     };
@@ -1604,33 +1678,47 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     } else {
       // Add the children ibGibs listed in the src rel8ns.
       let { rel8nName, rel8nSrc } = rel8nNode;
-      let rel8dIbGibs = rel8nSrc.ibGibJson.rel8ns[rel8nName] || [];
-      let rel8dIbGibNodes = [];
-      rel8dIbGibs
-        .forEach(rel8dIbGib => {
-          let rel8dIbGibNode = t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.ibGibProvider.getLatestIbGib(rel8dIbGib), /*srcNode*/ rel8nNode, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y}, /*isAdjunct*/ false);
-          rel8dIbGibNodes.push(rel8dIbGibNode);
-          rel8dIbGibNode.parentNode = rel8nNode;
-        });
-
-      if (d3PausedRel8ns.includes(rel8nNode.rel8nName)) {
-        // Mark all children as paused.
-        rel8dIbGibNodes.forEach(n => {
-          n.isPaused = true;
-        });
+      if (rel8nSrc.isMeta) {
+        t._expandNode_MetaRel8n(rel8nNode, callback);
       } else {
-        // Refresh children ibGibs.
-        let ibGibsToRefresh = rel8dIbGibs.concat([rel8nSrc.ibGib]);
-        t.backgroundRefresher.enqueue(ibGibsToRefresh);
+        let rel8dIbGibs = rel8nSrc.ibGibJson.rel8ns[rel8nName] || [];
+        let rel8dIbGibNodes = [];
+        rel8dIbGibs
+          .forEach(rel8dIbGib => {
+            let rel8dIbGibNode = t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.ibGibProvider.getLatestIbGib(rel8dIbGib), /*srcNode*/ rel8nNode, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y}, /*isAdjunct*/ false);
+            rel8dIbGibNodes.push(rel8dIbGibNode);
+            rel8dIbGibNode.parentNode = rel8nNode;
+          });
 
-        // Sync adjuncts, passing callback.
-        t.syncAdjuncts(rel8nNode.rel8nSrc.tempJuncIbGib, () => {
-          if (callback) { callback(); }
-        });
+        if (d3PausedRel8ns.includes(rel8nNode.rel8nName)) {
+          // Mark all children as paused.
+          rel8dIbGibNodes.forEach(n => {
+            n.isPaused = true;
+          });
+        } else {
+          // Refresh children ibGibs.
+          let ibGibsToRefresh = rel8dIbGibs.concat([rel8nSrc.ibGib]);
+          t.backgroundRefresher.enqueue(ibGibsToRefresh);
+
+          // Sync adjuncts, passing callback.
+          t.syncAdjuncts(rel8nNode.rel8nSrc.tempJuncIbGib, () => {
+            if (callback) { callback(); }
+          });
+        }
       }
     }
 
     rel8nNode.expandLevel = 1;
+  }
+  _expandNode_MetaRel8n(rel8nNode, callback) {
+    let t = this;
+    if (rel8nNode === t.rootRel8nNode_Identity) {
+      t.expandRootRel8n_Identity();
+    } else {
+      console.error(`Unknown meta rel8n node`);
+    }
+    
+    if (callback) { callback(); }
   }
   _refreshIbGibsForAutoExpansion(node, autoExpandRel8ns, callback) {
     let t = this;
@@ -2203,8 +2291,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     let t = this;
 
     if (t.rootNode) { t.clearFadeTimeout(t.rootNode); }
+    t.removeRootNode();
+    
+    // t.removeChildren(t.rootNode, /*durationMs*/ 0); // immediately
 
-    t.addRootNode();
+    t.showRootNode();
 
     let transform = ibHelper.parseTransformString(t.svgGroup.attr("transform"));
 
@@ -2321,7 +2412,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     // t.freezeNode(d, 1000);
     t.clearSelectedNode();
     t.animateNodeBorder(d, /*nodeShape*/ null);
-    if (!d.isRoot) { t.fadeOutNode(t.rootNode, t.config.other.rootFadeTimeoutMs_Fast); }
+    if (!d.isMeta) { 
+      t.removeRootNode();
+    }
 
     if (d.expanding) { delete d.expanding; }
     t.zap(d, () => {
@@ -2331,9 +2424,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   handleNodeDblClicked(d) {
     let t = this;
 
-    if (d.isRoot) {
+    if (d.isMeta) {
       return;
     }
+
+    t.removeRootNode();
 
     let isCancelledFunc = () => {
       return !d.fullyExpanding;
@@ -2565,11 +2660,17 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   handleEventBusMsg_Identity(identityIbGib, msg) {
     let t = this, lc = `handleEventBusMsg_Identity(${identityIbGib})`;
 
-    if (!t.currentIdentityIbGibs.includes(identityIbGib)) {
-      console.log(`Adding identityIbGib to currentIdentityIbGibs`);
-      t.currentIdentityIbGibs.push(identityIbGib);
+    if (msg.metadata.name === "ident_email") {
+      console.log(`ident_email msg: ${JSON.stringify(msg)}`)
+    } else if (msg.metadata.name === "unident_email") {
+      console.log(`unident_email msg: ${JSON.stringify(msg)}`)
+    } else {
+      console.error(`Unknown identity msg. identityIbGib: ${identityIbGib}. msg: ${JSON.stringify(msg)}`)
     }
 
+    // reload the entire app to ensure that we start fresh from the current
+    // identities in the connection cookie.
+    
     // Thanks SO! http://stackoverflow.com/a/28171425/4275029
     setTimeout(() => window.location.reload());
   }
