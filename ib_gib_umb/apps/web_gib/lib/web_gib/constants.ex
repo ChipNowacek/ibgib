@@ -82,6 +82,7 @@ defmodule WebGib.Constants do
       @emsg_email_send_failed "There were problems sending the login email."
       @emsg_ident_email_failed "There was a problem with the login process."
       @emsg_ident_email_token_mismatch "The token does not match."
+      @emsg_unident_email_failed "There was a problem with the logout process."
 
       @emsg_could_not_create_thumbnail "There was a problem creating the thumbnail."
     end

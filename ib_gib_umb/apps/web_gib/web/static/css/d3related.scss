@@ -245,3 +245,31 @@ div.panel {
     overflow: hidden;
     transition: max-height 0.6s ease-out;
 }
+
+#ib-link-details {
+  margin-top: 15px;
+}
+
+#link_form_data_text {
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+#ib-link-details-submit {
+  padding-left: 10px;
+  padding-right: 10px;
+  padding-bottom: 4px;
+}
+
+// I'm creating this when combining two spans for "combo icons".
+// In the unidentify details view, i want to have a button with two icons on it.
+// So that button has two spans, and I need the two spans formatted properly.
+.ib-left-icon-span {
+  margin-right: 5px;
+}
+
+#ib-unidentemail-details-note {
+  margin-top: 10px;
+  font-style: italic;
+  font-size: 0.8em;
+}

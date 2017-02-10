@@ -190,6 +190,11 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
           commands.push("mut8comment");
         }
       }
+      
+      if (t.ibScape.currentIdentityIbGibs.includes(d.ibGib) &&
+          ibAuthz.isEmailIdentity(d.ibGibJson)) {
+        commands.push("unidentemail");
+      }
     }
 
 

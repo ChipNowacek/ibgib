@@ -137,3 +137,13 @@ function _getIdentityType(identityIbGib) {
     return identityType;
   }
 }
+
+export function isEmailIdentity(ibGibJson) {
+  let { ib, gib, rel8ns, data } = ibGibJson;
+  return ib.startsWith("email_") &&
+         gib.startsWith("ibGib_") && 
+         rel8ns.instance_of &&
+         rel8ns.instance_of.length === 1 && 
+         rel8ns.instance_of[0] === "identity^gib" &&
+         data.type === "email";
+}

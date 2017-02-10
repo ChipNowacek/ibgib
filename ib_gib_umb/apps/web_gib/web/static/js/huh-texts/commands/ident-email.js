@@ -3,6 +3,11 @@ function getSpan() {
   return `<span style="padding: 5px; width: 70px; font-family: FontAwesome; background-color: #FFFFFF; border-radius: 15px">${iTag}</span>`;
 }
 
+function getSpan_UnIdent() {
+  let iTag = `<i class="fa fa-sign-out" aria-hidden="true"></i>`;
+  return `<span style="padding: 5px; width: 70px; font-family: FontAwesome; background-color: #7D7D7D; border-radius: 15px">${iTag}</span>`;
+}
+
 function getSpan_Root() {
   let iTag = `<i class="fa fa-circle-o" aria-hidden="true"></i>`;
   return `<span style="padding: 5px; width: 70px; font-family: FontAwesome; background-color: #76963e; border-radius: 15px">${iTag}</span>`;
@@ -12,10 +17,12 @@ var huhText_Cmd_IdentEmail = `
 
 ## Identify ${getSpan()}
 
-This command will identify you in ibGib with an email address. 
+The Identify command will identify you in ibGib with an email address. 
 
 **_This email address will be publicly visible. Please do not use ibGib if you
 wish your email address to remain private. Thank You!_** :smiley:
+
+You can also sign out by choosing the Unidentify command (${getSpan_UnIdent()}).
 
 ### :baby: :baby_bottle:
 

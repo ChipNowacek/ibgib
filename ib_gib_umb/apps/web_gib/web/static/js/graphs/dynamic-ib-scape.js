@@ -2668,6 +2668,4 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     // Thanks SO! http://stackoverflow.com/a/28171425/4275029
     setTimeout(() => window.location.reload());
   }
-  
-  
 }

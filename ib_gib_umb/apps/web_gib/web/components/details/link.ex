@@ -33,7 +33,7 @@ defmodule WebGib.Web.Components.Details.Link do
                value: ""]
         input [name: "_csrf_token", type: "hidden", value: Phoenix.Controller.get_csrf_token]
         div [class: "ib-tooltip"] do
-          button [type: "submit"] do
+          button [id: "ib-link-details-submit", type: "submit"] do
             span [class: "ib-center-glyph glyphicon glyphicon-link ib-green"]
           # span [class: "ib-tooltiptext"], do: gettext("Add Link")
           end

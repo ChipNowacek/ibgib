@@ -208,8 +208,17 @@ var d3MenuCommands = [
     "name": "identemail",
     "text": "Identify",
     "icon": "\uf090",
-    "description": "This lets you identify yourself with an email address",
+    "description": "This lets you identify yourself with an email address, which will be associated with all ibGib you create.",
     "color": "#FFFFFF",
+    "huh": huhText_Cmd_IdentEmail
+  },
+  {
+    "id": "menu-unidentemail",
+    "name": "unidentemail",
+    "text": "Un-Identify",
+    "icon": "\uf08b",
+    "description": "Logs OUT this email address, so that you will no longer be identified with it when creating ibGib. Any other email address(es) will stay logged in!",
+    "color": "#7D7D7D",
     "huh": huhText_Cmd_IdentEmail
   },
   {
