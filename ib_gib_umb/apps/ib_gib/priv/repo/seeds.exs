@@ -68,3 +68,7 @@ Seeds.insert(:binary)
 Seeds.insert({:pic, :binary_child})
 
 Seeds.insert(:number)
+
+# Tag Related
+Seeds.insert(:tag)
+Seeds.insert({:keyword, :tag_child})

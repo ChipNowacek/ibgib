@@ -28,7 +28,7 @@ defmodule IbGib.Data.Schemas.Seeds do
   #           will descend.
   # (I wanted to do all of this manually in the db, but it's just simpler to do
   # it here.)
-  @specifiers [:text_child, :binary_child]
+  @specifiers [:text_child, :binary_child, :tag_child]
 
   def insert(ib_atom, data \\ %{})
   def insert(ib_atom, data)
@@ -118,6 +118,21 @@ defmodule IbGib.Data.Schemas.Seeds do
       rel8ns: %{
         "dna" => @default_dna,
         "ancestor" => @default_ancestor ++ ["binary#{@delim}gib"],
+        "past" => @default_past,
+        "identity" => @default_identity
+        },
+      data: data
+    }
+  end
+  # This overload is for generating seeds that "descend" (forked from) tag^gib.
+  def get_seed({ib_string, :tag_child}, data) do
+    _ = Logger.debug "get_seed :tag_child. ib_string: #{ib_string}"
+    %IbGibModel{
+      ib: ib_string,
+      gib: "gib",
+      rel8ns: %{
+        "dna" => @default_dna,
+        "ancestor" => @default_ancestor ++ ["tag#{@delim}gib"],
         "past" => @default_past,
         "identity" => @default_identity
         },
