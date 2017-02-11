@@ -266,7 +266,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.simulation =
         d3.forceSimulation()
           .velocityDecay(t.getVelocityDecay())
-          .alphaTarget(0.1)
+          .alphaTarget(0)
           .force("link", t.getForceLink())
           .force("charge", t.getForceCharge())
           .force("collide", t.getForceCollide())
