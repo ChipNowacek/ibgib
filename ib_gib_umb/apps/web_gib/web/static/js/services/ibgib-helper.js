@@ -163,6 +163,10 @@ export function isIdentity(ibGibJson) {
          ibGibJson.rel8ns.instance_of[0] === "identity^gib";
 }
 
+export function isTag(ibGibJson) {
+  return ibGibJson.rel8ns.ancestor.some(x => x === "tag^gib");
+}
+
 /*
  * Determines if the browser is on a mobile device or not.
  * Thanks SO!

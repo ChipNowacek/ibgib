@@ -16,6 +16,8 @@ defmodule WebGib.Patterns do
   defpat comment_text_   %{"comment_text" => comment_text}
   defpat link_text_      %{"link_text" => link_text}
   defpat ib_username_    %{@ib_username_key => ib_username}
+  defpat tag_text_       %{"tag_text" => tag_text}
+  defpat tag_icons_text_ %{"tag_icons_text" => tag_icons_text}
   
   defpat params_         %{params: params}
   defpat conn_           %Plug.Conn{params: params}

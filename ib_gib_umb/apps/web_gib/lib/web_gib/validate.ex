@@ -152,4 +152,28 @@ defmodule WebGib.Validate do
     # i.e. we can't "attach" any ibGib to these rel8ns.
     !Enum.member?(@invalid_adjunct_rel8ns, adjunct_rel8n)
   end
+  def validate(:tag_text, tag_text) when is_bitstring(tag_text) and tag_text !== "" do
+    _ = Logger.debug "tag_text: #{tag_text}"
+    _ = Logger.debug "string length tag_text: #{String.length(tag_text)}"
+    _ = Logger.debug "@max_tag_text_size: #{@max_tag_text_size}"
+
+    valid_ib?(tag_text) and 
+      String.length(tag_text) <= @max_tag_text_size
+  end
+  def validate(:tag_text, tag_text) do
+    _ = Logger.warn "Invalid tag_text: #{inspect tag_text}"
+    false
+  end
+  def validate(:tag_icons_text, tag_icons_text) 
+    when is_bitstring(tag_icons_text) and tag_icons_text !== "" do
+    _ = Logger.debug "tag_icons_text: #{tag_icons_text}"
+    _ = Logger.debug "string length tag_icons_text: #{String.length(tag_icons_text)}"
+    _ = Logger.debug "@max_tag_icons_text_size: #{@max_tag_icons_text_size}"
+
+    String.length(tag_icons_text) < @max_tag_icons_text_size
+  end
+  def validate(:tag_icons_text, tag_icons_text) do
+    _ = Logger.warn "Invalid tag_icons_text: #{inspect tag_icons_text}"
+    false
+  end
 end
