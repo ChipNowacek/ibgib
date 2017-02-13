@@ -1,4 +1,7 @@
 import * as d3 from 'd3';
+import $ from 'jquery';
+import textcomplete from 'jquery-textcomplete';
+import {emojies} from '../../textcomplete/emoji';
 
 var md = require('markdown-it')({
   html: true,
@@ -7,6 +10,10 @@ var md = require('markdown-it')({
 });
 var emoji = require('markdown-it-emoji');
 md.use(emoji);
+var twemoji = require('twemoji')
+md.renderer.rules.emoji = function(token, idx) {
+  return twemoji.parse(token[idx].content);
+};
 
 import * as ibHelper from '../ibgib-helper';
 import * as ibAuthz from '../ibgib-authz';
@@ -559,7 +566,56 @@ export class CommentDetailsCommand extends FormDetailsCommandBase {
     d3.select("#comment_form_data_src_ib_gib")
       .attr("value", t.d.ibGib);
 
+    if (!t.detailsView.commentAutocompleteInitialized) {
+      t.initAutocomplete("comment_form_data_text");
+    }
+    
     $("#comment_form_data_text").val("").focus();
+  }
+  
+  initAutocomplete(textAreaId) {
+    let t = this, lc = `Comment initAutocomplete`;
+    console.log(`{lc} initializing Autocomplete starting...`)
+    
+    t.detailsView.commentAutocompleteInitialized = true;
+    
+    // let emojies = [
+    //   "confused", "simple_smile", "smile", "laughing", "sweat_smile", "joy",
+    //   "grin", "wink", "expressionless", "sweat", "confounded", "rage",
+    //   "no_mouth", "scream", "innocent", "imp", "smiling_imp", 'disappointed', 'smiley', 
+    //   
+    //   'dizzy_face', 'worried', 'fearful', 'unamused', 'neutral_face',
+    //   'kissing', 'kissing_heart', 'kissing_closed_eyes', 'angry', 'disappointed_relieved', 
+    //   'persevere', 'triumph', 'cry', 'frowning', 'weary',
+    //   
+    //   "abc", 
+    // ];
+    $('#' + textAreaId).textcomplete([
+      { // emoji strategy
+          id: 'emoji',
+          match: /\B:([\-+\w]*)$/,
+          search: function (term, callback) {
+              callback($.map(emojies, function (emoji) {
+                  return emoji.indexOf(term) === 0 ? emoji : null;
+              }));
+          },
+          template: function (value) {
+              return '<img src="/images/emoji/' + value + '.png" class="ib-emoji-list"></img>' + value;
+          },
+          replace: function (value) {
+              return ':' + value + ': ';
+          },
+          index: 1
+      }
+    ], {
+        onKeydown: function (e, commands) {
+            if (e.ctrlKey && e.keyCode === 74) { // CTRL-J
+                return commands.KEY_ENTER;
+            }
+        }
+    });
+    
+    console.log(`{lc} initializing Autocomplete complete.`)
   }
 
   /** Currently just trims whitespace of comment. */
@@ -833,6 +889,99 @@ export class LinkDetailsCommand extends FormDetailsCommandBase {
         // someone else's ibGib. So a link was created and was rel8d
         // to the src, but the src has not been inversely rel8d to the
         // link. So we'll remove the placeholder node and the
+        // :new_adjunct event will create a new node.
+
+        t.ibScape.remove(t.virtualNode);
+      }
+    } else {
+      console.error(`${typeof(t)}: Unknown msg response from channel.`);
+    }
+  }
+}
+
+export class TagDetailsCommand extends FormDetailsCommandBase {
+  constructor(ibScape, d) {
+    const cmdName = "tag";
+    super(cmdName, ibScape, d);
+  }
+
+  init() {
+    let t = this;
+
+    d3.select("#tag_form_data_src_ib_gib")
+      .attr("value", t.d.ibGib);
+
+    $("#tag_form_data_text").val("").focus();
+  }
+
+  /** Currently just trims whitespace of tag. */
+  sanitizeFormFields() {
+    let tagText = $("#tag_form_data_text").val();
+    tagText = tagText.trim();
+    $("#tag_form_data_text").val(tagText);
+  }
+
+  addVirtualNode(callback) {
+    let t = this, lc = `Comment addVirtualNode`;
+    console.log(`${lc} start. t.d.type: ${t.d.type}`)
+    if (t.d.type === "ibGib") {
+      let rel8nNodes = t.ibScape.getChildren_Rel8ns(t.d).filter(rel8nNode => rel8nNode.rel8nName === "tag");
+
+      let tagRel8nNode = null;
+      if (rel8nNodes.length === 0) {
+        t.ibScape.addSpiffyRel8ns(t.d);
+        rel8nNodes = t.ibScape.getChildren_Rel8ns(t.d).filter(rel8nNode => rel8nNode.rel8nName === "tag");
+      }
+      tagRel8nNode = rel8nNodes[0];
+
+      if (tagRel8nNode) {
+        t.ibScape.zap(tagRel8nNode, () => {
+          t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ tagRel8nNode, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ d3RootUnicodeChar, /*startPos*/ {x: t.d.x, y: t.d.y});
+          if (callback) { callback(); }
+        });
+      }
+
+    } else if (t.d.type === "rel8n") {
+      t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ t.d, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ d3RootUnicodeChar, /*startPos*/ {x: t.d.x, y: t.d.y});
+      if (callback) { callback(); }
+    } else {
+      console.error("Unknown t.d.type:", t.d.type);
+      if (callback) { callback(); }
+    }
+  }
+
+  getMessageData() {
+    let t = this;
+
+    return {
+      virtual_id: t.virtualNode.virtualId,
+      src_ib_gib: t.d.type === "rel8n" ? t.d.rel8nSrc.ibGib : t.d.ibGib,
+      tag_text: $("#tag_form_data_text").val()
+    };
+  }
+
+  handleSubmitResponse(msg) {
+    let t = this;
+    console.log("new tag handle submit response");
+    if (msg && msg.data && msg.data.tag_ib_gib) {
+      if (msg.data.new_src_ib_gib) {
+        // Update the cache with the new src_ib_gib
+        console.log(`new tag. src tempJuncIbGib: ${t.d.tempJuncIbGib}. new: ${msg.data.new_src_ib_gib}`)
+        
+        // The src was directly taged on, so this user had authz to
+        // do it (it's the ibGib's owner). So set the tag ibGib and
+        // zap it.
+        // debugger;
+        let tagIbGib = msg.data.tag_ib_gib;
+        t.virtualNode.ibGib = tagIbGib;
+        t.ibScape.zap(t.virtualNode, () => {
+          t.ibScape.ibGibEventBus.broadcastIbGibUpdate_LocallyOnly(t.d.tempJuncIbGib, msg.data.new_src_ib_gib);
+        });
+      } else {
+        // The src was not updated, so this is a user taging on
+        // someone else's ibGib. So a tag was created and was rel8d
+        // to the src, but the src has not been inversely rel8d to the
+        // tag. So we'll remove the placeholder node and the
         // :new_adjunct event will create a new node.
 
         t.ibScape.remove(t.virtualNode);

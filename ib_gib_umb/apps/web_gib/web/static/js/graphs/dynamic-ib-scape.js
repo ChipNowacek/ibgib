@@ -8,6 +8,10 @@ var md = require('markdown-it')({
 });
 var emoji = require('markdown-it-emoji');
 md.use(emoji);
+var twemoji = require('twemoji')
+md.renderer.rules.emoji = function(token, idx) {
+  return twemoji.parse(token[idx].content);
+};
 
 import { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3BoringRel8ns, d3AlwaysRel8ns, d3RequireExpandLevel2, d3MenuCommands, d3Rel8nIcons, d3RootUnicodeChar, /*d3AddableRel8ns,*/ d3PausedRel8ns } from '../d3params';
 
@@ -2224,7 +2228,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   openMenu(d) {
     let t = this;
 
-    const size = 240;
+    const size = 300;
     const halfSize = Math.trunc(size / 2);
     const pos = {x: t.center.x - halfSize, y: t.center.y - halfSize};
 

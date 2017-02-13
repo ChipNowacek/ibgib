@@ -268,6 +268,23 @@ var d3MenuCommands = [
     "color": "#C7FF4F",
     "huh": huhText_Cmd_Ack
   },
+  // 🔤
+  {
+    "id": "menu-tag",
+    "name": "tag",
+    "text": "Tag",
+    "icon": "\uf02b",
+    "description": "Tag an ibGib to make it easier for searching, organizing, and more.",
+    "color": "#FF4F4F"
+  },
+  // {
+  //   "id": "menu-flag",
+  //   "name": "flag",
+  //   "text": "Flag",
+  //   "icon": "\uf024",
+  //   "description": "The Flag button will mark the selected ibGib as containing inappropriate content",
+  //   "color": "#FF4F4F"
+  // },
   // {
   //   "id": "menu-merge",
   //   "name": "merge",
@@ -299,14 +316,6 @@ var d3MenuCommands = [
   //   "icon": "\uf005",
   //   "description": "The Star button will rate the selected ibGib",
   //   "color": "gold"
-  // },
-  // {
-  //   "id": "menu-flag",
-  //   "name": "flag",
-  //   "text": "Flag",
-  //   "icon": "\uf024",
-  //   "description": "The Flag button will mark the selected ibGib as containing inappropriate content",
-  //   "color": "#FF4F4F"
   // },
   // {
   //   "id": "menu-thumbsup",

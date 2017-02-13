@@ -14,14 +14,14 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
     super(graphDiv, svgId, config);
     let t = this;
 
-    const menuRadius = 120;
+    const menuRadius = 150;
     const menuDiam = 2 * menuRadius;
     const menuDivSize = menuDiam;
 
     let defaults = {
       background: {
-        fill: "blue",
-        opacity: 0.7,
+        fill: "#055E05",
+        opacity: 0.8,
         shape: "circle"
       },
       mouse: {
@@ -53,10 +53,10 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
         }
       },
       menu: {
-        radius: 120,
+        radius: menuRadius,
         diam: menuDiam,
         size: menuDivSize,
-        buttonRadius: 28,
+        buttonRadius: 26,
         position: position,
         d: d // why in the world did I do this?
       }
@@ -284,7 +284,9 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
   //     .text(d => t.getNodeTitle(d));
   // }
 
-  getNodeTitle(d) { return d.cmd.description || d.title || d.id || ""; }
+  getNodeTitle(d) {
+    return (d.cmd.description || d.title || d.id || "") + ' Long-click this button for more info.'; 
+  }
   getNodeLabelText(d) { return d.cmd.icon || d.label || d.title || d.id; }
   getNodeShapeFill(d) { return d.cmd.color || this.config.node.defShapeFill; }
 }
