@@ -43,8 +43,8 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
         defBorderStrokeWidth: "2px",
         label: {
           fontFamily: "FontAwesome",
-          fontStroke: "darkgreen",
-          fontFill: "darkgreen",
+          fontStroke: "#4F0945",
+          fontFill: "#701362",
           fontSize: "26px",
           fontOffset: 10
         },
@@ -167,7 +167,7 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
       if (d.ibGib && d.ibGib === "ib^gib") {
         commands = commands.concat(["info", "fork", "goto", "identemail", "query"]);
       } else {
-        commands = commands.concat([/*"view",*/ "fork", "comment", "pic", "link", "info", "refresh"]);
+        commands = commands.concat([/*"view",*/ "fork", "comment", "pic", "link", "info", "refresh", "tag"]);
         
         if (!d.isContext) {
           commands.push("goto");

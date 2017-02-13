@@ -1,7 +1,4 @@
 import * as d3 from 'd3';
-import $ from 'jquery';
-import textcomplete from 'jquery-textcomplete';
-import {emojies} from '../../textcomplete/emoji';
 
 var md = require('markdown-it')({
   html: true,
@@ -567,55 +564,11 @@ export class CommentDetailsCommand extends FormDetailsCommandBase {
       .attr("value", t.d.ibGib);
 
     if (!t.detailsView.commentAutocompleteInitialized) {
-      t.initAutocomplete("comment_form_data_text");
+      ibHelper.initAutocomplete("comment_form_data_text");
+      t.detailsView.commentAutocompleteInitialized = true;
     }
     
     $("#comment_form_data_text").val("").focus();
-  }
-  
-  initAutocomplete(textAreaId) {
-    let t = this, lc = `Comment initAutocomplete`;
-    console.log(`{lc} initializing Autocomplete starting...`)
-    
-    t.detailsView.commentAutocompleteInitialized = true;
-    
-    // let emojies = [
-    //   "confused", "simple_smile", "smile", "laughing", "sweat_smile", "joy",
-    //   "grin", "wink", "expressionless", "sweat", "confounded", "rage",
-    //   "no_mouth", "scream", "innocent", "imp", "smiling_imp", 'disappointed', 'smiley', 
-    //   
-    //   'dizzy_face', 'worried', 'fearful', 'unamused', 'neutral_face',
-    //   'kissing', 'kissing_heart', 'kissing_closed_eyes', 'angry', 'disappointed_relieved', 
-    //   'persevere', 'triumph', 'cry', 'frowning', 'weary',
-    //   
-    //   "abc", 
-    // ];
-    $('#' + textAreaId).textcomplete([
-      { // emoji strategy
-          id: 'emoji',
-          match: /\B:([\-+\w]*)$/,
-          search: function (term, callback) {
-              callback($.map(emojies, function (emoji) {
-                  return emoji.indexOf(term) === 0 ? emoji : null;
-              }));
-          },
-          template: function (value) {
-              return '<img src="/images/emoji/' + value + '.png" class="ib-emoji-list"></img>' + value;
-          },
-          replace: function (value) {
-              return ':' + value + ': ';
-          },
-          index: 1
-      }
-    ], {
-        onKeydown: function (e, commands) {
-            if (e.ctrlKey && e.keyCode === 74) { // CTRL-J
-                return commands.KEY_ENTER;
-            }
-        }
-    });
-    
-    console.log(`{lc} initializing Autocomplete complete.`)
   }
 
   /** Currently just trims whitespace of comment. */
@@ -640,7 +593,7 @@ export class CommentDetailsCommand extends FormDetailsCommandBase {
 
       if (commentRel8nNode) {
         t.ibScape.zap(commentRel8nNode, () => {
-          t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ commentRel8nNode, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ d3RootUnicodeChar, /*startPos*/ {x: t.d.x, y: t.d.y});
+          t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ commentRel8nNode, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ d3RootUnicodeChar, /*startPos*/ {x: commentRel8nNode.x, y: commentRel8nNode.y});
           if (callback) { callback(); }
         });
       }
@@ -733,6 +686,12 @@ export class Mut8CommentDetailsCommand extends FormDetailsCommandBase {
 
     t.ibScape.ibGibProvider.getIbGibJson(t.d.ibGib, ibGibJson => {
       t.initialCommentText = ibHelper.getDataText(ibGibJson);
+      
+      if (!t.detailsView.commentAutocompleteInitialized) {
+        ibHelper.initAutocomplete("comment_form_data_text");
+        t.detailsView.commentAutocompleteInitialized = true;
+      }
+
       $("#comment_form_data_text")
         .val(t.initialCommentText)
         .attr("disabled", false)
@@ -911,6 +870,11 @@ export class TagDetailsCommand extends FormDetailsCommandBase {
     d3.select("#tag_form_data_src_ib_gib")
       .attr("value", t.d.ibGib);
 
+    if (!t.detailsView.commentAutocompleteInitialized) {
+      ibHelper.initAutocomplete("tag_form_data_icons_text");
+      t.detailsView.commentAutocompleteInitialized = true;
+    }
+
     $("#tag_form_data_text").val("").focus();
   }
 
@@ -919,11 +883,16 @@ export class TagDetailsCommand extends FormDetailsCommandBase {
     let tagText = $("#tag_form_data_text").val();
     tagText = tagText.trim();
     $("#tag_form_data_text").val(tagText);
+    
+    let tagIconsText = $("#tag_form_data_icons_text").val();
+    tagIconsText = tagIconsText.trim();
+    $("#tag_form_data_icons_text").val(tagIconsText);
   }
 
   addVirtualNode(callback) {
     let t = this, lc = `Comment addVirtualNode`;
     console.log(`${lc} start. t.d.type: ${t.d.type}`)
+
     if (t.d.type === "ibGib") {
       let rel8nNodes = t.ibScape.getChildren_Rel8ns(t.d).filter(rel8nNode => rel8nNode.rel8nName === "tag");
 
@@ -931,16 +900,23 @@ export class TagDetailsCommand extends FormDetailsCommandBase {
       if (rel8nNodes.length === 0) {
         t.ibScape.addSpiffyRel8ns(t.d);
         rel8nNodes = t.ibScape.getChildren_Rel8ns(t.d).filter(rel8nNode => rel8nNode.rel8nName === "tag");
+        if (rel8nNodes.length === 0) {
+          // still zero, so no pre-existing tag rel8ns. So add it anew.
+          tagRel8nNode = t.ibScape.addRel8nVirtualNode(t.d, "tag", /*fadeTimeoutMs*/ 0);
+          rel8nNodes = [tagRel8nNode];
+        }
       }
+      
       tagRel8nNode = rel8nNodes[0];
 
       if (tagRel8nNode) {
         t.ibScape.zap(tagRel8nNode, () => {
-          t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ tagRel8nNode, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ d3RootUnicodeChar, /*startPos*/ {x: t.d.x, y: t.d.y});
+          t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ tagRel8nNode, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ d3RootUnicodeChar, /*startPos*/ {x: tagRel8nNode.x, y: tagRel8nNode.y});
           if (callback) { callback(); }
         });
+      } else {
+        console.error(`Tried to tag, but no tagRel8nNode?`);
       }
-
     } else if (t.d.type === "rel8n") {
       t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ t.d, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ d3RootUnicodeChar, /*startPos*/ {x: t.d.x, y: t.d.y});
       if (callback) { callback(); }
@@ -956,7 +932,8 @@ export class TagDetailsCommand extends FormDetailsCommandBase {
     return {
       virtual_id: t.virtualNode.virtualId,
       src_ib_gib: t.d.type === "rel8n" ? t.d.rel8nSrc.ibGib : t.d.ibGib,
-      tag_text: $("#tag_form_data_text").val()
+      tag_text: $("#tag_form_data_text").val(),
+      tag_icons_text: $("#tag_form_data_icons_text").val()
     };
   }
 

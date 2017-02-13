@@ -136,7 +136,7 @@ defmodule WebGib.Bus.Commanding.Tag do
                   "text" => tag_text,
                   "icons" => tag_icons_text,
                   "render" => "tag",
-                  "shape" => "circle",
+                  "shape" => "rect",
                   "when" => get_timestamp_str()
                 },
       {:ok, tag} <- tag |> mut8(identity_ib_gibs, state),

@@ -8,7 +8,7 @@ defmodule WebGib.Web.Components.IbScape do
 
   use WebGib.MarkerElements
   import WebGib.Gettext
-  import WebGib.Web.Components.Details.{Fork, Help, Comment, UploadPic, Link, IdentEmail, UnIdentEmail, Info, Query, Download, Huh}
+  import WebGib.Web.Components.Details.{Fork, Help, Comment, UploadPic, Link, IdentEmail, UnIdentEmail, Info, Query, Download, Huh, Tag}
 
   component :ib_scape do
 
@@ -35,6 +35,7 @@ defmodule WebGib.Web.Components.IbScape do
         download_details
         # add_ib_gib_details
         huh_details
+        tag_details
       end
 
     end

@@ -281,8 +281,10 @@ div.panel {
 img.emoji {
    height: 1.1em;
    width: 1.1em;
-   margin: 0 .25em 0 .1em;
-   vertical-align: -0.1em;
+   margin: 10px .25em 0 .1em;
+  //  vertical-align: -0.1em;
+  overflow-x: hidden;
+  overflow-y: hidden;
 }
 
 .ib-emoji-list {
