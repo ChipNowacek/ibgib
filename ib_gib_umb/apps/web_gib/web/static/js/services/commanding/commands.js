@@ -464,7 +464,7 @@ export class QueryDetailsCommand extends DetailsCommandBase {
     d3.select("#query_form_data_src_ib_gib")
       .attr("value", t.d.ibGib);
 
-    $("#query_form_data_search_ib").focus();
+    $("#query_form_data_search_text").focus();
   }
 
   exec() {

@@ -146,8 +146,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.svgGradientId_Background = "background" + ibHelper.getRandomString();
     t.addSvgGradient_Simple(t.svgGradientId_Background, "#108201", "#128C01", "#3FA132", "50%", "50%", "50%", "60%", "70%");
 
-    
-    
     t.svgGradientId_Default = "default" + ibHelper.getRandomString();
     t.addSvgGradient_Simple(t.svgGradientId_Default, "#72DFED", "#56CCDB", "#31C1D4");
   }

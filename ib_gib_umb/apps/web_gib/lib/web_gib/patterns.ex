@@ -21,6 +21,24 @@ defmodule WebGib.Patterns do
   
   defpat params_         %{params: params}
   defpat conn_           %Plug.Conn{params: params}
+
+
+  # Query params
+  # When a user/consumer sends us information about a query to perform
+  # The ? indicates it's a boolean value (like a checkbox)
+  defpat search_text_      %{"search_text" => search_text}
+  defpat ib_is_?           %{"ib_is" => ib_is?}
+  defpat ib_has_?          %{"ib_has" => ib_has?}
+  defpat data_has_?        %{"data_has" => data_has?}
+  defpat tag_is_?          %{"tag_is" => tag_is?}
+  defpat tag_has_?         %{"tag_has" => tag_has?}
+  defpat include_pic_?     %{"include_pic" => include_pic?}
+  defpat include_comment_? %{"include_comment" => include_comment?}
+  defpat include_dna_?     %{"include_dna" => include_dna?}
+  defpat include_query_?   %{"include_query" => include_query?}
+  defpat include_tag_?     %{"include_tag" => include_tag?}
+  defpat latest_?          %{"latest" => latest?}
+  
   
   defpat ib_identity_ib_gibs_ %{ib_identity_ib_gibs: identity_ib_gibs}
   defpat assigns_identity_ib_gibs_ %{assigns: ib_identity_ib_gibs_()}
@@ -32,5 +50,4 @@ defmodule WebGib.Patterns do
   defpat conn_login_form_data_ %Plug.Conn{
     body_params: (login_form_data_() = body_params)
   }
-
 end

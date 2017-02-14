@@ -32,7 +32,6 @@ defmodule WebGib.IbGibController do
   # ----------------------------------------------------------------------------
 
 
-
   @doc """
   This should show the "Home" ib^gib.
   """
@@ -1387,10 +1386,18 @@ defmodule WebGib.IbGibController do
   # Query
   # ----------------------------------------------------------------------------
 
+  defpat query_form_data_(
+    search_text_() =
+    ib_is_?() =
+    ib_has_?() =
+    data_has_?() =
+    tag_is_?() =
+    tag_has_?() =
+    src_ib_gib_()
+  )
 
   def query(conn, %{
-                     "query_form_data" => %{
-                      "src_ib_gib" => src_ib_gib} = query_params
+                     "query_form_data" => query_form_data_(...) = query_params
                     } = _params) do
     Logger.metadata(x: :query)
     _ = Logger.debug "conn: #{inspect conn}"
