@@ -22,7 +22,17 @@ defmodule WebGib.Patterns do
   defpat params_         %{params: params}
   defpat conn_           %Plug.Conn{params: params}
 
-
+  defpat ib_identity_ib_gibs_ %{ib_identity_ib_gibs: identity_ib_gibs}
+  defpat assigns_identity_ib_gibs_ %{assigns: ib_identity_ib_gibs_()}
+  
+  # Connection with a username
+  defpat conn_ib_username_   conn_(ib_username_())
+  defpat login_form_data_ %{"login_form_data" => ib_username_()}
+  # Connection with a login form with the username
+  defpat conn_login_form_data_ %Plug.Conn{
+    body_params: (login_form_data_() = body_params)
+  }
+  
   # Query params
   # When a user/consumer sends us information about a query to perform
   # The ? indicates it's a boolean value (like a checkbox)
@@ -39,15 +49,19 @@ defmodule WebGib.Patterns do
   defpat include_tag_?     %{"include_tag" => include_tag?}
   defpat latest_?          %{"latest" => latest?}
   
-  
-  defpat ib_identity_ib_gibs_ %{ib_identity_ib_gibs: identity_ib_gibs}
-  defpat assigns_identity_ib_gibs_ %{assigns: ib_identity_ib_gibs_()}
-  
-  # Connection with a username
-  defpat conn_ib_username_   conn_(ib_username_())
-  defpat login_form_data_ %{"login_form_data" => ib_username_()}
-  # Connection with a login form with the username
-  defpat conn_login_form_data_ %Plug.Conn{
-    body_params: (login_form_data_() = body_params)
-  }
+  defpat query_params_(
+    search_text_() =
+    ib_is_?() =
+    ib_has_?() =
+    data_has_?() =
+    tag_is_?() =
+    tag_has_?() =
+    include_pic_?() =
+    include_comment_?() =
+    include_dna_?() =
+    include_query_?() =
+    include_tag_?() =
+    latest_?() =
+    src_ib_gib_()
+  )
 end

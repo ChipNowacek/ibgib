@@ -21,7 +21,7 @@ defmodule WebGib.Web.Components.Details.Query do
   # e.g. ib, keywords, tags, data segment (like comment text or date), etc.
   component :search_what do
     fieldset [class: "ib-details-fieldset"] do
-      legend [class: "ib-details-legend"], do: "&#1F50D; What"
+      legend [class: "ib-details-legend"], do: "🔍"
       div class: "container" do
         
         # text row
@@ -31,6 +31,7 @@ defmodule WebGib.Web.Components.Details.Query do
                    name: "query_form_data[search_text]",
                    type: "text",
                    maxlength: max_query_data_text_size(),
+                   required: true,
                    value: ""]
             span [class: "ib-tooltip"] do
               span [class: "ib-center-glyph glyphicon glyphicon-question-sign ib-green"]
@@ -47,7 +48,7 @@ defmodule WebGib.Web.Components.Details.Query do
   # e.g. ib is/has, data, tag is/has
   component :search_how do
     fieldset [class: "ib-details-fieldset"] do
-      legend [class: "ib-details-legend"], do: "&#1F50D; What"
+      legend [class: "ib-details-legend"], do: "how"
       div class: "container" do
         div class: "row" do
           div class: "col-sm-12" do
@@ -64,7 +65,8 @@ defmodule WebGib.Web.Components.Details.Query do
             input [id: "query_form_data_ib_has",
                    name: "query_form_data[ib_has]",
                    type: "checkbox",
-                   value: "ib_has"]
+                   value: "ib_has",
+                   checked: ""]
             label [class: "ib-details-label", for: "query_form_data_ib_has"] do
               "ib has"
             end
@@ -73,7 +75,8 @@ defmodule WebGib.Web.Components.Details.Query do
             input [id: "query_form_data_data_has",
                    name: "query_form_data[data_has]",
                    type: "checkbox",
-                   value: "data_has"]
+                   value: "data_has",
+                   checked: ""]
             label [class: "ib-details-label", for: "query_form_data_data_has"] do
               "data has"
             end
@@ -86,14 +89,15 @@ defmodule WebGib.Web.Components.Details.Query do
             label [class: "ib-details-label", for: "query_form_data_ib_is"] do
               "tag is"
             end
-            # tag has
-            input [id: "query_form_data_tag_has",
-                   name: "query_form_data[tag_has]",
-                   type: "checkbox",
-                   value: "tag_has"]
-            label [class: "ib-details-label", for: "query_form_data_tag_has"] do
-              "tag has"
-            end
+            # # tag has
+            # input [id: "query_form_data_tag_has",
+            #        name: "query_form_data[tag_has]",
+            #        type: "checkbox",
+            #        value: "tag_has",
+            #        checked: ""]
+            # label [class: "ib-details-label", for: "query_form_data_tag_has"] do
+            #   "tag has"
+            # end
 
           end
         end

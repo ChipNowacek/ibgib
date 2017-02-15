@@ -306,14 +306,14 @@ defmodule WebGib.IbGibController do
     ib_gib_node = %{"id" => "ib#{@delim}gib", "name" => "ib", "cat" => "ibGib", "ibgib" => "ib#{@delim}gib", "js_id" => get_js_id()}
     ib_node = %{"id" => ib_node_ibgib, "name" => ib_node_ib, "cat" => "ib", "ibgib" => ib_node_ibgib, "js_id" => get_js_id(), "ib" => ib_node_ib, "gib" => ib_node_gib, "render" => get_render(ib_node_ibgib, ib_node_ib, ib_node_gib)}
 
-    nodes = [ib_gib_node, ib_node]
+    initial_nodes = [ib_gib_node, ib_node]
 
-    links = []
+    initial_links = []
 
     _ = Logger.debug "info[:rel8ns]: #{inspect info[:rel8ns]}"
     {nodes, links} =
       Enum.reduce(info[:rel8ns],
-                  {nodes, links},
+                  {initial_nodes, initial_links},
                   fn({rel8n, rel8n_ibgibs}, {acc_nodes, acc_links}) ->
 
         # First get the node representing the rel8n itself.
@@ -1386,18 +1386,9 @@ defmodule WebGib.IbGibController do
   # Query
   # ----------------------------------------------------------------------------
 
-  defpat query_form_data_(
-    search_text_() =
-    ib_is_?() =
-    ib_has_?() =
-    data_has_?() =
-    tag_is_?() =
-    tag_has_?() =
-    src_ib_gib_()
-  )
-
+  
   def query(conn, %{
-                     "query_form_data" => query_form_data_(...) = query_params
+                    "query_form_data" => query_params_(...) = query_params
                     } = _params) do
     Logger.metadata(x: :query)
     _ = Logger.debug "conn: #{inspect conn}"
@@ -1406,7 +1397,7 @@ defmodule WebGib.IbGibController do
        validate(:ib_gib, src_ib_gib) do
       _ = Logger.debug "query is valid. query_params: #{inspect query_params}"
 
-      case query_impl(conn, src_ib_gib, query_params) do
+      case query_impl(conn, query_params) do
         {:ok, query_result_ib_gib} ->
           conn
           |> redirect(to: "/ibgib/#{query_result_ib_gib}")
@@ -1430,14 +1421,46 @@ defmodule WebGib.IbGibController do
       |> redirect(to: "/ibgib/#{redirect_ib_gib}")
     end
   end
+  def query(conn, %{"query_form_data" => query_params} = params) do
+    explicit_query_params = 
+      query_params
+      |> fill_in_query_params("search_text", :non_bool)
+      |> fill_in_query_params("ib_is", :bool)
+      |> fill_in_query_params("ib_has", :bool)
+      |> fill_in_query_params("data_has", :bool)
+      |> fill_in_query_params("tag_is", :bool)
+      |> fill_in_query_params("tag_has", :bool)
+      |> fill_in_query_params("include_pic", :bool)
+      |> fill_in_query_params("include_comment", :bool)
+      |> fill_in_query_params("include_dna", :bool)
+      |> fill_in_query_params("include_query", :bool)
+      |> fill_in_query_params("include_tag", :bool)
+      |> fill_in_query_params("latest", :bool)
+      
+    query(conn, Map.put(params, "query_form_data", explicit_query_params))
+  end
+  
+  # I'm pattern matching against the entire explicit query_params structure,
+  # so this adds new entries for entries that weren't explicitly passed in,
+  # and it changes given bool entries to an actual boolean value
+  # I'm basically kluging it to fit the expat, but ah well.
+  defp fill_in_query_params(query_params, param_name, :bool) do
+    value = query_params[param_name] != nil
+    Logger.debug("fill in. param_name: #{param_name}. new val: #{value}")
+    Map.put(query_params, param_name, value)
+  end
+  defp fill_in_query_params(query_params, param_name, :non_bool) do
+    value = query_params[param_name] || ""
+    Logger.debug("fill in. param_name: #{param_name}. new val: #{value}")
+    Map.put(query_params, param_name, value)
+  end
 
   # I don't want to see the lint message for this right now. I'm aware that
   # the signature is just growing. But it's more concise than destructuring
   # the incoming params map.
   # @lint false
   # defp query_impl(conn, src_ib_gib, search_ib, ib_query_type, latest, search_data) do
-  defp query_impl(conn, src_ib_gib, query_params) do
-
+  defp query_impl(conn, query_params_(...) = query_params) do
     _ = Logger.debug "src_ib_gib: #{src_ib_gib}\nquery_params: #{inspect query_params}"
 
     with(
@@ -1465,98 +1488,247 @@ defmodule WebGib.IbGibController do
     end
   end
 
-  defp build_query_opts(identity_ib_gibs, query_params)
-    when is_list(identity_ib_gibs) and
-         length(identity_ib_gibs) > 1 do
 
+  defp add_identity_clause(query_opts = nil, _query_identities) do
+    query_opts # nil
+  end
+  defp add_identity_clause(query_opts, query_identities) do
+    query_opts 
+    |> where_rel8ns("identity", "withany", "ibgib", query_identities)
+  end
+
+  defp do_query_or_union(_query_opts = nil) do
+    do_query()
+  end
+  defp do_query_or_union(query_opts) do
+    query_opts |> union()
+  end
+
+  defp get_query_identities(identity_ib_gibs) do
+    # All queries (currently) look only within the current user's identities.
     # We're searching only for the user's ibgib, and we're going to do a
     # "withany" query. If we kept in the root, then it would return everything
     # since everybody has the root in its identity_ib_gibs. 
     # We also don't want any node identities in the query. We're looking only
     # for session and email identities.
-    query_identities = 
-      identity_ib_gibs
-      |> Enum.filter(&(&1 != @root_ib_gib))
-      |> Enum.filter(fn(identity_ib_gib) -> 
-           {ib, _gib} = separate_ib_gib!(identity_ib_gib)
-           [type, _hash] = String.split(ib, "_")
-           type !== "node" 
-         end)
+    identity_ib_gibs
+    |> Enum.filter(&(&1 != @root_ib_gib))
+    |> Enum.filter(fn(identity_ib_gib) -> 
+         {ib, _gib} = separate_ib_gib!(identity_ib_gib)
+         [type, _hash] = String.split(ib, "_")
+         type !== "node" 
+       end)
+  end
 
+  defp add_ib_query_if_needed(query_opts, 
+                              query_identities, 
+                              query_params_(...) = query_params) do
+    _ = Logger.debug("query_opts: #{inspect query_opts}\nib_is?: #{ib_is?}\nib_has?: #{ib_has?}\nsearch_text: #{search_text}" |> ExChalk.bg_green |> ExChalk.black)
+                          
+    if (ib_is? or ib_has?) and 
+       !is_nil(search_text) and 
+       String.length(search_text) > 0 do
+      query_opts
+      |> do_query_or_union()
+      |> add_ib_clause(query_params)
+      |> add_identity_clause(query_identities)
+      |> add_exclude_clauses(query_params)
+      |> add_latest_clause(query_params)
+    else
+      query_opts
+    end
+  end
+
+  defp add_ib_clause(query_opts, 
+                     query_params_(
+                      search_text: search_text, 
+                      ib_is?: true, 
+                      ib_has?: false
+                    ) = _query_params) do
+    query_opts 
+    |> where_ib("is", search_text)
+  end
+  defp add_ib_clause(query_opts, 
+                     query_params_(
+                       search_text: search_text, 
+                       ib_has?: true
+                     ) = _query_params) do
+    query_opts 
+    |> where_ib("like", search_text)
+  end
+  defp add_ib_clause(query_opts, _query_params) do
+    query_opts
+  end
+  
+  defp add_exclude_clauses(query_opts, 
+                           query_params_(...) = query_params) do
+    query_opts
+    |> add_exclude_ancestor_clause(include_pic?, 
+                                   ["pic#{@delim}gib"])
+    |> add_exclude_ancestor_clause(include_comment?,
+                                   ["comment#{@delim}gib"])
+    |> add_exclude_ancestor_clause(include_query?,
+                                   ["query#{@delim}gib",
+                                    "query_result#{@delim}gib"])
+    |> add_exclude_ancestor_clause(include_dna?, 
+                                   ["plan#{@delim}gib",
+                                    "fork#{@delim}gib",
+                                    "mut8#{@delim}gib",
+                                    "rel8#{@delim}gib"])
+    |> add_exclude_ancestor_clause(include_tag?, 
+                                   ["tag#{@delim}gib"])
+                                            
+    # # include rel8ns
+    # # We're going to check if the types are any of these by checking for the
+    # # relevant ancestors.
+    # include_pic = query_params["include_pic"] != nil
+    # include_comment = query_params["include_comment"] != nil
+    # include_query = query_params["include_query"] != nil
+    # include_dna = query_params["include_dna"] != nil
+    # 
+    # # Build up list of what we're including
+    # include_rel8n_ibgibs =
+    #   []
+    #   |> add_rel8n_ibgibs(include_pic, ["pic#{@delim}gib"])
+    #   |> add_rel8n_ibgibs(include_comment, ["comment#{@delim}gib"])
+    #   |> add_rel8n_ibgibs(include_query, ["query#{@delim}gib"])
+    #   |> add_rel8n_ibgibs(include_dna,
+    #                       ["plan#{@delim}gib",
+    #                        "fork#{@delim}gib",
+    #                        "mut8#{@delim}gib",
+    #                        "rel8#{@delim}gib"])
+    # 
+    # _ = Logger.debug("include_rel8n_ibgibs: #{inspect include_rel8n_ibgibs}" |> ExChalk.bg_green |> ExChalk.black)
+    # query_opts =
+    #   if length(include_rel8n_ibgibs) > 0 do
+    #     query_opts
+    #     |> where_rel8ns("ancestor", "withany", "ibgib", include_rel8n_ibgibs)
+    #   else
+    #     query_opts
+    #   end
+  end
+  
+  # If include? true, then return query_opts. If false, exclude them.
+  defp add_exclude_ancestor_clause(query_opts, _include? = true, ib_gibs) do
+    query_opts
+  end
+  defp add_exclude_ancestor_clause(query_opts, _include? = false, ib_gibs) do
+    # I don't have "withoutany" implemented for rel8n, so adding multiple 
+    # "without" clauses to exclude each ib_gib.
+    ib_gibs 
+    |> Enum.reduce(query_opts, fn(ib_gib, acc) -> 
+         acc |> where_rel8ns("ancestor", "without", "ibgib", ib_gib)
+       end)
+  end
+
+  defp add_data_query_if_needed(query_opts, 
+                                query_identities, 
+                                query_params_(...) = query_params) do
+    _ = Logger.debug("query_opts: #{inspect query_opts}\ndata_has?: #{data_has?}\nsearch_text: #{search_text}" |> ExChalk.bg_green |> ExChalk.black)
+                          
+    if data_has? and 
+       !is_nil(search_text) and 
+       String.length(search_text) > 0 do
+      query_opts
+      |> do_query_or_union()
+      |> add_data_clause(query_params)
+      |> add_identity_clause(query_identities)
+      |> add_exclude_clauses(query_params)
+      |> add_latest_clause(query_params)
+    else
+      query_opts
+    end
+  end
+  
+  defp add_data_clause(query_opts, 
+                       query_params_(
+                         search_text: search_text, 
+                         data_has?: true 
+                       ) = _query_params) do
+    query_opts 
+    |> where_data("value", "like", search_text)
+  end
+  defp add_data_clause(query_opts, _query_identities, _query_params) do
+    query_opts
+  end
+
+  defp add_tag_query_if_needed(query_opts, 
+                               query_identities, 
+                               query_params_(...) = query_params) do
+    _ = Logger.debug("query_opts: #{inspect query_opts}\ndata_has?: #{data_has?}\nsearch_text: #{search_text}" |> ExChalk.bg_green |> ExChalk.black)
+                          
+    if (tag_is? or tag_has?) and 
+       !is_nil(search_text) and 
+       String.length(search_text) > 0 do
+      query_opts
+      |> do_query_or_union()
+      |> add_tag_clause(query_params)
+      |> add_identity_clause(query_identities)
+      |> add_exclude_clauses(query_params)
+      |> add_latest_clause(query_params)
+    else
+      query_opts
+    end
+  end
+
+  defp add_tag_clause(query_opts, 
+                      query_params_(
+                        search_text: search_text, 
+                        tag_is?: true, 
+                        tag_has?: false
+                      ) = _query_params) do
+    # Each tag's ib is in the form of "tag keyword1 keyword2 ..."
+    # e.g. "tag bookmark", "tag flagged copyright", and so on.
+    query_opts 
+    |> where_rel8ns("tag", "with", "ib", "tag #{search_text}")
+  end
+  defp add_tag_clause(query_opts, 
+                      query_params_(
+                        search_text: search_text, 
+                        tag_has?: true
+                      ) = _query_params) do
+    query_opts 
+    # |> where_tag("like", search_text)
+  end
+  defp add_tag_clause(query_opts, _query_params) do
+    query_opts
+  end
+
+  defp add_latest_clause(query_opts, 
+                         query_params_(
+                           latest?: true
+                         ) = _query_params) do
+    query_opts 
+    |> most_recent_only()
+  end
+  defp add_latest_clause(query_opts, _query_params) do
+    query_opts
+  end
+  
+  defp build_query_opts(identity_ib_gibs, query_params_(...) = query_params)
+    when is_list(identity_ib_gibs) and
+         length(identity_ib_gibs) > 1 do
+
+    query_identities = get_query_identities(identity_ib_gibs)
+    
     _ = Logger.debug("query_identities: #{inspect query_identities}" |> ExChalk.bg_green |> ExChalk.black)
 
-    # All queries (currently) look only within the current user's identities.
-    query_opts =
-      do_query()
-      |> where_rel8ns("identity", "withany", "ibgib", query_identities)
+    if ib_is? or ib_has? or data_has? or tag_is? or tag_has? do
+      query_opts = nil
 
-    _ = Logger.debug("query_opts: #{inspect query_opts}" |> ExChalk.bg_green |> ExChalk.black)
-
-    # Add ib_search if given
-    search_ib = query_params["search_ib"]
-    query_opts =
-      if search_ib != nil and String.length(search_ib) > 0 do
-        ib_search_method =
-          case query_params["ib_query_type"] do
-            "is" -> "is"
-            "has" -> "like"
-          end
-
-        query_opts |> where_ib(ib_search_method, search_ib)
-      else
+      # ib_is?
+      query_opts = 
         query_opts
-      end
+        |> add_ib_query_if_needed(query_identities, query_params)
+        |> add_data_query_if_needed(query_identities, query_params)
+        |> add_tag_query_if_needed(query_identities, query_params)
 
-    # Add search_data if given
-    search_data = query_params["search_data"]
-    query_opts =
-      if search_data != nil and String.length(search_data) > 0 do
-        query_opts |> where_data("value", "like", search_data)
-      else
-        query_opts
-      end
+      _ = Logger.debug("query_opts: #{inspect query_opts}" |> ExChalk.bg_green |> ExChalk.black)
 
-    # Add latest if given
-    latest = query_params["latest"] != nil
-    query_opts =
-      if latest do
-        query_opts |> most_recent_only()
-      else
-        query_opts
-      end
-
-    # include rel8ns
-    # We're going to check if the types are any of these by checking for the
-    # relevant ancestors.
-    include_pic = query_params["include_pic"] != nil
-    include_comment = query_params["include_comment"] != nil
-    include_query = query_params["include_query"] != nil
-    include_dna = query_params["include_dna"] != nil
-
-    # Build up list of what we're including
-    include_rel8n_ibgibs =
-      []
-      |> add_rel8n_ibgibs(include_pic, ["pic#{@delim}gib"])
-      |> add_rel8n_ibgibs(include_comment, ["comment#{@delim}gib"])
-      |> add_rel8n_ibgibs(include_query, ["query#{@delim}gib"])
-      |> add_rel8n_ibgibs(include_dna,
-                          ["plan#{@delim}gib",
-                           "fork#{@delim}gib",
-                           "mut8#{@delim}gib",
-                           "rel8#{@delim}gib"])
-
-    _ = Logger.debug("include_rel8n_ibgibs: #{inspect include_rel8n_ibgibs}" |> ExChalk.bg_green |> ExChalk.black)
-    query_opts =
-      if length(include_rel8n_ibgibs) > 0 do
-        query_opts
-        |> where_rel8ns("ancestor", "withany", "ibgib", include_rel8n_ibgibs)
-      else
-        query_opts
-      end
-
-    _ = Logger.debug("query_opts: #{inspect query_opts}" |> ExChalk.bg_green |> ExChalk.black)
-
-    {:ok, query_opts}
+      {:ok, query_opts}
+    else 
+      {:error, "No query target is selected. You must choose to search at least one: ib is, ib has, data has, tag is, tag has."}
+    end
   end
   defp build_query_opts(identity_ib_gibs, query_params) do
     invalid_args([identity_ib_gibs, query_params])

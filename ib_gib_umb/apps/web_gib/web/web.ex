@@ -34,8 +34,7 @@ defmodule WebGib.Web do
       use Phoenix.Controller
 
       alias WebGib.Data.Repo
-      import WebGib.Router.Helpers
-      import WebGib.Gettext
+      import WebGib.{Gettext, Router.Helpers}
       import IbGib.{Helper, Macros}
       use IbGib.Constants, :ib_gib
       use IbGib.Constants, :error_msgs
@@ -56,9 +55,7 @@ defmodule WebGib.Web do
       use Marker
       use WebGib.MarkerElements
 
-      import WebGib.Router.Helpers
-      import WebGib.ErrorHelpers
-      import WebGib.Gettext
+      import WebGib.{ErrorHelpers, Gettext, Router.Helpers}
     end
   end
 
