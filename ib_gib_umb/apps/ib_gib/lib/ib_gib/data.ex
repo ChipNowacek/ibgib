@@ -311,7 +311,7 @@ defmodule IbGib.Data do
 
         {"with", "ib"} ->
           _ = Logger.debug "with ib. where: #{where}. search_term: #{search_term}"
-          # regex = ""
+          # regex ^[^^]+ means from the start of the ib^gib up until the ^ delim
           query
           |> where(fragment("? IN (SELECT substring( jsonb_array_elements_text(rel8ns -> ?) FROM '^[^^]+'))", ^search_term, ^where))
 
