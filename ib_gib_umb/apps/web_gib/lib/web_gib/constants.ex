@@ -5,6 +5,23 @@ defmodule WebGib.Constants do
   for consuming the constants in a module.
   """
 
+  def tags do
+    quote do
+      @ib_tag_presets [
+        %{name: "home", glyph: "home"},
+        %{name: "bookmark", glyph: "bookmark"},
+        %{name: "star", glyph: "star"},
+        %{name: "question", glyph: "question-sign"},
+        %{name: "heart", glyph: "heart"},
+        %{name: "thumbsup", glyph: "thumbs-up"},
+        %{name: "inbox", glyph: "inbox"},
+        %{name: "check", glyph: "ok"},
+        %{name: "x", glyph: "remove"},
+        %{name: "important", glyph: "exclamation-sign"},
+      ]
+    end
+  end
+
   def keys do
     quote do
       # I'm prepending ib to differentiate from any other possible name
@@ -61,7 +78,7 @@ defmodule WebGib.Constants do
       @query_cache_expiry_ms 60_000
     end
   end
-
+  
   def error_msgs do
     quote do
       @emsg_invalid_dest_ib "Only letters, numbers, spaces, dashes, underscores are allowed for the destination ib. Just hit the back button to return."

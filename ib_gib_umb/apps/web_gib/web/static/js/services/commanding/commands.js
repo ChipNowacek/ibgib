@@ -875,9 +875,77 @@ export class TagDetailsCommand extends FormDetailsCommandBase {
       t.detailsView.commentAutocompleteInitialized = true;
     }
 
-    $("#tag_form_data_text").val("").focus();
+    if (!ibHelper.isMobile()) {
+      $("#tag_form_data_text").val("").focus();
+    }
+    
+    t.initButtons();
   }
 
+  
+  
+  initButtons() {
+    const presets = [
+      {
+        name: "home",
+        text: "home",
+        icons: ":house:"
+      },
+      {
+        name: "bookmark",
+        text: "bookmark",
+        icons: ":bookmark:"
+      },
+      {
+        name: "star",
+        text: "star",
+        icons: ":star:"
+      },
+      {
+        name: "question",
+        text: "question",
+        icons: ":question:"
+      },
+      {
+        name: "heart",
+        text: "heart",
+        icons: ":heart:"
+      },
+      {
+        name: "thumbsup",
+        text: "thumbsup",
+        icons: ":+1:"
+      },
+      {
+        name: "inbox",
+        text: "inbox",
+        icons: ":inbox_tray:"
+      },
+      {
+        name: "check",
+        text: "check",
+        icons: ":white_check_mark:"
+      },
+      {
+        name: "x",
+        text: "x",
+        icons: ":x:"
+      },
+      {
+        name: "important",
+        text: "important",
+        icons: ":exclamation:"
+      },
+    ]
+    presets.forEach(preset => {
+      $(`#ib-details-tag-btn-preset-${preset.name}`)
+        .unbind("click")
+        .on("click", () => {
+          $('#tag_form_data_text').val(preset.text);
+          $('#tag_form_data_icons_text').val(preset.icons);
+        })
+    })
+  }
   /** Currently just trims whitespace of tag. */
   sanitizeFormFields() {
     let tagText = $("#tag_form_data_text").val();

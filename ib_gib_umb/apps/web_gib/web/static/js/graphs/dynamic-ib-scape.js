@@ -71,8 +71,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         defBorderStrokeWidth: "2px",
         label: {
           fontFamily: "Times New Roman",
-          fontStroke: "blue",
-          fontFill: "darkgreen",
+          fontStroke: "#550885",
+          fontFill: "#60DDE6",
           fontSize: "25px",
           fontOffset: 8
         },
@@ -1274,6 +1274,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
       t.contextNode = t.addVirtualNode(srcId, srcType, t.contextIbGib, /*srcNode*/ null, srcShape, autoZap, fadeTimeoutMs, /*cmd*/ null, /*title*/ null, /*label*/ null, /*startPos*/ {x: t.rootNode.x, y: t.rootNode.y}, /*isAdjunct*/ false);
       t.contextNode.isContext = true;
+      setTimeout(() => {
+        t.pin(t.contextNode);
+      }, 200)
 
       t.syncContextChildren();
     } else {

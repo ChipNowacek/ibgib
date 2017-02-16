@@ -43,8 +43,8 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
         defBorderStrokeWidth: "2px",
         label: {
           fontFamily: "FontAwesome",
-          fontStroke: "#4F0945",
-          fontFill: "#701362",
+          fontStroke: "#1F8A91",
+          fontFill: "#0AD5F0",
           fontSize: "26px",
           fontOffset: 10
         },
