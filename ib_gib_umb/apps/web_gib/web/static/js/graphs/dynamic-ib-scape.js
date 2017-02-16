@@ -1721,13 +1721,15 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           });
         } else {
           // Refresh children ibGibs.
-          let ibGibsToRefresh = rel8dIbGibs.concat([rel8nSrc.ibGib]);
-          t.backgroundRefresher.enqueue(ibGibsToRefresh);
+          if (rel8nSrc.ibGibJson.ib !== "query_result") {
+            let ibGibsToRefresh = rel8dIbGibs.concat([rel8nSrc.ibGib]);
+            t.backgroundRefresher.enqueue(ibGibsToRefresh);
 
-          // Sync adjuncts, passing callback.
-          t.syncAdjuncts(rel8nNode.rel8nSrc.tempJuncIbGib, () => {
-            if (callback) { callback(); }
-          });
+            // Sync adjuncts, passing callback.
+            t.syncAdjuncts(rel8nNode.rel8nSrc.tempJuncIbGib, () => {
+              if (callback) { callback(); }
+            });
+          }
         }
       }
     }
@@ -2014,6 +2016,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           return d.ibGibJson.data.label;
         } else if (d.ibGib === "ib^gib") {
           return d3RootUnicodeChar;
+        } else if (d.ibGibJson.ib === "query_result") {
+          return  `\uf1c0 ${ibHelper.getDataQueryResultCount(d.ibGibJson)} result(s)`;
         } else {
           return d.ibGibJson.ib;
         }

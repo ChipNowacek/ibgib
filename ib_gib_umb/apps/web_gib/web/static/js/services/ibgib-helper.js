@@ -57,6 +57,16 @@ export function getDataText(ibGibJson) {
       null;
 }
 
+/** 
+ * For safe access to ibGibJson.data.text.
+ * ATOW 2/13/
+ */
+export function getDataQueryResultCount(ibGibJson) {
+  return (ibGibJson && ibGibJson.ib === "query_result" && ibGibJson.data && ibGibJson.data.result_count) ?
+      ibGibJson.data.result_count :
+      -1;
+}
+
 export function getTagIconsText(ibGibJson) {
   return (ibGibJson && ibGibJson.data && ibGibJson.data.icons) ?
       ibGibJson.data.icons :

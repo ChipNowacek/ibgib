@@ -21,22 +21,26 @@ defmodule WebGib.Web.Components.Details.Query do
   # e.g. ib, keywords, tags, data segment (like comment text or date), etc.
   component :search_what do
     fieldset [class: "ib-details-fieldset"] do
-      legend [class: "ib-details-legend"], do: "🔍"
+      legend [class: "ib-details-legend"] do
+        "🔍"
+        span [class: "ib-tooltip"] do
+          span [class: "ib-center-glyph glyphicon glyphicon-question-sign ib-green"]
+          span [class: "ib-tooltiptext"], do: gettext("Type in what you want to search for. You can type in partial/whole text for an ib, comment text, a date like '2017' or '%2017%02%14%'.")
+        end
+      end
       div class: "container" do
         
         # text row
         div class: "row" do
-          div class: "col-sm-12" do
+          div class: "col-xs-10" do
             input [id: "query_form_data_search_text",
                    name: "query_form_data[search_text]",
                    type: "text",
                    maxlength: max_query_data_text_size(),
                    required: true,
                    value: ""]
-            span [class: "ib-tooltip"] do
-              span [class: "ib-center-glyph glyphicon glyphicon-question-sign ib-green"]
-              span [class: "ib-tooltiptext-smallfont"], do: gettext("Type in what you want to search for. You can type in partial/whole text for an ib, comment text, a date like '2017' or '%2017%02%14%'.")
-            end
+          end
+          div class: "col-xs-2" do
           end
         end
         
@@ -51,8 +55,8 @@ defmodule WebGib.Web.Components.Details.Query do
       legend [class: "ib-details-legend"], do: "how"
       div class: "container" do
         div class: "row" do
-          div class: "col-sm-12" do
-            
+
+          div class: "col-xs-10 col-sm-2 col-md-2 col-lg-2" do
             # ib is
             input [id: "query_form_data_ib_is",
                    name: "query_form_data[ib_is]",
@@ -61,6 +65,9 @@ defmodule WebGib.Web.Components.Details.Query do
             label [class: "ib-details-label", for: "query_form_data_ib_is"] do
               "ib is"
             end
+          end
+
+          div class: "col-xs-10 col-sm-2 col-md-2 col-lg-2" do
             # ib has
             input [id: "query_form_data_ib_has",
                    name: "query_form_data[ib_has]",
@@ -70,7 +77,9 @@ defmodule WebGib.Web.Components.Details.Query do
             label [class: "ib-details-label", for: "query_form_data_ib_has"] do
               "ib has"
             end
+          end
 
+          div class: "col-xs-10 col-sm-2 col-md-2 col-lg-2" do
             # data has
             input [id: "query_form_data_data_has",
                    name: "query_form_data[data_has]",
@@ -80,15 +89,23 @@ defmodule WebGib.Web.Components.Details.Query do
             label [class: "ib-details-label", for: "query_form_data_data_has"] do
               "data has"
             end
+          end
 
+          div class: "col-xs-10 col-sm-2 col-md-2 col-lg-2" do
             # tag is
             input [id: "query_form_data_tag_is",
                    name: "query_form_data[tag_is]",
                    type: "checkbox",
-                   value: "tag_is"]
+                   value: "tag_is",
+                   checked: ""]
             label [class: "ib-details-label", for: "query_form_data_ib_is"] do
               "tag is"
             end
+          end
+          
+          div class: "col-xs-10 col-sm-2 col-md-2 col-lg-2 ib-hidden" do
+            
+          end
             # # tag has
             # input [id: "query_form_data_tag_has",
             #        name: "query_form_data[tag_has]",
@@ -99,7 +116,6 @@ defmodule WebGib.Web.Components.Details.Query do
             #   "tag has"
             # end
 
-          end
         end
       end
     end
@@ -113,7 +129,9 @@ defmodule WebGib.Web.Components.Details.Query do
 
       div class: "container" do
         div class: "row" do
-          div class: "col-sm-12" do
+          
+          
+          div class: "col-xs-10 col-sm-2 col-md-2 col-lg-2" do
             # pic
             input [id: "query_form_data_include_pic",
                    name: "query_form_data[include_pic]",
@@ -123,7 +141,9 @@ defmodule WebGib.Web.Components.Details.Query do
             label [class: "ib-details-label", for: "query_form_data_include_pic"] do
               "pic"
             end
-
+          end
+          
+          div class: "col-xs-10 col-sm-2 col-md-2 col-lg-2" do
             # comment
             input [id: "query_form_data_include_comment",
                    name: "query_form_data[include_comment]",
@@ -133,7 +153,9 @@ defmodule WebGib.Web.Components.Details.Query do
             label [class: "ib-details-label", for: "query_form_data_include_comment"] do
               "comment"
             end
+          end
 
+          div class: "col-xs-10 col-sm-2 col-md-2 col-lg-2" do
             # dna
             input [id: "query_form_data_include_dna",
                    name: "query_form_data[include_dna]",
@@ -142,7 +164,9 @@ defmodule WebGib.Web.Components.Details.Query do
             label [class: "ib-details-label", for: "query_form_data_include_dna"] do
               "dna"
             end
-
+          end
+          
+          div class: "col-xs-10 col-sm-2 col-md-2 col-lg-2" do
             # query
             input [id: "query_form_data_include_query",
                    name: "query_form_data[include_query]",
@@ -151,7 +175,9 @@ defmodule WebGib.Web.Components.Details.Query do
             label [class: "ib-details-label", for: "query_form_data_include_query"] do
               "query"
             end
+          end
             
+          div class: "col-xs-10 col-sm-2 col-md-2 col-lg-2" do
             # tag
             input [id: "query_form_data_include_tag",
                    name: "query_form_data[include_tag]",
@@ -160,8 +186,8 @@ defmodule WebGib.Web.Components.Details.Query do
             label [class: "ib-details-label", for: "query_form_data_include_tag"] do
               "tag"
             end
-
           end
+
         end
       end
     end

@@ -886,56 +886,16 @@ export class TagDetailsCommand extends FormDetailsCommandBase {
   
   initButtons() {
     const presets = [
-      {
-        name: "home",
-        text: "home",
-        icons: ":house:"
-      },
-      {
-        name: "bookmark",
-        text: "bookmark",
-        icons: ":bookmark:"
-      },
-      {
-        name: "star",
-        text: "star",
-        icons: ":star:"
-      },
-      {
-        name: "question",
-        text: "question",
-        icons: ":question:"
-      },
-      {
-        name: "heart",
-        text: "heart",
-        icons: ":heart:"
-      },
-      {
-        name: "thumbsup",
-        text: "thumbsup",
-        icons: ":+1:"
-      },
-      {
-        name: "inbox",
-        text: "inbox",
-        icons: ":inbox_tray:"
-      },
-      {
-        name: "check",
-        text: "check",
-        icons: ":white_check_mark:"
-      },
-      {
-        name: "x",
-        text: "x",
-        icons: ":x:"
-      },
-      {
-        name: "important",
-        text: "important",
-        icons: ":exclamation:"
-      },
+      { name: "home", text: "home", icons: ":house:" },
+      { name: "bookmark", text: "bookmark", icons: ":bookmark:" },
+      { name: "star", text: "star", icons: ":star:" },
+      { name: "thumbsup", text: "thumbsup", icons: ":+1:" },
+      { name: "question", text: "question", icons: ":question:" },
+      { name: "answered", text: "answered", icons: ":white_check_mark:" },
+      { name: "heart", text: "heart", icons: ":heart:" },
+      { name: "inbox", text: "inbox", icons: ":inbox_tray:" },
+      { name: "x", text: "x", icons: ":x:" },
+      { name: "important", text: "important", icons: ":exclamation:" },
     ]
     presets.forEach(preset => {
       $(`#ib-details-tag-btn-preset-${preset.name}`)
