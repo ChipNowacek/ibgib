@@ -130,6 +130,7 @@ defmodule WebGib.Bus.Commanding.Tag do
   # "tag flagged copyright", "tag highlight", "tag todo-yo", etc.
   defp create_tag(identity_ib_gibs, latest_src, tag_gib, tag_text, tag_icons_text) do
     with(
+      tag_text <- tag_text |> String.downcase,
       {:ok, tag} <-
         tag_gib |> instance(identity_ib_gibs, "tag #{tag_text}"),
       state <- %{
