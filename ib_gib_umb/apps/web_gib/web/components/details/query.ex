@@ -11,11 +11,13 @@ defmodule WebGib.Web.Components.Details.Query do
 
   use IbGib.Constants, :ib_gib
   use IbGib.Constants, :validation
+  use WebGib.Constants, :tags
   # Need to expose via function, because in the Marker component macro, the `@`
   # attempts to pull from assigns (not a module attribute).
   defp max_id_length, do: @max_id_length
   defp min_query_data_text_size, do: @min_query_data_text_size
   defp max_query_data_text_size, do: @max_query_data_text_size
+  defp ib_tag_presets, do: @ib_tag_presets
 
   # What to search for.
   # e.g. ib, keywords, tags, data segment (like comment text or date), etc.
@@ -96,16 +98,13 @@ defmodule WebGib.Web.Components.Details.Query do
             input [id: "query_form_data_tag_is",
                    name: "query_form_data[tag_is]",
                    type: "checkbox",
-                   value: "tag_is",
-                   checked: ""]
-            label [class: "ib-details-label", for: "query_form_data_ib_is"] do
+                   value: "tag_is"]
+            label [class: "ib-details-label", for: "query_form_data_tag_is"] do
               "tag is"
             end
           end
           
-          div class: "col-xs-10 col-sm-2 col-md-2 col-lg-2 ib-hidden" do
-            
-          end
+          
             # # tag has
             # input [id: "query_form_data_tag_has",
             #        name: "query_form_data[tag_has]",
@@ -117,6 +116,18 @@ defmodule WebGib.Web.Components.Details.Query do
             # end
 
         end
+        
+        div [id: "ib-details-query-btn-presets-div", class: "row container ib-width-100 ib-hidden"] do
+          ib_tag_presets()
+          |> Enum.map(fn(m) -> 
+             div class: "col-xs-6 col-sm-2 ib-details-tag-preset" do
+               button [id: "ib-details-query-btn-preset-#{m.name}", class: "ib-details-tag-btn-preset", type: "button"] do
+                 span [class: "ib-center-glyph glyphicon glyphicon-#{m.glyph} ib-green"]
+               end
+             end
+           end)
+        end
+        
       end
     end
   end
@@ -204,8 +215,7 @@ defmodule WebGib.Web.Components.Details.Query do
             input [id: "query_form_data_latest",
                    name: "query_form_data[latest]",
                    type: "checkbox",
-                   value: "latest",
-                   checked: ""]
+                   value: "latest"]
             label [class: "ib-details-label", for: "query_form_data_latest"] do
               "latest only"
             end

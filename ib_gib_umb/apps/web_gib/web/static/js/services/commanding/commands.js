@@ -464,7 +464,45 @@ export class QueryDetailsCommand extends DetailsCommandBase {
     d3.select("#query_form_data_src_ib_gib")
       .attr("value", t.d.ibGib);
 
-    $("#query_form_data_search_text").focus();
+    if (!ibHelper.isMobile()) {
+      $("#query_form_data_search_text").focus();
+    }
+    
+    t.initButtons();
+  }
+  
+  initButtons() {
+    const presets = [
+      { name: "home", text: "home", icons: ":house:" },
+      { name: "bookmark", text: "bookmark", icons: ":bookmark:" },
+      { name: "star", text: "star", icons: ":star:" },
+      { name: "thumbsup", text: "thumbsup", icons: ":+1:" },
+      { name: "question", text: "question", icons: ":question:" },
+      { name: "answered", text: "answered", icons: ":white_check_mark:" },
+      { name: "heart", text: "heart", icons: ":heart:" },
+      { name: "inbox", text: "inbox", icons: ":inbox_tray:" },
+      { name: "x", text: "x", icons: ":x:" },
+      { name: "important", text: "important", icons: ":exclamation:" },
+    ]
+    presets.forEach(preset => {
+      $(`#ib-details-query-btn-preset-${preset.name}`)
+        .unbind("click")
+        .on("click", () => {
+          console.log(`clicked`)
+          $('#query_form_data_search_text').val(preset.text);
+        })
+    })
+    
+    $(`#query_form_data_tag_is`)
+      .unbind("change")
+      .on("change", e => {
+        $(`#ib-details-query-btn-presets-div`).toggleClass("ib-hidden");
+        // if (e.currentTarget.checked) {
+        //   
+        // } else {
+        //   
+        // }
+      });
   }
 
   exec() {
@@ -882,8 +920,6 @@ export class TagDetailsCommand extends FormDetailsCommandBase {
     t.initButtons();
   }
 
-  
-  
   initButtons() {
     const presets = [
       { name: "home", text: "home", icons: ":house:" },
@@ -901,11 +937,13 @@ export class TagDetailsCommand extends FormDetailsCommandBase {
       $(`#ib-details-tag-btn-preset-${preset.name}`)
         .unbind("click")
         .on("click", () => {
+          console.log(`clicked`)
           $('#tag_form_data_text').val(preset.text);
           $('#tag_form_data_icons_text').val(preset.icons);
         })
     })
   }
+  
   /** Currently just trims whitespace of tag. */
   sanitizeFormFields() {
     let tagText = $("#tag_form_data_text").val();
