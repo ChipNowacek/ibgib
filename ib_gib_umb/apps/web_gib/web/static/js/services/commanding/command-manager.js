@@ -105,6 +105,7 @@ export class CommandManager {
     }
   }
 
+  /* rel8nAdd is deprecated, but I haven't felt like slogging through to remove. */
   getCommand_rel8nAdd(dIbGib) {
     let t = this;
     switch (dIbGib.rel8nName) {

@@ -191,6 +191,12 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
         }
       }
       
+      // if (ibHelper.isTag(d.ibGibJson)) {
+      //   if (ibAuthz.isAuthorizedForMut8OrRel8(d.ibGibJson, t.ibScape.currentIdentityIbGibs)) {
+      //     commands.push("untag"); // to be implemented
+      //   }
+      // }
+      
       if (t.ibScape.currentIdentityIbGibs.includes(d.ibGib) &&
           ibAuthz.isEmailIdentity(d.ibGibJson)) {
         commands.push("unidentemail");

@@ -15,6 +15,7 @@ import { huhText_Cmd_ExternalLink } from "./huh-texts/commands/external-link";
 import { huhText_Cmd_Query } from "./huh-texts/commands/query";
 import { huhText_Cmd_Mut8Comment } from "./huh-texts/commands/mut8-comment";
 import { huhText_Cmd_Goto } from "./huh-texts/commands/goto";
+import { huhText_Cmd_Tag } from "./huh-texts/commands/tag";
 
 
 var d3CircleRadius = 20;
@@ -81,6 +82,7 @@ let d3Colors = {
   "details": "#FFA91F",   // info, view
   "pos": "#1E990E", 
   "neg": "#DE4040",       // flag
+  "remove": "#FC2D95",    // untag, cut, trash
 };
 
 var d3BoringRel8ns = [
@@ -286,6 +288,16 @@ var d3MenuCommands = [
     "icon": "\uf02b",
     "description": "Tag an ibGib to make it easier for searching, organizing, and more.",
     "color": d3Colors["secondary"],
+    "huh": huhText_Cmd_Tag
+  },
+  {
+    "id": "menu-untag",
+    "name": "untag",
+    "text": "UnTag",
+    "icon": "\uf00d\uf02b",
+    "description": "Remove a tag from an ibGib.",
+    "color": d3Colors["remove"],
+    "huh": huhText_Cmd_Tag
   },
   // {
   //   "id": "menu-flag",

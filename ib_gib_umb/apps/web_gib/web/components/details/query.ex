@@ -104,7 +104,6 @@ defmodule WebGib.Web.Components.Details.Query do
             end
           end
           
-          
             # # tag has
             # input [id: "query_form_data_tag_has",
             #        name: "query_form_data[tag_has]",
@@ -250,67 +249,3 @@ defmodule WebGib.Web.Components.Details.Query do
   end
 
 end
-
-
-# component :ib_options do
-#   # ib options
-#   fieldset [class: "ib-details-fieldset"] do
-#     legend [class: "ib-details-legend"], do: "ib"
-#     div class: "container" do
-#       # is/has row
-#       div class: "row" do
-#         div class: "col-sm-2" do
-#           span do
-#             input [id: "query_form_data_ib_query_type_is",
-#                    name: "query_form_data[ib_query_type]",
-#                    type: "radio",
-#                    value: "is"]
-#             label "is", for: "query_form_data_ib_query_type_is"
-#           end
-#         end
-#         div class: "col-sm-2" do
-#           span do
-#             input [id: "query_form_data_ib_query_type_has",
-#                    name: "query_form_data[ib_query_type]",
-#                    type: "radio",
-#                    value: "has",
-#                    checked: ""]
-#             label "has", for: "query_form_data_ib_query_type_has"
-#           end
-#         end
-#       end
-#       # search_ib text row
-#       div class: "row" do
-#         div class: "col-sm-12" do
-#           input [id: "query_form_data_search_ib",
-#                  name: "query_form_data[search_ib]",
-#                  type: "text",
-#                  maxlength: max_id_length,
-#                  value: ""]
-#         end
-#       end
-#     end
-#   end
-# end
-# 
-# component :data_options do
-#   fieldset [class: "ib-details-fieldset"] do
-#     legend [class: "ib-details-legend"], do: "data"
-#     div class: "container" do
-#       # is/has row
-#       div class: "row" do
-#         div class: "col-sm-12" do
-#           label [class: "ib-details-label", for: "query_form_data_search_data"] do
-#             "has"
-#           end
-#           input [id: "query_form_data_search_data",
-#                  name: "query_form_data[search_data]",
-#                  type: "text",
-#                  pattern: ".{#{min_query_data_text_size},#{max_query_data_text_size}}",
-#                  title: "Please enter query data text with a maximum of #{max_query_data_text_size} characters.",
-#                  value: ""]
-#         end
-#       end
-#     end
-#   end
-# end

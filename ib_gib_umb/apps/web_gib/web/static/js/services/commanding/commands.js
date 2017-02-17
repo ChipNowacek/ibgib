@@ -497,11 +497,6 @@ export class QueryDetailsCommand extends DetailsCommandBase {
       .unbind("change")
       .on("change", e => {
         $(`#ib-details-query-btn-presets-div`).toggleClass("ib-hidden");
-        // if (e.currentTarget.checked) {
-        //   
-        // } else {
-        //   
-        // }
       });
   }
 
