@@ -12,8 +12,7 @@ defmodule WebGib.Bus.Commanding.Fork do
   
   alias WebGib.Adjunct
   alias WebGib.Bus.Channels.Event, as: EventChannel
-  import IbGib.Expression
-  import IbGib.Helper
+  import IbGib.{Expression, Helper}
   import WebGib.Bus.Commanding.Helper
   import WebGib.Patterns
   use IbGib.Constants, :ib_gib

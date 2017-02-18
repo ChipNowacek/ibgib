@@ -7,6 +7,10 @@ var md = require('markdown-it')({
 });
 var emoji = require('markdown-it-emoji');
 md.use(emoji);
+var twemoji = require('twemoji')
+md.renderer.rules.emoji = function(token, idx) {
+  return twemoji.parse(token[idx].content);
+};
 
 import * as ibHelper from '../ibgib-helper';
 import * as ibAuthz from '../ibgib-authz';
@@ -460,7 +464,40 @@ export class QueryDetailsCommand extends DetailsCommandBase {
     d3.select("#query_form_data_src_ib_gib")
       .attr("value", t.d.ibGib);
 
-    $("#query_form_data_search_ib").focus();
+    if (!ibHelper.isMobile()) {
+      $("#query_form_data_search_text").focus();
+    }
+    
+    t.initButtons();
+  }
+  
+  initButtons() {
+    const presets = [
+      { name: "home", text: "home", icons: ":house:" },
+      { name: "bookmark", text: "bookmark", icons: ":bookmark:" },
+      { name: "star", text: "star", icons: ":star:" },
+      { name: "thumbsup", text: "thumbsup", icons: ":+1:" },
+      { name: "question", text: "question", icons: ":question:" },
+      { name: "answered", text: "answered", icons: ":white_check_mark:" },
+      { name: "heart", text: "heart", icons: ":heart:" },
+      { name: "inbox", text: "inbox", icons: ":inbox_tray:" },
+      { name: "x", text: "x", icons: ":x:" },
+      { name: "important", text: "important", icons: ":exclamation:" },
+    ]
+    presets.forEach(preset => {
+      $(`#ib-details-query-btn-preset-${preset.name}`)
+        .unbind("click")
+        .on("click", () => {
+          console.log(`clicked`)
+          $('#query_form_data_search_text').val(preset.text);
+        })
+    })
+    
+    $(`#query_form_data_tag_is`)
+      .unbind("change")
+      .on("change", e => {
+        $(`#ib-details-query-btn-presets-div`).toggleClass("ib-hidden");
+      });
   }
 
   exec() {
@@ -559,6 +596,11 @@ export class CommentDetailsCommand extends FormDetailsCommandBase {
     d3.select("#comment_form_data_src_ib_gib")
       .attr("value", t.d.ibGib);
 
+    if (!t.detailsView.commentAutocompleteInitialized) {
+      ibHelper.initAutocomplete("comment_form_data_text");
+      t.detailsView.commentAutocompleteInitialized = true;
+    }
+    
     $("#comment_form_data_text").val("").focus();
   }
 
@@ -584,7 +626,7 @@ export class CommentDetailsCommand extends FormDetailsCommandBase {
 
       if (commentRel8nNode) {
         t.ibScape.zap(commentRel8nNode, () => {
-          t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ commentRel8nNode, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ d3RootUnicodeChar, /*startPos*/ {x: t.d.x, y: t.d.y});
+          t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ commentRel8nNode, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ d3RootUnicodeChar, /*startPos*/ {x: commentRel8nNode.x, y: commentRel8nNode.y});
           if (callback) { callback(); }
         });
       }
@@ -677,6 +719,12 @@ export class Mut8CommentDetailsCommand extends FormDetailsCommandBase {
 
     t.ibScape.ibGibProvider.getIbGibJson(t.d.ibGib, ibGibJson => {
       t.initialCommentText = ibHelper.getDataText(ibGibJson);
+      
+      if (!t.detailsView.commentAutocompleteInitialized) {
+        ibHelper.initAutocomplete("comment_form_data_text");
+        t.detailsView.commentAutocompleteInitialized = true;
+      }
+
       $("#comment_form_data_text")
         .val(t.initialCommentText)
         .attr("disabled", false)
@@ -833,6 +881,145 @@ export class LinkDetailsCommand extends FormDetailsCommandBase {
         // someone else's ibGib. So a link was created and was rel8d
         // to the src, but the src has not been inversely rel8d to the
         // link. So we'll remove the placeholder node and the
+        // :new_adjunct event will create a new node.
+
+        t.ibScape.remove(t.virtualNode);
+      }
+    } else {
+      console.error(`${typeof(t)}: Unknown msg response from channel.`);
+    }
+  }
+}
+
+export class TagDetailsCommand extends FormDetailsCommandBase {
+  constructor(ibScape, d) {
+    const cmdName = "tag";
+    super(cmdName, ibScape, d);
+  }
+
+  init() {
+    let t = this;
+
+    d3.select("#tag_form_data_src_ib_gib")
+      .attr("value", t.d.ibGib);
+
+    if (!t.detailsView.commentAutocompleteInitialized) {
+      ibHelper.initAutocomplete("tag_form_data_icons_text");
+      t.detailsView.commentAutocompleteInitialized = true;
+    }
+
+    if (!ibHelper.isMobile()) {
+      $("#tag_form_data_text").val("").focus();
+    }
+    
+    t.initButtons();
+  }
+
+  initButtons() {
+    const presets = [
+      { name: "home", text: "home", icons: ":house:" },
+      { name: "bookmark", text: "bookmark", icons: ":bookmark:" },
+      { name: "star", text: "star", icons: ":star:" },
+      { name: "thumbsup", text: "thumbsup", icons: ":+1:" },
+      { name: "question", text: "question", icons: ":question:" },
+      { name: "answered", text: "answered", icons: ":white_check_mark:" },
+      { name: "heart", text: "heart", icons: ":heart:" },
+      { name: "inbox", text: "inbox", icons: ":inbox_tray:" },
+      { name: "x", text: "x", icons: ":x:" },
+      { name: "important", text: "important", icons: ":exclamation:" },
+    ]
+    presets.forEach(preset => {
+      $(`#ib-details-tag-btn-preset-${preset.name}`)
+        .unbind("click")
+        .on("click", () => {
+          console.log(`clicked`)
+          $('#tag_form_data_text').val(preset.text);
+          $('#tag_form_data_icons_text').val(preset.icons);
+        })
+    })
+  }
+  
+  /** Currently just trims whitespace of tag. */
+  sanitizeFormFields() {
+    let tagText = $("#tag_form_data_text").val();
+    tagText = tagText.trim();
+    $("#tag_form_data_text").val(tagText);
+    
+    let tagIconsText = $("#tag_form_data_icons_text").val();
+    tagIconsText = tagIconsText.trim();
+    $("#tag_form_data_icons_text").val(tagIconsText);
+  }
+
+  addVirtualNode(callback) {
+    let t = this, lc = `Comment addVirtualNode`;
+    console.log(`${lc} start. t.d.type: ${t.d.type}`)
+
+    if (t.d.type === "ibGib") {
+      let rel8nNodes = t.ibScape.getChildren_Rel8ns(t.d).filter(rel8nNode => rel8nNode.rel8nName === "tag");
+
+      let tagRel8nNode = null;
+      if (rel8nNodes.length === 0) {
+        t.ibScape.addSpiffyRel8ns(t.d);
+        rel8nNodes = t.ibScape.getChildren_Rel8ns(t.d).filter(rel8nNode => rel8nNode.rel8nName === "tag");
+        if (rel8nNodes.length === 0) {
+          // still zero, so no pre-existing tag rel8ns. So add it anew.
+          tagRel8nNode = t.ibScape.addRel8nVirtualNode(t.d, "tag", /*fadeTimeoutMs*/ 0);
+          rel8nNodes = [tagRel8nNode];
+        }
+      }
+      
+      tagRel8nNode = rel8nNodes[0];
+
+      if (tagRel8nNode) {
+        t.ibScape.zap(tagRel8nNode, () => {
+          t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ tagRel8nNode, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ d3RootUnicodeChar, /*startPos*/ {x: tagRel8nNode.x, y: tagRel8nNode.y});
+          if (callback) { callback(); }
+        });
+      } else {
+        console.error(`Tried to tag, but no tagRel8nNode?`);
+      }
+    } else if (t.d.type === "rel8n") {
+      t.virtualNode = t.ibScape.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ t.cmdName + "_virtualnode", /*srcNode*/ t.d, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ d3RootUnicodeChar, /*startPos*/ {x: t.d.x, y: t.d.y});
+      if (callback) { callback(); }
+    } else {
+      console.error("Unknown t.d.type:", t.d.type);
+      if (callback) { callback(); }
+    }
+  }
+
+  getMessageData() {
+    let t = this;
+
+    return {
+      virtual_id: t.virtualNode.virtualId,
+      src_ib_gib: t.d.type === "rel8n" ? t.d.rel8nSrc.ibGib : t.d.ibGib,
+      tag_text: $("#tag_form_data_text").val(),
+      tag_icons_text: $("#tag_form_data_icons_text").val()
+    };
+  }
+
+  handleSubmitResponse(msg) {
+    let t = this;
+    console.log("new tag handle submit response");
+    if (msg && msg.data && msg.data.tag_ib_gib) {
+      if (msg.data.new_src_ib_gib) {
+        // Update the cache with the new src_ib_gib
+        console.log(`new tag. src tempJuncIbGib: ${t.d.tempJuncIbGib}. new: ${msg.data.new_src_ib_gib}`)
+        
+        // The src was directly taged on, so this user had authz to
+        // do it (it's the ibGib's owner). So set the tag ibGib and
+        // zap it.
+        // debugger;
+        let tagIbGib = msg.data.tag_ib_gib;
+        t.virtualNode.ibGib = tagIbGib;
+        t.ibScape.zap(t.virtualNode, () => {
+          t.ibScape.ibGibEventBus.broadcastIbGibUpdate_LocallyOnly(t.d.tempJuncIbGib, msg.data.new_src_ib_gib);
+        });
+      } else {
+        // The src was not updated, so this is a user taging on
+        // someone else's ibGib. So a tag was created and was rel8d
+        // to the src, but the src has not been inversely rel8d to the
+        // tag. So we'll remove the placeholder node and the
         // :new_adjunct event will create a new node.
 
         t.ibScape.remove(t.virtualNode);

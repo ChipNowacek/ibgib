@@ -1,6 +1,5 @@
 defmodule WebGib.Router do
-  use WebGib.Web, :router
-  # use Phoenix.Socket
+  use Phoenix.Router
 
   pipeline :browser do
     plug :accepts, ["html"]

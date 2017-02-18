@@ -50,7 +50,7 @@ defmodule IbGib.Mixfile do
       {:random_gib, in_umbrella: true},
       {:ok, "~> 1.2.1"},
       {:exchalk, "~> 1.0.1"},
-      {:credo, "~> 0.4", only: [:dev, :test]},
+      {:credo, "~> 0.6", only: [:dev, :test]},
       {:dialyxir, "~> 0.3.5", only: [:dev]}
     ]
   end

@@ -16,29 +16,15 @@ defmodule WebGib.Web do
   below.
   """
 
-  def model do
-    quote do
-      use Ecto.Schema
-
-      import Ecto
-      import Ecto.Changeset
-      import Ecto.Query
-    end
-  end
-
   def controller do
     quote do
-      import Ecto
-      import Ecto.Query
       require Logger
       use Phoenix.Controller
 
-      alias WebGib.Data.Repo
-      import WebGib.Router.Helpers
-      import WebGib.Gettext
       import IbGib.{Helper, Macros}
-      use IbGib.Constants, :ib_gib
+      import WebGib.{Gettext, Router.Helpers}
       use IbGib.Constants, :error_msgs
+      use IbGib.Constants, :ib_gib
       use WebGib.Constants, :error_msgs
       use WebGib.Constants, :keys
     end
@@ -56,26 +42,7 @@ defmodule WebGib.Web do
       use Marker
       use WebGib.MarkerElements
 
-      import WebGib.Router.Helpers
-      import WebGib.ErrorHelpers
-      import WebGib.Gettext
-    end
-  end
-
-  def router do
-    quote do
-      use Phoenix.Router
-    end
-  end
-
-  def channel do
-    quote do
-      use Phoenix.Channel
-
-      alias WebGib.Data.Repo
-      import Ecto
-      import Ecto.Query
-      import WebGib.Gettext
+      import WebGib.{ErrorHelpers, Gettext, Router.Helpers}
     end
   end
 

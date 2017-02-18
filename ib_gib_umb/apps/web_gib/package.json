@@ -14,12 +14,15 @@
     "d3-textwrap": "^2.0.0",
     "font-awesome": "^4.6.3",
     "glslify": "^5.1.0",
+    "jquery": "^1.11.2",
+    "jquery-textcomplete": "^1.8.0",
     "markdown-it": "^8.2.2",
     "markdown-it-emoji": "^1.3.0",
     "phoenix": "file:../../deps/phoenix",
     "phoenix-socket": "^1.1.3",
     "phoenix_html": "file:../../deps/phoenix_html",
-    "sass-brunch": "^2.6.3"
+    "sass-brunch": "^2.6.3",
+    "twemoji": "^2.2.5"
   },
   "devDependencies": {
     "babel-brunch": "~6.0.0",

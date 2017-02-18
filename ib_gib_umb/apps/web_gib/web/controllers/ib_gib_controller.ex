@@ -19,6 +19,7 @@ defmodule WebGib.IbGibController do
   alias WebGib.Adjunct
   alias WebGib.Bus.Channels.Event, as: EventChannel
   import IbGib.QueryOptionsFactory
+  import WebGib.Implementors.Query
   import WebGib.{Patterns, Validate}
 
   # ----------------------------------------------------------------------------
@@ -30,7 +31,6 @@ defmodule WebGib.IbGibController do
   # ----------------------------------------------------------------------------
   # Controller Commands
   # ----------------------------------------------------------------------------
-
 
 
   @doc """
@@ -307,14 +307,14 @@ defmodule WebGib.IbGibController do
     ib_gib_node = %{"id" => "ib#{@delim}gib", "name" => "ib", "cat" => "ibGib", "ibgib" => "ib#{@delim}gib", "js_id" => get_js_id()}
     ib_node = %{"id" => ib_node_ibgib, "name" => ib_node_ib, "cat" => "ib", "ibgib" => ib_node_ibgib, "js_id" => get_js_id(), "ib" => ib_node_ib, "gib" => ib_node_gib, "render" => get_render(ib_node_ibgib, ib_node_ib, ib_node_gib)}
 
-    nodes = [ib_gib_node, ib_node]
+    initial_nodes = [ib_gib_node, ib_node]
 
-    links = []
+    initial_links = []
 
     _ = Logger.debug "info[:rel8ns]: #{inspect info[:rel8ns]}"
     {nodes, links} =
       Enum.reduce(info[:rel8ns],
-                  {nodes, links},
+                  {initial_nodes, initial_links},
                   fn({rel8n, rel8n_ibgibs}, {acc_nodes, acc_links}) ->
 
         # First get the node representing the rel8n itself.
@@ -722,6 +722,28 @@ defmodule WebGib.IbGibController do
       conn
       |> send_resp(500, emsg)
     end
+  end
+
+  # User must be signed in with an email identity to upload pics.
+  defp authorize_upload(conn, _params) do
+    identity_ib_gibs = get_session(conn, @ib_identity_ib_gibs_key)
+    if has_email_identity?(identity_ib_gibs) do
+      conn
+    else
+      _ = Logger.info("User not authorized to upload pic.")
+      emsg = "You must be identified by at least one email account to upload. To identify yourself with an email address, click on the root ibGib (the green one that pops up when you click the background) and click the white \"Login\" button.\n\nFor a slightly outdated walkthru of this, see https://github.com/ibgib/ibgib/wiki/Identify-with-Email---Step-By-Step-Walkthru.\n\nAnd for more information on ibGib Identity, see https://github.com/ibgib/ibgib/wiki/Identity for more info."
+      conn
+      |> send_resp(403, emsg)
+      |> halt
+    end
+  end
+
+  defp has_email_identity?(identity_ib_gibs) when is_list(identity_ib_gibs) do
+    identity_ib_gibs
+    |> Enum.any?(&(String.starts_with?(&1, "email_")))
+  end
+  defp has_email_identity?(_identity_ib_gibs) do
+    false
   end
 
   defp pic_impl(conn, src_ib_gib, content_type, filename, path) do
@@ -1387,10 +1409,9 @@ defmodule WebGib.IbGibController do
   # Query
   # ----------------------------------------------------------------------------
 
-
+  
   def query(conn, %{
-                     "query_form_data" => %{
-                      "src_ib_gib" => src_ib_gib} = query_params
+                    "query_form_data" => query_params_(...) = query_params
                     } = _params) do
     Logger.metadata(x: :query)
     _ = Logger.debug "conn: #{inspect conn}"
@@ -1399,7 +1420,7 @@ defmodule WebGib.IbGibController do
        validate(:ib_gib, src_ib_gib) do
       _ = Logger.debug "query is valid. query_params: #{inspect query_params}"
 
-      case query_impl(conn, src_ib_gib, query_params) do
+      case query_impl(conn, query_params) do
         {:ok, query_result_ib_gib} ->
           conn
           |> redirect(to: "/ibgib/#{query_result_ib_gib}")
@@ -1423,167 +1444,38 @@ defmodule WebGib.IbGibController do
       |> redirect(to: "/ibgib/#{redirect_ib_gib}")
     end
   end
-
-  # I don't want to see the lint message for this right now. I'm aware that
-  # the signature is just growing. But it's more concise than destructuring
-  # the incoming params map.
-  # @lint false
-  # defp query_impl(conn, src_ib_gib, search_ib, ib_query_type, latest, search_data) do
-  defp query_impl(conn, src_ib_gib, query_params) do
-
-    _ = Logger.debug "src_ib_gib: #{src_ib_gib}\nquery_params: #{inspect query_params}"
-
-    with(
-      # Identities (need plug)
-      identity_ib_gibs <- conn |> get_session(@ib_identity_ib_gibs_key),
-
-      # We will query off of the given src
-      {:ok, src} <- IbGib.Expression.Supervisor.start_expression(src_ib_gib),
-
-      # Build the query options
-      {:ok, query_opts} <-
-        build_query_opts(identity_ib_gibs, query_params),
-
-      # Execute the query itself, which creates the query_result ib_gib
-      {:ok, query_result} <-
-        src |> Expression.query(identity_ib_gibs, query_opts),
-
-      # Return the query's ib^gib
-      {:ok, query_result_info} <- query_result |> Expression.get_info,
-      {:ok, query_result_ib_gib} <- get_ib_gib(query_result_info)
-    ) do
-      {:ok, query_result_ib_gib}
-    else
-      error -> default_handle_error(error)
-    end
+  def query(conn, %{"query_form_data" => query_params} = params) do
+    explicit_query_params = 
+      query_params
+      |> fill_in_query_params("search_text", :non_bool)
+      |> fill_in_query_params("ib_is", :bool)
+      |> fill_in_query_params("ib_has", :bool)
+      |> fill_in_query_params("data_has", :bool)
+      |> fill_in_query_params("tag_is", :bool)
+      |> fill_in_query_params("tag_has", :bool)
+      |> fill_in_query_params("include_pic", :bool)
+      |> fill_in_query_params("include_comment", :bool)
+      |> fill_in_query_params("include_dna", :bool)
+      |> fill_in_query_params("include_query", :bool)
+      |> fill_in_query_params("include_tag", :bool)
+      |> fill_in_query_params("latest", :bool)
+      
+    query(conn, Map.put(params, "query_form_data", explicit_query_params))
   end
-
-  defp build_query_opts(identity_ib_gibs, query_params)
-    when is_list(identity_ib_gibs) and
-         length(identity_ib_gibs) > 1 do
-
-    # We're searching only for the user's ibgib, and we're going to do a
-    # "withany" query. If we kept in the root, then it would return everything
-    # since everybody has the root in its identity_ib_gibs. 
-    # We also don't want any node identities in the query. We're looking only
-    # for session and email identities.
-    query_identities = 
-      identity_ib_gibs
-      |> Enum.filter(&(&1 != @root_ib_gib))
-      |> Enum.filter(fn(identity_ib_gib) -> 
-           {ib, _gib} = separate_ib_gib!(identity_ib_gib)
-           [type, _hash] = String.split(ib, "_")
-           type !== "node" 
-         end)
-
-    _ = Logger.debug("query_identities: #{inspect query_identities}" |> ExChalk.bg_green |> ExChalk.black)
-
-    # All queries (currently) look only within the current user's identities.
-    query_opts =
-      do_query()
-      |> where_rel8ns("identity", "withany", "ibgib", query_identities)
-
-    _ = Logger.debug("query_opts: #{inspect query_opts}" |> ExChalk.bg_green |> ExChalk.black)
-
-    # Add ib_search if given
-    search_ib = query_params["search_ib"]
-    query_opts =
-      if search_ib != nil and String.length(search_ib) > 0 do
-        ib_search_method =
-          case query_params["ib_query_type"] do
-            "is" -> "is"
-            "has" -> "like"
-          end
-
-        query_opts |> where_ib(ib_search_method, search_ib)
-      else
-        query_opts
-      end
-
-    # Add search_data if given
-    search_data = query_params["search_data"]
-    query_opts =
-      if search_data != nil and String.length(search_data) > 0 do
-        query_opts |> where_data("value", "like", search_data)
-      else
-        query_opts
-      end
-
-    # Add latest if given
-    latest = query_params["latest"] != nil
-    query_opts =
-      if latest do
-        query_opts |> most_recent_only()
-      else
-        query_opts
-      end
-
-    # include rel8ns
-    # We're going to check if the types are any of these by checking for the
-    # relevant ancestors.
-    include_pic = query_params["include_pic"] != nil
-    include_comment = query_params["include_comment"] != nil
-    include_query = query_params["include_query"] != nil
-    include_dna = query_params["include_dna"] != nil
-
-    # Build up list of what we're including
-    include_rel8n_ibgibs =
-      []
-      |> add_rel8n_ibgibs(include_pic, ["pic#{@delim}gib"])
-      |> add_rel8n_ibgibs(include_comment, ["comment#{@delim}gib"])
-      |> add_rel8n_ibgibs(include_query, ["query#{@delim}gib"])
-      |> add_rel8n_ibgibs(include_dna,
-                          ["plan#{@delim}gib",
-                           "fork#{@delim}gib",
-                           "mut8#{@delim}gib",
-                           "rel8#{@delim}gib"])
-
-    _ = Logger.debug("include_rel8n_ibgibs: #{inspect include_rel8n_ibgibs}" |> ExChalk.bg_green |> ExChalk.black)
-    query_opts =
-      if length(include_rel8n_ibgibs) > 0 do
-        query_opts
-        |> where_rel8ns("ancestor", "withany", "ibgib", include_rel8n_ibgibs)
-      else
-        query_opts
-      end
-
-    _ = Logger.debug("query_opts: #{inspect query_opts}" |> ExChalk.bg_green |> ExChalk.black)
-
-    {:ok, query_opts}
+  
+  # I'm pattern matching against the entire explicit query_params structure,
+  # so this adds new entries for entries that weren't explicitly passed in,
+  # and it changes given bool entries to an actual boolean value
+  # I'm basically kluging it to fit the expat, but ah well.
+  defp fill_in_query_params(query_params, param_name, :bool) do
+    value = query_params[param_name] != nil
+    Logger.debug("fill in. param_name: #{param_name}. new val: #{value}")
+    Map.put(query_params, param_name, value)
   end
-  defp build_query_opts(identity_ib_gibs, query_params) do
-    invalid_args([identity_ib_gibs, query_params])
+  defp fill_in_query_params(query_params, param_name, :non_bool) do
+    value = query_params[param_name] || ""
+    Logger.debug("fill in. param_name: #{param_name}. new val: #{value}")
+    Map.put(query_params, param_name, value)
   end
-
-  defp add_rel8n_ibgibs(agg_list, true, ibgibs) do
-    agg_list ++ ibgibs
-  end
-  defp add_rel8n_ibgibs(agg_list, false, _ibgibs) do
-    agg_list
-  end
-
-
-  # User must be signed in with an email identity to upload pics.
-  defp authorize_upload(conn, _params) do
-    identity_ib_gibs = get_session(conn, @ib_identity_ib_gibs_key)
-    if has_email_identity?(identity_ib_gibs) do
-      conn
-    else
-      _ = Logger.info("User not authorized to upload pic.")
-      emsg = "You must be identified by at least one email account to upload. To identify yourself with an email address, click on the root ibGib (the green one that pops up when you click the background) and click the white \"Login\" button.\n\nFor a slightly outdated walkthru of this, see https://github.com/ibgib/ibgib/wiki/Identify-with-Email---Step-By-Step-Walkthru.\n\nAnd for more information on ibGib Identity, see https://github.com/ibgib/ibgib/wiki/Identity for more info."
-      conn
-      |> send_resp(403, emsg)
-      |> halt
-    end
-  end
-
-  defp has_email_identity?(identity_ib_gibs) when is_list(identity_ib_gibs) do
-    identity_ib_gibs
-    |> Enum.any?(&(String.starts_with?(&1, "email_")))
-  end
-  defp has_email_identity?(_identity_ib_gibs) do
-    false
-  end
-
 
 end

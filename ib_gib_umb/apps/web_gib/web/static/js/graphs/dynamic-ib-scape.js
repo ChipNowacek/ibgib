@@ -8,6 +8,10 @@ var md = require('markdown-it')({
 });
 var emoji = require('markdown-it-emoji');
 md.use(emoji);
+var twemoji = require('twemoji')
+md.renderer.rules.emoji = function(token, idx) {
+  return twemoji.parse(token[idx].content);
+};
 
 import { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3BoringRel8ns, d3AlwaysRel8ns, d3RequireExpandLevel2, d3MenuCommands, d3Rel8nIcons, d3RootUnicodeChar, /*d3AddableRel8ns,*/ d3PausedRel8ns } from '../d3params';
 
@@ -67,8 +71,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         defBorderStrokeWidth: "2px",
         label: {
           fontFamily: "Times New Roman",
-          fontStroke: "blue",
-          fontFill: "darkgreen",
+          fontStroke: "#550885",
+          fontFill: "#60DDE6",
           fontSize: "25px",
           fontOffset: 8
         },
@@ -92,7 +96,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   }
   destroy() {
     let t = this;
-    if (t.backgroundRefresher) { t.backgroundRefresher.destroy(); }
+    // if (t.backgroundRefresher) { t.backgroundRefresher.destroy(); }
     super.destroy();
   }
 
@@ -126,19 +130,22 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.addSvgGradient_Simple(t.svgGradientId_Root, "#30B315", "green", "darkgreen");
 
     t.svgGradientId_Comment = "comment" + ibHelper.getRandomString();
-    t.addSvgGradient_Simple(t.svgGradientId_Comment, "#D8EB6E", "#AFD147", "#91BD1A", "50%", "50%", "40%", "50%", "90%");
+    t.addSvgGradient_Simple(t.svgGradientId_Comment, "#D8EB6E", "#AFD147", "transparent", "50%", "50%", "40%", "50%", "90%");
     // t.addSvgGradient_Simple(t.svgGradientId_Comment, "#D8EB6E", "#AFD147", "#91BD1A");
 
     t.svgGradientId_Image = "image" + ibHelper.getRandomString();
     t.addSvgGradient_Simple(t.svgGradientId_Image, "#590782", "#0FF21E", "#0FF21E", "50%", "50%", "40%", "50%", "90%");
     // t.addSvgGradient_Simple(t.svgGradientId_Image, "#AD9DFA", "#9B2ED1", "#6E368A");
 
+    t.svgGradientId_Tag = "tag" + ibHelper.getRandomString();
+    t.addSvgGradient_Simple(t.svgGradientId_Tag, /*inner*/"#E5B1FA", /*ring*/"#FFFF3B", /*outer*/"transparent", "50%", "50%", "40%", "50%", "90%");
+
     t.svgGradientId_Rel8n = "rel8n" + ibHelper.getRandomString();
     t.addSvgGradient_Simple(t.svgGradientId_Rel8n, "#90C3D4", "#71A3EB", "#61A1FA");
     
     t.svgGradientId_Background = "background" + ibHelper.getRandomString();
     t.addSvgGradient_Simple(t.svgGradientId_Background, "#108201", "#128C01", "#3FA132", "50%", "50%", "50%", "60%", "70%");
-    
+
     t.svgGradientId_Default = "default" + ibHelper.getRandomString();
     t.addSvgGradient_Simple(t.svgGradientId_Default, "#72DFED", "#56CCDB", "#31C1D4");
   }
@@ -297,7 +304,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.graphNodesEnter_Comments =
       t.graphNodesEnter
         .filter(d => {
-          return ["text", "link"].includes(t.getNodeRenderType(d) || "");
+          return ["text", "link", "tag"].includes(t.getNodeRenderType(d) || "");
         })
         .append("foreignObject")
           .attr("id", d => t.getUniqueId(d.id, "label", "foreignObject"))
@@ -320,7 +327,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           .style("word-break", "break-word")
           .style("word-wrap", "break-word")
           .style("font-size", d => {
-            let text = ibHelper.getDataText(d.ibGibJson);
+            let text = d.render === "tag" ? ibHelper.getTagIconsText(d.ibGibJson) : ibHelper.getDataText(d.ibGibJson);
             if (text) {
               let textLength = text.length;
               // let singleEmojiRegEx = /^:\w+:$/;
@@ -328,7 +335,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
               // let textIsSingleEmoji = regExResult && regExResult.length > 0;
               let textIsSingleEmoji = false;
               let fontSize = 0;
-              if (d.isSource) {
+              if (d.isTag) {
+                fontSize = 13;
+              } else if (d.isSource) {
                 // emoji, smileys
                 if (textLength <= 3 || textIsSingleEmoji) {
                   fontSize = 65;
@@ -372,24 +381,32 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           })
         .append("div")
           .style("width", "100%")
-          .style("overflow", () => {
+          .style("overflow", (d) => {
             // On mobile, the user must use the view command to view
             // long comments (there is no mousewheel to scroll, plus
             // there is a bug with overflow + d3 on mobile).
-            return ibHelper.isMobile() ? "hidden" : "auto";
+            return ibHelper.isMobile() || (d && d.isTag) ? "hidden" : "auto";
           })
           .style("max-height", d => (2 * t.getNodeShapeRadius(d)) + "px")
           .style("text-align", "center")
           .html(d => {
             if (d.ibGibJson) {
-              let dataText = ibHelper.getDataText(d.ibGibJson);
-              if (dataText) {
-                let html;
-                if (d.render === "link") {
-                  html = `<a href="${dataText}" target="_blank">${dataText}</a>`;
-                } else {
-                  html = md.render(dataText);
-                }
+              let text = "", html = "";
+              if (d.render === "comment") {
+                text = ibHelper.getDataText(d.ibGibJson);
+                html = md.render(text);
+              } else if (d.render === "link") {
+                text = ibHelper.getDataText(d.ibGibJson);
+                html = `<a href="${text}" target="_blank">${text}</a>`;
+              } else if (d.render === "tag") {
+                text = ibHelper.getTagIconsText(d.ibGibJson);
+                html = md.render(text);
+              } else {
+                text = ibHelper.getDataText(d.ibGibJson);
+                html = md.render(text);
+              }
+
+              if (html) {
                 return html;
               } else {
                 console.warn("update node label: no dataText?")
@@ -474,6 +491,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         node.render = "link";
       } else if (ibHelper.isIdentity(node.ibGibJson)) {
         node.render = "identity";
+      } else if (ibHelper.isTag(node.ibGibJson)) {
+        node.render = "tag";
       } else {
         delete node.render;
       }
@@ -527,6 +546,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.getIbGibJson(t.contextNode.ibGib, ibGibJson => {
       // console.log(`got context's json: ${JSON.stringify(ibGibJson)}`);
       t.contextNode.ibGibJson = ibGibJson;
+      t.contextNode.isTag = ibHelper.isTag(ibGibJson);
       t.contextNode.tempJuncIbGib =
         ibHelper.getTemporalJunctionIbGib(ibGibJson);
       try {
@@ -1254,6 +1274,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
       t.contextNode = t.addVirtualNode(srcId, srcType, t.contextIbGib, /*srcNode*/ null, srcShape, autoZap, fadeTimeoutMs, /*cmd*/ null, /*title*/ null, /*label*/ null, /*startPos*/ {x: t.rootNode.x, y: t.rootNode.y}, /*isAdjunct*/ false);
       t.contextNode.isContext = true;
+      setTimeout(() => {
+        t.pin(t.contextNode);
+      }, 200)
 
       t.syncContextChildren();
     } else {
@@ -1488,6 +1511,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         t.getIbGibJson(latestIbGib, latestIbGibJson => {
           node.ibGib = latestIbGib;
           node.ibGibJson = latestIbGibJson;
+          node.isTag = ibHelper.isTag(ibGibJson);
           
           t.updateRender(node);
 
@@ -1697,13 +1721,15 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           });
         } else {
           // Refresh children ibGibs.
-          let ibGibsToRefresh = rel8dIbGibs.concat([rel8nSrc.ibGib]);
-          t.backgroundRefresher.enqueue(ibGibsToRefresh);
+          if (rel8nSrc.ibGibJson.ib !== "query_result") {
+            let ibGibsToRefresh = rel8dIbGibs.concat([rel8nSrc.ibGib]);
+            t.backgroundRefresher.enqueue(ibGibsToRefresh);
 
-          // Sync adjuncts, passing callback.
-          t.syncAdjuncts(rel8nNode.rel8nSrc.tempJuncIbGib, () => {
-            if (callback) { callback(); }
-          });
+            // Sync adjuncts, passing callback.
+            t.syncAdjuncts(rel8nNode.rel8nSrc.tempJuncIbGib, () => {
+              if (callback) { callback(); }
+            });
+          }
         }
       }
     }
@@ -1849,6 +1875,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       case "ibGib":
         if (d.isContext) {
           multiplier = d3Scales["context"];
+        } else if (d.isTag) {
+          multiplier = d3Scales["tag"];
         } else if (d.isSource) {
           multiplier = d3Scales["source"];
         } else if (d.isRoot) {
@@ -1909,6 +1937,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           return `url(#${t.svgGradientId_Comment})`;
         } else if (d.render && d.render === "image") {
           return `url(#${t.svgGradientId_Image})`;
+        } else if (d.render && d.render === "tag") {
+          return `url(#${t.svgGradientId_Tag})`;
         } else if (d.render && d.render === "identity") {
           return "white";
         } else {
@@ -1964,6 +1994,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           return url;
         } else if (d.render === "image") {
           return "";
+        } else if (d.render === "tag") {
+          return "";
         } else if (d.render === "identity") {
           if (d.ibGibJson.data.type === "email" && d.ibGibJson.data.email_addr) {
             return d.ibGibJson.data.email_addr;
@@ -1984,6 +2016,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           return d.ibGibJson.data.label;
         } else if (d.ibGib === "ib^gib") {
           return d3RootUnicodeChar;
+        } else if (d.ibGibJson.ib === "query_result") {
+          return  `\uf1c0 ${ibHelper.getDataQueryResultCount(d.ibGibJson)} result(s)`;
         } else {
           return d.ibGibJson.ib;
         }
@@ -2224,7 +2258,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   openMenu(d) {
     let t = this;
 
-    const size = 240;
+    const size = 300;
     const halfSize = Math.trunc(size / 2);
     const pos = {x: t.center.x - halfSize, y: t.center.y - halfSize};
 

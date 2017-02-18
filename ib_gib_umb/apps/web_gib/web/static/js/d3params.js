@@ -15,6 +15,7 @@ import { huhText_Cmd_ExternalLink } from "./huh-texts/commands/external-link";
 import { huhText_Cmd_Query } from "./huh-texts/commands/query";
 import { huhText_Cmd_Mut8Comment } from "./huh-texts/commands/mut8-comment";
 import { huhText_Cmd_Goto } from "./huh-texts/commands/goto";
+import { huhText_Cmd_Tag } from "./huh-texts/commands/tag";
 
 
 var d3CircleRadius = 20;
@@ -44,6 +45,7 @@ let d3Scales = {
   "link": 4,
   "result": 3,
   "comment": 3,
+  "tag": 1.2,
   "default": 2
 };
 
@@ -63,6 +65,7 @@ let d3Colors = {
   "image": "#DDEDD3",
   "img": "#DDEDD3",
   "identity": "#FFFFFF",
+  "unidentity": "#7D7D7D",
   "huh": "#EBFF0F",
   "help": "#EBFF0F",
   "query": "#C7FF4F",
@@ -71,7 +74,15 @@ let d3Colors = {
   "imageBorder": "#3CAA71",
   "textBorder": "#8F26A3",
   "rootBorder": "#12F50A",
-  "defaultBorder": "#ED6DCD"
+  "defaultBorder": "#ED6DCD",
+  
+  "main": "#FF2EE0",      // fork, pic, link
+  "secondary": "#0CF200", // mut8, tag
+  "nav": "#1FFFC0",       // goto, refresh, zap, query
+  "details": "#FFA91F",   // info, view
+  "pos": "#1E990E", 
+  "neg": "#DE4040",       // flag
+  "remove": "#FC2D95",    // untag, cut, trash
 };
 
 var d3BoringRel8ns = [
@@ -110,7 +121,7 @@ var d3MenuCommands = [
     "text": "Fork",
     "icon": "\uf259",
     "description": "The Fork button will take the selected ibGib and create a new one based on it in your personal ib space. It's like making a copy at that point in time and branching off of it. Live Long and Prosper!",
-    "color": "#61B9FF",
+    "color": d3Colors["main"],
     "huh": huhText_Cmd_Fork
   },
   {
@@ -119,7 +130,7 @@ var d3MenuCommands = [
     "text": "Pic",
     "icon": "\uf03e",
     "description": "The Picture button will add a picture to the selected ibGib. You can choose to upload a file, or take a picture with your camera. You can even add pictures to pictures",
-    "color": "#61B9FF",
+    "color": d3Colors["main"],
     "huh": huhText_Cmd_Pic
   },
   {
@@ -128,7 +139,7 @@ var d3MenuCommands = [
     "text": "Comment",
     "icon": "\uf075",
     "description": "The Comment button adds a comment (or any text really) to the selected ibGib",
-    "color": "#61B9FF",
+    "color": d3Colors["main"],
     "huh": huhText_Cmd_Comment
   },
   {
@@ -137,7 +148,7 @@ var d3MenuCommands = [
     "text": "Link",
     "icon": "\uf0c1",
     "description": "The Link button will add a hyperlink from the World Wide interWeb to the selected ibGib",
-    "color": "#61B9FF",
+    "color": d3Colors["main"],
     "huh": huhText_Cmd_Link
   },
   {
@@ -146,7 +157,7 @@ var d3MenuCommands = [
     "text": "Huh?",
     "icon": "\uf128 \uf12a \uf128",
     "description": "This is like in-depth help. Click it when you have no idea what is going on.",
-    "color": "#EBFF0F",
+    "color": d3Colors["huh"],
     "huh": huhText_Cmd_Huh
   },
   {
@@ -155,7 +166,7 @@ var d3MenuCommands = [
     "text": "Mut8 Comment",
     "icon": "\u2622",
     "description": "The Mut8 button will allow you to edit the ibGib",
-    "color": "lightblue",
+    "color": d3Colors["secondary"],
     "huh": huhText_Cmd_Mut8Comment
   },
   {
@@ -164,7 +175,7 @@ var d3MenuCommands = [
     "text": "View",
     "icon": "\uf06e", // :eye: 
     "description": "The View button will lets you look more closely at the ibGib.",
-    "color": "#CFA1C8",
+    "color": d3Colors["details"],
     "huh": huhText_Cmd_View
   },
   {
@@ -173,7 +184,7 @@ var d3MenuCommands = [
     "text": "Query",
     "icon": "\uf002",
     "description": "The Query button will show you a search screen where you can look for other ibGib.",
-    "color": "#C7FF4F",
+    "color": d3Colors["nav"],
     "huh": huhText_Cmd_Query
   },
   {
@@ -182,7 +193,7 @@ var d3MenuCommands = [
     "text": "Goto",
     "icon": "\uf0a6",
     "description": "The Goto button will navigate you to the selected ibGib, setting it as the Context.",
-    "color": "#C7FF4F",
+    "color": d3Colors["nav"],
     "huh": huhText_Cmd_Goto
   },
   {
@@ -191,7 +202,7 @@ var d3MenuCommands = [
     "text": "Info",
     "icon": "\uf05a",
     "description": "The Information button lets you see the internal gibblies of an ibGib",
-    "color": "#CFA1C8",
+    "color": d3Colors["details"],
     "huh": huhText_Cmd_Info
   },
   {
@@ -200,7 +211,7 @@ var d3MenuCommands = [
     "text": "Open external link",
     "icon": "\uf08e",
     "description": "The Open External Link button will open a link in a new tab/window of your browser",
-    "color": "#C7FF4F",
+    "color": d3Colors["nav"],
     "huh": huhText_Cmd_ExternalLink
   },
   {
@@ -209,7 +220,7 @@ var d3MenuCommands = [
     "text": "Identify",
     "icon": "\uf090",
     "description": "This lets you identify yourself with an email address, which will be associated with all ibGib you create.",
-    "color": "#FFFFFF",
+    "color": d3Colors["identity"],
     "huh": huhText_Cmd_IdentEmail
   },
   {
@@ -218,7 +229,8 @@ var d3MenuCommands = [
     "text": "Un-Identify",
     "icon": "\uf08b",
     "description": "Logs OUT this email address, so that you will no longer be identified with it when creating ibGib. Any other email address(es) will stay logged in!",
-    "color": "#7D7D7D",
+    "color": d3Colors["unidentity"],
+    // "color": "#7D7D7D",
     "huh": huhText_Cmd_IdentEmail
   },
   {
@@ -227,7 +239,7 @@ var d3MenuCommands = [
     "text": "Refresh ibGib",
     "icon": "\uf021",
     "description": "The Refresh button refreshes the selected ibGib to the most up-to-date version",
-    "color": "#C7FF4F",
+    "color": d3Colors["nav"],
     "huh": huhText_Cmd_Refresh
   },
   {
@@ -236,7 +248,7 @@ var d3MenuCommands = [
     "text": "Download from the Cloud",
     "icon": "\uf0ed",
     "description": "The Cloud Download button saves the pic/file to your local device",
-    "color": "#CFA1C8",
+    "color": d3Colors["details"],
     "huh": huhText_Cmd_Download
   },
   {
@@ -245,7 +257,7 @@ var d3MenuCommands = [
     "text": "Zap",
     "icon": "\uf0e7",
     "description": "Zaps virtual ibGib with some juice \u26a1",
-    "color": "yellow",
+    "color": d3Colors["nav"],
     "huh": huhText_Cmd_Zap
   },
   {
@@ -255,7 +267,7 @@ var d3MenuCommands = [
     // http://www.alt-codes.net/plus-sign-symbols
     "icon": "\uf067", // http://fontawesome.io/icon/plus/
     "description": "Creates and adds a new ibGib with a given rel8n.",
-    "color": "#C7FF4F",
+    "color": d3Colors["secondary"],
     "huh": huhText_Cmd_Add
   },
   {
@@ -265,9 +277,36 @@ var d3MenuCommands = [
     // http://www.fileformat.info/info/unicode/char/2713/index.htm
     "icon": "\u2713", // ✓ (check mark)
     "description": "Acknowledge an ibGib that has been created by someone else to be directly rel8d to your ibGib.",
-    "color": "#C7FF4F",
+    "color": d3Colors["pos"],
     "huh": huhText_Cmd_Ack
   },
+  // 🔤
+  {
+    "id": "menu-tag",
+    "name": "tag",
+    "text": "Tag",
+    "icon": "\uf02b",
+    "description": "Tag an ibGib to make it easier for searching, organizing, and more.",
+    "color": d3Colors["secondary"],
+    "huh": huhText_Cmd_Tag
+  },
+  {
+    "id": "menu-untag",
+    "name": "untag",
+    "text": "UnTag",
+    "icon": "\uf00d\uf02b",
+    "description": "Remove a tag from an ibGib.",
+    "color": d3Colors["remove"],
+    "huh": huhText_Cmd_Tag
+  },
+  // {
+  //   "id": "menu-flag",
+  //   "name": "flag",
+  //   "text": "Flag",
+  //   "icon": "\uf024",
+  //   "description": "The Flag button will mark the selected ibGib as containing inappropriate content",
+  //   "color": "#FF4F4F"
+  // },
   // {
   //   "id": "menu-merge",
   //   "name": "merge",
@@ -301,14 +340,6 @@ var d3MenuCommands = [
   //   "color": "gold"
   // },
   // {
-  //   "id": "menu-flag",
-  //   "name": "flag",
-  //   "text": "Flag",
-  //   "icon": "\uf024",
-  //   "description": "The Flag button will mark the selected ibGib as containing inappropriate content",
-  //   "color": "#FF4F4F"
-  // },
-  // {
   //   "id": "menu-thumbsup",
   //   "name": "thumbs up",
   //   "text": "Thumbs up",
@@ -339,6 +370,7 @@ let d3Rel8nIcons = {
   "current identity": "\uf007",
   "pic": "\uf03e",
   "comment": "\uf075",
+  "tag": "\uf02b",
   "past": "\uf100",
   "ancestor": "\uf102",
   "instance": "\uf107",

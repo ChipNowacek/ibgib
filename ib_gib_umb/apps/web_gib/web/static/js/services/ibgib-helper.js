@@ -1,3 +1,7 @@
+import $ from 'jquery';
+import textcomplete from 'jquery-textcomplete';
+import { emojies } from '../textcomplete/emoji';
+
 /** Extracts the full ib + gib from the ibGibJson info. */
 export function getFull_ibGib(ibGibJson) {
   return ibGibJson.ib + "^" + ibGibJson.gib;
@@ -43,10 +47,29 @@ export function isInPast(ibGibJson, ibGib) {
   return ibGibJson && ibGibJson.rel8ns && ibGibJson.rel8ns["past"] && ibGibJson.rel8ns["past"].includes(ibGib);
 }
 
-/** For safe access to ibGibJson.data.text */
+/** 
+ * For safe access to ibGibJson.data.text.
+ * ATOW 2/13/
+ */
 export function getDataText(ibGibJson) {
   return (ibGibJson && ibGibJson.data && ibGibJson.data.text) ?
       ibGibJson.data.text :
+      null;
+}
+
+/** 
+ * For safe access to ibGibJson.data.text.
+ * ATOW 2/13/
+ */
+export function getDataQueryResultCount(ibGibJson) {
+  return (ibGibJson && ibGibJson.ib === "query_result" && ibGibJson.data && ibGibJson.data.result_count) ?
+      ibGibJson.data.result_count :
+      -1;
+}
+
+export function getTagIconsText(ibGibJson) {
+  return (ibGibJson && ibGibJson.data && ibGibJson.data.icons) ?
+      ibGibJson.data.icons :
       null;
 }
 
@@ -163,6 +186,10 @@ export function isIdentity(ibGibJson) {
          ibGibJson.rel8ns.instance_of[0] === "identity^gib";
 }
 
+export function isTag(ibGibJson) {
+  return ibGibJson.rel8ns.ancestor.some(x => x === "tag^gib");
+}
+
 /*
  * Determines if the browser is on a mobile device or not.
  * Thanks SO!
@@ -171,3 +198,35 @@ export function isIdentity(ibGibJson) {
 export function isMobile() {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
+
+export function initAutocomplete(textAreaId) {
+    let t = this, lc = `Comment initAutocomplete`;
+    console.log(`{lc} initializing Autocomplete starting...`)
+    
+    $('#' + textAreaId).textcomplete([
+      { // emoji strategy
+          id: 'emoji',
+          match: /\B:([\-+\w]*)$/,
+          search: function (term, callback) {
+              callback($.map(emojies, function (emoji) {
+                  return emoji.indexOf(term) === 0 ? emoji : null;
+              }));
+          },
+          template: function (value) {
+              return '<img src="/images/emoji/' + value + '.png" class="ib-emoji-list"></img>' + value;
+          },
+          replace: function (value) {
+              return ':' + value + ': ';
+          },
+          index: 1
+      }
+    ], {
+        onKeydown: function (e, commands) {
+            if (e.ctrlKey && e.keyCode === 74) { // CTRL-J
+                return commands.KEY_ENTER;
+            }
+        }
+    });
+    
+    console.log(`{lc} initializing Autocomplete complete.`)
+  }

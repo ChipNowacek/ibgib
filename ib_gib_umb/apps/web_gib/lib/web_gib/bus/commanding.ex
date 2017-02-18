@@ -10,7 +10,7 @@ defmodule WebGib.Bus.Commanding do
 
   require Logger
 
-  alias WebGib.Bus.Commanding.{Fork, Comment, Refresh, BatchRefresh, Ack, GetAdjuncts, Mut8Comment, Link}
+  alias WebGib.Bus.Commanding.{Fork, Comment, Refresh, BatchRefresh, Ack, GetAdjuncts, Mut8Comment, Link, Tag}
   import WebGib.Bus.Commanding.Helper
 
   def handle_cmd(cmd_name, data, metadata, msg, socket) do
@@ -42,6 +42,9 @@ defmodule WebGib.Bus.Commanding do
   end
   defp handle_cmd_impl("link", data,  metadata, msg, socket) do
     Link.handle_cmd(data, metadata, msg, socket)
+  end
+  defp handle_cmd_impl("tag", data,  metadata, msg, socket) do
+    Tag.handle_cmd(data, metadata, msg, socket)
   end
   defp handle_cmd_impl(cmd_name, data, metadata, msg, socket) do
     emsg = "Unknown command params. cmd_name: #{inspect cmd_name}"

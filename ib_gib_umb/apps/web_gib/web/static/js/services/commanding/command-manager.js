@@ -92,6 +92,9 @@ export class CommandManager {
       case "zap":
         t.ibScape.currentCmd = t.getCommand_Zap(dIbGib);
         break;
+      case "tag":
+        t.ibScape.currentCmd = t.getCommand_Tag(dIbGib);
+        break;
       default:
         console.error(`unknown cmdName: ${cmdName}`);
     }
@@ -102,6 +105,7 @@ export class CommandManager {
     }
   }
 
+  /* rel8nAdd is deprecated, but I haven't felt like slogging through to remove. */
   getCommand_rel8nAdd(dIbGib) {
     let t = this;
     switch (dIbGib.rel8nName) {
@@ -172,5 +176,8 @@ export class CommandManager {
   }
   getCommand_Zap(dIbGib) {
     return new commands.ZapCommand(this.ibScape, dIbGib);
+  }
+  getCommand_Tag(dIbGib) {
+    return new commands.TagDetailsCommand(this.ibScape, dIbGib);
   }
 }

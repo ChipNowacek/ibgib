@@ -14,14 +14,14 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
     super(graphDiv, svgId, config);
     let t = this;
 
-    const menuRadius = 120;
+    const menuRadius = 150;
     const menuDiam = 2 * menuRadius;
     const menuDivSize = menuDiam;
 
     let defaults = {
       background: {
-        fill: "blue",
-        opacity: 0.7,
+        fill: "#055E05",
+        opacity: 0.8,
         shape: "circle"
       },
       mouse: {
@@ -43,8 +43,8 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
         defBorderStrokeWidth: "2px",
         label: {
           fontFamily: "FontAwesome",
-          fontStroke: "darkgreen",
-          fontFill: "darkgreen",
+          fontStroke: "#1F8A91",
+          fontFill: "#0AD5F0",
           fontSize: "26px",
           fontOffset: 10
         },
@@ -53,10 +53,10 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
         }
       },
       menu: {
-        radius: 120,
+        radius: menuRadius,
         diam: menuDiam,
         size: menuDivSize,
-        buttonRadius: 28,
+        buttonRadius: 26,
         position: position,
         d: d // why in the world did I do this?
       }
@@ -167,7 +167,7 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
       if (d.ibGib && d.ibGib === "ib^gib") {
         commands = commands.concat(["info", "fork", "goto", "identemail", "query"]);
       } else {
-        commands = commands.concat([/*"view",*/ "fork", "comment", "pic", "link", "info", "refresh"]);
+        commands = commands.concat([/*"view",*/ "fork", "comment", "pic", "link", "info", "refresh", "tag"]);
         
         if (!d.isContext) {
           commands.push("goto");
@@ -190,6 +190,12 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
           commands.push("mut8comment");
         }
       }
+      
+      // if (ibHelper.isTag(d.ibGibJson)) {
+      //   if (ibAuthz.isAuthorizedForMut8OrRel8(d.ibGibJson, t.ibScape.currentIdentityIbGibs)) {
+      //     commands.push("untag"); // to be implemented
+      //   }
+      // }
       
       if (t.ibScape.currentIdentityIbGibs.includes(d.ibGib) &&
           ibAuthz.isEmailIdentity(d.ibGibJson)) {
@@ -284,7 +290,9 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
   //     .text(d => t.getNodeTitle(d));
   // }
 
-  getNodeTitle(d) { return d.cmd.description || d.title || d.id || ""; }
+  getNodeTitle(d) {
+    return (d.cmd.description || d.title || d.id || "") + ' Long-click this button for more info.'; 
+  }
   getNodeLabelText(d) { return d.cmd.icon || d.label || d.title || d.id; }
   getNodeShapeFill(d) { return d.cmd.color || this.config.node.defShapeFill; }
 }

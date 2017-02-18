@@ -9,6 +9,7 @@ defmodule WebGib.Validate do
   require Logger
 
   import IbGib.Helper
+  import WebGib.Patterns
   use IbGib.Constants, :ib_gib
   use IbGib.Constants, :validation
   use WebGib.Constants, :validation
@@ -94,12 +95,11 @@ defmodule WebGib.Validate do
     _ = Logger.warn "Invalid ib_gibs. Must be a non-empty list of ib_gibs."
     false
   end
-  def validate(:query_params, query_params) do
+  def validate(:query_params, query_params_(...) = query_params) do
     _ = Logger.debug "validating query_params: #{inspect query_params}"
     valid? =
-      validate(:search_ib, query_params) and
-      validate(:ib_query_type, query_params) and
-      validate(:search_data, query_params)
+      validate(:query_somehow, query_params) and
+      validate(:query_search_text, query_params)
 
     if valid? do
       _ = Logger.debug("valid?: #{valid?}" |> ExChalk.bg_green)
@@ -108,40 +108,22 @@ defmodule WebGib.Validate do
     end
     valid?
   end
-  def validate(:search_ib, %{"search_ib" => search_ib})
-    when is_bitstring(search_ib) do
-    _ = Logger.debug "validating search_ib: #{search_ib}"
-    String.length(search_ib) < @max_id_length
+  def validate(:query_somehow, query_params_(...) = query_params) do
+    valid? = ib_is? or ib_has? or data_has? or tag_is? or tag_has?
+    
   end
-  def validate(:search_ib, %{"search_ib" => search_ib}) do
-    _ = Logger.warn "Invalid search_ib: #{inspect search_ib}"
+  def validate(:query_search_text, query_params_(...) = query_params) do
+    if data_has? do
+      # data_has? is the least restrictive. So just search per data_has?
+      # constraints, b/c don't want to invalidate for invalid ib if they 
+      # just have both data and ib checked by default.
+      String.length(search_text) <= @max_query_data_text_size
+    else
+      String.length(search_text) <= @max_id_length
+    end
+  end
+  def validate(:query_search_text, query_params_(...) = query_params) do
     false
-  end
-  def validate(:search_ib, _query_params) do
-    # none given is fine
-    true
-  end
-  def validate(:ib_query_type, %{"ib_query_type" => ib_query_type})
-    when is_bitstring(ib_query_type) do
-    _ = Logger.debug "validating ib_query_type: #{ib_query_type}"
-    ib_query_type in ["is", "has"]
-  end
-  def validate(:ib_query_type, query_params) do
-    _ = Logger.warn "Invalid ib_query_type: #{inspect query_params}"
-    false
-  end
-  def validate(:search_data, %{"search_data" => search_data})
-    when is_bitstring(search_data) do
-    _ = Logger.debug "validating search_data: #{search_data}"
-    String.length(search_data) <= @max_query_data_text_size
-  end
-  def validate(:search_data, %{"search_data" => search_data}) do
-    _ = Logger.warn "Invalid search_data: #{inspect search_data}"
-    false
-  end
-  def validate(:search_data, _query_params) do
-    # none given is fine
-    true
   end
   def validate(:adjunct_rel8n, nil) do
     # can't be nil
@@ -151,5 +133,29 @@ defmodule WebGib.Validate do
     # adjunct_rel8n cannot be "past", "history", etc.
     # i.e. we can't "attach" any ibGib to these rel8ns.
     !Enum.member?(@invalid_adjunct_rel8ns, adjunct_rel8n)
+  end
+  def validate(:tag_text, tag_text) when is_bitstring(tag_text) and tag_text !== "" do
+    _ = Logger.debug "tag_text: #{tag_text}"
+    _ = Logger.debug "string length tag_text: #{String.length(tag_text)}"
+    _ = Logger.debug "@max_tag_text_size: #{@max_tag_text_size}"
+
+    valid_ib?(tag_text) and 
+      String.length(tag_text) <= @max_tag_text_size
+  end
+  def validate(:tag_text, tag_text) do
+    _ = Logger.warn "Invalid tag_text: #{inspect tag_text}"
+    false
+  end
+  def validate(:tag_icons_text, tag_icons_text) 
+    when is_bitstring(tag_icons_text) and tag_icons_text !== "" do
+    _ = Logger.debug "tag_icons_text: #{tag_icons_text}"
+    _ = Logger.debug "string length tag_icons_text: #{String.length(tag_icons_text)}"
+    _ = Logger.debug "@max_tag_icons_text_size: #{@max_tag_icons_text_size}"
+
+    String.length(tag_icons_text) < @max_tag_icons_text_size
+  end
+  def validate(:tag_icons_text, tag_icons_text) do
+    _ = Logger.warn "Invalid tag_icons_text: #{inspect tag_icons_text}"
+    false
   end
 end

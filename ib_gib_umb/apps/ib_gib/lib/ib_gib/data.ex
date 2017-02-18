@@ -282,6 +282,9 @@ defmodule IbGib.Data do
   end
 
   # This overload is for is_bitstring(search_term)
+  # "where" is the rel8n_name in this case
+  
+  
   defp add_rel8ns_options_iteration(query, %{"what" => search_term, "how" =>
     method, "where" => where, "extra" => with_or_without} = rel8ns_options)
     when is_map(rel8ns_options) and map_size(rel8ns_options) > 0 and
@@ -289,6 +292,12 @@ defmodule IbGib.Data do
          is_bitstring(where) and is_bitstring(with_or_without)do
       case {with_or_without, method} do
 
+        # rel8ns is in form of {rel8ns: {"rel1": [a,b,c]}, {"rel2": [b,c,d], ...}}
+        # It may be tricky to wrap your head around.
+        # Here are the different parts of the following 2 where clauses:
+        # rel8ns -> ?   says pull the array (e.g. [a,b,c]) for rel8n `?`
+        # SELECT jsonb_array_elements_text     makes the array usable with `IN` / `NOT IN`
+        # ? IN array    says is search term in that array, e.g. "a" IN [a,b,c]
         {"with", "ibgib"} ->
           _ = Logger.debug "with ib_gib. where: #{where}. search_term: #{search_term}"
           query
@@ -299,9 +308,10 @@ defmodule IbGib.Data do
           query
           |> where(fragment("? NOT IN (SELECT jsonb_array_elements_text(rel8ns -> ?))", ^search_term, ^where))
 
+
         {"with", "ib"} ->
           _ = Logger.debug "with ib. where: #{where}. search_term: #{search_term}"
-          # regex = ""
+          # regex ^[^^]+ means from the start of the ib^gib up until the ^ delim
           query
           |> where(fragment("? IN (SELECT substring( jsonb_array_elements_text(rel8ns -> ?) FROM '^[^^]+'))", ^search_term, ^where))
 
