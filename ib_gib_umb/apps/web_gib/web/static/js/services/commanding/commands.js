@@ -1504,11 +1504,10 @@ export class AckCommand extends CommandBase {
       console.log(`AckCommand successMsg: ${JSON.stringify(successMsg)}`)
       t.handleSubmitResponse(successMsg);
     }, (errorMsg) => {
-      console.error(`${t.cmdName} command errored. Msg: ${JSON.stringify(errorMsg)}`);
+      let emsg = `${t.cmdName} command errored. Msg: ${JSON.stringify(errorMsg)}`;
+      console.error(emsg);
+      alert(emsg);
       t.ibScape.clearBusy(t.d);
-      t.virtualNode.type = "error";
-      t.virtualNode.errorMsg = JSON.stringify(errorMsg);
-      t.ibScape.zap(t.virtualNode, /*callback*/ null);
     });
   }
 
@@ -1543,6 +1542,99 @@ export class AckCommand extends CommandBase {
     let t = this;
 
     t.ibScape.clearBusy(t.d);
+
+    // if (msg && msg.data) {
+    //   if (msg.data.latest_is_different) {
+    //     console.warn(`${typeof(t)}: There's a new version available...should come down event bus...(if hasn't already done so)`);
+    //     // new one available, don't clear busy.
+    //   } else {
+    //     // already up-to-date
+    //     t.ibScape.clearBusy(t.d);
+    //   }
+    // } else {
+    //   console.error("RefreshCommand.handleSubmitResponse: No msg data(?)");
+    // }
+  }
+}
+
+/** Move a non-Context ibGib to the "trash" rel8n of its parent ibGib. */ 
+export class TrashCommand extends CommandBase {
+  constructor(ibScape, d) {
+    const cmdName = "trash";
+    super(cmdName, ibScape, d);
+  }
+
+  exec() {
+    super.exec();
+    
+    let t = this, lc = `TrashCommand.exec`;
+    console.log(`${t.cmdName} cmd exec`);
+
+    t.ibScape.removeVirtualCmdNodes();
+    if (t.d.isSource) {
+      t.parent = t.ibScape.contextNode;
+      t.parentRel8nName = "ib^gib";
+    } else {
+      t.parent = t.d.parentNode.parentNode;
+      t.parentRel8nName = t.d.parentNode.rel8nName;
+      if (!t.parent || t.parentRel8n) {
+        debugger;
+        let emsg = `${lc} no parent/parentRel8n?`;
+        console.error(emsg);
+        alert(emsg)
+        return;
+      }
+    }
+
+    t.ibScape.setBusy(t.d);
+    t.ibScape.setBusy(t.parent);
+
+    let msg = t.getMessage();
+    t.ibScape.commandMgr.bus.send(msg, (successMsg) => {
+      console.log(`AckCommand successMsg: ${JSON.stringify(successMsg)}`)
+      t.handleSubmitResponse(successMsg);
+    }, (errorMsg) => {
+      console.error(`${t.cmdName} command errored. Msg: ${JSON.stringify(errorMsg)}`);
+      t.ibScape.clearBusy(t.d);
+      t.ibScape.clearBusy(t.parent);
+    });
+  }
+
+  getMessage() {
+    let t = this;
+
+    return {
+      data: t.getMessageData(),
+      metadata: t.getMessageMetadata()
+    };
+  }
+
+  getMessageData() {
+    let t = this;
+
+    return {
+      parent_ibgib:      t.parent.ibGib,
+      parent_rel8n_name: t.parentRel8nName,
+      child_ibgib:       t.d.ibGib,
+      is_adjunct:        t.d.isAdjunct
+    };
+  }
+
+  getMessageMetadata() {
+    let t = this;
+
+    return {
+      name: t.cmdName,
+      type: "cmd",
+      local_time: new Date()
+    };
+  }
+
+  handleSubmitResponse(msg) {
+    let t = this;
+
+    t.ibScape.clearBusy(t.d);
+    t.ibScape.clearBusy(t.parent);
 
     // if (msg && msg.data) {
     //   if (msg.data.latest_is_different) {

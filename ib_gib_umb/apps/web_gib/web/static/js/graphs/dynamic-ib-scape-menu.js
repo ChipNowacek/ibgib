@@ -86,20 +86,61 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
   open(d) {
     let t = this;
 
-    let graph = t.getMenuCommandsJson(d);
     t.moveTo(t.config.menu.position); // temp
+
+    t.d = d;
+    t.addPrimaryCommands(); 
+    t.addAdjunctCommands(); 
+  }
+  
+  addPrimaryCommands() {
+    let t = this;
+
+    let graph = t.getPrimaryCommandGraph(t.d);
 
     for (var i = 0; i < graph.nodes.length; i++) {
       let cmd = graph.nodes[i];
-      let newNode = {
-        id: i,
-        cmd: cmd,
-        virtualId: ibHelper.getRandomString(),
-        type: "cmd"
-      };
-
-      t.add([newNode], [], /*updateParentOrChild*/ true);
+      t.addMenuButton(/*id*/ i, cmd, ibHelper.getRandomString());
     }
+  }
+  
+  addAdjunctCommands() {
+    let t = this;
+    
+    if (t.d.isAdjunct) {
+      let adjunctInfo = t.ibScape.ibGibProvider.getAdjunctInfo_ByAdjunctIbGib(t.d.ibGib);
+      if (adjunctInfo) {
+        t.ibScape.ibGibProvider.getIbGibJson(adjunctInfo.adjunctToTemporalJunction, adjunctTargetIbGibJson => {
+          if (!adjunctTargetIbGibJson) {
+            // This should be truthy
+            // (I'm programming this function very defensively, gauntlet-style...)
+            console.error(`t.d is expected to be adjunct, but adjunctInfo is falsy?.`);
+            return;
+          }
+
+          if (ibAuthz.isAuthorizedForMut8OrRel8(adjunctTargetIbGibJson, t.ibScape.currentIdentityIbGibs)) {
+            let cmd = d3MenuCommands.filter(c => c.name === "ack")[0]
+            t.addMenuButton("ack_id", cmd, ibHelper.getRandomString());
+          }
+        });
+  
+      } else {
+        // Where's our adjunct info?
+        console.error(`t.d is expected to be adjunct, but adjunctInfo is falsy?.`);
+      }
+    }  
+  }
+  
+  addMenuButton(id, cmd, virtualId) {
+    let t = this;
+    let newNode = {
+      id: id,
+      cmd: cmd,
+      virtualId: virtualId || ibHelper.getRandomString(),
+      type: "cmd"
+    };
+
+    t.add([newNode], [], /*updateParentOrChild*/ true);
   }
 
   handleNodeNormalClicked(d) {
@@ -153,65 +194,63 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
    * This menu is what shows the commands for the user to do, e.g. "fork",
    * "merge", etc.
    */
-  getMenuCommandsJson(d) {
+  getPrimaryCommandGraph(d) {
     let t = this;
 
-    // TODO: ib-scape.js getMenuCommandsJson: When we have client-side dynamicism (prefs, whatever), then we need to change this to take that into account when building the popup menu.
-    let commands = ["huh", "zap"];
+    // TODO: ib-scape.js getPrimaryCommandGraph: When we have client-side dynamicism (prefs, whatever), then we need to change this to take that into account when building the popup menu.
+    let cmdNames = ["huh", "zap"];
 
     if (d.virtualId) {
       // Virtual ibGib
-      // commands.push("zap");
+      // cmdNames.push("zap");
     } else {
       // Concrete ibGib
       if (d.ibGib && d.ibGib === "ib^gib") {
-        commands = commands.concat(["info", "fork", "goto", "identemail", "query"]);
+        cmdNames = cmdNames.concat(["info", "fork", "goto", "identemail", "query"]);
       } else {
-        commands = commands.concat([/*"view",*/ "fork", "comment", "pic", "link", "info", "refresh", "tag"]);
+        cmdNames = cmdNames.concat([/*"view",*/ "fork", "comment", "pic", "link", "info", "refresh", "tag"]);
         
         if (!d.isContext) {
-          commands.push("goto");
+          cmdNames.push("goto");
         }
       }
 
       if (ibHelper.isImage(d.ibGibJson) || d.render === "image") {
-        commands.push("view");
-        commands.push("download");
+        cmdNames.push("view");
+        cmdNames.push("download");
       }
 
       if (ibHelper.isLink(d.ibGibJson) || d.render === "link") {
-        commands.push("externallink");
+        cmdNames.push("externallink");
       }
 
       if (ibHelper.isComment(d.ibGibJson)) {
-        commands.push("view");
+        cmdNames.push("view");
 
         if (ibAuthz.isAuthorizedForMut8OrRel8(d.ibGibJson, t.ibScape.currentIdentityIbGibs)) {
-          commands.push("mut8comment");
+          cmdNames.push("mut8comment");
         }
       }
       
       // if (ibHelper.isTag(d.ibGibJson)) {
       //   if (ibAuthz.isAuthorizedForMut8OrRel8(d.ibGibJson, t.ibScape.currentIdentityIbGibs)) {
-      //     commands.push("untag"); // to be implemented
+      //     cmdNames.push("untag"); // to be implemented
       //   }
       // }
       
       if (t.ibScape.currentIdentityIbGibs.includes(d.ibGib) &&
           ibAuthz.isEmailIdentity(d.ibGibJson)) {
-        commands.push("unidentemail");
+        cmdNames.push("unidentemail");
       }
     }
 
-
-    let nodes = commands.map(cmdName => d3MenuCommands.filter(cmd => cmd.name === cmdName)[0]);
+    let nodes = cmdNames.map(cmdName => d3MenuCommands.filter(cmd => cmd.name === cmdName)[0]);
     return {
       "nodes": nodes
     };
   }
 
   moveTo(position) {
-
     let t = this;
 
     let transition =
