@@ -272,6 +272,42 @@ defmodule IbGib.Helper do
   def valid_ib?(_) do
     false
   end
+  
+  @doc """
+  Determines if the given `rel8n_name` is valid.
+  ATOW (2017/02/19), I'm making this the same as valid_ib?
+
+  ## Examples
+      iex> IbGib.Helper.valid_rel8n_name?("ib")
+      true
+
+      iex> IbGib.Helper.valid_rel8n_name?("only letters and spaces")
+      true
+
+      iex> IbGib.Helper.valid_rel8n_name?("12345")
+      true
+
+      iex> IbGib.Helper.valid_rel8n_name?("letters numbers _underscores_ -dashes- spaces allowed")
+      true
+
+      iex> IbGib.Helper.valid_rel8n_name?("")
+      false
+
+      # This one is too long. 76 character max
+      iex> IbGib.Helper.valid_rel8n_name?("12345678901234567890123456789012345678901234567890123456789012345678901234567")
+      false
+  """
+  def valid_rel8n_name?(rel8n_name) when is_bitstring(rel8n_name) do
+    length = rel8n_name |> String.length
+
+    length >= @min_id_length and
+      length <= @max_id_length and
+      Regex.match?(@regex_valid_rel8n_name, rel8n_name)
+  end
+  def valid_rel8n_name?(_) do
+    false
+  end
+  
 
   @doc """
   Determines if the given `gib` is valid. Only letters, digits, underscores
@@ -719,7 +755,101 @@ defmodule IbGib.Helper do
   def get_rel8n(info, rel8n_name) do
     invalid_args([info, rel8n_name])
   end
+
+  @doc """
+  Gets the rel8n_names of all rel8nships between a and b. 
+  So if a is rel8d to b via "ib^gib" and "past", then will return a list:
+  ["ib^gib", "past"].
+  If the two are unrel8d, then will return an empty list: [].
   
+    iex> b_ib_gib = "b^gib"
+    ...> a_rel8ns = %{rel8ns: %{"past" => ["ib^gib", b_ib_gib]}}
+    ...> IbGib.Helper.get_rel8nships(a_rel8ns, b_ib_gib)
+    {:ok, ["past"]}
+    
+    # If there is another rel8n that doesn't list b, then should be excluded
+    iex> b_ib_gib = "b^gib"
+    ...> a_rel8ns = %{rel8ns: %{"past" => ["ib^gib", b_ib_gib], "other" => ["c^gib"]}}
+    ...> IbGib.Helper.get_rel8nships(a_rel8ns, b_ib_gib)
+    {:ok, ["past"]}
+
+    # If not rel8d via any rel8ns, then return empty list.
+    iex> b_ib_gib = "b^gib"
+    ...> a_rel8ns = %{rel8ns: %{"past" => ["ib^gib"], "other" => ["ib^gib"]}}
+    ...> IbGib.Helper.get_rel8nships(a_rel8ns, b_ib_gib)
+    {:ok, []}
+    
+    # Invalid args signature check returns error.
+    iex> b_ib_gib = "b^gib"
+    ...> a_rel8ns = ["this is the wrong type"]
+    ...> Logger.disable(self())
+    ...> {result, _} = IbGib.Helper.get_rel8nships(a_rel8ns, b_ib_gib)
+    ...> Logger.enable(self())
+    ...> result
+    :error
+
+    # Invalid args signature check returns error.
+    iex> b_ib_gib = :wrong_type
+    ...> a_rel8ns = %{rel8ns: %{"past" => ["ib^gib"], "other" => ["ib^gib"]}}
+    ...> Logger.disable(self())
+    ...> {result, _} = IbGib.Helper.get_rel8nships(a_rel8ns, b_ib_gib)
+    ...> Logger.enable(self())
+    ...> result
+    :error
+  """
+  def get_rel8nships(a, b) 
+  def get_rel8nships(a_info, b_info) 
+    when is_map(a_info) and is_map(b_info) do
+    # There is a rel8nship if the _current_ rel8ns of a match _either_ the 
+    # current b_ib_gib _or_ any ib_gib in b's past.
+    with(
+      {:ok, b_ib_gib} <- get_ib_gib(b_info),
+      b_ib_gibs <- [b_ib_gib] ++ b_info[:rel8ns]["past"],
+      {:ok, rel8n_names} <-
+        {
+          :ok, 
+          a_info[:rel8ns]
+          |> Enum.reduce(%{}, fn({rel8n_name, rel8n_ib_gibs}, acc) -> 
+               rel8d_b_ib_gibs = 
+                 b_ib_gibs 
+                 |> Enum.reduce([], fn(b_iG, acc2) ->  
+                      # Find b_ib_gibs that are in rel8n_ib_gibs (oy...)
+                      if rel8n_ib_gibs |> Enum.member?(b_iG) do
+                        acc2 ++ [b_iG]
+                      else
+                        acc2
+                      end
+                    end)
+               if rel8d_b_ib_gibs === [] do
+                 acc
+               else
+                 Map.put(acc, rel8n_name, rel8d_b_ib_gibs)
+               end
+             end)
+        }
+    ) do 
+      {:ok, rel8n_names}
+    else
+    end
+  end
+  def get_rel8nships(a_info, b_ib_gib) 
+    when is_map(a_info) and is_bitstring(b_ib_gib) do
+    {
+      :ok, 
+      a_info[:rel8ns]
+      |> Enum.reduce([], fn({rel8n_name, rel8ns}, acc) -> 
+           if Enum.member?(rel8ns, b_ib_gib) do
+             acc ++ [rel8n_name]
+           else
+             acc
+           end
+         end)
+    }
+  end
+  def get_rel8nships(a, b) do
+    invalid_args([a, b])
+  end
+
   def get_timestamp_str() do
     DateTime.utc_now |> DateTime.to_string
   end

@@ -12,7 +12,7 @@ defmodule IbGib.Transform.Plan.Factory do
 
   require Logger
 
-  import OK, only: :macros
+  import OK, only: ["~>>": 2]
 
   alias IbGib.Transform.Plan.Builder, as: PB
   # import IbGib.Helper

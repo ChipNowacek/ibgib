@@ -1591,7 +1591,7 @@ export class TrashCommand extends CommandBase {
 
     let msg = t.getMessage();
     t.ibScape.commandMgr.bus.send(msg, (successMsg) => {
-      console.log(`AckCommand successMsg: ${JSON.stringify(successMsg)}`)
+      console.log(`TrashCommand successMsg: ${JSON.stringify(successMsg)}`)
       t.handleSubmitResponse(successMsg);
     }, (errorMsg) => {
       console.error(`${t.cmdName} command errored. Msg: ${JSON.stringify(errorMsg)}`);
@@ -1613,10 +1613,9 @@ export class TrashCommand extends CommandBase {
     let t = this;
 
     return {
-      parent_ibgib:      t.parent.ibGib,
+      parent_ib_gib:     t.parent.ibGib,
       parent_rel8n_name: t.parentRel8nName,
       child_ibgib:       t.d.ibGib,
-      is_adjunct:        t.d.isAdjunct
     };
   }
 

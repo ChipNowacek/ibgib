@@ -14,10 +14,6 @@ defmodule WebGib.Validate do
   use IbGib.Constants, :validation
   use WebGib.Constants, :validation
 
-  # ----------------------------------------------------------------------------
-  # Helper (refactor this into a module!)
-  # ----------------------------------------------------------------------------
-
   def validate(type, instance)
   def validate(:ib, ib) do
     valid_ib?(ib)
@@ -124,6 +120,9 @@ defmodule WebGib.Validate do
   end
   def validate(:query_search_text, query_params_(...) = query_params) do
     false
+  end
+  def validate(:rel8n_name, rel8n_name) do
+    valid_rel8n_name?(rel8n_name)
   end
   def validate(:adjunct_rel8n, nil) do
     # can't be nil
