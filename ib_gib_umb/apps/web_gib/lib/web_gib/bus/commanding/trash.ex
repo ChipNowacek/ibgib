@@ -47,12 +47,12 @@ defmodule WebGib.Bus.Commanding.Trash do
         validate_input(:rel8n_name, rel8n_name, "Invalid parent rel8n_name"),
 
       # Execute
-      {:ok, {parent_ib_gib_temp_junc, new_parent_ib_gib}} <-
+      {:ok, {parent_temp_junc_ib_gib, new_parent_ib_gib}} <-
         exec_impl(identity_ib_gibs, parent_ib_gib, child_ib_gib, rel8n_name),
 
       # Broadcast
       {:ok, :ok} <-
-        broadcast(parent_ib_gib_temp_junc, new_parent_ib_gib),
+        broadcast(parent_temp_junc_ib_gib, new_parent_ib_gib),
 
       # Reply
       {:ok, reply_msg} <-
@@ -87,31 +87,16 @@ defmodule WebGib.Bus.Commanding.Trash do
       {:ok, rel8nships} <-
         get_direct_rel8nships(:a_now_b_anytime, parent_info, child_info),
         
-      # If it's directly rel8d, then we're going to unrel8 first
-      {:ok, {parent_ib_gib, parent, parent_info}} <- 
-        unrel8_from_parent(rel8nships, 
-                           rel8n_name, 
-                           identity_ib_gibs, 
-                           {parent_ib_gib, parent, parent_info}, 
-                           {child_ib_gib, child, child_info})
-      
-      {:ok, new_parent_ib_gib} <-
-        
-      
-      # Unrel8 via the rel8n_name
-      {:ok, target_info} <- get_info(target),
-      {:ok, target_ib_gib} <- get_ib_gib(target_info),
-
-      # If authorized, rel8 the adjunct directly to the target
-      {:ok, new_target} <-
-        rel8_to_target_if_authorized(target,
-                                     adjunct,
-                                     adjunct_target_rel8n,
-                                     identity_ib_gibs),
-      {:ok, new_target_info} <- get_info(new_target),
-      {:ok, new_target_ib_gib} <- get_ib_gib(new_target_info)
+      # This will remove the proper rel8nships and add to the "trash" rel8n.
+      {:ok, parent_ib_gib} <- 
+        trash_rel8nships(rel8nships, 
+                         rel8n_name, 
+                         identity_ib_gibs, 
+                         {parent_ib_gib, parent, parent_info}, 
+                         parent_temp_junc_ib_gib,
+                         {child_ib_gib, child, child_info}),
     ) do
-      {:ok, {target_ib_gib, new_target_ib_gib}}
+      {:ok, {parent_temp_junc_ib_gib, parent_ib_gib}}
     else
       error -> default_handle_error(error)
     end
@@ -143,65 +128,73 @@ defmodule WebGib.Bus.Commanding.Trash do
     end
   end
 
-  defp directly_rel8d?(a_info, b_info) do
-    with(
-      {:ok, rel8nships} <-
-        get_direct_rel8nships(:a_now_b_anytime, latest_parent_info, child_info)
-      directly_rel8d? <- map_size(rel8nships) > 0,
-    ) do
-      {:ok, directly_rel8d?}
-    else
-      error -> default_handle_error(error)
-    end
+  # If rel8n_name is ib^gib, then we're going to unrel8 **all** rel8nships.
+  # If rel8n_name isn't 
+  defp trash_rel8nships(rel8nships, 
+                        rel8n_name, 
+                        identity_ib_gibs, 
+                        {parent_ib_gib, parent, parent_info}, 
+                        parent_temp_junc_ib_gib,
+                        {child_ib_gib, child, child_info})
+  defp trash_rel8nships(_rel8nships, 
+                        _rel8n_name, 
+                        _identity_ib_gibs, 
+                        {_parent_ib_gib, parent, _parent_info}, 
+                        parent_temp_junc_ib_gib,
+                        {_child_ib_gib, _child, child_info}) 
+    when map_size(rel8nships) === 0 do
+    # rel8nships is empty, so we have nothing to unrel8
+    # We need to ensure that the child is actually an adjunct to the parent.
+    # Once ensured, we will put the child_ib_gib in the parent's "trash" rel8n.
+      with(
+        {:ok, :ok} <- ensure_is_adjunct(parent_info, child_info),
+        {:ok, parent} <- parent |> rel8(child, identity_ib_gibs, ["trash"]),
+        {:ok, parent_info} <- parent
+      ) do 
+        
+      else
+        
+      end
+    {:ok, {parent_ib_gib, parent, parent_info}}
   end
-  
-  defp child_is_adjunct?(latest_parent_info, 
-                         parent_temp_junc_ib_gib, 
-                         child, 
-                         child_ib_gib) do
-    with(
-      {:ok, rel8n_names} <-
-        get_rel8nships(latest_parent_info[:rel8ns], child_ib_gib),
-      directly_rel8d? <- rel8n_names !== [],
-      
-      
-        
-      {:ok, child_info} <- child |> get_info(),
-        
-      is_adjunct? <- 
-    ) do
-      {:ok, is_adjunct?}
-    else
-    end
+  defp trash_rel8nships(rel8nships, 
+                        rel8n_name = @root_ib_gib, 
+                        identity_ib_gibs, 
+                        {parent_ib_gib, parent, parent_info}, 
+                        parent_temp_junc_ib_gib,
+                        {child_ib_gib, child, child_info}) do
+    # rel8n_name is ib^gib, so unrel8 **all** rel8nships.
+    #   But right now, rel8nships is by rel8n_name. 
+    # We actually _want_ to collate by child_ib_gib and unrel8/rel8 each one
+    #   in a single pass.
+    new_parent = 
+      rel8nships
+      |> Enum.reduce(parent, fn({}, acc_new_parent) -> 
+           
+         end)
+    parent |> rel8(identity_ib_gibs)
+  end
+  defp trash_rel8nships(rel8nships, 
+                        rel8n_name, 
+                        identity_ib_gibs, 
+                        {parent_ib_gib, parent, parent_info}, 
+                        parent_temp_junc_ib_gib,
+                        {child_ib_gib, child, child_info}) do
+    # We've specified a non-ib^gib rel8n_name. 
+    #   If this is the only non-ib^gib rel8n, then we're going to remove the
+    #     ib^gib rel8n as well.
+    #   If there are other existing non-ib^gib rel8ns, then we'll only unrel8
+    #     this particular rel8n_name.
   end
 
-  # Only relate the adjunct if they're actually authorized to rel8 on the
-  # target. This is intended to be called by the target owner.
-  # If not authorized, returns :error tuple.
-  defp rel8_to_target_if_authorized(target,
-                                    adjunct,
-                                    adjunct_target_rel8n,
-                                    identity_ib_gibs) do
-    with(
-      {:ok, target_info} <- target |> get_info(),
-      # authorize if identity_ib_gibs are allowed to execute rel8 on target
-      {authz_result, _} <- Authz.authorize_apply_b(:rel8, target_info[:rel8ns], identity_ib_gibs),
-      {:ok, new_target} <-
-        (
-          if authz_result === :ok do
-            _ = Logger.debug("authz is ok. allower is authorized to rel8 to the target.\nadjunct_target_rel8n: #{adjunct_target_rel8n}" |> ExChalk.yellow |> ExChalk.bg_blue)
-            target |> rel8(adjunct, identity_ib_gibs, [adjunct_target_rel8n])
-          else
-            _ = Logger.debug("authz is NOT ok. adjuncter is NOT authorized to rel8 to the target." |> ExChalk.yellow |> ExChalk.bg_red)
-            # Not authorized, so this is a user adjuncting on someone else's
-            # ibGib
-            {:error, "Not authorized to rel8 the adjunct to the target.\ntarget_info: #{inspect target_info}\nidentity_ib_gibs: #{inspect identity_ib_gibs}\nadjunct_target_rel8n: #{adjunct_target_rel8n}"}
-          end
-        )
-    ) do
-      {:ok, new_target}
+  # For now, this just checks to see if the child's rel8ns includes an 
+  # "adjunct_to" rel8n that includes the parent_temp_junc_ib_gib. 
+  defp ensure_is_adjunct(parent_temp_junc_ib_gib, child_info) do
+    if child_info[:rel8ns]["adjunct_to"] != nil and 
+       Enum.member?(child_info[:rel8ns]["adjunct_to"], parent_temp_junc_ib_gib) do
+      {:ok, :ok}
     else
-      error -> default_handle_error(error)
+      {:error, "The child is not an adjunct to the parent. There is no rel8n named \"adjunct_to\" that contains the parent_temp_junc_ib_gib: #{parent_temp_junc_ib_gib}"}
     end
   end
 
