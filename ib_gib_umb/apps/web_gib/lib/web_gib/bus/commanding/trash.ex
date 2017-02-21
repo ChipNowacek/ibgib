@@ -73,13 +73,9 @@ defmodule WebGib.Bus.Commanding.Trash do
     with(
       # Get the latest parent and latest child in preparation to rel8/unrel8.
       # We'll be updating the parent throughout this function.
-      {:ok, {parent_ib_gib, 
-             parent, 
-             parent_info, 
+      {:ok, {{parent_ib_gib, parent, parent_info}, 
              parent_temp_junc_ib_gib, 
-             child_ib_gib, 
-             child, 
-             child_info}} <-
+             {child_ib_gib, child, child_info}}} <-
         prepare(identity_ib_gibs, parent_ib_gib, child_ib_gib),
 
       # Is the user authorized to to rel8 to/unrel8 from the parent?
@@ -87,14 +83,18 @@ defmodule WebGib.Bus.Commanding.Trash do
         Authz.authorize_apply_b(:rel8, parent_info[:rel8ns], identity_ib_gibs),
 
       # We're going to handle it differently, depending on if the child is
-      # directly rel8d or an adjunct. If neither, then it's an {:error, _}.
-      {:ok, {directly_rel8d?, rel8n_names}} <- 
-        child_is_directly_rel8d?(parent_info, child_info),
+      # directly rel8d or an adjunct. (If neither, then it's an {:error, _}.)
+      {:ok, rel8nships} <-
+        get_direct_rel8nships(:a_now_b_anytime, parent_info, child_info),
         
-      # if it's directly rel8d, then we're going to unrel8 first via all rel8ns
-      {:ok, parent} <- 
-        unrel8_all_rel8ns_from_parent(identity_ib_gibs, parent, child, rel8n_names)
-      # If it's an adjunct, then we're going to go straight "trash" rel8n.
+      # If it's directly rel8d, then we're going to unrel8 first
+      {:ok, {parent_ib_gib, parent, parent_info}} <- 
+        unrel8_from_parent(rel8nships, 
+                           rel8n_name, 
+                           identity_ib_gibs, 
+                           {parent_ib_gib, parent, parent_info}, 
+                           {child_ib_gib, child, child_info})
+      
       {:ok, new_parent_ib_gib} <-
         
       
@@ -135,23 +135,19 @@ defmodule WebGib.Bus.Commanding.Trash do
         IbGib.Expression.Supervisor.start_expression(latest_child_ib_gib),
       {:ok, latest_child_info} <- latest_child |> get_info(),
     ) do
-      {:ok, {latest_parent_ib_gib, 
-             latest_parent, 
-             latest_parent_info, 
+      {:ok, {{latest_parent_ib_gib, latest_parent, latest_parent_info}, 
              parent_temp_junc_ib_gib, 
-             latest_child_ib_gib, 
-             latest_child, 
-             latest_child_info}}
+             {latest_child_ib_gib, latest_child, latest_child_info}}}
     else
       error -> default_handle_error(error)
     end
   end
 
-  defp child_is_directly_rel8d?(parent_info, child_info) do
+  defp directly_rel8d?(a_info, b_info) do
     with(
-      {:ok, rel8n_names} <-
-        get_rel8nships(latest_parent_info[:rel8ns], child_info),
-      directly_rel8d? <- rel8n_names !== [],
+      {:ok, rel8nships} <-
+        get_direct_rel8nships(:a_now_b_anytime, latest_parent_info, child_info)
+      directly_rel8d? <- map_size(rel8nships) > 0,
     ) do
       {:ok, directly_rel8d?}
     else

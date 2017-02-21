@@ -757,97 +757,66 @@ defmodule IbGib.Helper do
   end
 
   @doc """
-  Gets the rel8n_names of all rel8nships between a and b. 
-  So if a is rel8d to b via "ib^gib" and "past", then will return a list:
-  ["ib^gib", "past"].
-  If the two are unrel8d, then will return an empty list: [].
+  Gets the rel8n_names of all rel8nships between ibGibs `a` and `b`.
   
-    iex> b_ib_gib = "b^gib"
-    ...> a_rel8ns = %{rel8ns: %{"past" => ["ib^gib", b_ib_gib]}}
-    ...> IbGib.Helper.get_rel8nships(a_rel8ns, b_ib_gib)
-    {:ok, ["past"]}
-    
-    # If there is another rel8n that doesn't list b, then should be excluded
-    iex> b_ib_gib = "b^gib"
-    ...> a_rel8ns = %{rel8ns: %{"past" => ["ib^gib", b_ib_gib], "other" => ["c^gib"]}}
-    ...> IbGib.Helper.get_rel8nships(a_rel8ns, b_ib_gib)
-    {:ok, ["past"]}
-
-    # If not rel8d via any rel8ns, then return empty list.
-    iex> b_ib_gib = "b^gib"
-    ...> a_rel8ns = %{rel8ns: %{"past" => ["ib^gib"], "other" => ["ib^gib"]}}
-    ...> IbGib.Helper.get_rel8nships(a_rel8ns, b_ib_gib)
-    {:ok, []}
-    
-    # Invalid args signature check returns error.
-    iex> b_ib_gib = "b^gib"
-    ...> a_rel8ns = ["this is the wrong type"]
-    ...> Logger.disable(self())
-    ...> {result, _} = IbGib.Helper.get_rel8nships(a_rel8ns, b_ib_gib)
-    ...> Logger.enable(self())
-    ...> result
-    :error
-
-    # Invalid args signature check returns error.
-    iex> b_ib_gib = :wrong_type
-    ...> a_rel8ns = %{rel8ns: %{"past" => ["ib^gib"], "other" => ["ib^gib"]}}
-    ...> Logger.disable(self())
-    ...> {result, _} = IbGib.Helper.get_rel8nships(a_rel8ns, b_ib_gib)
-    ...> Logger.enable(self())
-    ...> result
-    :error
+  This returns a map in the form of %{"rel8n_name" => ["ib^gib1", "ib^gib2"...]}
+  
+  ## how strategies
+  
+  `how` refers to how we're looking for rel8nships. 
+  
+  The driving use case is to find the rel8nships between two ibGibs in order to
+  unrel8 one of them before rel8ing to "trash". 
+  
+  ### `:a_now_b_anytime` 
+  
+  This strategy will look at the current timeframe of `a` only. It will check
+  each direct rel8n to see if it includes either `b`'s _current_ ib^gib, or 
+  any of the ib^gib listed in its "past" rel8n. 
+  
+  When you fork an ibGib, it starts the past anew, so it will not overlap with
+  other forked timelines. So if you rel8 an ibGib, then fork it, then rel8 the
+  fork, this will only find the rel8nships between each individual timeline. 
+  (Because a fork creates a "different" ibGib.)
   """
-  def get_rel8nships(a, b) 
-  def get_rel8nships(a_info, b_info) 
+  def get_direct_rel8nships(how, a_info, b_info) 
+  def get_direct_rel8nships(:a_now_b_anytime, a_info, b_info)
     when is_map(a_info) and is_map(b_info) do
     # There is a rel8nship if the _current_ rel8ns of a match _either_ the 
     # current b_ib_gib _or_ any ib_gib in b's past.
     with(
       {:ok, b_ib_gib} <- get_ib_gib(b_info),
       b_ib_gibs <- [b_ib_gib] ++ b_info[:rel8ns]["past"],
-      {:ok, rel8n_names} <-
-        {
-          :ok, 
-          a_info[:rel8ns]
-          |> Enum.reduce(%{}, fn({rel8n_name, rel8n_ib_gibs}, acc) -> 
-               rel8d_b_ib_gibs = 
-                 b_ib_gibs 
-                 |> Enum.reduce([], fn(b_iG, acc2) ->  
-                      # Find b_ib_gibs that are in rel8n_ib_gibs (oy...)
-                      if rel8n_ib_gibs |> Enum.member?(b_iG) do
-                        acc2 ++ [b_iG]
-                      else
-                        acc2
-                      end
-                    end)
-               if rel8d_b_ib_gibs === [] do
-                 acc
-               else
-                 Map.put(acc, rel8n_name, rel8d_b_ib_gibs)
-               end
-             end)
-        }
+      rel8n_names <-
+        a_info[:rel8ns]
+        |> Enum.reduce(%{}, fn({rel8n_name, rel8n_ib_gibs}, acc) -> 
+             rel8d_b_ib_gibs = get_rel8d_ib_gibs(rel8n_ib_gibs, b_ib_gibs)
+             if rel8d_b_ib_gibs === [] do
+               acc
+             else
+               Map.put(acc, rel8n_name, rel8d_b_ib_gibs)
+             end
+           end)
     ) do 
       {:ok, rel8n_names}
     else
+      error -> default_handle_error(error)
     end
   end
-  def get_rel8nships(a_info, b_ib_gib) 
-    when is_map(a_info) and is_bitstring(b_ib_gib) do
-    {
-      :ok, 
-      a_info[:rel8ns]
-      |> Enum.reduce([], fn({rel8n_name, rel8ns}, acc) -> 
-           if Enum.member?(rel8ns, b_ib_gib) do
-             acc ++ [rel8n_name]
-           else
-             acc
-           end
-         end)
-    }
-  end
-  def get_rel8nships(a, b) do
+  def get_direct_rel8nships(a, b) do
     invalid_args([a, b])
+  end
+
+  # helper method for above `get_direct_rel8nships` function
+  defp get_rel8d_ib_gibs(rel8n_ib_gibs, b_ib_gibs) do
+    b_ib_gibs 
+    |> Enum.reduce([], fn(b_ib_gib, acc) ->  
+         if Enum.member?(rel8n_ib_gibs, b_ib_gib) do
+           acc ++ [b_ib_gib]
+         else
+           acc
+         end
+       end)
   end
 
   def get_timestamp_str() do
