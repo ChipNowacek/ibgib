@@ -56,7 +56,7 @@ defmodule WebGib.Bus.Commanding.Trash do
 
       # Reply
       {:ok, reply_msg} <-
-        get_reply_msg(adjunct_ib_gib, old_target_ib_gib, new_target_ib_gib)
+        get_reply_msg(parent_temp_junc_ib_gib, new_parent_ib_gib)
     ) do
       {:reply, {:ok, reply_msg}, socket}
     else
@@ -87,7 +87,8 @@ defmodule WebGib.Bus.Commanding.Trash do
       {:ok, rel8nships} <-
         get_direct_rel8nships(:a_now_b_anytime, parent_info, child_info),
         
-      # This will remove the proper rel8nships and add to the "trash" rel8n.
+      # This will remove the "appropriate" rel8nships, depending on rel8n_name,
+      #   and add those ib_gib to the "trash" rel8n.
       {:ok, parent_ib_gib} <- 
         trash_rel8nships(rel8nships, 
                          rel8n_name, 
@@ -146,45 +147,97 @@ defmodule WebGib.Bus.Commanding.Trash do
     # rel8nships is empty, so we have nothing to unrel8
     # We need to ensure that the child is actually an adjunct to the parent.
     # Once ensured, we will put the child_ib_gib in the parent's "trash" rel8n.
-      with(
-        {:ok, :ok} <- ensure_is_adjunct(parent_info, child_info),
-        {:ok, parent} <- parent |> rel8(child, identity_ib_gibs, ["trash"]),
-        {:ok, parent_info} <- parent
-      ) do 
-        
-      else
-        
-      end
-    {:ok, {parent_ib_gib, parent, parent_info}}
-  end
-  defp trash_rel8nships(rel8nships, 
-                        rel8n_name = @root_ib_gib, 
-                        identity_ib_gibs, 
-                        {parent_ib_gib, parent, parent_info}, 
-                        parent_temp_junc_ib_gib,
-                        {child_ib_gib, child, child_info}) do
-    # rel8n_name is ib^gib, so unrel8 **all** rel8nships.
-    #   But right now, rel8nships is by rel8n_name. 
-    # We actually _want_ to collate by child_ib_gib and unrel8/rel8 each one
-    #   in a single pass.
-    new_parent = 
-      rel8nships
-      |> Enum.reduce(parent, fn({}, acc_new_parent) -> 
-           
-         end)
-    parent |> rel8(identity_ib_gibs)
+    with(
+      {:ok, :ok} <- ensure_is_adjunct(parent_info, child_info),
+      {:ok, parent} <- parent |> rel8(child, identity_ib_gibs, ["trash"]),
+      {:ok, parent_info} <- parent |> get_info(),
+      {:ok, parent_ib_gib} <- get_ib_gib(parent_info)
+    ) do 
+      {:ok, parent_ib_gib}
+    else
+      error -> default_handle_error(error)
+    end
   end
   defp trash_rel8nships(rel8nships, 
                         rel8n_name, 
                         identity_ib_gibs, 
                         {parent_ib_gib, parent, parent_info}, 
                         parent_temp_junc_ib_gib,
-                        {child_ib_gib, child, child_info}) do
-    # We've specified a non-ib^gib rel8n_name. 
-    #   If this is the only non-ib^gib rel8n, then we're going to remove the
-    #     ib^gib rel8n as well.
-    #   If there are other existing non-ib^gib rel8ns, then we'll only unrel8
-    #     this particular rel8n_name.
+                        {child_ib_gib, child, child_info}) 
+    when rel8n_name == @root_ib_gib or map_size(rel8nships) === 1 do
+    # rel8n_name is ib^gib (or it's only one rel8nship), 
+    #   so unrel8 **all** rel8nships.
+    #   But right now, rel8nships is mapped by rel8n_name keys. 
+    # We actually _want_ it by child_ib_gib keys so we can unrel8/rel8 each one
+    #   in a single pass. So we invert the map first. 
+    #   See IbGib.Helper.invert_flat_map/1
+    with(
+      new_parent when new_parent != nil <-
+        rel8nships
+        |> invert_flat_map()
+        |> Enum.reduce_while(parent, fn({ib_gib, rel8n_names}, acc) ->
+             # unrel8 via -rel8n, and rel8 to "trash"
+             rel8ns = (rel8n_names |> Enum.map(&("-"<>&1))) ++ ["trash"]
+             {result_tag, result} = 
+               parent |> rel8(child, identity_ib_gibs, rel8ns)
+             if result_tag === :ok do
+               {:cont, result}
+             else
+               {:halt, nil}
+             end
+           end),
+      {:ok, new_parent_info} <- new_parent |> get_info(),
+      {:ok, new_parent_ib_gib} <- get_ib_gib(new_parent_info)
+    ) do
+      {:ok, new_parent_ib_gib}
+    else
+      error -> default_handle_error(error)
+    end
+  end
+  defp trash_rel8nships(rel8nships, 
+                        rel8n_name, 
+                        identity_ib_gibs, 
+                        {parent_ib_gib, parent, parent_info}, 
+                        parent_temp_junc_ib_gib,
+                        {child_ib_gib, child, child_info}) 
+    when map_size(rel8nships) === 2 do
+    # We've specified a non-ib^gib rel8n_name and know there are 2 rel8nships.
+    # If the other rel8nship is ib^gib, then we're going to remove all
+    #   rel8nships via calling this recursively but with rel8n_name === ib^gib.
+    # Else we'll cull rel8nships to only this rel8n and call recursively with 
+    #   with the modified rel8nships where map_size will === 1.
+    other_rel8n_name = 
+      rel8nships 
+      |> Map.keys 
+      |> Enum.filter(&(&1 != rel8n_name)) 
+      |> Enum.at(0)
+      
+    if other_rel8n_name === @root_ib_gib do
+      trash_rel8nships(rel8nships,
+                       @root_ib_gib, 
+                       identity_ib_gibs, 
+                       {parent_ib_gib, parent, parent_info}, 
+                       parent_temp_junc_ib_gib,
+                       {child_ib_gib, child, child_info})
+    else
+      only_rel8n_name_map = 
+        rel8nships 
+        |> Enum.filter(fn({k,v}) -> k === rel8n_name end) 
+        |> Enum.into(%{})
+      if map_size(only_rel8n_name_map) === 1 do
+        trash_rel8nships(only_rel8n_name_map,
+                         rel8n_name,
+                         identity_ib_gibs,
+                         {parent_ib_gib, parent, parent_info},
+                         parent_temp_junc_ib_gib,
+                         {child_ib_gib, child, child_info})
+      else
+        # This should NOT happen. I'm only putting it here juuuuust in case.
+        emsg = "trash_rel8nships problem mapping to the given rel8n_name (#{rel8n_name}). What up wit dat?"
+        _ = Logger.error(emsg)
+        {:error, emsg}
+      end
+    end
   end
 
   # For now, this just checks to see if the child's rel8ns includes an 
@@ -198,27 +251,33 @@ defmodule WebGib.Bus.Commanding.Trash do
     end
   end
 
-  defp broadcast(adjunct_ib_gib, old_target_ib_gib, new_target_ib_gib) do
-    # _ = EventChannel.broadcast_ib_gib_event(:adjunct_rel8d,
-    #                                         {adjunct_ib_gib,
-    #                                          old_target_ib_gib,
-    #                                          new_target_ib_gib})
-
-    _ = EventChannel.broadcast_ib_gib_event(:update,
-                                            {old_target_ib_gib,
-                                             new_target_ib_gib})
-    {:ok, :ok}
-    # def broadcast_ib_gib_event(:update = msg_type,
-    #                            {old_ib_gib, new_ib_gib} = msg_info) do
+  defp get_rel8nships_by_ib_gib(rel8nships) do
+    uniq_ib_gibs = 
+      rel8nships
+      |> Map.values
+      |> List.flatten
+      |> Enum.uniq
+      
+    uniq_ib_gibs
+    |> Enum.reduce(%{}, fn(ib_gib) -> 
+         rel8nships |> Enum.fil
+       end)
   end
 
-  defp get_reply_msg(adjunct_ib_gib, old_target_ib_gib, new_target_ib_gib) do
+  defp broadcast(parent_temp_junc_ib_gib, new_parent_ib_gib) do
+    _ = EventChannel.broadcast_ib_gib_event(:update,
+                                            {parent_temp_junc_ib_gib,
+                                             new_parent_ib_gib})
+    {:ok, :ok}
+  end
+
+  defp get_reply_msg(parent_temp_junc_ib_gib, new_parent_ib_gib) do
     reply_msg =
       %{
         "data" => %{
-          "adjunct_ib_gib" => adjunct_ib_gib,
-          "old_target_ib_gib" => old_target_ib_gib,
-          "new_target_ib_gib" => new_target_ib_gib,
+          "parent_temp_junc_ib_gib" => parent_temp_junc_ib_gib,
+          "old_parent_ib_gib" => old_parent_ib_gib,
+          "new_parent_ib_gib" => new_parent_ib_gib
         }
       }
     {:ok, reply_msg}

@@ -822,4 +822,34 @@ defmodule IbGib.Helper do
   def get_timestamp_str() do
     DateTime.utc_now |> DateTime.to_string
   end
+  
+  @doc """
+  Inverts a map of key/value list to a new map where each item in the value
+  lists is the key and its value is a list of the corresponding original keys.
+
+  That's a mouthful. I'm probably not saying it right. Here is an example:
+  
+    iex> a = ["a"]
+    ...> b = ["b"]
+    ...> c = ["a", "b", "c"]
+    ...> map = %{a: a, b: b, c: c}
+    ...> IbGib.Helper.invert_flat_map(map)
+    %{"a" => [:a, :c], "b" => [:b, :c], "c" => [:c]}
+  """
+  def invert_flat_map(key_valuelist_map) do
+    uniq_values = 
+      key_valuelist_map
+      |> Map.values
+      |> List.flatten
+      |> Enum.uniq
+    
+    # Map the unique values to a keyword list and convert that back to a map.
+    uniq_values
+    |> Enum.map(&({&1, key_valuelist_map 
+                       |> Enum.filter(fn({_k,v}) -> Enum.member?(v, &1) end) 
+                       |> Enum.into(%{}) 
+                       |> Map.keys})) 
+    |> Enum.into(%{})
+  end
+
 end
