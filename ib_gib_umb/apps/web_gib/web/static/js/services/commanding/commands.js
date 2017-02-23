@@ -871,7 +871,6 @@ export class LinkDetailsCommand extends FormDetailsCommandBase {
         // zap it.
         let linkIbGib = msg.data.link_ib_gib;
         t.virtualNode.ibGib = linkIbGib;
-        debugger;
         t.ibScape.zap(t.virtualNode, () => {
           t.ibScape.ibGibEventBus.broadcastIbGibUpdate_LocallyOnly(t.d.tempJuncIbGib, msg.data.new_src_ib_gib);
         });
@@ -1632,8 +1631,9 @@ export class TrashCommand extends CommandBase {
   handleSubmitResponse(msg) {
     let t = this;
 
-    t.ibScape.clearBusy(t.d);
-    t.ibScape.clearBusy(t.parent);
+    t.ibScape.removeNodeAndChildren(t.d);
+    // t.ibScape.clearBusy(t.d);
+    // t.ibScape.clearBusy(t.parent);
 
     // if (msg && msg.data) {
     //   if (msg.data.latest_is_different) {

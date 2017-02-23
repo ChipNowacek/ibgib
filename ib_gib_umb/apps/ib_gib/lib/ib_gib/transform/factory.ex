@@ -172,6 +172,8 @@ defmodule IbGib.Transform.Factory do
     invalid_args([src_ib_gib, other_ib_gib, identity_ib_gibs, rel8ns, opts])
   end
 
+  # NOT DRY>>>>NOOOOOOOOOOO
+  # THIS IS DUPLICATED IN TRANSFORM_FACTORY/BUILDER
   defp add_default_rel8ns_if_needed(rel8ns) do
     cond do
       # If no rel8ns are specified, then do the defaults.

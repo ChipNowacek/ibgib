@@ -181,8 +181,7 @@ defmodule WebGib.Bus.Commanding.Trash do
                else 
                  rel8ns = (rel8n_names |> Enum.map(&("-" <> &1))) ++ ["trash"]
                  _ = Logger.debug("rel8ns: #{inspect rel8ns}" |> ExChalk.bg_green |> ExChalk.blue)
-                 {result_tag, result} = 
-                   parent |> rel8(child, identity_ib_gibs, rel8ns)
+                 {result_tag, result} = exec_unrel8_rel8(identity_ib_gibs, parent, ib_gib, rel8ns)
                  if result_tag === :ok do
                    {:cont, result}
                  else
@@ -270,6 +269,22 @@ defmodule WebGib.Bus.Commanding.Trash do
       {:error, emsg}
     end
   end
+  
+  defp exec_unrel8_rel8(identity_ib_gibs, parent, child_ib_gib, rel8ns) do
+    with(
+      {:ok, child} <-
+        IbGib.Expression.Supervisor.start_expression(child_ib_gib),
+      {:ok, new_parent} <- 
+        parent |> rel8(child, identity_ib_gibs, rel8ns)
+    ) do
+      {:ok, new_parent}
+    else
+      error -> 
+        _ = Logger.error(inspect error)
+        error
+    end
+  end
+  
   # For now, this just checks to see if the child's rel8ns includes an 
   # "adjunct_to" rel8n that includes the parent_temp_junc_ib_gib. 
   defp ensure_is_adjunct(parent_temp_junc_ib_gib, child_info) do
@@ -279,19 +294,6 @@ defmodule WebGib.Bus.Commanding.Trash do
     else
       {:error, "The child is not an adjunct to the parent. There is no rel8n named \"adjunct_to\" that contains the parent_temp_junc_ib_gib: #{parent_temp_junc_ib_gib}"}
     end
-  end
-
-  defp get_rel8nships_by_ib_gib(rel8nships) do
-    uniq_ib_gibs = 
-      rel8nships
-      |> Map.values
-      |> List.flatten
-      |> Enum.uniq
-      
-    uniq_ib_gibs
-    |> Enum.reduce(%{}, fn(ib_gib) -> 
-         rel8nships |> Enum.fil
-       end)
   end
 
   defp broadcast(parent_temp_junc_ib_gib, new_parent_ib_gib) do
