@@ -91,6 +91,7 @@ var d3BoringRel8ns = [
   "dna",
   "query",
   "ib^gib",
+  "trash",
   "identity"
 ];
 
@@ -299,6 +300,15 @@ var d3MenuCommands = [
     "color": d3Colors["remove"],
     "huh": huhText_Cmd_Tag
   },
+  {
+    "id": "menu-trash",
+    "name": "trash",
+    "text": "Trash",
+    "icon": "\uf1f8",
+    "description": "Unrel8 an ibGib and rel8 it via the \"trash\" rel8n.",
+    "color": d3Colors["remove"],
+    "huh": huhText_Cmd_Tag
+  },
   // {
   //   "id": "menu-flag",
   //   "name": "flag",
@@ -381,7 +391,8 @@ let d3Rel8nIcons = {
   "ib^gib": d3RootUnicodeChar,
   "dna": "➿",
   "adjunct": "\uf01c", // Font awesome inbox, unicode one is -> 📥
-  "identity_session": "\uf21b"
+  "identity_session": "\uf21b",
+  "trash": "\uf1f8",
 };
 
 var d3RootUnicodeChar = "\uf10c";

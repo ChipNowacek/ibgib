@@ -44,7 +44,7 @@ defmodule WebGib.Bus.Commanding.Trash do
                        {:simple, child_ib_gib != @root_ib_gib},
                        "The child cannot be the root"),
       {:rel8n_name, true} <-
-        validate_input(:rel8n_name, rel8n_name, "Invalid parent rel8n_name"),
+        validate_input(:rel8n_name, rel8n_name, "Invalid rel8n_name"),
 
       # Execute
       {:ok, {parent_temp_junc_ib_gib, new_parent_ib_gib}} <-
@@ -56,7 +56,7 @@ defmodule WebGib.Bus.Commanding.Trash do
 
       # Reply
       {:ok, reply_msg} <-
-        get_reply_msg(parent_temp_junc_ib_gib, new_parent_ib_gib)
+        get_reply_msg(parent_temp_junc_ib_gib, parent_ib_gib, new_parent_ib_gib)
     ) do
       {:reply, {:ok, reply_msg}, socket}
     else
@@ -95,7 +95,7 @@ defmodule WebGib.Bus.Commanding.Trash do
                          identity_ib_gibs, 
                          {parent_ib_gib, parent, parent_info}, 
                          parent_temp_junc_ib_gib,
-                         {child_ib_gib, child, child_info}),
+                         {child_ib_gib, child, child_info})
     ) do
       {:ok, {parent_temp_junc_ib_gib, parent_ib_gib}}
     else
@@ -119,7 +119,7 @@ defmodule WebGib.Bus.Commanding.Trash do
         IbGib.Common.get_latest_ib_gib(identity_ib_gibs, child_ib_gib),
       {:ok, latest_child} <-
         IbGib.Expression.Supervisor.start_expression(latest_child_ib_gib),
-      {:ok, latest_child_info} <- latest_child |> get_info(),
+      {:ok, latest_child_info} <- latest_child |> get_info()
     ) do
       {:ok, {{latest_parent_ib_gib, latest_parent, latest_parent_info}, 
              parent_temp_junc_ib_gib, 
@@ -129,20 +129,18 @@ defmodule WebGib.Bus.Commanding.Trash do
     end
   end
 
-  # If rel8n_name is ib^gib, then we're going to unrel8 **all** rel8nships.
-  # If rel8n_name isn't 
   defp trash_rel8nships(rel8nships, 
                         rel8n_name, 
                         identity_ib_gibs, 
-                        {parent_ib_gib, parent, parent_info}, 
+                        parent_stuff, 
                         parent_temp_junc_ib_gib,
-                        {child_ib_gib, child, child_info})
-  defp trash_rel8nships(_rel8nships, 
+                        child_stuff) 
+  defp trash_rel8nships(rel8nships, 
                         _rel8n_name, 
-                        _identity_ib_gibs, 
-                        {_parent_ib_gib, parent, _parent_info}, 
+                        identity_ib_gibs, 
+                        {_parent_ib_gib, parent, parent_info}, 
                         parent_temp_junc_ib_gib,
-                        {_child_ib_gib, _child, child_info}) 
+                        {_child_ib_gib, child, child_info}) 
     when map_size(rel8nships) === 0 do
     # rel8nships is empty, so we have nothing to unrel8
     # We need to ensure that the child is actually an adjunct to the parent.
@@ -171,20 +169,26 @@ defmodule WebGib.Bus.Commanding.Trash do
     # We actually _want_ it by child_ib_gib keys so we can unrel8/rel8 each one
     #   in a single pass. So we invert the map first. 
     #   See IbGib.Helper.invert_flat_map/1
+    _ = Logger.debug("rel8nships: #{inspect rel8nships}" |> ExChalk.bg_green |> ExChalk.blue)
     with(
       new_parent when new_parent != nil <-
         rel8nships
         |> invert_flat_map()
         |> Enum.reduce_while(parent, fn({ib_gib, rel8n_names}, acc) ->
              # unrel8 via -rel8n, and rel8 to "trash"
-             rel8ns = (rel8n_names |> Enum.map(&("-"<>&1))) ++ ["trash"]
-             {result_tag, result} = 
-               parent |> rel8(child, identity_ib_gibs, rel8ns)
-             if result_tag === :ok do
-               {:cont, result}
-             else
-               {:halt, nil}
-             end
+               if rel8n_names === ["trash"] do
+                 {:halt, nil}
+               else 
+                 rel8ns = (rel8n_names |> Enum.map(&("-" <> &1))) ++ ["trash"]
+                 _ = Logger.debug("rel8ns: #{inspect rel8ns}" |> ExChalk.bg_green |> ExChalk.blue)
+                 {result_tag, result} = 
+                   parent |> rel8(child, identity_ib_gibs, rel8ns)
+                 if result_tag === :ok do
+                   {:cont, result}
+                 else
+                   {:halt, nil}
+                 end
+               end
            end),
       {:ok, new_parent_info} <- new_parent |> get_info(),
       {:ok, new_parent_ib_gib} <- get_ib_gib(new_parent_info)
@@ -239,7 +243,33 @@ defmodule WebGib.Bus.Commanding.Trash do
       end
     end
   end
-
+  defp trash_rel8nships(rel8nships, 
+                        rel8n_name, 
+                        identity_ib_gibs, 
+                        {parent_ib_gib, parent, parent_info}, 
+                        parent_temp_junc_ib_gib,
+                        {child_ib_gib, child, child_info}) do
+    # We've specified a non-ib^gib rel8n_name and know there are more than 2
+    # So we'll cull rel8nships to only this rel8n and call recursively with 
+    #   with the modified rel8nships where map_size will === 1.
+    only_rel8n_name_map = 
+      rel8nships 
+      |> Enum.filter(fn({k,v}) -> k === rel8n_name end) 
+      |> Enum.into(%{})
+    if map_size(only_rel8n_name_map) === 1 do
+      trash_rel8nships(only_rel8n_name_map,
+                       rel8n_name,
+                       identity_ib_gibs,
+                       {parent_ib_gib, parent, parent_info},
+                       parent_temp_junc_ib_gib,
+                       {child_ib_gib, child, child_info})
+    else
+      # This should NOT happen. I'm only putting it here juuuuust in case.
+      emsg = "trash_rel8nships problem mapping to the given rel8n_name (#{rel8n_name}). What up wit dat?"
+      _ = Logger.error(emsg)
+      {:error, emsg}
+    end
+  end
   # For now, this just checks to see if the child's rel8ns includes an 
   # "adjunct_to" rel8n that includes the parent_temp_junc_ib_gib. 
   defp ensure_is_adjunct(parent_temp_junc_ib_gib, child_info) do
@@ -271,7 +301,9 @@ defmodule WebGib.Bus.Commanding.Trash do
     {:ok, :ok}
   end
 
-  defp get_reply_msg(parent_temp_junc_ib_gib, new_parent_ib_gib) do
+  defp get_reply_msg(parent_temp_junc_ib_gib, 
+                     old_parent_ib_gib, 
+                     new_parent_ib_gib) do
     reply_msg =
       %{
         "data" => %{

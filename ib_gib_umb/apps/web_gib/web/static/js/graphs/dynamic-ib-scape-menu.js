@@ -215,6 +215,10 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
         }
       }
 
+      if (d.ibGib && !d.isContext && d.ibGib !== "ib^gib") {
+        cmdNames.push("trash");
+      }
+
       if (ibHelper.isImage(d.ibGibJson) || d.render === "image") {
         cmdNames.push("view");
         cmdNames.push("download");

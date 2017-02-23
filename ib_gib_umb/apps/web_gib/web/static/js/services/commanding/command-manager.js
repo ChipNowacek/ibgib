@@ -95,6 +95,9 @@ export class CommandManager {
       case "tag":
         t.ibScape.currentCmd = t.getCommand_Tag(dIbGib);
         break;
+      case "trash":
+        t.ibScape.currentCmd = t.getCommand_Trash(dIbGib);
+        break;
       default:
         console.error(`unknown cmdName: ${cmdName}`);
     }
@@ -179,5 +182,8 @@ export class CommandManager {
   }
   getCommand_Tag(dIbGib) {
     return new commands.TagDetailsCommand(this.ibScape, dIbGib);
+  }
+  getCommand_Trash(dIbGib) {
+    return new commands.TrashCommand(this.ibScape, dIbGib);
   }
 }

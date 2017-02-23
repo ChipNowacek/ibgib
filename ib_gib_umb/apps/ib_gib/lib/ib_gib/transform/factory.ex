@@ -137,8 +137,8 @@ defmodule IbGib.Transform.Factory do
 
     case validate_identity_ib_gibs(identity_ib_gibs) do
       {:ok, :ok} ->
-        rel8ns =
-          if length(rel8ns) == 0, do: @default_rel8ns, else: rel8ns
+        # rel8ns =
+        #   if length(rel8ns) == 0, do: @default_rel8ns, else: rel8ns
 
         ib = "rel8"
         relations = %{
@@ -150,7 +150,8 @@ defmodule IbGib.Transform.Factory do
         data = %{
           "src_ib_gib" => src_ib_gib,
           "other_ib_gib" => other_ib_gib,
-          "rel8ns" => rel8ns |> Enum.concat(@default_rel8ns) |> Enum.uniq,
+          "rel8ns" => rel8ns |> add_default_rel8ns_if_needed()
+          # "rel8ns" => rel8ns |> Enum.concat(@default_rel8ns) |> Enum.uniq,
         }
         gib =
           Helper.hash(ib, relations, data)
@@ -169,6 +170,29 @@ defmodule IbGib.Transform.Factory do
   end
   def rel8(src_ib_gib, other_ib_gib, identity_ib_gibs, rel8ns, opts) do
     invalid_args([src_ib_gib, other_ib_gib, identity_ib_gibs, rel8ns, opts])
+  end
+
+  defp add_default_rel8ns_if_needed(rel8ns) do
+    cond do
+      # If no rel8ns are specified, then do the defaults.
+      length(rel8ns) === 0 -> 
+        @default_rel8ns
+      
+      # If it's strictly an unrel8 process, then don't add default rel8ns.
+      rel8ns 
+      |> Enum.all?(&(String.starts_with?(&1, "-"))) -> 
+        rel8ns
+      
+      # If it's only rel8 rel8n is "trash", then don't add defaults.
+      rel8ns 
+      |> Enum.filter(&(!String.starts_with?(&1, "-"))) 
+      |> Enum.all?(&(&1 === "trash")) ->
+        rel8ns
+        
+      # Add the defaults otherwise
+      true ->
+        (rel8ns ++ @default_rel8ns) |> Enum.uniq
+    end
   end
 
   @doc """

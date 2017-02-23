@@ -290,6 +290,12 @@ defmodule IbGib.Helper do
       iex> IbGib.Helper.valid_rel8n_name?("letters numbers _underscores_ -dashes- spaces allowed")
       true
 
+      iex> IbGib.Helper.valid_rel8n_name?("ib^gib")
+      true
+
+      iex> IbGib.Helper.valid_rel8n_name?("tag^gib")
+      true
+
       iex> IbGib.Helper.valid_rel8n_name?("")
       false
 
@@ -298,11 +304,12 @@ defmodule IbGib.Helper do
       false
   """
   def valid_rel8n_name?(rel8n_name) when is_bitstring(rel8n_name) do
-    length = rel8n_name |> String.length
-
-    length >= @min_id_length and
-      length <= @max_id_length and
-      Regex.match?(@regex_valid_rel8n_name, rel8n_name)
+    valid_ib?(rel8n_name) or valid_ib_gib?(rel8n_name)
+    # length = rel8n_name |> String.length
+    # 
+    # length >= @min_id_length and
+    #   length <= @max_id_length and
+    #   Regex.match?(@regex_valid_rel8n_name, rel8n_name)
   end
   def valid_rel8n_name?(_) do
     false
@@ -778,6 +785,14 @@ defmodule IbGib.Helper do
   other forked timelines. So if you rel8 an ibGib, then fork it, then rel8 the
   fork, this will only find the rel8nships between each individual timeline. 
   (Because a fork creates a "different" ibGib.)
+  
+    iex> a_info = %{ib: "a", gib: "gib", data: %{}, rel8ns: %{"past" => ["a0^gib"], "ancestor" => ["ib^gib"], "ib^gib"=> ["b^gib"]}}
+    ...> b_info = %{ib: "b", gib: "gib", data: %{}, rel8ns: %{"past" => ["b0^gib"], "ancestor" => ["ib^gib"]}}
+    ...> Logger.disable(self())
+    ...> result = IbGib.Helper.get_direct_rel8nships(:a_now_b_anytime, a_info, b_info)
+    ...> Logger.enable(self())
+    ...> result
+    {:ok, %{"ib^gib" => ["b^gib"]}}
   """
   def get_direct_rel8nships(how, a_info, b_info) 
   def get_direct_rel8nships(:a_now_b_anytime, a_info, b_info)
@@ -786,11 +801,12 @@ defmodule IbGib.Helper do
     # current b_ib_gib _or_ any ib_gib in b's past.
     with(
       {:ok, b_ib_gib} <- get_ib_gib(b_info),
-      b_ib_gibs <- [b_ib_gib] ++ b_info[:rel8ns]["past"],
+      b_ib_gibs <- [b_ib_gib] ++ b_info[:rel8ns]["past"] -- ["ib^gib"],
       rel8n_names <-
         a_info[:rel8ns]
         |> Enum.reduce(%{}, fn({rel8n_name, rel8n_ib_gibs}, acc) -> 
              rel8d_b_ib_gibs = get_rel8d_ib_gibs(rel8n_ib_gibs, b_ib_gibs)
+             _ = Logger.debug("rel8d_b_ib_gibs: #{inspect rel8d_b_ib_gibs}" |> ExChalk.bg_green |> ExChalk.blue)
              if rel8d_b_ib_gibs === [] do
                acc
              else

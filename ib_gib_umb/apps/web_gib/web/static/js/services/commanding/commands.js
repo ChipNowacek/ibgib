@@ -1613,9 +1613,9 @@ export class TrashCommand extends CommandBase {
     let t = this;
 
     return {
-      parent_ib_gib:     t.parent.ibGib,
-      parent_rel8n_name: t.parentRel8nName,
-      child_ibgib:       t.d.ibGib,
+      parent_ib_gib: t.parent.ibGib,
+      child_ib_gib:   t.d.ibGib,
+      rel8n_name:    t.parentRel8nName,
     };
   }
 
