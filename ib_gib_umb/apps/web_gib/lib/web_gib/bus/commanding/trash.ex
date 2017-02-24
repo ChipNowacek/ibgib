@@ -52,7 +52,7 @@ defmodule WebGib.Bus.Commanding.Trash do
 
       # Broadcast
       {:ok, :ok} <-
-        broadcast(parent_temp_junc_ib_gib, new_parent_ib_gib),
+        broadcast(parent_ib_gib, new_parent_ib_gib),
 
       # Reply
       {:ok, reply_msg} <-
@@ -296,9 +296,10 @@ defmodule WebGib.Bus.Commanding.Trash do
     end
   end
 
-  defp broadcast(parent_temp_junc_ib_gib, new_parent_ib_gib) do
+  defp broadcast(old_parent_ib_gib, new_parent_ib_gib) do
+    
     _ = EventChannel.broadcast_ib_gib_event(:update,
-                                            {parent_temp_junc_ib_gib,
+                                            {old_parent_ib_gib,
                                              new_parent_ib_gib})
     {:ok, :ok}
   end

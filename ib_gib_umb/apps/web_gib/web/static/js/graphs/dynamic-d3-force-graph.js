@@ -808,12 +808,21 @@ export class DynamicD3ForceGraph {
         // this call on the parent with duplicate json.
         let nodesToAddClone = nodesToAdd.map(n => t.cloneJson(n));
         let srcNodes = nodesToAdd.concat(t.graphData.nodes);
-        let linksToAddClone = linksToAdd.map(l => {
-          let newSource = srcNodes.filter(n => t.nodeKeyFunction(n) === t.nodeKeyFunction(l.source))[0];
-          let newTarget = srcNodes.filter(n => t.nodeKeyFunction(n) === t.nodeKeyFunction(l.target))[0];
+        let linksToAddClone = 
+          linksToAdd.map(l => {
+            let newSource = srcNodes.filter(n => t.nodeKeyFunction(n) === t.nodeKeyFunction(l.source))[0];
+            let newTarget = srcNodes.filter(n => t.nodeKeyFunction(n) === t.nodeKeyFunction(l.target))[0];
 
-          return { source: newSource.id, target: newTarget.id };
-        });
+            if (newSource && newTarget) {
+              return { source: newSource.id, target: newTarget.id };
+            } else {
+              // this happens when there is a race condition, i.e. if we 
+              // remove a source or target while this function is executing.
+              console.warn(`source or target null when adding new node. probably was removed during this function.`)
+              return { source: null, target: null };
+            }
+          })
+          .filter(l => l.source && l.target);
 
         // For children that do not share data
         t.children

@@ -100,6 +100,7 @@ defmodule WebGib.Bus.Channels.Event do
                              {old_ib_gib, new_ib_gib} = msg_info) do
     with(
       {:ok, temp_junc_ib_gib} <- get_temporal_junction_ib_gib(old_ib_gib),
+      _ <- Logger.debug("update: old_ib_gib: #{old_ib_gib}\nnew_ib_gib: #{new_ib_gib}\ntemp_junc_ib_gib: #{temp_junc_ib_gib}"),
       {:ok, msg} <- get_broadcast_msg(msg_type, {temp_junc_ib_gib, old_ib_gib, new_ib_gib}),
       # Not interested if the broadcast errors. It is possible that the topic
       # doesn't even exist (no one is signed up to hear it).

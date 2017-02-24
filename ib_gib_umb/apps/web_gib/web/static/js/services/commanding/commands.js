@@ -1631,7 +1631,7 @@ export class TrashCommand extends CommandBase {
   handleSubmitResponse(msg) {
     let t = this;
 
-    t.ibScape.removeNodeAndChildren(t.d);
+    // t.ibScape.removeNodeAndChildren(t.d);
     // t.ibScape.clearBusy(t.d);
     // t.ibScape.clearBusy(t.parent);
 
