@@ -211,6 +211,87 @@ defmodule IbGib.Expression.BasicsTest do
   end
 
   @tag :capture_log
+  test "rel8 multiple, remove multiple rel8" do
+    {:ok, root} = Expression.Supervisor.start_expression()
+
+    a_ib = "a ib here"
+    {:ok, a} = root |> Expression.fork(@test_identities_1, a_ib)
+
+    b_ib = "b Yoooo"
+    {:ok, b} = root |> Expression.fork(@test_identities_1, b_ib)
+    b_ib_gib = b |> Expression.get_info! |> Helper.get_ib_gib!
+
+    test_rel8ns = ["rel8d", "other", "woohoo"]
+    a_rel8d = a |> Expression.rel8!(b, @test_identities_1, test_rel8ns, @default_transform_options)
+    a_rel8d_info = a_rel8d |> Expression.get_info!
+
+    test_rel8ns
+    |> Enum.each(fn(test_rel8n) ->
+         assert Map.has_key?(a_rel8d_info[:rel8ns], test_rel8n)
+         assert Enum.member?(a_rel8d_info[:rel8ns][test_rel8n], b_ib_gib)
+       end)
+
+    _ = Logger.debug "a_rel8d_info:\n#{inspect a_rel8d_info, pretty: true}"
+
+    test_unrel8ns = test_rel8ns |> Enum.map(&("-" <> &1))
+    a_unrel8d = a_rel8d |> Expression.rel8!(b, @test_identities_1, test_unrel8ns, @default_transform_options)
+    a_unrel8d_info = a_unrel8d |> Expression.get_info!
+
+    _ = Logger.debug("a_rel8d_info: #{inspect a_rel8d_info}" |> ExChalk.red |> ExChalk.bg_green)
+    _ = Logger.debug("a_unrel8d_info: #{inspect a_unrel8d_info}" |> ExChalk.red |> ExChalk.bg_yellow)
+    assert !Map.has_key?(a_unrel8d_info[:rel8ns], "rel8d")
+
+    test_rel8ns
+    |> Enum.each(fn(test_rel8n) ->
+         _ = Logger.debug("test_rel8n: #{test_rel8n}" |> ExChalk.bg_cyan |> ExChalk.black)
+         assert !Map.has_key?(a_unrel8d_info[:rel8ns], test_rel8n)
+       end)
+  end
+
+  @tag :capture_log
+  test "rel8 multiple, add/remove multiple rel8 in one go" do
+    {:ok, root} = Expression.Supervisor.start_expression()
+
+    a_ib = "a ib here"
+    {:ok, a} = root |> Expression.fork(@test_identities_1, a_ib)
+
+    b_ib = "b Yoooo"
+    {:ok, b} = root |> Expression.fork(@test_identities_1, b_ib)
+    b_ib_gib = b |> Expression.get_info! |> Helper.get_ib_gib!
+
+    test_rel8ns = ["rel8d", "other", "woohoo"]
+    a_rel8d = a |> Expression.rel8!(b, @test_identities_1, test_rel8ns, @default_transform_options)
+    a_rel8d_info = a_rel8d |> Expression.get_info!
+
+    test_rel8ns
+    |> Enum.each(fn(test_rel8n) ->
+         assert Map.has_key?(a_rel8d_info[:rel8ns], test_rel8n)
+         assert Enum.member?(a_rel8d_info[:rel8ns][test_rel8n], b_ib_gib)
+       end)
+
+    _ = Logger.debug "a_rel8d_info:\n#{inspect a_rel8d_info, pretty: true}"
+
+    test_unrel8ns = test_rel8ns |> Enum.map(&("-" <> &1))
+    test_new_rel8ns = ["added_anew", "added_anew_too"]
+    a_anew = a_rel8d |> Expression.rel8!(b, @test_identities_1, test_unrel8ns ++ test_new_rel8ns, @default_transform_options)
+    a_anew_info = a_anew |> Expression.get_info!
+
+    _ = Logger.debug("a_rel8d_info: #{inspect a_rel8d_info}" |> ExChalk.red |> ExChalk.bg_green)
+    _ = Logger.debug("a_anew_info: #{inspect a_anew_info}" |> ExChalk.red |> ExChalk.bg_yellow)
+    
+    test_rel8ns
+    |> Enum.each(fn(test_rel8n) ->
+         _ = Logger.debug("test_rel8n: #{test_rel8n}" |> ExChalk.bg_cyan |> ExChalk.black)
+         assert !Map.has_key?(a_anew_info[:rel8ns], test_rel8n)
+       end)
+    test_new_rel8ns
+    |> Enum.each(fn(test_rel8n) ->
+         _ = Logger.debug("test_rel8n: #{test_rel8n}" |> ExChalk.bg_cyan |> ExChalk.black)
+         assert Map.has_key?(a_anew_info[:rel8ns], test_rel8n)
+       end)
+  end
+
+  @tag :capture_log
   test "rel8, fork, try remove ancestor rel8n, should fail" do
     {:ok, root} = Expression.Supervisor.start_expression()
 

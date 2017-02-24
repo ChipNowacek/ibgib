@@ -31,6 +31,7 @@ defmodule IbGib.Constants do
       @regex_valid_gib ~r/^\w+$/
       # delim hardcoded in!!!!
       @regex_valid_ib_gib ~r/^\w[\w\d \-]*(?<![\s])[\^][\w\d]+$/
+      @regex_valid_rel8n_name @regex_valid_ib
 
       @default_dna [@root_ib_gib]
       @default_past [@root_ib_gib]

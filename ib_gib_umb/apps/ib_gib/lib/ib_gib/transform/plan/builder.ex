@@ -237,7 +237,8 @@ defmodule IbGib.Transform.Plan.Builder do
                   }
                 } = step) do
 
-    rel8ns = rel8ns |> Enum.concat(@default_rel8ns) |> Enum.uniq
+    rel8ns = rel8ns |> add_default_rel8ns_if_needed()
+    # rel8ns = rel8ns |> Enum.concat(@default_rel8ns) |> Enum.uniq
     step_f_data = Map.put(step["f_data"], "rel8ns", rel8ns)
     step = Map.put(step, "f_data", step_f_data)
 
@@ -326,13 +327,38 @@ defmodule IbGib.Transform.Plan.Builder do
                 "f_data" => %{
                   "type" => "rel8",
                   "other_ib_gib" => other_ib_gib,
-                  "rel8ns" => rel8ns |> Enum.concat(@default_rel8ns) |> Enum.uniq,
+                  "rel8ns" => rel8ns |> add_default_rel8ns_if_needed(),
                 }
               }
             )
   end
   def add_rel8(plan, name, other_ib_gib, rel8ns) do
     invalid_args([plan, name, other_ib_gib, rel8ns])
+  end
+  
+  # NOT DRY>>>>NOOOOOOOOOOO
+  # THIS IS DUPLICATED IN TRANSFORM_FACTORY/BUILDER
+  defp add_default_rel8ns_if_needed(rel8ns) do
+    cond do
+      # If no rel8ns are specified, then do the defaults.
+      length(rel8ns) === 0 -> 
+        @default_rel8ns
+      
+      # If it's strictly an unrel8 process, then don't add default rel8ns.
+      rel8ns 
+      |> Enum.all?(&(String.starts_with?(&1, "-"))) -> 
+        rel8ns
+      
+      # If it's only rel8 rel8n is "trash", then don't add defaults.
+      rel8ns 
+      |> Enum.filter(&(!String.starts_with?(&1, "-"))) 
+      |> Enum.all?(&(&1 === "trash")) ->
+        rel8ns
+        
+      # Add the defaults otherwise
+      true ->
+        (rel8ns ++ @default_rel8ns) |> Enum.uniq
+    end
   end
 
   # ----------------------------------------------------------------------------

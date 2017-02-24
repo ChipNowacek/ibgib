@@ -272,6 +272,49 @@ defmodule IbGib.Helper do
   def valid_ib?(_) do
     false
   end
+  
+  @doc """
+  Determines if the given `rel8n_name` is valid.
+  ATOW (2017/02/19), I'm making this the same as valid_ib?
+
+  ## Examples
+      iex> IbGib.Helper.valid_rel8n_name?("ib")
+      true
+
+      iex> IbGib.Helper.valid_rel8n_name?("only letters and spaces")
+      true
+
+      iex> IbGib.Helper.valid_rel8n_name?("12345")
+      true
+
+      iex> IbGib.Helper.valid_rel8n_name?("letters numbers _underscores_ -dashes- spaces allowed")
+      true
+
+      iex> IbGib.Helper.valid_rel8n_name?("ib^gib")
+      true
+
+      iex> IbGib.Helper.valid_rel8n_name?("tag^gib")
+      true
+
+      iex> IbGib.Helper.valid_rel8n_name?("")
+      false
+
+      # This one is too long. 76 character max
+      iex> IbGib.Helper.valid_rel8n_name?("12345678901234567890123456789012345678901234567890123456789012345678901234567")
+      false
+  """
+  def valid_rel8n_name?(rel8n_name) when is_bitstring(rel8n_name) do
+    valid_ib?(rel8n_name) or valid_ib_gib?(rel8n_name)
+    # length = rel8n_name |> String.length
+    # 
+    # length >= @min_id_length and
+    #   length <= @max_id_length and
+    #   Regex.match?(@regex_valid_rel8n_name, rel8n_name)
+  end
+  def valid_rel8n_name?(_) do
+    false
+  end
+  
 
   @doc """
   Determines if the given `gib` is valid. Only letters, digits, underscores
@@ -719,8 +762,110 @@ defmodule IbGib.Helper do
   def get_rel8n(info, rel8n_name) do
     invalid_args([info, rel8n_name])
   end
+
+  @doc """
+  Gets the rel8n_names of all rel8nships between ibGibs `a` and `b`.
   
+  This returns a map in the form of %{"rel8n_name" => ["ib^gib1", "ib^gib2"...]}
+  
+  ## how strategies
+  
+  `how` refers to how we're looking for rel8nships. 
+  
+  The driving use case is to find the rel8nships between two ibGibs in order to
+  unrel8 one of them before rel8ing to "trash". 
+  
+  ### `:a_now_b_anytime` 
+  
+  This strategy will look at the current timeframe of `a` only. It will check
+  each direct rel8n to see if it includes either `b`'s _current_ ib^gib, or 
+  any of the ib^gib listed in its "past" rel8n. 
+  
+  When you fork an ibGib, it starts the past anew, so it will not overlap with
+  other forked timelines. So if you rel8 an ibGib, then fork it, then rel8 the
+  fork, this will only find the rel8nships between each individual timeline. 
+  (Because a fork creates a "different" ibGib.)
+  
+    iex> a_info = %{ib: "a", gib: "gib", data: %{}, rel8ns: %{"past" => ["a0^gib"], "ancestor" => ["ib^gib"], "ib^gib"=> ["b^gib"]}}
+    ...> b_info = %{ib: "b", gib: "gib", data: %{}, rel8ns: %{"past" => ["b0^gib"], "ancestor" => ["ib^gib"]}}
+    ...> Logger.disable(self())
+    ...> result = IbGib.Helper.get_direct_rel8nships(:a_now_b_anytime, a_info, b_info)
+    ...> Logger.enable(self())
+    ...> result
+    {:ok, %{"ib^gib" => ["b^gib"]}}
+  """
+  def get_direct_rel8nships(how, a_info, b_info) 
+  def get_direct_rel8nships(:a_now_b_anytime, a_info, b_info)
+    when is_map(a_info) and is_map(b_info) do
+    # There is a rel8nship if the _current_ rel8ns of a match _either_ the 
+    # current b_ib_gib _or_ any ib_gib in b's past.
+    with(
+      {:ok, b_ib_gib} <- get_ib_gib(b_info),
+      b_ib_gibs <- [b_ib_gib] ++ b_info[:rel8ns]["past"] -- ["ib^gib"],
+      rel8n_names <-
+        a_info[:rel8ns]
+        |> Enum.reduce(%{}, fn({rel8n_name, rel8n_ib_gibs}, acc) -> 
+             rel8d_b_ib_gibs = get_rel8d_ib_gibs(rel8n_ib_gibs, b_ib_gibs)
+             _ = Logger.debug("rel8d_b_ib_gibs: #{inspect rel8d_b_ib_gibs}" |> ExChalk.bg_green |> ExChalk.blue)
+             if rel8d_b_ib_gibs === [] do
+               acc
+             else
+               Map.put(acc, rel8n_name, rel8d_b_ib_gibs)
+             end
+           end)
+    ) do 
+      {:ok, rel8n_names}
+    else
+      error -> default_handle_error(error)
+    end
+  end
+  def get_direct_rel8nships(a, b) do
+    invalid_args([a, b])
+  end
+
+  # helper method for above `get_direct_rel8nships` function
+  defp get_rel8d_ib_gibs(rel8n_ib_gibs, b_ib_gibs) do
+    b_ib_gibs 
+    |> Enum.reduce([], fn(b_ib_gib, acc) ->  
+         if Enum.member?(rel8n_ib_gibs, b_ib_gib) do
+           acc ++ [b_ib_gib]
+         else
+           acc
+         end
+       end)
+  end
+
   def get_timestamp_str() do
     DateTime.utc_now |> DateTime.to_string
   end
+  
+  @doc """
+  Inverts a map of key/value list to a new map where each item in the value
+  lists is the key and its value is a list of the corresponding original keys.
+
+  That's a mouthful. I'm probably not saying it right. Here is an example:
+  
+    iex> a = ["a"]
+    ...> b = ["b"]
+    ...> c = ["a", "b", "c"]
+    ...> map = %{a: a, b: b, c: c}
+    ...> IbGib.Helper.invert_flat_map(map)
+    %{"a" => [:a, :c], "b" => [:b, :c], "c" => [:c]}
+  """
+  def invert_flat_map(key_valuelist_map) do
+    uniq_values = 
+      key_valuelist_map
+      |> Map.values
+      |> List.flatten
+      |> Enum.uniq
+    
+    # Map the unique values to a keyword list and convert that back to a map.
+    uniq_values
+    |> Enum.map(&({&1, key_valuelist_map 
+                       |> Enum.filter(fn({_k,v}) -> Enum.member?(v, &1) end) 
+                       |> Enum.into(%{}) 
+                       |> Map.keys})) 
+    |> Enum.into(%{})
+  end
+
 end
