@@ -517,7 +517,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         if (nodeChildren.length > 0) {
           // use case right now is children who are adjuncts but have been
           // turned into direct rel8ns.
-          // debugger;
           nodeChildren
             .filter(child => child.type === "rel8n")
             .forEach(rel8nNode => {
@@ -630,17 +629,16 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         t.syncContextAdjuncts(adjunctInfos);
       }
 
+      debugger;
       let prunedAdjunctTempJuncIbGibs = t.pruneAdjuncts(tempJuncIbGib);
-
       // console.log(`syncAdjuncts: prunedAdjunctTempJuncIbGibs: ${JSON.stringify(prunedAdjunctTempJuncIbGibs)}`)
 
       // This syncs rel8ns that are being shown. But if there are ibGib nodes
       // that are not expanded at all, then this will not auto-expand them.
-      // For example, if a node has already expanded and is 
       t.graphData.nodes
         .filter(n => n.type === "rel8n" &&
                      !n.virtualId &&
-                     !["past", "ancestor"].includes(n.rel8nName))
+                     !["past", "ancestor", "trash"].includes(n.rel8nName))
         .forEach(rel8nNode => {
           let src = rel8nNode.rel8nSrc;
           let childrenTempJuncIbGibs = t.getChildren(rel8nNode).filter(c => c.type === "ibGib").map(child => child.tempJuncIbGib);
@@ -652,7 +650,13 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
             })
             .filter(info => {
               // Don't add pruned (assimilated) adjuncts.
-              return !prunedAdjunctTempJuncIbGibs.includes(info.adjunctTempJuncIbGib);
+              debugger;
+              let infoPastIbGibs = ibHelper.getRel8dIbGibs(info.adjunctIbGibJson, "past");
+              let assimilated = 
+                ibHelper.isDirectlyRel8d(src.ibGibJson, info.adjunctIbGib) ||
+                ibHelper.isDirectlyRel8dToAny(src.ibGibJson, infoPastIbGibs) ||
+                prunedAdjunctTempJuncIbGibs.includes(info.adjunctTempJuncIbGib);
+              return !assimilated;
             })
             .filter(info => {
               // Only corresponding adjuncts to the given tempJunc
@@ -694,13 +698,20 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       // So, "!some(rel8ns)" pointing to the adjunctIbGib
       adjunctInfos =
         adjunctInfos.filter(info => {
-          return !Object.keys(contextIbGibJson.rel8ns)
-            .map(key => contextIbGibJson.rel8ns[key])
-            .some(rel8nIbGibs => {
-              return rel8nIbGibs.includes(info.adjunctTempJuncIbGib) ||
-                rel8nIbGibs.includes(info.adjunctIbGib);
-            })
-        });
+          let infoPastIbGibs = ibHelper.getRel8dIbGibs(info.adjunctIbGibJson, "past");
+          let assimilated = 
+            ibHelper.isDirectlyRel8d(contextIbGibJson, info.adjunctIbGib) ||
+            ibHelper.isDirectlyRel8dToAny(contextIbGibJson, infoPastIbGibs);
+          return !assimilated;
+        })
+        // adjunctInfos.filter(info => {
+        //   return !Object.keys(contextIbGibJson.rel8ns)
+        //     .map(key => contextIbGibJson.rel8ns[key])
+        //     .some(rel8nIbGibs => {
+        //       return rel8nIbGibs.includes(info.adjunctTempJuncIbGib) ||
+        //         rel8nIbGibs.includes(info.adjunctIbGib);
+        //     })
+        // });
       let adjunctSourceNodes =
         t.graphData.nodes.filter(n => n.isSource && n.id !== t.contextNode.id && !n.isRoot && n.isAdjunct);
 
@@ -744,7 +755,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       try {
         let sourceNodes =
           t.graphData.nodes.filter(n => n.isSource && n.id !== t.contextNode.id && !n.isRoot);
-          // debugger;
         // not optimized :scream:
 
         // prune
@@ -845,9 +855,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
                 // For each adjunctNode, check to see if it's been assimilated
                 // directly on node n. If it has, then it's no longer an adjunct,
                 // but rather a directly rel8d node.
-                if (Object.keys(n.ibGibJson.rel8ns)
-                      .map(key => n.ibGibJson.rel8ns[key])
-                      .some(rel8nIbGibs => rel8nIbGibs.includes(adjunctNode.ibGib))) {
+                if (ibHelper.isDirectlyRel8d(n.ibGibJson, adjunctNode.ibGib)) {
+                // if (Object.keys(n.ibGibJson.rel8ns)
+                //       .map(key => n.ibGibJson.rel8ns[key])
+                //       .some(rel8nIbGibs => rel8nIbGibs.includes(adjunctNode.ibGib))) {
                   adjunctNode.isAdjunct = false;
                   console.log(`${lc} updating adjunctNode. adjunctNode.ibGib: ${adjunctNode.ibGib}`)
                   t.swap(adjunctNode, adjunctNode, /*updateParentOrChild*/ true);
@@ -1171,7 +1182,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     
     if (!removed) {
       console.warn(`remove not found. ibGib: ${dToRemove.ibGib}`)
-      // debugger;
     }
 
     if (t.graphData.nodes.length === 0) {
@@ -2679,7 +2689,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
             // console.log(`updating ibGib node`)
             t.clearBusy(n);
 
-            // debugger;
             t.updateIbGib(n, msg.data.new_ib_gib, /*skipUpdateUrl*/ false, /*callback*/ null);
           });
       }

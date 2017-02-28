@@ -146,7 +146,7 @@ defmodule WebGib.Bus.Commanding.Trash do
     # We need to ensure that the child is actually an adjunct to the parent.
     # Once ensured, we will put the child_ib_gib in the parent's "trash" rel8n.
     with(
-      {:ok, :ok} <- ensure_is_adjunct(parent_info, child_info),
+      {:ok, :ok} <- ensure_is_adjunct(parent_temp_junc_ib_gib, child_info),
       {:ok, parent} <- parent |> rel8(child, identity_ib_gibs, ["trash"]),
       {:ok, parent_info} <- parent |> get_info(),
       {:ok, parent_ib_gib} <- get_ib_gib(parent_info)

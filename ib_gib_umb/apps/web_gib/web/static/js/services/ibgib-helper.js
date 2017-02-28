@@ -47,6 +47,28 @@ export function isInPast(ibGibJson, ibGib) {
   return ibGibJson && ibGibJson.rel8ns && ibGibJson.rel8ns["past"] && ibGibJson.rel8ns["past"].includes(ibGib);
 }
 
+export function isDirectlyRel8d(ibGibJson, ibGib) {
+  return Object.keys(ibGibJson.rel8ns)
+               .map(key => ibGibJson.rel8ns[key])
+               .some(rel8nIbGibs => rel8nIbGibs.includes(ibGib));
+}
+
+export function isDirectlyRel8dToAny(ibGibJson, ibGibs) {
+  return ibGibs.some(ibGib => {
+    return Object.keys(ibGibJson.rel8ns)
+                 .map(key => ibGibJson.rel8ns[key])
+                 .some(rel8nIbGibs => rel8nIbGibs.includes(ibGib));
+  })
+}
+
+export function getRel8dIbGibs(ibGibJson, rel8nName) {
+  if (ibGibJson && ibGibJson.rel8ns) {
+    return ibGibJson.rel8ns[rel8nName] || []; 
+  } else {
+    console.error(`ibGibJson and ibGibJson.rel8ns assumed to be populated.`)
+  }
+}
+
 /** 
  * For safe access to ibGibJson.data.text.
  * ATOW 2/13/
