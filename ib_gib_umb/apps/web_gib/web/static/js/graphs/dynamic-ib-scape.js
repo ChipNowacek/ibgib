@@ -246,9 +246,20 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     window.onpopstate = (event) => {
       console.warn("pop state triggered");
       delete t.contextNode.ibGibJson;
+      
+      let removeSpaces = (ibGib) => {
+        while (ibGib.includes("%20")) {
+          ibGib = ibGib.replace("%20", " ");
+        }
+        return ibGib;
+      };
+      
       // Trim /ibgib/ or ibgib/ to get the ib^gib from the pathname
       let leadingTrimLength = window.location.pathname[0] === "/" ? 7 : 6;
-      let newContextIbGib = window.location.pathname.replace("%5E", "^").substring(leadingTrimLength);
+      let newContextIbGib = window.location.pathname;
+      newContextIbGib = newContextIbGib.replace("%5E", "^");
+      newContextIbGib = removeSpaces(newContextIbGib);
+      newContextIbGib = newContextIbGib.substring(leadingTrimLength);
 
       t.updateIbGib(t.contextNode, newContextIbGib, /*skipUpdateUrl*/ true,
         /*callback*/ () => {
@@ -629,7 +640,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         t.syncContextAdjuncts(adjunctInfos);
       }
 
-      debugger;
       let prunedAdjunctTempJuncIbGibs = t.pruneAdjuncts(tempJuncIbGib);
       // console.log(`syncAdjuncts: prunedAdjunctTempJuncIbGibs: ${JSON.stringify(prunedAdjunctTempJuncIbGibs)}`)
 
