@@ -44,7 +44,7 @@ defmodule IbGib.Common do
         get_ib_gib_identity_ib_gibs(src_ib_gib_info),
 
       # Build the query options
-      query_opts <-
+      {:ok, query_opts} <-
         build_query_opts_latest(src_ib_gib_identity_ib_gibs, src_ib_gib),
 
       # Execute the query itself, which creates the query_result ib_gib
@@ -62,13 +62,31 @@ defmodule IbGib.Common do
     end
   end
 
+  def get_identities_for_query(identity_ib_gibs) do
+    possibles = 
+      identity_ib_gibs
+      |> Enum.filter(&(&1 != @root_ib_gib))
+      |> Enum.filter(&(String.starts_with?(&1, "node")))
+    if length(possibles) > 0 do
+      {:ok, possibles}
+    else
+      {:error, "No queryable identities found. Must have at least one non-root and non-node identity."}
+    end
+  end
+  
   defp build_query_opts_latest(identity_ib_gibs, ib_gib) do
-    non_root_identities = Enum.filter(identity_ib_gibs, &(&1 != @root_ib_gib))
-
-    do_query()
-    |> where_rel8ns("identity", "withany", "ibgib", non_root_identities)
-    |> where_rel8ns("past", "withany", "ibgib", [ib_gib])
-    |> most_recent_only()
+    with(
+      {:ok, identities_for_query} <-
+        get_identities_for_query(identity_ib_gibs),
+      query_opts = (
+        do_query()
+        |> where_rel8ns("identity", "withany", "ibgib", identities_for_query)
+        |> where_rel8ns("past", "withany", "ibgib", [ib_gib])
+        |> most_recent_only()
+      )
+    ) do
+      {:ok, query_opts}
+    end
   end
 
   defp get_ib_gib_identity_ib_gibs(ib_gib_info) do
