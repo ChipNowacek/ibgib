@@ -130,13 +130,25 @@ defmodule WebGib.Bus.Commanding.Refresh do
       OK.success query_result_ib_gib
     end
   end
-  defp refresh(:query_result, identity_ib_gibs, src_ib_gib, src, src_info) do
-    # Rerun the query associated to the result
-    {:error, :not_implemented_query_result}
+  defp refresh(:query_result, identity_ib_gibs, query_result_ib_gib, query_result, query_result_info) do
+    OK.with do
+      query_ib_gib <- get_query_ib_gib(query_result_info[:rel8ns]["query"])
+      query <- IbGib.Expression.Supervisor.start_expression(query_ib_gib)
+      query_info <- query |> get_info()
+      refresh(:query, identity_ib_gibs, query_ib_gib, query, query_info)
+    end
   end
   defp refresh(:latest, identity_ib_gibs, src_ib_gib, _src, _src_info) do
     # Get the latest version of the src_ib_gib
     IbGib.Common.get_latest_ib_gib(identity_ib_gibs, src_ib_gib)
+  end
+  
+  defp get_query_ib_gib(query_rel8ns)
+    when is_list(query_rel8ns) and length(query_rel8ns) === 1 do
+    {:ok, Enum.at(query_rel8ns, 0)}
+  end
+  defp get_query_ib_gib(query_rel8ns) do
+    {:error, "Invalid query rel8ns. query_result should have a \"query\" rel8n with a single ib^gib."}
   end
 
   defp get_reply_msg(:query = refresh_kind, query_ib_gib, query_result_ib_gib) do

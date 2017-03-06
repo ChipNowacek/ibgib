@@ -1464,20 +1464,37 @@ export class RefreshCommand extends CommandBase {
   }
 
   handleSubmitResponse(msg) {
-    let t = this;
+    let t = this, lc = `RefreshCommand.handleSubmitResponse`;
 
-    if (msg && msg.data) {
-      if (msg.data.latest_is_different) {
-        t.ibScape.clearBusy(t.d);
+    debugger;
+    if (msg && msg.data && msg.metadata && msg.metadata.refresh_kind) {
+      switch (msg.metadata.refresh_kind) {
+        case "latest":
+          t.ibScape.clearBusy(t.d);
+          if (msg.data.latest_is_different) {
+            t.ibScape.updateIbGib(t.d, msg.data.latest_ib_gib, /*skipUpdateUrl*/ false, /*callback*/ () => {
+              console.log(`${lc} updated latest with new ib^gib.`)
+            });
+          }
+          break;
+        case "query_result":
+          t.ibScape.clearBusy(t.d);
+          if (msg.data.latest_is_different) {
+            t.ibScape.removeChildren(t.d, /*durationMs*/ 0);
 
-        t.ibScape.updateIbGib(t.d, msg.data.latest_ib_gib, /*skipUpdateUrl*/ false, /*callback*/ () => {
-        });
-      } else {
-        // already up-to-date
-        t.ibScape.clearBusy(t.d);
+            t.ibScape.updateIbGib(t.d, msg.data.latest_ib_gib, /*skipUpdateUrl*/ false, /*callback*/ () => {
+              console.log(`${lc} updated query result with new results.`)
+            });
+          }
+          break;
+        case "query":
+            location.href = `/ibgib/${msg.data.query_result_ib_gib}`
+          break;
+        default:
+          console.error(`${lc} Unknown or missing refresh_kind. msg: ${JSON.stringify(msg)}`)
       }
     } else {
-      console.error("RefreshCommand.handleSubmitResponse: No msg data(?)");
+      console.error(`${lc} Invalid refresh response? msg: ${JSON.stringify(msg)}`);
     }
   }
 }
