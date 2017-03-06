@@ -246,9 +246,20 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     window.onpopstate = (event) => {
       console.warn("pop state triggered");
       delete t.contextNode.ibGibJson;
+      
+      let removeSpaces = (ibGib) => {
+        while (ibGib.includes("%20")) {
+          ibGib = ibGib.replace("%20", " ");
+        }
+        return ibGib;
+      };
+      
       // Trim /ibgib/ or ibgib/ to get the ib^gib from the pathname
       let leadingTrimLength = window.location.pathname[0] === "/" ? 7 : 6;
-      let newContextIbGib = window.location.pathname.replace("%5E", "^").substring(leadingTrimLength);
+      let newContextIbGib = window.location.pathname;
+      newContextIbGib = newContextIbGib.replace("%5E", "^");
+      newContextIbGib = removeSpaces(newContextIbGib);
+      newContextIbGib = newContextIbGib.substring(leadingTrimLength);
 
       t.updateIbGib(t.contextNode, newContextIbGib, /*skipUpdateUrl*/ true,
         /*callback*/ () => {
@@ -629,7 +640,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         t.syncContextAdjuncts(adjunctInfos);
       }
 
-      debugger;
       let prunedAdjunctTempJuncIbGibs = t.pruneAdjuncts(tempJuncIbGib);
       // console.log(`syncAdjuncts: prunedAdjunctTempJuncIbGibs: ${JSON.stringify(prunedAdjunctTempJuncIbGibs)}`)
 
@@ -2210,45 +2220,49 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
    */
   getAdjunctInfos(tempJuncIbGib, callback) {
     let t = this;
-
-    let adjunctInfos = t.ibGibAdjunctCache.getAdjunctInfos(tempJuncIbGib);
-    if (adjunctInfos) {
-      // console.log(`adjunctInfos gotten from cache: ${adjunctInfos.length}`);
-      // console.log(`adjunctInfos gotten from cache: ${JSON.stringify(adjunctInfos)}`);
-      callback(adjunctInfos);
-    } else if (t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib]) {
-      t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib].push(callback);
+    
+    if (tempJuncIbGib === "ib^gib") {
+      callback([]);
     } else {
-      // console.log(`No adjunctInfos in cache. Getting from server...`);
-      
-      t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib] = [callback];
+      let adjunctInfos = t.ibGibAdjunctCache.getAdjunctInfos(tempJuncIbGib);
+      if (adjunctInfos) {
+        // console.log(`adjunctInfos gotten from cache: ${adjunctInfos.length}`);
+        // console.log(`adjunctInfos gotten from cache: ${JSON.stringify(adjunctInfos)}`);
+        callback(adjunctInfos);
+      } else if (t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib]) {
+        t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib].push(callback);
+      } else {
+        // console.log(`No adjunctInfos in cache. Getting from server...`);
+        
+        t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib] = [callback];
 
-      let data = { ibGibs: [tempJuncIbGib] };
-      let cmdGetAdjuncts = new commands.GetAdjunctsCommand(t, data, successMsg => {
-        t.ibGibAdjunctCache.clearAdjunctInfos(tempJuncIbGib);
-        if (successMsg.data && successMsg.data.adjunct_ib_gibs) {
-          let adjunctIbGibs = successMsg.data.adjunct_ib_gibs[tempJuncIbGib];
-          t.getIbGibJsons(adjunctIbGibs, adjunctIbGibJsons => {
-            Object.keys(adjunctIbGibJsons)
-              .map(key => adjunctIbGibJsons[key])
-              .forEach(adjunctIbGibJson => {
-                let adjunctIbGib = ibHelper.getFull_ibGib(adjunctIbGibJson);
-                t.ibGibAdjunctCache.addAdjunctInfo(tempJuncIbGib, tempJuncIbGib, adjunctIbGib, adjunctIbGibJson);
-              });
-            adjunctInfos = t.ibGibAdjunctCache.getAdjunctInfos(tempJuncIbGib);
+        let data = { ibGibs: [tempJuncIbGib] };
+        let cmdGetAdjuncts = new commands.GetAdjunctsCommand(t, data, successMsg => {
+          t.ibGibAdjunctCache.clearAdjunctInfos(tempJuncIbGib);
+          if (successMsg.data && successMsg.data.adjunct_ib_gibs) {
+            let adjunctIbGibs = successMsg.data.adjunct_ib_gibs[tempJuncIbGib];
+            t.getIbGibJsons(adjunctIbGibs, adjunctIbGibJsons => {
+              Object.keys(adjunctIbGibJsons)
+                .map(key => adjunctIbGibJsons[key])
+                .forEach(adjunctIbGibJson => {
+                  let adjunctIbGib = ibHelper.getFull_ibGib(adjunctIbGibJson);
+                  t.ibGibAdjunctCache.addAdjunctInfo(tempJuncIbGib, tempJuncIbGib, adjunctIbGib, adjunctIbGibJson);
+                });
+              adjunctInfos = t.ibGibAdjunctCache.getAdjunctInfos(tempJuncIbGib);
 
-            t._dispatchGetAdjunctInfosCallbacksInProgress(tempJuncIbGib, adjunctInfos);
-            // callback(adjunctInfos);
-          });
-        } else {
-          // console.log(`GetAdjunctsCommand did not have successMsg.data && successMsg.data.adjunct_ib_gibs. Probably has no adjuncts.)`);
-          t._dispatchGetAdjunctInfosCallbacksInProgress(tempJuncIbGib, []);
-            // callback([]);
-        }
-      }, errorMsg => {
-        console.error(`getAdjuncts error: ${JSON.stringify(errorMsg)}`);
-      });
-      cmdGetAdjuncts.exec();
+              t._dispatchGetAdjunctInfosCallbacksInProgress(tempJuncIbGib, adjunctInfos);
+              // callback(adjunctInfos);
+            });
+          } else {
+            // console.log(`GetAdjunctsCommand did not have successMsg.data && successMsg.data.adjunct_ib_gibs. Probably has no adjuncts.)`);
+            t._dispatchGetAdjunctInfosCallbacksInProgress(tempJuncIbGib, []);
+              // callback([]);
+          }
+        }, errorMsg => {
+          console.error(`getAdjuncts error: ${JSON.stringify(errorMsg)}`);
+        });
+        cmdGetAdjuncts.exec();
+      }
     }
   }
   /** wrapper that calls ibGibProvider (refactoring) */
