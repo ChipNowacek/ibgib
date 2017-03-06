@@ -1466,7 +1466,6 @@ export class RefreshCommand extends CommandBase {
   handleSubmitResponse(msg) {
     let t = this, lc = `RefreshCommand.handleSubmitResponse`;
 
-    debugger;
     if (msg && msg.data && msg.metadata && msg.metadata.refresh_kind) {
       switch (msg.metadata.refresh_kind) {
         case "latest":
