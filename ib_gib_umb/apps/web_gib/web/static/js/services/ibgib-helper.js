@@ -55,7 +55,9 @@ export function isDirectlyRel8d(ibGibJson, ibGib) {
 
 export function isDirectlyRel8dToAny(ibGibJson, ibGibs) {
   return ibGibs.some(ibGib => {
-    return Object.keys(ibGibJson.rel8ns)
+    
+    return ibGib !== "ib^gib" &&
+           Object.keys(ibGibJson.rel8ns)
                  .map(key => ibGibJson.rel8ns[key])
                  .some(rel8nIbGibs => rel8nIbGibs.includes(ibGib));
   })

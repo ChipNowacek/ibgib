@@ -660,7 +660,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
             })
             .filter(info => {
               // Don't add pruned (assimilated) adjuncts.
-              debugger;
               let infoPastIbGibs = ibHelper.getRel8dIbGibs(info.adjunctIbGibJson, "past");
               let assimilated = 
                 ibHelper.isDirectlyRel8d(src.ibGibJson, info.adjunctIbGib) ||
@@ -1303,6 +1302,51 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       identityNode.parentNode = rel8nNode;
     });
   }
+  addRootRel8n_Notification() {
+    let t = this;
+
+    if (t.rootRel8nNode_Notification) {
+      t.clearFadeTimeout(t.rootRel8nNode_Notification);
+      t.removeNodeAndChildren(t.rootRel8nNode_Notification);
+      delete t.rootRel8nNode_Notification; 
+    }
+    
+    t.rootRel8nNode_Notification = t.addRel8nVirtualNode(t.rootNode, "notifications", /*fadeTimeoutMs*/ t.config.other.cmdFadeTimeoutMs_Default);
+    t.rootRel8nNode_Notification.isMeta = true;
+  }
+  expandRootRel8n_Notification() {
+    let t = this;
+    let rel8nNode = t.rootRel8nNode_Notification;
+    t.clearFadeTimeout(rel8nNode);
+    
+    t.setBusy(rel8nNode);
+    t.getNotifications(notificationInfos => {
+      notificationInfos.forEach(notificationInfo => {
+        if (notificationInfo.ibGib === "ib^gib") { return; }
+        let notificationNode = 
+          t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", 
+                           /*nameOrIbGib*/ notificationInfo.ibGib, 
+                           /*srcNode*/ rel8nNode, /*shape*/ "circle",
+                           /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null,
+                           /*title*/ "...", /*label*/ "", 
+                           /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y},
+                           /*isAdjunct*/ false);
+        notificationNode.isMeta = true;
+        // notificationNode.isPaused = true;
+        notificationNode.parentNode = rel8nNode;
+      });
+      
+    });
+  }
+  getNotifications(callback) {
+    // ib:
+    //   oy adjunct pic/comment/link/other
+    //   oy reminder
+    // rel8ns:
+    //   sender
+    //   adjunct
+    //   target
+  }
   removeRootNode() {
     let t = this;
     t.graphData.nodes
@@ -1312,6 +1356,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     if (t.rootRel8nNode_Identity) { 
       t.clearFadeTimeout(t.rootRel8nNode_Identity);
       delete t.rootRel8nNode_Identity; 
+    }
+    if (t.rootRel8nNode_Notification) { 
+      t.clearFadeTimeout(t.rootRel8nNode_Notification);
+      delete t.rootRel8nNode_Notification; 
     }
   }
   addContextNode() {
@@ -1799,6 +1847,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     let t = this;
     if (rel8nNode === t.rootRel8nNode_Identity) {
       t.expandRootRel8n_Identity();
+    } else if (rel8nNode === t.rootRel8nNode_Notification) {
+        t.expandRootRel8n_Notification();
     } else {
       console.error(`Unknown meta rel8n node`);
     }
