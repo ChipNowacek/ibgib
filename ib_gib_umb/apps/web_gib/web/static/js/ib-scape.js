@@ -7,10 +7,10 @@ import * as ibHelper from './services/ibgib-helper';
 
 
 export class IbScape {
-  constructor(graphDiv, baseJsonPath, ibGibCache, ibGibImageProvider) {
+  constructor(graphDiv, baseJsonPath, ibGibJsonCache, ibGibImageProvider) {
     this.graphDiv = graphDiv;
     this.baseJsonPath = baseJsonPath;
-    this.ibGibCache = ibGibCache;
+    this.ibGibJsonCache = ibGibJsonCache;
     this.ibGibImageProvider = ibGibImageProvider;
     this.circleRadius = 10;
 
@@ -641,7 +641,7 @@ export class IbScape {
       if (d.render === "text") {
         return null;
       } else if (d.render && d.render === "image") {
-        let ibGibJson = t.ibGibCache.get(d.ibgib);
+        let ibGibJson = t.ibGibJsonCache.get(d.ibgib);
         if (ibGibJson) {
           // console.log("already ibGibJson")
           let imageUrl =
@@ -650,7 +650,7 @@ export class IbScape {
         } else {
           // console.log("not yet ibGibJson")
           d3.json(t.baseJsonPath + d.ibgib, ibGibJson => {
-            t.ibGibCache.add(ibGibJson);
+            t.ibGibJsonCache.add(ibGibJson);
 
             let imageUrl = t.ibGibImageProvider.getThumbnailImageUrl(d.ibgib, ibGibJson);
 
@@ -1041,14 +1041,14 @@ export class IbScape {
   }
 
   getIbGibJson(ibgib, callback) {
-    let ibGibJson = this.ibGibCache.get(ibgib);
+    let ibGibJson = this.ibGibJsonCache.get(ibgib);
     if (ibGibJson) {
       if (callback) { callback(ibGibJson); }
     } else {
       // We don't yet have the json for this particular data.
       // So we need to load the json, and when it returns we will exec callback.
       d3.json(this.baseJsonPath + ibgib, ibGibJson => {
-        this.ibGibCache.add(ibGibJson);
+        this.ibGibJsonCache.add(ibGibJson);
 
         if (callback) { callback(ibGibJson); }
       });

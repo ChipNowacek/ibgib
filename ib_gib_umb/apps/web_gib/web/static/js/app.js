@@ -1,7 +1,7 @@
 import { DynamicIbScape } from "./graphs/dynamic-ib-scape";
 import { DynamicD3ForceGraph } from "./graphs/dynamic-d3-force-graph";
 import { DynamicD3ForceGraph2 } from "./graphs/dynamic-d3-force-graph2";
-import { IbGibCache } from "./services/caches/ibgibjson-cache";
+import { IbGibJsonCache } from "./services/caches/ibgib-json-cache";
 import { IbGibAdjunctCache } from "./services/caches/ibgib-adjunct-cache";
 import { IbGibLatestCache } from "./services/caches/ibgib-latest-cache";
 import { IbGibImageProvider } from "./services/ibgib-image-provider";
@@ -16,10 +16,10 @@ class App {
 
     let divIbGibData = document.querySelector("#ibgib-data");
     if (divIbGibData) {
-      let ibGibCache = new IbGibCache();
+      let ibGibJsonCache = new IbGibJsonCache();
       let ibGibAdjunctCache = new IbGibAdjunctCache();
       let ibGibLatestCache = new IbGibLatestCache();
-      let ibGibImageProvider = new IbGibImageProvider(ibGibCache);
+      let ibGibImageProvider = new IbGibImageProvider(ibGibJsonCache);
       let ibIdentityToken = document.getElementsByName("ib_identity_token")[0].content;
       let ibAggregateIdentityHash =
         document.getElementsByName("ib_agg_identity_hash")[0].content;
@@ -34,19 +34,19 @@ class App {
       let baseD3JsonPath = divIbGibData.getAttribute("d3-data-path");
       let currentIdentityIbGibs = divIbGibData.getAttribute("data-identityibgibs").split("|");
 
-      let ibGibProvider = new IbGibProvider(ibGibCache, ibGibAdjunctCache, ibGibLatestCache, baseJsonPath);
+      let ibGibProvider = new IbGibProvider(ibGibJsonCache, ibGibAdjunctCache, ibGibLatestCache, baseJsonPath);
       let ibGibEventBus = new IbGibEventBus(ibGibSocket.socket, ibGibProvider);
 
       // Create the ibScape, which is the d3 "landscape" for the ibGib.
       let graphDiv = document.querySelector("#ib-d3-graph-div");
 
-      // this.ibScape = new IbScape(graphDiv, baseJsonPath, ibGibCache, ibGibImageProvider);
+      // this.ibScape = new IbScape(graphDiv, baseJsonPath, ibGibJsonCache, ibGibImageProvider);
       //
       // // We set the ibScape to get its json data
       // let data = baseD3JsonPath + ibGib;
       // this.ibScape.update(data);
 
-      this.ibScape = new DynamicIbScape(graphDiv, "mainIbScapeSvg", /*config*/ null, baseJsonPath, ibGibCache, ibGibAdjunctCache, ibGibImageProvider, ibGib, ibGibSocket, ibGibEventBus, /*isPrimaryIbScape*/ true, ibGibProvider, currentIdentityIbGibs);
+      this.ibScape = new DynamicIbScape(graphDiv, "mainIbScapeSvg", /*config*/ null, baseJsonPath, ibGibJsonCache, ibGibAdjunctCache, ibGibImageProvider, ibGib, ibGibSocket, ibGibEventBus, /*isPrimaryIbScape*/ true, ibGibProvider, currentIdentityIbGibs);
       // this.ibScape.init();
       this.ibScape.toggleFullScreen();
 

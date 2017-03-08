@@ -8,31 +8,33 @@ import * as ibHelper from '../ibgib-helper';
  * am too unsure of the overall approach for the updateEventMsg cache to
  * refactor right now.
  */
-export class IbGibCache {
+export class IbGibJsonCache {
   constructor() {
-    let t = this;
-    t.naiveCache = {};
   }
 
   /**
    * True if ibGibJson exists for given `ibGib`.
-   *
-   * This has nothing to do with the `getLatest` mechanism. :nose:
    */
   exists(ibGib) {
-    return ibGib in this.naiveCache;
+    return localStorage.getItem(t._getKey(ibGib)) !== null;
   }
 
   add(ibGibJson) {
+    let t = this;
     let ibGib = ibHelper.getFull_ibGib(ibGibJson);
-    this.naiveCache[ibGib] = ibGibJson;
+    localStorage.setItem(t._getKey(ibGib), JSON.stringify(ibGibJson));
   }
 
   get(ibGib) {
-    if (ibGib in this.naiveCache) {
-      return this.naiveCache[ibGib];
-    } else {
-      return null;
-    }
+    let t = this;
+    let key = t._getKey(ibGib);
+    let json = localStorage.getItem(key);
+    let result = JSON.parse(json);
+    return result;
+  }
+  
+  _getKey(ibGib) {
+    console.log(`IbGibJsonCache._getKey: ${ibGib}`);
+    return "json_" + ibGib;
   }
 }

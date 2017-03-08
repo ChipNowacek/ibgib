@@ -1,10 +1,10 @@
 import * as d3 from 'd3';
 
 export class IbGibProvider {
-  constructor(ibGibCache, ibGibAdjunctCache, ibGibLatestCache, baseJsonPath) {
+  constructor(ibGibJsonCache, ibGibAdjunctCache, ibGibLatestCache, baseJsonPath) {
     let t = this;
 
-    t.ibGibCache = ibGibCache;
+    t.ibGibJsonCache = ibGibJsonCache;
     t.ibGibAdjunctCache = ibGibAdjunctCache;
     t.ibGibLatestCache = ibGibLatestCache;
     t.baseJsonPath = baseJsonPath;
@@ -12,14 +12,14 @@ export class IbGibProvider {
 
   getIbGibJson(ibGib, callback) {
     let t = this;
-    let ibGibJson = this.ibGibCache.get(ibGib);
+    let ibGibJson = this.ibGibJsonCache.get(ibGib);
     if (ibGibJson) {
       if (callback) { callback(ibGibJson); }
     } else {
       // We don't yet have the json for this particular data.
       // So we need to load the json, and when it returns we will exec callback.
       d3.json(t.baseJsonPath + ibGib, ibGibJson => {
-        t.ibGibCache.add(ibGibJson);
+        t.ibGibJsonCache.add(ibGibJson);
 
         if (callback) { callback(ibGibJson); }
       });
@@ -36,7 +36,7 @@ export class IbGibProvider {
   getIbGibJsonOrNull_Sync(ibGib) {
     let lc = `getIbGibJsonOrNull_Sync(${ibGib})`;
 
-    let ibGibJson = this.ibGibCache.get(ibGib);
+    let ibGibJson = this.ibGibJsonCache.get(ibGib);
     if (ibGibJson) {
       return ibGibJson;
     } else {

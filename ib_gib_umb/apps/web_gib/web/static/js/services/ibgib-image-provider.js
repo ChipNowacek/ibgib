@@ -1,10 +1,10 @@
 export class IbGibImageProvider {
-  constructor(ibGibCache) {
-    this.ibGibCache = ibGibCache;
+  constructor(ibGibJsonCache) {
+    this.ibGibJsonCache = ibGibJsonCache;
   }
 
   getThumbnailImageUrl(ibGib, ibGibJson) {
-    ibGibJson = ibGibJson || this.ibGibCache.get(ibGib);
+    ibGibJson = ibGibJson || this.ibGibJsonCache.get(ibGib);
     if (ibGibJson &&
         ibGibJson.data &&
         ibGibJson.data.bin_id &&
@@ -16,7 +16,7 @@ export class IbGibImageProvider {
   }
 
   getFullImageUrl(ibGib, ibGibJson) {
-    ibGibJson = ibGibJson || this.ibGibCache.get(ibGib);
+    ibGibJson = ibGibJson || this.ibGibJsonCache.get(ibGib);
     if (ibGibJson &&
         ibGibJson.data &&
         ibGibJson.data.bin_id &&

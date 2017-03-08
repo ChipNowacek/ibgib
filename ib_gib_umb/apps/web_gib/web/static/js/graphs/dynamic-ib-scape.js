@@ -28,12 +28,12 @@ import { IbGibIbScapeBackgroundRefresher } from '../services/ibgib-ib-scape-back
  * data interaction. So on the client side, this is the big enchilada.
  */
 export class DynamicIbScape extends DynamicD3ForceGraph {
-  constructor(graphDiv, svgId, config, baseJsonPath, ibGibCache, ibGibAdjunctCache, ibGibImageProvider, sourceIbGib, ibGibSocketManager, ibGibEventBus, isPrimaryIbScape, ibGibProvider, currentIdentityIbGibs) {
+  constructor(graphDiv, svgId, config, baseJsonPath, ibGibJsonCache, ibGibAdjunctCache, ibGibImageProvider, sourceIbGib, ibGibSocketManager, ibGibEventBus, isPrimaryIbScape, ibGibProvider, currentIdentityIbGibs) {
     super(graphDiv, svgId, {});
     let t = this;
 
     t.baseJsonPath = baseJsonPath;
-    t.ibGibCache = ibGibCache;
+    t.ibGibJsonCache = ibGibJsonCache;
     t.ibGibAdjunctCache = ibGibAdjunctCache;
     t.ibGibImageProvider = ibGibImageProvider;
     t.ibGibSocketManager = ibGibSocketManager;
@@ -1341,7 +1341,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   getNotifications(callback) {
     // ib:
     //   oy adjunct pic/comment/link/other
-    //   oy reminder
+    //   oy reminder (future todo)
     // rel8ns:
     //   sender
     //   adjunct
@@ -1377,7 +1377,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           fadeTimeoutMs = 0;
 
       t.contextNode = t.addVirtualNode(srcId, srcType, t.contextIbGib, /*srcNode*/ null, srcShape, autoZap, fadeTimeoutMs, /*cmd*/ null, /*title*/ null, /*label*/ null, /*startPos*/ {x: t.rootNode.x, y: t.rootNode.y}, /*isAdjunct*/ false);
-      t.contextNode.isContext = true;
       setTimeout(() => {
         t.pin(t.contextNode);
       }, 200)
@@ -1421,6 +1420,12 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     if (startPos) {
       virtualNode.x = startPos.x;
       virtualNode.y = startPos.y;
+    }
+
+    if (nameOrIbGib === t.contextIbGib && 
+        nameOrIbGib !== "ib^gib" && 
+        !t.contextNode) {
+      virtualNode.isContext = true;
     }
 
     let links = srcNode ? [{ source: srcNode, target: virtualNode }] : [];
