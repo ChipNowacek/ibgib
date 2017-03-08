@@ -1799,6 +1799,73 @@ export class GetAdjunctsCommand extends CommandBase {
   }
 }
 
+/**
+ * Gets the adjuncts for a given ibGib data `d` and returns the adjuncts
+ * in the given `successCallback` when executed.
+ *
+ * The data `d` is not the "normal" d3 node `d` variable, but just data
+ * that contains information for the command. IOW, it is not the data
+ * associated to a d3 node, since this command is executed on its own.
+ *
+ * (Probably will need to revisit exact command architecture for these
+ * non-menu command commands, i.e. refactor.)
+ */
+export class GetOysCommand extends CommandBase {
+  constructor(ibScape, d, successCallback, errorCallback) {
+    const cmdName = "getoys";
+    super(cmdName, ibScape, d);
+
+    let t = this;
+    t.successCallback = successCallback;
+    t.errorCallback = errorCallback;
+  }
+
+  exec() {
+    // Does NOT call super.exec() because this command is different. See class
+    // documentation for details.
+    // super.exec();
+
+    let t = this;
+    // console.log(`${t.cmdName} cmd exec`);
+
+    let msg = t.getMessage();
+    t.ibScape.commandMgr.bus.send(msg, (successMsg) => {
+      if (t.successCallback) {
+         t.successCallback(successMsg);
+       }
+    }, (errorMsg) => {
+      console.error(`${t.cmdName} command errored. Msg: ${JSON.stringify(errorMsg)}`);
+      if (t.errorCallback) { t.errorCallback(errorMsg); }
+    });
+  }
+
+  getMessage() {
+    let t = this;
+
+    return {
+      data: t.getMessageData(),
+      metadata: t.getMessageMetadata()
+    };
+  }
+
+  getMessageData() {
+    let t = this;
+
+    return {
+    };
+  }
+
+  getMessageMetadata() {
+    let t = this;
+
+    return {
+      name: t.cmdName,
+      type: "cmd",
+      local_time: new Date()
+    };
+  }
+}
+
 /** View comment or pic */
 export class ViewDetailsCommand extends HtmlDetailsCommandBase {
   constructor(ibScape, d) {
