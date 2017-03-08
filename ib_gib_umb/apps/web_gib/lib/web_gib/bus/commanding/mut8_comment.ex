@@ -66,7 +66,7 @@ defmodule WebGib.Bus.Commanding.Mut8Comment do
       # Reply
       {:ok, reply_msg} <- get_reply_msg(new_src_ib_gib)
     ) do
-      {:reply, {:ok, reply_msg}, socket}
+      {:ok, reply_msg}
     else
       {:error, reason} when is_bitstring(reason) ->
         handle_cmd_error(:error, reason, msg, socket)

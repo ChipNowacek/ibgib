@@ -75,7 +75,7 @@ defmodule WebGib.Bus.Commanding.Fork do
       # Reply
       {:ok, reply_msg} <- get_reply_msg(forked_ib_gib, new_context_ib_gib_or_nil)
     ) do
-      {:reply, {:ok, reply_msg}, socket}
+      {:ok, reply_msg}
     else
       {:error, reason} when is_bitstring(reason) ->
         handle_cmd_error(:error, reason, msg, socket)

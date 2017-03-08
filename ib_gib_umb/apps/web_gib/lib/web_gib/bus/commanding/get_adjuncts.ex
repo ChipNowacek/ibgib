@@ -51,7 +51,7 @@ defmodule WebGib.Bus.Commanding.GetAdjuncts do
       {:ok, reply_msg} <- get_reply_msg(adjunct_ib_gibs),
       _ <- Logger.debug("reply_msg whoa: #{inspect reply_msg}" |> ExChalk.bg_blue |> ExChalk.white)
     ) do
-      {:reply, {:ok, reply_msg}, socket}
+      {:ok, reply_msg}
     else
       {:error, reason} when is_bitstring(reason) ->
         handle_cmd_error(:error, reason, msg, socket)
