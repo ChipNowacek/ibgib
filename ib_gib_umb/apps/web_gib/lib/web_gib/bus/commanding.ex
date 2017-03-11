@@ -15,7 +15,6 @@ defmodule WebGib.Bus.Commanding do
 
   def handle_cmd(cmd_name, data, metadata, msg, socket) do
     _ = Logger.debug("cmd_name: #{cmd_name}\ndata: #{inspect data}\nmetadata: #{inspect metadata}\nmsg: #{inspect msg}\nsocket: #{inspect socket}" |> ExChalk.bg_cyan |> ExChalk.red)
-
     {:reply, handle_cmd_impl(cmd_name, data, metadata, msg, socket), socket}
   end
 
