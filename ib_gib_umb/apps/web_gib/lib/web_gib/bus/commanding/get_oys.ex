@@ -25,6 +25,7 @@ defmodule WebGib.Bus.Commanding.GetOys do
   import WebGib.Bus.Commanding.Helper
   import WebGib.Patterns
   use IbGib.Constants, :ib_gib
+  use IbGib.Constants, :error_msgs
 
   @doc """
   Handles the command for getting oy(!)s. See module doc for more info `WebGib.Bus.Commanding.GetOys`.
@@ -41,7 +42,7 @@ defmodule WebGib.Bus.Commanding.GetOys do
       oy_ib_gibs <- exec_impl(identity_ib_gibs)
 
       # Reply
-      reply_msg <- get_reply_msg(query_result_ib_gib, oy_ib_gibs)
+      reply_msg <- get_reply_msg(oy_ib_gibs)
       _ <- Logger.debug("reply_msg oyyo: #{inspect reply_msg}" |> ExChalk.bg_blue |> ExChalk.white)
       
       OK.success reply_msg
@@ -55,17 +56,13 @@ defmodule WebGib.Bus.Commanding.GetOys do
 
   defp exec_impl(identity_ib_gibs) do
     with(
-      # Get the adjunct and target in preparation to rel8
       {query_identity_ib_gibs, query_identity} <-
         prepare(identity_ib_gibs)
 
       oy_ib_gibs <- 
         get_oy_ib_gibs(identity_ib_gibs, query_identity_ib_gibs, query_identity)
-
-      {:ok, adjunct_ib_gibs} <-
-        get_adjunct_ib_gibs(identity_ib_gibs, identity, ib_gibs)
-    ) do
-      {:ok, adjunct_ib_gibs}
+        
+      OK.success oy_ib_gibs
     else
       error -> default_handle_error(error)
     end
@@ -100,83 +97,18 @@ defmodule WebGib.Bus.Commanding.GetOys do
       query_opts <- build_query_opts(identity_ib_gibs, query_identity_ib_gibs)
 
       # Execute the query itself, which creates the query_result ib_gib
-      query_result <- query_identity |> query(identity_ib_gibs, query_opts),
+      query_result <- query_identity |> query(identity_ib_gibs, query_opts)
 
       # Return the query_result result (non-root) ib^gibs, if any
       # Returns {:ok, nil} if none found
-      {:ok, query_result_info} <- query_result |> get_info(),
-      _ <- Logger.debug("query_result_info: #{inspect query_result_info}" |> ExChalk.bg_blue |> ExChalk.white),
-      {:ok, adjunct_ib_gibs} <- extract_adjunct_ib_gibs(query_result_info)
+      query_result_info <- query_result |> get_info()
+      _ = Logger.debug("query_result_info: #{inspect query_result_info}" |> ExChalk.bg_blue |> ExChalk.white)
+      oy_ib_gibs <- 
+        extract_result_ib_gibs(query_result_info, [prune_root: true])
 
-      # Run the query
-      query_result <- contact(query_identity, query)
-      query_result_ib_gib <- query_result |> get_info() ~>> get_ib_gib()
-      
-      OK.success query_result_ib_gib
+      OK.success oy_ib_gibs
     else
       reason -> OK.failure handle_ok_error(reason, log: true)
-    end
-  end
-
-  defp get_adjunct_ib_gibs(identity_ib_gibs, identity, ib_gibs) do
-    adjunct_ib_gibs_or_error =
-      ib_gibs
-      |> Enum.uniq()
-      |> Enum.reduce_while(%{}, fn(ib_gib, acc) ->
-           case get_adjuncts(identity_ib_gibs, identity, ib_gib) do
-            # Adjunct_ib_gibs should be a list of ib^gibs or nil if none found.
-             {:ok, nil} ->
-               {:cont, acc}
-
-             {:ok, adjunct_ib_gibs} ->
-               _ = Logger.debug("wookie adjunct_ib_gibs: #{inspect adjunct_ib_gibs}" |> ExChalk.bg_blue |> ExChalk.white)
-               {:cont, Map.put(acc, ib_gib, adjunct_ib_gibs)}
-
-             {:error, reason} ->
-               {:halt, reason}
-           end
-         end)
-
-    if is_map(adjunct_ib_gibs_or_error) do
-      # is a map of ib_gib => adjunct ib_gib (or empty, which is fine)
-      _ = Logger.debug("adjunct_ib_gibs_or_error: #{inspect adjunct_ib_gibs_or_error, pretty: true}" |> ExChalk.bg_blue |> ExChalk.white |> ExChalk.italic)
-      {:ok, adjunct_ib_gibs_or_error}
-    else
-      # is an error (reason)
-      {:error, adjunct_ib_gibs_or_error}
-    end
-  end
-
-  defp get_adjuncts(identity_ib_gibs, query_src, ib_gib) do
-    with(
-      # Need to get the latest ib_gib in order to ensure that we get the 
-      # proper temporal junction point.
-      {:ok, latest_ib_gib} <-
-        IbGib.Common.get_latest_ib_gib(identity_ib_gibs, ib_gib),
-
-      # Get the temporal junction for the **latest** ib_gib
-      {:ok, latest_ib_gib_process} <-
-        IbGib.Expression.Supervisor.start_expression(latest_ib_gib),
-      {:ok, latest_ib_gib_info} <- latest_ib_gib_process |> get_info(),
-      _ <- Logger.debug("latest_ib_gib_info yoyo: #{inspect latest_ib_gib_info, pretty: true}" |> ExChalk.bg_green |> ExChalk.blue),
-      {:ok, temporal_junction_ib_gib} when temporal_junction_ib_gib !== nil <-
-        get_temporal_junction_ib_gib(latest_ib_gib_info),
-
-      # Build the query options
-      query_opts <- build_query_opts_adjunct(temporal_junction_ib_gib),
-
-      # Execute the query itself, which creates the query_result ib_gib
-      {:ok, query_result} <- query_src |> query(identity_ib_gibs, query_opts),
-
-      # Return the query_result result (non-root) ib^gibs, if any
-      # Returns {:ok, nil} if none found
-      {:ok, query_result_info} <- query_result |> get_info(),
-      _ <- Logger.debug("query_result_info: #{inspect query_result_info}" |> ExChalk.bg_blue |> ExChalk.white),
-      {:ok, adjunct_ib_gibs} <- extract_adjunct_ib_gibs(query_result_info)
-    ) do
-      {:ok, adjunct_ib_gibs}
-    else
-      error -> default_handle_error(error)
     end
   end
 
@@ -186,35 +118,47 @@ defmodule WebGib.Bus.Commanding.GetOys do
     |> where_rel8ns("identity", "withany", "ibgib", query_identity_ib_gibs)
   end
 
-  defp extract_adjunct_ib_gibs(query_result_info) do
-    result_data = query_result_info[:rel8ns]["result"]
-    result_count = Enum.count(result_data)
+  defp extract_result_ib_gibs(query_result_info, opts \\ [prune_root: true]) do
+    raw_result_ib_gibs = query_result_info[:rel8ns]["result"]
+    result_count = Enum.count(raw_result_ib_gibs)
     case result_count do
       0 ->
         # 0 results is unexpected. Should at least return the root (1 result)
-        _ = Logger.error "unknown result count: #{result_count}"
-        {:ok, nil}
+        emsg = emsg_query_result_count(0)
+        _ = Logger.error emsg
+        {:error, emsg}
 
       1 ->
-        # Not found (1 result is root)
-        {:ok, nil}
+        # 1 result should be the root, but I don't explicitly ensure that here.
+        if opts[:prune_root] do
+          {:ok, []}
+        else
+          if Enum.at(raw_result_ib_gibs, 0) !== @root_ib_gib do
+            Logger.warn "Query result has only one ib_gib that isn't the root. It is expected to always return the root in addition to the other query ib_gibs."
+          end
+          {:ok, raw_result_ib_gibs}
+        end
 
       _ ->
         # At least one non-root result found
-        [_root | adjunct_ib_gibs] = result_data
-        _ = Logger.debug("lookie2 adjunct_ib_gibs: #{inspect adjunct_ib_gibs}" |> ExChalk.bg_blue |> ExChalk.white)
-        {:ok, adjunct_ib_gibs}
+        result_ib_gibs = 
+          if opts[:prune_root] do
+            [_root | non_root_ib_gibs] = raw_result_ib_gibs
+            non_root_ib_gibs
+          else
+            raw_result_ib_gibs
+          end
+        
+        _ = Logger.debug("foonkie result_ib_gibs: #{inspect result_ib_gibs}" |> ExChalk.bg_blue |> ExChalk.white)
+        {:ok, result_ib_gibs}
     end
   end
 
-  defp get_reply_msg(adjunct_ib_gibs) do
-    adjunct_ib_gibs =
-      if map_size(adjunct_ib_gibs) > 0, do: adjunct_ib_gibs, else: nil
-
+  defp get_reply_msg(oy_ib_gibs) do
     reply_msg =
       %{
         "data" => %{
-          "adjunct_ib_gibs" => adjunct_ib_gibs
+          "oy_ib_gibs" => oy_ib_gibs
         }
       }
 
