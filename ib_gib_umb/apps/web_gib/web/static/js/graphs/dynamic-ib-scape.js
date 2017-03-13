@@ -1043,6 +1043,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   addRootRel8ns() {
     let t = this;
     t.addRootRel8n_Identity();
+    t.addRootRel8n_Oy();
   }
   /**
    * Adds "important" rel8ns that are not collapsed by default.
@@ -1302,43 +1303,58 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       identityNode.parentNode = rel8nNode;
     });
   }
-  addRootRel8n_Notification() {
+  addRootRel8n_Oy() {
     let t = this;
 
-    if (t.rootRel8nNode_Notification) {
-      t.clearFadeTimeout(t.rootRel8nNode_Notification);
-      t.removeNodeAndChildren(t.rootRel8nNode_Notification);
-      delete t.rootRel8nNode_Notification; 
+    if (t.rootRel8nNode_Oy) {
+      t.clearFadeTimeout(t.rootRel8nNode_Oy);
+      t.removeNodeAndChildren(t.rootRel8nNode_Oy);
+      delete t.rootRel8nNode_Oy; 
     }
     
-    t.rootRel8nNode_Notification = t.addRel8nVirtualNode(t.rootNode, "notifications", /*fadeTimeoutMs*/ t.config.other.cmdFadeTimeoutMs_Default);
-    t.rootRel8nNode_Notification.isMeta = true;
+    t.rootRel8nNode_Oy = t.addRel8nVirtualNode(t.rootNode, "oy", /*fadeTimeoutMs*/ t.config.other.cmdFadeTimeoutMs_Default);
+    t.rootRel8nNode_Oy.isMeta = true;
   }
-  expandRootRel8n_Notification() {
+  expandRootRel8n_Oy(callback) {
     let t = this;
-    let rel8nNode = t.rootRel8nNode_Notification;
+    let rel8nNode = t.rootRel8nNode_Oy;
     t.clearFadeTimeout(rel8nNode);
     
     t.setBusy(rel8nNode);
-    t.getNotifications(notificationInfos => {
-      notificationInfos.forEach(notificationInfo => {
-        if (notificationInfo.ibGib === "ib^gib") { return; }
-        let notificationNode = 
+    t.getOys(oyInfos => {
+      oyInfos.forEach(oyInfo => {
+        if (oyInfo.ibGib === "ib^gib") { return; }
+        let oyNode = 
           t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", 
-                           /*nameOrIbGib*/ notificationInfo.ibGib, 
+                           /*nameOrIbGib*/ oyInfo.ibGib, 
                            /*srcNode*/ rel8nNode, /*shape*/ "circle",
                            /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null,
                            /*title*/ "...", /*label*/ "", 
                            /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y},
                            /*isAdjunct*/ false);
-        notificationNode.isMeta = true;
-        // notificationNode.isPaused = true;
-        notificationNode.parentNode = rel8nNode;
+        oyNode.isMeta = true;
+        // oyNode.isPaused = true;
+        oyNode.parentNode = rel8nNode;
+        
       });
-      
+    
+      t.clearBusy(rel8nNode);
+      if (callback) { callback(); }
     });
   }
-  getNotifications(callback) {
+  getOys(callback) {
+    let t = this, lc = `getOys`;
+    
+    // let data = { ibGibs: [tempJuncIbGib] };
+    let cmdGetOys = new commands.GetOysCommand(t, /*d*/ null, successMsg => {
+      debugger;
+      if (callback) { callback([]); }
+    }, errorMsg => {
+      console.error(`${lc} error: ${JSON.stringify(errorMsg)}`);
+      if (callback) { callback([]); }
+    });
+    cmdGetOys.exec();
+    
     // ib:
     //   oy adjunct pic/comment/link/other
     //   oy reminder (future todo)
@@ -1357,9 +1373,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       t.clearFadeTimeout(t.rootRel8nNode_Identity);
       delete t.rootRel8nNode_Identity; 
     }
-    if (t.rootRel8nNode_Notification) { 
-      t.clearFadeTimeout(t.rootRel8nNode_Notification);
-      delete t.rootRel8nNode_Notification; 
+    if (t.rootRel8nNode_Oy) { 
+      t.clearFadeTimeout(t.rootRel8nNode_Oy);
+      delete t.rootRel8nNode_Oy; 
     }
   }
   addContextNode() {
@@ -1852,13 +1868,13 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     let t = this;
     if (rel8nNode === t.rootRel8nNode_Identity) {
       t.expandRootRel8n_Identity();
-    } else if (rel8nNode === t.rootRel8nNode_Notification) {
-        t.expandRootRel8n_Notification();
+      if (callback) { callback(); }
+    } else if (rel8nNode === t.rootRel8nNode_Oy) {
+        t.expandRootRel8n_Oy(callback);
     } else {
       console.error(`Unknown meta rel8n node`);
+      if (callback) { callback(); }
     }
-    
-    if (callback) { callback(); }
   }
   _refreshIbGibsForAutoExpansion(node, autoExpandRel8ns, callback) {
     let t = this;

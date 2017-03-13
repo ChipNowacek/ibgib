@@ -393,6 +393,7 @@ let d3Rel8nIcons = {
   "adjunct": "\uf01c", // Font awesome inbox, unicode one is -> 📥
   "identity_session": "\uf21b",
   "trash": "\uf1f8",
+  "oy": "\uf0f3"
 };
 
 var d3RootUnicodeChar = "\uf10c";

@@ -21,7 +21,9 @@ defmodule WebGib.Bus.Commanding.GetOys do
   require Logger
   require OK
 
+  alias IbGib.Common
   import IbGib.{Expression, Helper, QueryOptionsFactory}
+  import IbGib.Macros, only: [handle_ok_error: 1, handle_ok_error: 2]
   import WebGib.Bus.Commanding.Helper
   import WebGib.Patterns
   use IbGib.Constants, :ib_gib
@@ -43,7 +45,7 @@ defmodule WebGib.Bus.Commanding.GetOys do
 
       # Reply
       reply_msg <- get_reply_msg(oy_ib_gibs)
-      _ <- Logger.debug("reply_msg oyyo: #{inspect reply_msg}" |> ExChalk.bg_blue |> ExChalk.white)
+      _ = Logger.debug("reply_msg oyyo: #{inspect reply_msg}" |> ExChalk.bg_blue |> ExChalk.white)
       
       OK.success reply_msg
     else
@@ -55,7 +57,7 @@ defmodule WebGib.Bus.Commanding.GetOys do
   end
 
   defp exec_impl(identity_ib_gibs) do
-    with(
+    OK.with do
       {query_identity_ib_gibs, query_identity} <-
         prepare(identity_ib_gibs)
 
@@ -94,13 +96,13 @@ defmodule WebGib.Bus.Commanding.GetOys do
                       query_identity) do
     OK.with do
       # Build the query options
-      query_opts <- build_query_opts(identity_ib_gibs, query_identity_ib_gibs)
+      query_opts <- build_query_opts(query_identity_ib_gibs)
 
       # Execute the query itself, which creates the query_result ib_gib
       query_result <- query_identity |> query(identity_ib_gibs, query_opts)
 
       # Return the query_result result (non-root) ib^gibs, if any
-      # Returns {:ok, nil} if none found
+      # Returns {:ok, []} if none found
       query_result_info <- query_result |> get_info()
       _ = Logger.debug("query_result_info: #{inspect query_result_info}" |> ExChalk.bg_blue |> ExChalk.white)
       oy_ib_gibs <- 
@@ -113,9 +115,11 @@ defmodule WebGib.Bus.Commanding.GetOys do
   end
 
   defp build_query_opts(query_identity_ib_gibs) do
-    do_query()
-    |> where_rel8ns("ancestor", "with", "ibgib", "oy#{@delim}gib")
-    |> where_rel8ns("identity", "withany", "ibgib", query_identity_ib_gibs)
+    query_opts = 
+      do_query()
+      |> where_rel8ns("ancestor", "with", "ibgib", "oy#{@delim}gib")
+      |> where_rel8ns("identity", "withany", "ibgib", query_identity_ib_gibs)
+    {:ok, query_opts}
   end
 
   defp extract_result_ib_gibs(query_result_info, opts \\ [prune_root: true]) do

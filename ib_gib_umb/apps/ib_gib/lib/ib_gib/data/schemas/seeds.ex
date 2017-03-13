@@ -38,10 +38,10 @@ defmodule IbGib.Data.Schemas.Seeds do
     try do
       case Repo.insert(get_seed(ib_atom)) do
         {:ok, _struct} -> _ = Logger.warn "Inserted #{ib} successfully."
-        {:error, error} -> _ = Logger.error "Insert #{ib} failed. This probably just means that the seed for this item has already been executed. (Probably ignore this error). error: #{inspect error}"
+        {:error, error} -> _ = Logger.error "Insert #{ib} failed. Already seeded? error: #{inspect error}"
       end
     rescue
-      error -> _ = Logger.error "Insert #{ib} failed. This probably just means this item has already been seeded (so probably ignore this error). error: #{inspect error}"
+      error -> _ = Logger.error "Insert #{ib} failed. Already seeded? error: #{inspect error}"
     end
     :ok
   end

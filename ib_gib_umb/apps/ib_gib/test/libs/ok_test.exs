@@ -64,7 +64,7 @@ defmodule IbGib.Libs.OK do
     assert result === {:error, 42}
   end
 
-  # @tag :capture_log
+  @tag :capture_log
   test "OK.with, else clause, use default error macro, reason is bitstring" do
     result = 
       OK.with do
@@ -77,7 +77,7 @@ defmodule IbGib.Libs.OK do
     assert result === {:error, "answer"}
   end
 
-  # @tag :capture_log
+  @tag :capture_log
   test "OK.with, else clause, use default error macro, reason is atom" do
     result = 
       OK.with do
@@ -90,7 +90,7 @@ defmodule IbGib.Libs.OK do
     assert result === {:error, "answer"}
   end
 
-  # @tag :capture_log
+  @tag :capture_log
   test "OK.with, else clause, use default error macro, reason is map" do
     error_map = %{question: 6 * 9, answer: 42}
     result = 

@@ -86,6 +86,13 @@ defmodule WebGib.Bus.Commanding.Helper do
     end
   end
 
+  def validate_input({:ok, name}, value, emsg, validate_type) do
+    if validate(validate_type, value) do
+      {:ok, true}
+    else
+      {:error, emsg}
+    end
+  end
   def validate_input(name, value, emsg, validate_type) do
     if validate(validate_type, value) do
       {name, true}
