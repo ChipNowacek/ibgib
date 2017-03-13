@@ -16,6 +16,7 @@ defmodule WebGib.Adjunct do
   """
 
   require Logger
+  require OK
 
   alias IbGib.Auth.Authz
   import IbGib.{Expression, Helper}
@@ -68,11 +69,11 @@ defmodule WebGib.Adjunct do
                              identity_ib_gibs,
                              adjunct_rel8n,
                              adjunct_target_rel8n) do
-    with(
+    OK.with do
       # We're going to mut8 an adjunct_rel8n of the given
       #   `adjunct_rel8n`, e.g. "comment_on".
       # It's useful to do this before the adjunct rel8 itself.
-      {:ok, adjunct} <-
+      adjunct <-
         adjunct
         |> mut8(identity_ib_gibs, %{
             # adjunct_rel8n is what the rel8n from the adjunct to the
@@ -87,25 +88,34 @@ defmodule WebGib.Adjunct do
             #   addition to the 'ib^gib' rel8n)."
             # For a comment, e.g., this would be "comment"
             "adjunct_target_rel8n" => adjunct_target_rel8n
-          }),
+          })
 
       # Back to the Future to the rescue...again!
       # See `IbGib.Helper.get_temporal_junction_ib_gib/1` for more info.
-      {:ok, target_temp_junc_ib_gib} <- get_temporal_junction_ib_gib(target),
-      {:ok, target_temporal_junction} <-
-        IbGib.Expression.Supervisor.start_expression(target_temp_junc_ib_gib),
+      target_temp_junc_ib_gib <- get_temporal_junction_ib_gib(target)
+      target_temporal_junction <-
+        IbGib.Expression.Supervisor.start_expression(target_temp_junc_ib_gib)
 
       # Execute the actual adjunct rel8.
-      {:ok, adjunct} <-
+      adjunct} <-
         adjunct
         |> rel8(target_temporal_junction,
                 identity_ib_gibs,
                 ["adjunct_to"])
-    ) do
-      {:ok, {adjunct, target_temp_junc_ib_gib}}
+      adjunct_ib_gib <- adjunct |> get_info() ~>> get_ib_gib()
+        
+      # Publish the corresponding Oy notification
+      _oy_ib_gib <- 
+        WebGib.Oy.create_and_publish_oy(:adjunct, %{
+          "adjunct_identities" => identity_ib_gibs,
+          "adjunct_ib_gib" => adjunct_ib_gib,
+          "target_identities" => target_identities,
+          "target_ib_gib" => target_ib_gib
+        })
+        
+      OK.success {adjunct, target_temp_junc_ib_gib}
     else
-      error -> default_handle_error(error)
+      reason -> OK.failure handle_ok_error(reason, log: true)
     end
   end
-
 end
