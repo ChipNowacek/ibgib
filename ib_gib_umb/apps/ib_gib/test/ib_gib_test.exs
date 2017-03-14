@@ -12,6 +12,7 @@ defmodule IbGibTest do
   doctest IbGib
   doctest IbGib.Helper
   doctest IbGib.Auth.Identity
+  doctest IbGib.Auth.Authz
   doctest IbGib.Data.Schemas.ValidateHelper
   doctest IbGib.Transform.Factory
   doctest IbGib.Transform.Plan.Builder

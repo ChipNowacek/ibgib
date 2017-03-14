@@ -33,7 +33,7 @@ defmodule IbGib.Auth.Authz do
 
   alias IbGib.{Helper, UnauthorizedError}
 
-  # import IbGib.Macros
+  import IbGib.Macros
 
   use IbGib.Constants, :ib_gib
   use IbGib.Constants, :error_msgs
@@ -278,12 +278,70 @@ defmodule IbGib.Auth.Authz do
       Enum.all?(rel8ns["identity"], &Helper.valid_identity?/1)
   end
 
-  defp get_identity_type(@root_ib_gib) do
+  @doc """
+  Gets the identity type of a given `identity_ib_gib`.
+  
+  ## Examples
+  
+    iex> IbGib.Auth.Authz.get_identity_type("ib^gib")
+    "ibgib"
+    
+    iex> IbGib.Auth.Authz.get_identity_type("session_abc^123gib")
+    "session"
+
+    iex> IbGib.Auth.Authz.get_identity_type("email_abc^123gib")
+    "email"
+  """
+  def get_identity_type(identity_ib_gib)
+  def get_identity_type(@root_ib_gib) do
     "ibgib"
   end
-  defp get_identity_type(identity_ib_gib) do
+  def get_identity_type(identity_ib_gib) do
     {ib, _gib} = Helper.separate_ib_gib!(identity_ib_gib)
     [identity_type, _] = String.split(ib, @identity_type_delim)
     identity_type
+  end
+  
+  @doc """
+  Gets a filtered list of identity_ib_gibs which are the given `identity_type`.
+  
+  ## Examples
+  
+    iex> IbGib.Auth.Authz.get_identities_of_type(["ib^gib", "session_abc^123"], "ibgib")
+    {:ok, ["ib^gib"]}
+
+    iex> IbGib.Auth.Authz.get_identities_of_type(["ib^gib", "session_abc^123"], "session")
+    {:ok, ["session_abc^123"]}
+
+    iex> IbGib.Auth.Authz.get_identities_of_type(["ib^gib", "session_abc^123", "email_abc^123", "email_def^456"], "email")
+    {:ok, ["email_abc^123", "email_def^456"]}
+  """
+  def get_identities_of_type(identity_ib_gibs, identity_type) 
+  def get_identities_of_type(identity_ib_gibs, identity_type) 
+    when is_list(identity_ib_gibs) and identity_ib_gibs !== [] and
+         is_bitstring(identity_type) do
+    identities =
+      identity_ib_gibs
+      |> Enum.filter(&(get_identity_type(&1) == identity_type))
+    {:ok, identities}
+  end
+  def get_identities_of_type(identity_ib_gibs, identity_type) do
+    invalid_args([identity_ib_gibs, identity_type])
+  end
+  
+  @doc """
+  Bang version of `get_identities_of_type/2`.
+
+  iex> IbGib.Auth.Authz.get_identities_of_type!(["ib^gib", "session_abc^123"], "ibgib")
+  ["ib^gib"]
+
+  iex> IbGib.Auth.Authz.get_identities_of_type!(["ib^gib", "session_abc^123"], "session")
+  ["session_abc^123"]
+
+  iex> IbGib.Auth.Authz.get_identities_of_type!(["ib^gib", "session_abc^123", "email_abc^123", "email_def^456"], "email")
+  ["email_abc^123", "email_def^456"]
+  """
+  def get_identities_of_type!(identity_ib_gibs, identity_type) do
+    bang(get_identities_of_type(identity_ib_gibs, identity_type))
   end
 end

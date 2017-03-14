@@ -149,17 +149,10 @@ defmodule WebGib.Bus.Commanding.Ack do
   end
 
   defp broadcast(adjunct_ib_gib, old_target_ib_gib, new_target_ib_gib) do
-    # _ = EventChannel.broadcast_ib_gib_event(:adjunct_rel8d,
-    #                                         {adjunct_ib_gib,
-    #                                          old_target_ib_gib,
-    #                                          new_target_ib_gib})
-
     _ = EventChannel.broadcast_ib_gib_event(:update,
                                             {old_target_ib_gib,
                                              new_target_ib_gib})
     {:ok, :ok}
-    # def broadcast_ib_gib_event(:update = msg_type,
-    #                            {old_ib_gib, new_ib_gib} = msg_info) do
   end
 
   defp get_reply_msg(adjunct_ib_gib, old_target_ib_gib, new_target_ib_gib) do

@@ -15,11 +15,12 @@ defmodule WebGib.Adjunct do
   "adjunct" to a_ib.
   """
 
+  import OK, only: ["~>>": 2]
   require Logger
   require OK
 
   alias IbGib.Auth.Authz
-  import IbGib.{Expression, Helper}
+  import IbGib.{Expression, Helper, Macros}
   use IbGib.Constants, :ib_gib
 
   @doc """
@@ -97,7 +98,7 @@ defmodule WebGib.Adjunct do
         IbGib.Expression.Supervisor.start_expression(target_temp_junc_ib_gib)
 
       # Execute the actual adjunct rel8.
-      adjunct} <-
+      adjunct <-
         adjunct
         |> rel8(target_temporal_junction,
                 identity_ib_gibs,
@@ -107,10 +108,10 @@ defmodule WebGib.Adjunct do
       # Publish the corresponding Oy notification
       _oy_ib_gib <- 
         WebGib.Oy.create_and_publish_oy(:adjunct, %{
+          "name" => adjunct_target_rel8n,
+          "adjunct" => adjunct,
           "adjunct_identities" => identity_ib_gibs,
-          "adjunct_ib_gib" => adjunct_ib_gib,
-          "target_identities" => target_identities,
-          "target_ib_gib" => target_ib_gib
+          "target" => target
         })
         
       OK.success {adjunct, target_temp_junc_ib_gib}
