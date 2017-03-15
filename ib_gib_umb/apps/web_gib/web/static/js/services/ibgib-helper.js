@@ -1,6 +1,7 @@
 import $ from 'jquery';
 import textcomplete from 'jquery-textcomplete';
 import { emojies } from '../textcomplete/emoji';
+var sha256 = require('js-sha256').sha256;
 
 /** Extracts the full ib + gib from the ibGibJson info. */
 export function getFull_ibGib(ibGibJson) {
@@ -224,33 +225,113 @@ export function isMobile() {
 }
 
 export function initAutocomplete(textAreaId) {
-    let t = this, lc = `Comment initAutocomplete`;
-    console.log(`{lc} initializing Autocomplete starting...`)
-    
-    $('#' + textAreaId).textcomplete([
-      { // emoji strategy
-          id: 'emoji',
-          match: /\B:([\-+\w]*)$/,
-          search: function (term, callback) {
-              callback($.map(emojies, function (emoji) {
-                  return emoji.indexOf(term) === 0 ? emoji : null;
-              }));
-          },
-          template: function (value) {
-              return '<img src="/images/emoji/' + value + '.png" class="ib-emoji-list"></img>' + value;
-          },
-          replace: function (value) {
-              return ':' + value + ': ';
-          },
-          index: 1
+  let t = this, lc = `Comment initAutocomplete`;
+  console.log(`{lc} initializing Autocomplete starting...`)
+  
+  $('#' + textAreaId).textcomplete([
+    { // emoji strategy
+        id: 'emoji',
+        match: /\B:([\-+\w]*)$/,
+        search: function (term, callback) {
+            callback($.map(emojies, function (emoji) {
+                return emoji.indexOf(term) === 0 ? emoji : null;
+            }));
+        },
+        template: function (value) {
+            return '<img src="/images/emoji/' + value + '.png" class="ib-emoji-list"></img>' + value;
+        },
+        replace: function (value) {
+            return ':' + value + ': ';
+        },
+        index: 1
+    }
+  ], {
+      onKeydown: function (e, commands) {
+          if (e.ctrlKey && e.keyCode === 74) { // CTRL-J
+              return commands.KEY_ENTER;
+          }
       }
-    ], {
-        onKeydown: function (e, commands) {
-            if (e.ctrlKey && e.keyCode === 74) { // CTRL-J
-                return commands.KEY_ENTER;
-            }
+  });
+  
+  console.log(`{lc} initializing Autocomplete complete.`)
+}
+
+const salt = "ib_gib_salt_whaa";
+export function verifyIbGibJson(ibGibJson) {
+  let lc = `verifyIbGibJson`;
+  if (ibGibJson && ibGibJson.ib && ibGibJson.gib && ibGibJson.rel8ns && ibGibJson.data) {
+    let { ib, gib, data, rel8ns } = ibGibJson;
+    let ibGib = getFull_ibGib(ibGibJson);
+    console.warn(`${lc} ${ibGib}`)
+    if (gib === "gib") {
+      console.error(`${lc} Auto-verifying special gib case. Need to address this yo! ibGibJson: ${JSON.stringify(ibGibJson)}`);
+      return true;
+    } else {
+      let ibHash = sha256(salt + ib).toUpperCase();
+      let rel8nsHash = sha256(salt + poisonify(rel8ns)).toUpperCase();
+      let dataHash = sha256(salt + poisonify(data)).toUpperCase();
+      let allHash = sha256(salt + ibHash + rel8nsHash + dataHash).toUpperCase();
+
+      if (gib.startsWith("ibGib_") && gib.endsWith("_ibGib")) {
+        // gib is stamped, e.g. "ibGib_abc123_ibGib". Slightly lame, yes...
+        let components = gib.split("_");
+        if (components && components.length === 3) {
+          let bareGib = components[1];
+          return allHash === bareGib;
+        } else {
+          console.error(`${lc} Invalid ibGibJson (gib stamp is invalid): ${JSON.stringify(ibGibJson)}`)
+          return null;
         }
-    });
-    
-    console.log(`{lc} initializing Autocomplete complete.`)
+      } else {
+        return allHash === gib;
+      }
+    }
+  } else {
+    console.error(`${lc} Invalid ibGibJson: ${JSON.stringify(ibGibJson)}`)
+    return null;
   }
+}
+
+/** Poison encodes json object with escaping double-quotes. */
+function poisonify(map) {
+  let rawString = JSON.stringify(map);
+  return rawString;
+  // let escapedQuotes = rawString.replace(/"/g, "\\\"");
+  // return escapedQuotes;
+}
+
+function sha256_promise(str) {
+  // We transform the string into an arraybuffer.
+  var buffer = new TextEncoder("utf-8").encode(str);
+  return crypto.subtle.digest("SHA-256", buffer).then(function (hash) {
+    let digest = hex(hash);
+    return digest;
+  });
+}
+
+export function sha256(str, callback) {
+  // We transform the string into an arraybuffer.
+  var buffer = new TextEncoder("utf-8").encode(str);
+  crypto.subtle.digest("SHA-256", buffer).then(function (hash) {
+    let digest = hex(hash);
+    callback(digest);
+  });
+}
+
+function hex(buffer) {
+  var hexCodes = [];
+  var view = new DataView(buffer);
+  for (var i = 0; i < view.byteLength; i += 4) {
+    // Using getUint32 reduces the number of iterations needed (we process 4 bytes each time)
+    var value = view.getUint32(i)
+    // toString(16) will give the hex representation of the number without padding
+    var stringValue = value.toString(16)
+    // We use concatenation and slice for padding
+    var padding = '00000000'
+    var paddedValue = (padding + stringValue).slice(-padding.length)
+    hexCodes.push(paddedValue);
+  }
+
+  // Join all the hex strings into one
+  return hexCodes.join("");
+}

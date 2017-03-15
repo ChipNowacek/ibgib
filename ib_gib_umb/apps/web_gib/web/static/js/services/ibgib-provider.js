@@ -1,4 +1,5 @@
 import * as d3 from 'd3';
+import * as ibHelper from './ibgib-helper';
 
 export class IbGibProvider {
   constructor(ibGibJsonCache, ibGibAdjunctCache, ibGibLatestCache, baseJsonPath) {
@@ -11,17 +12,33 @@ export class IbGibProvider {
   }
 
   getIbGibJson(ibGib, callback) {
-    let t = this;
+    let t = this, lc = `IbGibProvider.getIbGibJson`;
     let ibGibJson = this.ibGibJsonCache.get(ibGib);
     if (ibGibJson) {
       if (callback) { callback(ibGibJson); }
     } else {
       // We don't yet have the json for this particular data.
       // So we need to load the json, and when it returns we will exec callback.
+      
+      
+      // MUST CHANGE! Need to change this to push callbacks onto a stack if 
+      // already in progress. Right now, it's pinging multiple calls 
+      // simultaneously which is bad.
+      
       d3.json(t.baseJsonPath + ibGib, ibGibJson => {
-        t.ibGibJsonCache.add(ibGibJson);
-
-        if (callback) { callback(ibGibJson); }
+        let verified = ibHelper.verifyIbGibJson(ibGibJson);
+        if (verified === true) {
+          t.ibGibJsonCache.add(ibGibJson);
+          if (callback) { callback(ibGibJson); }
+        } else if (verified === false) {
+          console.error(`${lc} ibGibJson is not valid. :-/`);
+          ibGibJson = this.ibGibJsonCache.get("ib^gib");
+          callback(ibGibJson);
+        } else {
+          console.error(`${lc} There was an error during verification of ibGibJson.`);
+          ibGibJson = this.ibGibJsonCache.get("ib^gib");
+          callback(ibGibJson);
+        }
       });
     }
   }
