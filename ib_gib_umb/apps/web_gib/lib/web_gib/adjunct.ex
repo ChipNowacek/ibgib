@@ -104,15 +104,23 @@ defmodule WebGib.Adjunct do
                 identity_ib_gibs,
                 ["adjunct_to"])
       adjunct_ib_gib <- adjunct |> get_info() ~>> get_ib_gib()
-        
+      
+      target_info <- target |> get_info()
+      target_email_identities <- Authz.get_identities_of_type(target_info[:rel8ns]["identity"], "email")
+      
       # Publish the corresponding Oy notification
-      _oy_ib_gib <- 
-        WebGib.Oy.create_and_publish_oy(:adjunct, %{
-          "name" => adjunct_target_rel8n,
-          "adjunct" => adjunct,
-          "adjunct_identities" => identity_ib_gibs,
-          "target" => target
-        })
+      _ <- 
+        if length(target_email_identities) > 0 do
+          WebGib.Oy.create_and_publish_oy(:adjunct, %{
+            "name" => adjunct_target_rel8n,
+            "adjunct" => adjunct,
+            "adjunct_identities" => identity_ib_gibs,
+            "target" => target,
+            "target_email_identities" => target_email_identities
+          })
+        else
+          {:ok, :ok}
+        end
         
       OK.success {adjunct, target_temp_junc_ib_gib}
     else

@@ -1321,12 +1321,13 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.clearFadeTimeout(rel8nNode);
     
     t.setBusy(rel8nNode);
-    t.getOys(oyInfos => {
-      oyInfos.forEach(oyInfo => {
-        if (oyInfo.ibGib === "ib^gib") { return; }
+    t.getOys(oyIbGibs => {
+      oyIbGibs.forEach(oyIbGib => {
+        // debugger;
+        if (oyIbGib === "ib^gib") { return; }
         let oyNode = 
           t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", 
-                           /*nameOrIbGib*/ oyInfo.ibGib, 
+                           /*nameOrIbGib*/ oyIbGib, 
                            /*srcNode*/ rel8nNode, /*shape*/ "circle",
                            /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null,
                            /*title*/ "...", /*label*/ "", 
@@ -1335,7 +1336,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         oyNode.isMeta = true;
         // oyNode.isPaused = true;
         oyNode.parentNode = rel8nNode;
-        
       });
     
       t.clearBusy(rel8nNode);
@@ -1347,8 +1347,12 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     
     // let data = { ibGibs: [tempJuncIbGib] };
     let cmdGetOys = new commands.GetOysCommand(t, /*d*/ null, successMsg => {
-      debugger;
-      if (callback) { callback([]); }
+      if (successMsg && successMsg.data && successMsg.data.oy_ib_gibs) {
+        if (callback) { callback(successMsg.data.oy_ib_gibs); }
+      } else {
+        console.error(`${lc} invalid successMsg: ${JSON.stringify(successMsg)}`);
+        if (callback) { callback([]); }
+      }
     }, errorMsg => {
       console.error(`${lc} error: ${JSON.stringify(errorMsg)}`);
       if (callback) { callback([]); }

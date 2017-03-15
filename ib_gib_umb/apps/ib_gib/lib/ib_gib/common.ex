@@ -66,7 +66,7 @@ defmodule IbGib.Common do
     possibles = 
       identity_ib_gibs
       |> Enum.filter(&(&1 != @root_ib_gib))
-      |> Enum.filter(&(String.starts_with?(&1, "node")))
+      |> Enum.filter(&(!String.starts_with?(&1, "node")))
     if length(possibles) > 0 do
       {:ok, possibles}
     else

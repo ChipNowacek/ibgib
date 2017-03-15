@@ -115,10 +115,11 @@ defmodule WebGib.Bus.Commanding.GetOys do
   end
 
   defp build_query_opts(query_identity_ib_gibs) do
+    _ = Logger.debug("query_identity_ib_gibs: #{inspect query_identity_ib_gibs}" |> ExChalk.bg_green |> ExChalk.white)
     query_opts = 
       do_query()
       |> where_rel8ns("ancestor", "with", "ibgib", "oy#{@delim}gib")
-      |> where_rel8ns("identity", "withany", "ibgib", query_identity_ib_gibs)
+      |> where_rel8ns("target_identity", "withany", "ibgib", query_identity_ib_gibs)
     {:ok, query_opts}
   end
 
