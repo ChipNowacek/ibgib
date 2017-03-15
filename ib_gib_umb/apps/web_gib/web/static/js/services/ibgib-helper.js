@@ -262,7 +262,7 @@ export function verifyIbGibJson(ibGibJson) {
   if (ibGibJson && ibGibJson.ib && ibGibJson.gib && ibGibJson.rel8ns && ibGibJson.data) {
     let { ib, gib, data, rel8ns } = ibGibJson;
     let ibGib = getFull_ibGib(ibGibJson);
-    console.warn(`${lc} ${ibGib}`)
+    // console.warn(`${lc} ${ibGib}`)
     if (gib === "gib") {
       console.error(`${lc} Auto-verifying special gib case. Need to address this yo! ibGibJson: ${JSON.stringify(ibGibJson)}`);
       return true;

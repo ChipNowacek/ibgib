@@ -9,38 +9,61 @@ export class IbGibProvider {
     t.ibGibAdjunctCache = ibGibAdjunctCache;
     t.ibGibLatestCache = ibGibLatestCache;
     t.baseJsonPath = baseJsonPath;
+    
+    t.gettingJsonCallbacks = {};
   }
 
   getIbGibJson(ibGib, callback) {
-    let t = this, lc = `IbGibProvider.getIbGibJson`;
+    let t = this, lc = `IbGibProvider.getIbGibJson ${ibGib}`;
     let ibGibJson = this.ibGibJsonCache.get(ibGib);
     if (ibGibJson) {
       if (callback) { callback(ibGibJson); }
     } else {
       // We don't yet have the json for this particular data.
       // So we need to load the json, and when it returns we will exec callback.
-      
-      
-      // MUST CHANGE! Need to change this to push callbacks onto a stack if 
-      // already in progress. Right now, it's pinging multiple calls 
-      // simultaneously which is bad.
-      
-      d3.json(t.baseJsonPath + ibGib, ibGibJson => {
-        let verified = ibHelper.verifyIbGibJson(ibGibJson);
-        if (verified === true) {
-          t.ibGibJsonCache.add(ibGibJson);
-          if (callback) { callback(ibGibJson); }
-        } else if (verified === false) {
-          console.error(`${lc} ibGibJson is not valid. :-/`);
-          ibGibJson = this.ibGibJsonCache.get("ib^gib");
-          callback(ibGibJson);
-        } else {
-          console.error(`${lc} There was an error during verification of ibGibJson.`);
-          ibGibJson = this.ibGibJsonCache.get("ib^gib");
-          callback(ibGibJson);
-        }
-      });
+      // But we don't want to duplicate calls that are already in progress for
+      // a given ibGib. So we keep track of callbacks and only make the call 
+      // once to the server.
+      if (ibGib in t.gettingJsonCallbacks) {
+        // console.warn(`${lc} already in progress. adding callback.`)
+        t.gettingJsonCallbacks[ibGib].push(callback);
+      } else {
+        t.gettingJsonCallbacks[ibGib] = [callback];
+        // console.warn(`${lc} getting json from server...`)
+        d3.json(t.baseJsonPath + ibGib, ibGibJson => {
+          // console.warn(`${lc} returned json from server.`)
+          
+          let verified = ibHelper.verifyIbGibJson(ibGibJson);
+          if (verified === true) {
+            t.ibGibJsonCache.add(ibGibJson);
+            t._dispatchGetJsonCallback(ibGib, ibGibJson);
+            // if (callback) { callback(ibGibJson); }
+          } else if (verified === false) {
+            console.error(`${lc} ibGibJson is not valid. :-/`);
+            ibGibJson = this.ibGibJsonCache.get("ib^gib");
+            t._dispatchGetJsonCallback(ibGib, ibGibJson);
+          } else {
+            console.error(`${lc} There was an error during verification of ibGibJson.`);
+            ibGibJson = this.ibGibJsonCache.get("ib^gib");
+            t._dispatchGetJsonCallback(ibGib, ibGibJson);
+          }
+        });
+      }
     }
+  }
+  
+  _dispatchGetJsonCallback(ibGib, ibGibJson) {
+    let t = this, lc = `_dispatchGetJsonCallback ${ibGib}`;
+    let callbacksCount = 0;
+    do {
+      let callbacks = t.gettingJsonCallbacks[ibGib];
+      // console.log(`${lc} callbacksCount: ${callbacks.length}. Dispatching...`)
+      t.gettingJsonCallbacks[ibGib] = callbacks.splice(1);
+      let callback = callbacks[0];
+      callback(ibGibJson);
+      callbacksCount = t.gettingJsonCallbacks[ibGib].length;
+    } while (callbacksCount > 0);
+    delete t.gettingJsonCallbacks[ibGib];
   }
 
   /**
