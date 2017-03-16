@@ -504,6 +504,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         node.render = "identity";
       } else if (ibHelper.isTag(node.ibGibJson)) {
         node.render = "tag";
+      } else if (ibHelper.isOy(node.ibGibJson)) {
+        node.render = "oy";
       } else {
         delete node.render;
       }
@@ -635,7 +637,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.getAdjunctInfos(tempJuncIbGib, adjunctInfos => {
       // console.log(`syncAdjuncts: adjunctInfos: ${JSON.stringify(adjunctInfos)}`);
 
-      if (tempJuncIbGib === t.contextNode.tempJuncIbGib) {
+      if (t.contextNode && t.contextNode.tempJuncIbGib === tempJuncIbGib) {
         // console.log(`syncAdjuncts: calling syncContextAdjuncts...`);
         t.syncContextAdjuncts(adjunctInfos);
       }
@@ -1037,13 +1039,17 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     node.parentNode = dSrc;
     
     if (dSrc.isMeta) { node.isMeta = true; }
+    if (dSrc.isExpandable) { node.isExpandable = true; }
 
     return node;
   }
   addRootRel8ns() {
     let t = this;
     t.addRootRel8n_Identity();
-    t.addRootRel8n_Oy();
+    
+    if (t.currentIdentityIbGibs.some(idIbGib => ibAuthz.getIdentityType(idIbGib) === "email")) {
+      t.addRootRel8n_Oy();
+    }
   }
   /**
    * Adds "important" rel8ns that are not collapsed by default.
@@ -1334,6 +1340,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
                            /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y},
                            /*isAdjunct*/ false);
         oyNode.isMeta = true;
+        // isExpandable means that expand it, even though it's meta.
+        oyNode.isExpandable = true; 
         // oyNode.isPaused = true;
         oyNode.parentNode = rel8nNode;
       });
@@ -1453,6 +1461,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     if (srcNode) {
       virtualNode.parentNode = srcNode;
+      if (srcNode.isMeta) { 
+        virtualNode.isMeta = true; 
+        virtualNode.isExpandable = srcNode.isExpandable;
+      }
+      
       t.animateNodeBorder(/*d*/ srcNode, /*nodeShape*/ null);
     } else {
       virtualNode.isSource = true;
@@ -1742,7 +1755,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   _expandNode_IbGib(node, callback) {
     let t = this;
 
-    if (node.expanding || node.isMeta) {
+    if (node.expanding || (node.isMeta && !node.isExpandable)) {
       if (callback) { callback(); }
       return;
     } else {
@@ -1833,7 +1846,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     } else {
       // Add the children ibGibs listed in the src rel8ns.
       let { rel8nName, rel8nSrc } = rel8nNode;
-      if (rel8nSrc.isMeta) {
+      if (rel8nSrc.isMeta && !rel8nSrc.isExpandable) {
         t._expandNode_MetaRel8n(rel8nNode, callback);
       } else {
         let rel8dIbGibs = rel8nSrc.ibGibJson.rel8ns[rel8nName] || [];
@@ -2152,6 +2165,21 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           return d3RootUnicodeChar;
         } else if (d.ibGibJson.ib === "query_result") {
           return  `\uf1c0 ${ibHelper.getDataQueryResultCount(d.ibGibJson)} result(s)`;
+        } else if (d.render === "oy") {
+          if (d.ibGibJson.ib.startsWith("oy adjunct")) {
+            if (d.ibGibJson.ib.includes("comment")) {
+              return `\uf12a${d3Rel8nIcons["comment"]}`;
+            } else if (d.ibGibJson.ib.includes("pic")) {
+              return `\uf12a${d3Rel8nIcons["pic"]}`;
+            } else if (d.ibGibJson.ib.includes("link")) {
+              return `\uf12a${d3Rel8nIcons["link"]}`;
+            } else {
+              return "\uf12a\uf128" // !? exclamation for oy, question b/c unknown
+            }
+          } else {
+            return "\uf12a\uf128" // !? exclamation for oy, question b/c unknown
+          }
+          return "\uf12a "
         } else {
           return d.ibGibJson.ib;
         }
@@ -2311,32 +2339,37 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         
         t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib] = [callback];
 
-        let data = { ibGibs: [tempJuncIbGib] };
-        let cmdGetAdjuncts = new commands.GetAdjunctsCommand(t, data, successMsg => {
-          t.ibGibAdjunctCache.clearAdjunctInfos(tempJuncIbGib);
-          if (successMsg.data && successMsg.data.adjunct_ib_gibs) {
-            let adjunctIbGibs = successMsg.data.adjunct_ib_gibs[tempJuncIbGib];
-            t.getIbGibJsons(adjunctIbGibs, adjunctIbGibJsons => {
-              Object.keys(adjunctIbGibJsons)
-                .map(key => adjunctIbGibJsons[key])
-                .forEach(adjunctIbGibJson => {
-                  let adjunctIbGib = ibHelper.getFull_ibGib(adjunctIbGibJson);
-                  t.ibGibAdjunctCache.addAdjunctInfo(tempJuncIbGib, tempJuncIbGib, adjunctIbGib, adjunctIbGibJson);
-                });
-              adjunctInfos = t.ibGibAdjunctCache.getAdjunctInfos(tempJuncIbGib);
+        if (ibHelper.getIbAndGib(tempJuncIbGib).gib === "gib") {
+          callback([]);
+        } else {
+          let data = { ibGibs: [tempJuncIbGib] };
+          let cmdGetAdjuncts = new commands.GetAdjunctsCommand(t, data, successMsg => {
+            t.ibGibAdjunctCache.clearAdjunctInfos(tempJuncIbGib);
+            if (successMsg.data && successMsg.data.adjunct_ib_gibs) {
+              let adjunctIbGibs = successMsg.data.adjunct_ib_gibs[tempJuncIbGib];
+              t.getIbGibJsons(adjunctIbGibs, adjunctIbGibJsons => {
+                Object.keys(adjunctIbGibJsons)
+                  .map(key => adjunctIbGibJsons[key])
+                  .forEach(adjunctIbGibJson => {
+                    let adjunctIbGib = ibHelper.getFull_ibGib(adjunctIbGibJson);
+                    t.ibGibAdjunctCache.addAdjunctInfo(tempJuncIbGib, tempJuncIbGib, adjunctIbGib, adjunctIbGibJson);
+                  });
+                adjunctInfos = t.ibGibAdjunctCache.getAdjunctInfos(tempJuncIbGib);
 
-              t._dispatchGetAdjunctInfosCallbacksInProgress(tempJuncIbGib, adjunctInfos);
-              // callback(adjunctInfos);
-            });
-          } else {
-            // console.log(`GetAdjunctsCommand did not have successMsg.data && successMsg.data.adjunct_ib_gibs. Probably has no adjuncts.)`);
+                t._dispatchGetAdjunctInfosCallbacksInProgress(tempJuncIbGib, adjunctInfos);
+                // callback(adjunctInfos);
+              });
+            } else {
+              // console.log(`GetAdjunctsCommand did not have successMsg.data && successMsg.data.adjunct_ib_gibs. Probably has no adjuncts.)`);
+              t._dispatchGetAdjunctInfosCallbacksInProgress(tempJuncIbGib, []);
+                // callback([]);
+            }
+          }, errorMsg => {
+            console.error(`getAdjuncts error: ${JSON.stringify(errorMsg)}`);
             t._dispatchGetAdjunctInfosCallbacksInProgress(tempJuncIbGib, []);
-              // callback([]);
-          }
-        }, errorMsg => {
-          console.error(`getAdjuncts error: ${JSON.stringify(errorMsg)}`);
-        });
-        cmdGetAdjuncts.exec();
+          });
+          cmdGetAdjuncts.exec();
+        }
       }
     }
   }

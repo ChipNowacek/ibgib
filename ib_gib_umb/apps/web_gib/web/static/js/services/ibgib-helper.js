@@ -215,6 +215,10 @@ export function isTag(ibGibJson) {
   return ibGibJson.rel8ns.ancestor.some(x => x === "tag^gib");
 }
 
+export function isOy(ibGibJson) {
+  return ibGibJson.rel8ns.ancestor.some(x => x === "oy^gib");
+}
+
 /*
  * Determines if the browser is on a mobile device or not.
  * Thanks SO!

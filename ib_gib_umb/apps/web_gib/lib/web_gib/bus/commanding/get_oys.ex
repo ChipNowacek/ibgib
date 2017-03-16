@@ -23,7 +23,7 @@ defmodule WebGib.Bus.Commanding.GetOys do
 
   alias IbGib.Common
   import IbGib.{Expression, Helper, QueryOptionsFactory}
-  import IbGib.Macros, only: [handle_ok_error: 1, handle_ok_error: 2]
+  import IbGib.Macros, only: [handle_ok_error: 2]
   import WebGib.Bus.Commanding.Helper
   import WebGib.Patterns
   use IbGib.Constants, :ib_gib
@@ -35,7 +35,7 @@ defmodule WebGib.Bus.Commanding.GetOys do
   def handle_cmd(_data,
                  _metadata,
                  msg,
-                 assigns_identity_ib_gibs_(...) = socket) do
+                 assigns_identity_ib_gibs_(...) = _socket) do
     OK.with do
       _ = Logger.debug("oyyy" |> ExChalk.blue |> ExChalk.bg_yellow)
       # No validation ATOW (2017/03/08) for this command
