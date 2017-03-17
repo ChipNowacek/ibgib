@@ -13,10 +13,14 @@ defmodule IbGib.Common do
   ibGib function.
   """
 
+  import OK, only: ["~>>": 2]
   require Logger
+  require OK
 
   import IbGib.{Expression, Helper, QueryOptionsFactory}
+  import IbGib.Macros, only: [invalid_args: 1, handle_ok_error: 2]
   use IbGib.Constants, :ib_gib
+  use IbGib.Constants, :error_msgs
 
   # ------------------------------------------------------------------
   # get_latest_ib_gib(identity_ib_gibs, src_ib_gib)
@@ -30,35 +34,93 @@ defmodule IbGib.Common do
   This queries off of the given `identity_ib_gibs`, but it creates the query
   related to the given `src_ib_gib`'s identities.
   """
-  def get_latest_ib_gib(identity_ib_gibs, src_ib_gib) do
-    with(
-      # We will query off of the current identity
-      {:ok, current_identity} <- IbGib.Expression.Supervisor.start_expression(Enum.at(identity_ib_gibs, 0)),
+  def get_latest_ib_gib(_identity_ib_gibs, src_ib_gib = @root_ib_gib) do
+    {:ok, @root_ib_gib}
+  end
+  def get_latest_ib_gib(identity_ib_gibs, src_ib_gib) 
+    when is_list(identity_ib_gibs) and length(identity_ib_gibs) > 0 do
+    OK.with do
+      # We will query off of the current identity (1st, arbitrarily)
+      current_identity <-
+        identity_ib_gibs 
+        |> Enum.at(0) 
+        |> IbGib.Expression.Supervisor.start_expression()
 
       # Our search for the latest version must be using the credentials of
       # **that** ibgib's identities, i.e. in that timeline.
-      {:ok, src_ib_gib_process} <-
-        IbGib.Expression.Supervisor.start_expression(src_ib_gib),
-      {:ok, src_ib_gib_info} <- src_ib_gib_process |> get_info(),
-      {:ok, src_ib_gib_identity_ib_gibs} <-
-        get_ib_gib_identity_ib_gibs(src_ib_gib_info),
+      src_ib_gib_identity_ib_gibs <- 
+        {:ok, src_ib_gib}
+        ~>> IbGib.Expression.Supervisor.start_expression()
+        ~>> get_info()
+        ~>> get_rel8ns("identity", [error_on_not_found: true])
 
       # Build the query options
-      {:ok, query_opts} <-
-        build_query_opts_latest(src_ib_gib_identity_ib_gibs, src_ib_gib),
+      query_opts <-
+        build_query_opts_latest(src_ib_gib_identity_ib_gibs, src_ib_gib)
 
-      # Execute the query itself, which creates the query_result ib_gib
-      {:ok, query_result} <-
-        current_identity |> query(identity_ib_gibs, query_opts),
+      # Execute the query itself and pull the result_ib_gib out.
+      result_ib_gib <-
+        {:ok, current_identity} 
+        ~>> query(identity_ib_gibs, query_opts)
+        ~>> get_info()
+        ~>> extract_result_ib_gib(src_ib_gib)
 
-        # Return the query_result result ib^gib
-      {:ok, query_result_info} <- query_result |> get_info(),
-      {:ok, result_ib_gib} <-
-        extract_result_ib_gib(src_ib_gib, query_result_info)
-    ) do
-      {:ok, result_ib_gib}
+      OK.success result_ib_gib 
     else
-      error -> default_handle_error(error)
+      reason -> OK.failure handle_ok_error(reason, log: true)
+    end
+  end
+  def get_latest_ib_gib(identity_ib_gibs, src_ib_gib) do
+    invalid_args([identity_ib_gibs, src_ib_gib])
+  end
+
+  @doc """
+  Takes a list of `ib_gibs`, and filters each ibGib timeline to its present
+  ib_gib (relative latest for each ibGib).
+  
+  For example, say you have a list of 10 ib_gibs (ib^gib pointers). These
+  aren't necessarily 10 different ibGib (timelines), but rather 10 pointers to
+  n<=10 ibGibs. This could actually be a list of only a single ibGib with 9
+  past pointers and 1 present pointer. Or it could be 2 ibGibs with 4 past
+  ib_gibs each and 1 present ib_gib.
+  
+  ## Algorithm
+  
+  This will get a the latest ib_gib from the given list of `ib_gibs`, and then
+  get its corresponding info. It will then check the "past" rel8n, removing 
+  any past ib^gibs found ib_gibs and then repeat the process. 
+  
+  ## WARNING - Not optimized for scale
+  
+  This probably won't scale well and there is probably a way to do it strictly
+  within PostgreSQL (I already know of at least one way in raw SQL). For now 
+  tho (ATOW 2017/03/16), this is what I'm doing. :-)
+  """
+  @spec filter_present_only(list(String.t), list(String.t)) :: 
+          {:ok, list(String.t)} | {:error, any}
+  def filter_present_only(_identity_ib_gibs, ib_gibs) when ib_gibs === [] do
+    {:ok, []}
+  end
+  def filter_present_only(_identity_ib_gibs, ib_gibs) when ib_gibs === [@root_ib_gib] do
+    {:ok, [@root_ib_gib]}
+  end
+  def filter_present_only(identity_ib_gibs, ib_gibs) when is_list(ib_gibs) do
+    {:error, :not_implemented}
+  end
+  def filter_present_only(ib_gibs) do
+    invalid_args(ib_gibs)
+  end
+  
+  defp filter_present_iteration(_identity_ib_gibs, [], acc) do
+    {:ok, acc}
+  end
+  defp filter_present_iteration(identity_ib_gibs, [ib_gib | rest], acc) do
+    OK.with do
+      latest_ib_gib <- get_latest_ib_gib(identity_ib_gibs, ib_gib)
+      latest_info <-
+        IbGib.Expression.Supervisor.start_expression(latest_ib_gib) 
+        ~>> get_info()
+      
     end
   end
 
@@ -89,31 +151,66 @@ defmodule IbGib.Common do
     end
   end
 
-  defp get_ib_gib_identity_ib_gibs(ib_gib_info) do
-    _ = Logger.debug("ib_gib_info:\n#{inspect ib_gib_info}" |> ExChalk.magenta)
-    rel8ns = ib_gib_info[:rel8ns]
-    _ = Logger.debug("rel8ns:\n#{inspect rel8ns}" |> ExChalk.magenta)
-    identities = rel8ns["identity"]
-    _ = Logger.debug("identities:\n#{inspect identities}" |> ExChalk.magenta)
-    {:ok, identities}
+  @doc """
+  Gets the identity_ib_gibs out of the given `ib_gib_info` map.
+  
+  Returns tagged identity ib^gibs.
+  """
+  def get_identity_ib_gibs(ib_gib_info) when is_map(ib_gib_info) do
+    OK.with do
+      identities <-
+        get_rel8ns(ib_gib_info, "identity", [error_on_not_found: true])
+      identities <-
+        if identities !== [] do
+          {:ok, identities}
+        else
+          {:error, "No identity rel8ns found"}
+        end
+      
+      OK.success identities
+    else
+      reason -> OK.failure handle_ok_error(reason, log: true)
+    end
+  end
+  def get_identity_ib_gibs(ib_gib_info) do
+    invalid_args(ib_gib_info)
   end
 
-  defp extract_result_ib_gib(src_ib_gib, query_result_info) do
-    result_data = query_result_info[:rel8ns]["result"]
-    result_count = Enum.count(result_data)
-    case result_count do
-      1 ->
-        # Not found (1 result is root), so the "latest" is the one that we're
-        # search off of (has no past)
-        {:ok, src_ib_gib}
+  defp extract_result_ib_gib(query_result_info, default_ib_gib) do
+    OK.with do
+      result_data <- 
+        get_rel8ns(query_result_info, "result", [error_on_not_found: true])
+      result_count = Enum.count(result_data)
+      case result_count do
+        1 ->
+          # Not found (1 result is root), so the "latest" is the one that we're
+          # search off of (has no past)
+          {:ok, default_ib_gib}
 
-      2 ->
-        # First is always root, so get second
-        {:ok, Enum.at(result_data, 1)}
+        2 ->
+          # First is always root, so get second
+          {:ok, Enum.at(result_data, 1)}
 
-      _ ->
-        _ = Logger.error "unknown result count: #{result_count}"
-        {:ok, @root_ib_gib}
+        _ ->
+          _ = Logger.error "unknown result count: #{result_count}"
+          {:ok, @root_ib_gib}
+      end
     end
+    # result_data = query_result_info[:rel8ns]["result"]
+    # result_count = Enum.count(result_data)
+    # case result_count do
+    #   1 ->
+    #     # Not found (1 result is root), so the "latest" is the one that we're
+    #     # search off of (has no past)
+    #     {:ok, default_ib_gib}
+    # 
+    #   2 ->
+    #     # First is always root, so get second
+    #     {:ok, Enum.at(result_data, 1)}
+    # 
+    #   _ ->
+    #     _ = Logger.error "unknown result count: #{result_count}"
+    #     {:ok, @root_ib_gib}
+    # end
   end
 end

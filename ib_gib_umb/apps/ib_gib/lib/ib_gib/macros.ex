@@ -33,8 +33,8 @@ defmodule IbGib.Macros do
     quote do
       reason = case unquote(untagged_reason) do
         reason when is_bitstring(reason) -> reason
-        # reason when is_atom(reason) -> Atom.to_string(reason)
-        # reason -> inspect reason
+        reason when is_atom(reason) -> Atom.to_string(reason)
+        reason -> inspect reason
       end
       if unquote(opts[:log]), do: Logger.error reason
       reason
