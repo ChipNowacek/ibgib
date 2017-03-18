@@ -86,9 +86,15 @@ defmodule IbGib.Common do
   
   ## Algorithm
   
-  This will get a the latest ib_gib from the given list of `ib_gibs`, and then
-  get its corresponding info. It will then check the "past" rel8n, removing 
-  any past ib^gibs found ib_gibs and then repeat the process. 
+  This will start with an empty accumulator list. The purpose is to fill this 
+  list with the latest, unique ib^gibs from the starting list.
+  
+  It does this by pattern matching out the head ib^gib and getting its latest
+  ib^gib. It will add this to the accumulator, and then it will check this 
+  ib^gib's "past" rel8n. It will remove all of these from the next iteration's
+  source list, thus eliminating the ibGib's entire timeline and storing that
+  ibGib's most recent in the accumulator. It then executes this recursively
+  until the entire `ib_gibs` list is exhausted.
   
   ## WARNING - Not optimized for scale
   
@@ -101,27 +107,43 @@ defmodule IbGib.Common do
   def filter_present_only(_identity_ib_gibs, ib_gibs) when ib_gibs === [] do
     {:ok, []}
   end
-  def filter_present_only(_identity_ib_gibs, ib_gibs) when ib_gibs === [@root_ib_gib] do
+  def filter_present_only(_identity_ib_gibs, ib_gibs) 
+    when ib_gibs === [@root_ib_gib] do
     {:ok, [@root_ib_gib]}
   end
   def filter_present_only(identity_ib_gibs, ib_gibs) when is_list(ib_gibs) do
-    {:error, :not_implemented}
+    filter_present_iteration(identity_ib_gibs, ib_gibs, [])
   end
   def filter_present_only(ib_gibs) do
     invalid_args(ib_gibs)
   end
   
-  defp filter_present_iteration(_identity_ib_gibs, [], acc) do
-    {:ok, acc}
+  defp filter_present_iteration(_identity_ib_gibs, [], acc) 
+    when is_list(acc) do
+    # It's possible that there are duplicates in acc, so de-dupe.
+    {:ok, acc |> Enum.uniq }
   end
-  defp filter_present_iteration(identity_ib_gibs, [ib_gib | rest], acc) do
+  defp filter_present_iteration(identity_ib_gibs, [ib_gib | rest], acc) 
+    when is_list(acc) do
     OK.with do
+      # Get the latest and add it to the accumulator
       latest_ib_gib <- get_latest_ib_gib(identity_ib_gibs, ib_gib)
+      acc = acc ++ [latest_ib_gib]
+
+      # Get all past ib^gibs and remove them from the next iteration
       latest_info <-
         IbGib.Expression.Supervisor.start_expression(latest_ib_gib) 
         ~>> get_info()
+      past_ib_gibs <-
+        get_rel8ns(latest_info, "past", [error_on_not_found: true])
+      next =
+        Enum.filter(rest, &(!Enum.member?(past_ib_gibs, &1)))
       
+      filter_present_iteration(identity_ib_gibs, next, acc)
     end
+  end
+  defp filter_present_iteration(identity_ib_gibs, ib_gibs, acc) do
+    invalid_args([identity_ib_gibs, ib_gibs, acc])
   end
 
   def get_identities_for_query(identity_ib_gibs) do

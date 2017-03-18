@@ -136,4 +136,79 @@ defmodule IbGib.Expression.CommonTest do
     end
   end
 
+  defp create_random_ib_gib_with_past(ib) do
+    OK.with do
+      root <- IbGib.Expression.Supervisor.start_expression()
+      x <- root |> fork(@test_identities_1, ib)
+      x_ib_gib <- x |> get_info() ~>> get_ib_gib()
+      
+      x_4 <- 
+        {:ok, x}
+        ~>> mut8(@test_identities_1, %{"i" => "1"})
+        ~>> mut8(@test_identities_1, %{"i" => "2"})
+        ~>> mut8(@test_identities_1, %{"i" => "3"})
+        ~>> mut8(@test_identities_1, %{"i" => "4"})
+
+      OK.success x_4
+    else
+      error -> raise "error: #{inspect error}"
+    end
+  end
+
+  @tag :capture_log
+  test "filter_present_only, one ibGib timeline" do
+    OK.with do
+      a_now <- create_random_ib_gib_with_past("a")
+      a_now_info <- a_now |> get_info()
+      a_now_ib_gib <- a_now_info |> get_ib_gib()
+      a_past_ib_gibs <- get_rel8ns(a_now_info, "past")
+      a_all_ib_gibs = a_past_ib_gibs ++ [a_now_ib_gib]
+      a_all_ib_gibs = a_all_ib_gibs -- [@root_ib_gib]
+      _ = Logger.debug "a_all_ib_gibs: #{inspect a_all_ib_gibs}"
+
+      present_only <- 
+        Common.filter_present_only(@test_identities_1, a_all_ib_gibs)
+      
+      assert present_only == [a_now_ib_gib]
+      
+      OK.success :ok
+    else
+      error -> raise "error: #{inspect error}"
+    end
+  end
+
+  @tag :capture_log
+  test "filter_present_only, two ibGib timelines" do
+    OK.with do
+      a_now <- create_random_ib_gib_with_past("a")
+      a_now_info <- a_now |> get_info()
+      a_now_ib_gib <- a_now_info |> get_ib_gib()
+      a_past_ib_gibs <- get_rel8ns(a_now_info, "past")
+      a_all_ib_gibs = a_past_ib_gibs ++ [a_now_ib_gib]
+      a_all_ib_gibs = a_all_ib_gibs -- [@root_ib_gib]
+      _ = Logger.debug "a_all_ib_gibs: #{inspect a_all_ib_gibs}"
+
+      b_now <- create_random_ib_gib_with_past("b")
+      b_now_info <- b_now |> get_info()
+      b_now_ib_gib <- b_now_info |> get_ib_gib()
+      b_past_ib_gibs <- get_rel8ns(b_now_info, "past")
+      b_all_ib_gibs = b_past_ib_gibs ++ [b_now_ib_gib]
+      b_all_ib_gibs = b_all_ib_gibs -- [@root_ib_gib]
+      _ = Logger.debug "b_all_ib_gibs: #{inspect b_all_ib_gibs}"
+
+      all_ib_gibs = a_all_ib_gibs ++ b_all_ib_gibs
+      present_only <- 
+        Common.filter_present_only(@test_identities_1, all_ib_gibs)
+      
+      assert present_only == [a_now_ib_gib, b_now_ib_gib]
+      
+      IO.puts "present_only: #{inspect present_only}"
+      
+      OK.success :ok
+    else
+      error -> raise "error: #{inspect error}"
+    end
+  end
+
+
 end

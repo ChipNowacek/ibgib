@@ -798,7 +798,7 @@ defmodule IbGib.Helper do
     ...> :ok
     :ok
   """
-  def get_rel8ns(info, rel8n_name, opts) 
+  def get_rel8ns(info, rel8n_name, opts \\ [error_on_not_found: true]) 
   def get_rel8ns(info, rel8n_name, opts) 
     when is_map(info) and is_bitstring(rel8n_name) and is_list(opts) do
     OK.with do
