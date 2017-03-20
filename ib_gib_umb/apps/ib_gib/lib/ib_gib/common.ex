@@ -104,26 +104,26 @@ defmodule IbGib.Common do
   """
   @spec filter_present_only(list(String.t), list(String.t)) :: 
           {:ok, list(String.t)} | {:error, any}
-  def filter_present_only(_identity_ib_gibs, ib_gibs) when ib_gibs === [] do
+  def filter_present_only(ib_gibs, _identity_ib_gibs) when ib_gibs === [] do
     {:ok, []}
   end
-  def filter_present_only(_identity_ib_gibs, ib_gibs) 
+  def filter_present_only(ib_gibs, _identity_ib_gibs) 
     when ib_gibs === [@root_ib_gib] do
     {:ok, [@root_ib_gib]}
   end
-  def filter_present_only(identity_ib_gibs, ib_gibs) when is_list(ib_gibs) do
-    filter_present_iteration(identity_ib_gibs, ib_gibs, [])
+  def filter_present_only(ib_gibs, identity_ib_gibs) when is_list(ib_gibs) do
+    filter_present_iteration(ib_gibs, identity_ib_gibs, [])
   end
-  def filter_present_only(ib_gibs) do
-    invalid_args(ib_gibs)
+  def filter_present_only(ib_gibs, identity_ib_gibs) do
+    invalid_args([ib_gibs, identity_ib_gibs])
   end
   
-  defp filter_present_iteration(_identity_ib_gibs, [], acc) 
+  defp filter_present_iteration([], _identity_ib_gibs, acc) 
     when is_list(acc) do
     # It's possible that there are duplicates in acc, so de-dupe.
     {:ok, acc |> Enum.uniq }
   end
-  defp filter_present_iteration(identity_ib_gibs, [ib_gib | rest], acc) 
+  defp filter_present_iteration([ib_gib | rest], identity_ib_gibs, acc) 
     when is_list(acc) do
     OK.with do
       # Get the latest and add it to the accumulator
@@ -139,10 +139,10 @@ defmodule IbGib.Common do
       next =
         Enum.filter(rest, &(!Enum.member?(past_ib_gibs, &1)))
       
-      filter_present_iteration(identity_ib_gibs, next, acc)
+      filter_present_iteration(next, identity_ib_gibs, acc)
     end
   end
-  defp filter_present_iteration(identity_ib_gibs, ib_gibs, acc) do
+  defp filter_present_iteration(ib_gibs, identity_ib_gibs, acc) do
     invalid_args([identity_ib_gibs, ib_gibs, acc])
   end
 

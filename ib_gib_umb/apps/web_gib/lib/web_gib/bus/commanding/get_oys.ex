@@ -18,6 +18,7 @@ defmodule WebGib.Bus.Commanding.GetOys do
   &nbsp;&nbsp;to lead you to repentance.
   """
 
+  import OK, only: ["~>>": 2]
   require Logger
   require OK
 
@@ -63,7 +64,7 @@ defmodule WebGib.Bus.Commanding.GetOys do
 
       oy_ib_gibs <- 
         get_oy_ib_gibs(identity_ib_gibs, query_identity_ib_gibs, query_identity)
-        
+
       OK.success oy_ib_gibs
     else
       error -> default_handle_error(error)
@@ -106,8 +107,10 @@ defmodule WebGib.Bus.Commanding.GetOys do
       query_result_info <- query_result |> get_info()
       _ = Logger.debug("query_result_info: #{inspect query_result_info}" |> ExChalk.bg_blue |> ExChalk.white)
       oy_ib_gibs <- 
-        extract_result_ib_gibs(query_result_info, [prune_root: true])
-
+        {:ok, query_result_info}
+        ~>> extract_result_ib_gibs([prune_root: true])
+        ~>> Common.filter_present_only(identity_ib_gibs)
+        
       OK.success oy_ib_gibs
     else
       reason -> OK.failure handle_ok_error(reason, log: true)

@@ -1039,7 +1039,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     node.parentNode = dSrc;
     
     if (dSrc.isMeta) { node.isMeta = true; }
-    if (dSrc.isExpandable) { node.isExpandable = true; }
+    // if (dSrc.isExpandable) { node.isExpandable = true; }
 
     return node;
   }
@@ -1328,26 +1328,81 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     
     t.setBusy(rel8nNode);
     t.getOys(oyIbGibs => {
-      oyIbGibs.forEach(oyIbGib => {
-        // debugger;
-        if (oyIbGib === "ib^gib") { return; }
-        let oyNode = 
-          t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", 
-                           /*nameOrIbGib*/ oyIbGib, 
-                           /*srcNode*/ rel8nNode, /*shape*/ "circle",
-                           /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null,
-                           /*title*/ "...", /*label*/ "", 
-                           /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y},
-                           /*isAdjunct*/ false);
-        oyNode.isMeta = true;
-        // isExpandable means that expand it, even though it's meta.
-        oyNode.isExpandable = true; 
-        // oyNode.isPaused = true;
-        oyNode.parentNode = rel8nNode;
+      let adjunctOyIbGibs = 
+        oyIbGibs.filter(oyIbGib => ibHelper.getIbAndGib(oyIbGib).ib.includes("adjunct"));
+      t.getIbGibJsons(adjunctOyIbGibs, oyIbGibJsons => {
+        // Group the 
+        let oyIbGibsByTarget = 
+          oyIbGibs
+            .reduce((acc, oyIbGib) => {
+              let oyIbGibJson = oyIbGibJsons[oyIbGib];
+              let targetIbGib = ibHelper.getRel8dIbGibs(oyIbGibJson, "target")[0];
+              
+              if (targetIbGib in acc) {
+                acc[targetIbGib].push(oyIbGibJson);
+              } else {
+                if (oyIbGib === "ib^gib") {
+                  acc[targetIbGib] = [];
+                } else {
+                  acc[targetIbGib] = [oyIbGibJson];
+                }
+              }
+              
+              return acc;
+            }, {});
+            
+        Object.keys(oyIbGibsByTarget)
+          .forEach(targetIbGib => {
+            let targetNode = 
+              t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", 
+                               /*nameOrIbGib*/ targetIbGib, 
+                               /*srcNode*/ rel8nNode, /*shape*/ "circle",
+                               /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null,
+                               /*title*/ "...", /*label*/ "", 
+                               /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y},
+                               /*isAdjunct*/ false);
+            
+            // Only take the first few. The user should navigate to the 
+            // target to take care of things.
+            const take_first = 5;
+            let targetOyIbGibJsons = oyIbGibsByTarget[targetIbGib].slice(0, take_first);
+            targetOyIbGibJsons.forEach(targetOyIbGibJson => {
+              let oyAdjunctIbGib = ibHelper.getRel8dIbGibs(targetOyIbGibJson, "adjunct")[0];
+              // let oyNode = 
+              t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", 
+                               /*nameOrIbGib*/ oyAdjunctIbGib, 
+                               /*srcNode*/ targetNode, /*shape*/ "circle",
+                               /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null,
+                               /*title*/ "...", /*label*/ "", 
+                               /*startPos*/ {x: targetNode.x, y: targetNode.y},
+                               /*isAdjunct*/ false);
+            });
+          });
+        
+        t.clearBusy(rel8nNode);
+        if (callback) { callback(); }
       });
-    
-      t.clearBusy(rel8nNode);
-      if (callback) { callback(); }
+    //   oyIbGibs.forEach(oyIbGib => {
+    //     
+    //     // debugger;
+    //     if (oyIbGib === "ib^gib") { return; }
+    //     let oyNode = 
+    //       t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", 
+    //                        /*nameOrIbGib*/ oyIbGib, 
+    //                        /*srcNode*/ rel8nNode, /*shape*/ "circle",
+    //                        /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null,
+    //                        /*title*/ "...", /*label*/ "", 
+    //                        /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y},
+    //                        /*isAdjunct*/ false);
+    //     oyNode.isMeta = true;
+    //     // isExpandable means that expand it, even though it's meta.
+    //     // oyNode.isExpandable = true; 
+    //     // oyNode.isPaused = true;
+    //     oyNode.parentNode = rel8nNode;
+    //   });
+    // 
+    //   t.clearBusy(rel8nNode);
+    //   if (callback) { callback(); }
     });
   }
   getOys(callback) {
@@ -1463,7 +1518,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       virtualNode.parentNode = srcNode;
       if (srcNode.isMeta) { 
         virtualNode.isMeta = true; 
-        virtualNode.isExpandable = srcNode.isExpandable;
+        // virtualNode.isExpandable = srcNode.isExpandable;
       }
       
       t.animateNodeBorder(/*d*/ srcNode, /*nodeShape*/ null);
@@ -1755,7 +1810,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   _expandNode_IbGib(node, callback) {
     let t = this;
 
-    if (node.expanding || (node.isMeta && !node.isExpandable)) {
+    // if (node.expanding || (node.isMeta && !node.isExpandable)) {
+    if (node.expanding || node.isMeta) {
       if (callback) { callback(); }
       return;
     } else {
@@ -1846,7 +1902,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     } else {
       // Add the children ibGibs listed in the src rel8ns.
       let { rel8nName, rel8nSrc } = rel8nNode;
-      if (rel8nSrc.isMeta && !rel8nSrc.isExpandable) {
+      // if (rel8nSrc.isMeta && !rel8nSrc.isExpandable) {
+      if (rel8nSrc.isMeta) {
         t._expandNode_MetaRel8n(rel8nNode, callback);
       } else {
         let rel8dIbGibs = rel8nSrc.ibGibJson.rel8ns[rel8nName] || [];

@@ -167,7 +167,7 @@ defmodule IbGib.Expression.CommonTest do
       _ = Logger.debug "a_all_ib_gibs: #{inspect a_all_ib_gibs}"
 
       present_only <- 
-        Common.filter_present_only(@test_identities_1, a_all_ib_gibs)
+        Common.filter_present_only(a_all_ib_gibs, @test_identities_1)
       
       assert present_only == [a_now_ib_gib]
       
@@ -198,11 +198,11 @@ defmodule IbGib.Expression.CommonTest do
 
       all_ib_gibs = a_all_ib_gibs ++ b_all_ib_gibs
       present_only <- 
-        Common.filter_present_only(@test_identities_1, all_ib_gibs)
+        Common.filter_present_only(all_ib_gibs, @test_identities_1)
       
       assert present_only == [a_now_ib_gib, b_now_ib_gib]
       
-      IO.puts "present_only: #{inspect present_only}"
+      # IO.puts "present_only: #{inspect present_only}"
       
       OK.success :ok
     else
