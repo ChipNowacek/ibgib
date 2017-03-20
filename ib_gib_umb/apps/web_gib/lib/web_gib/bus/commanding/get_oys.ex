@@ -20,7 +20,6 @@ defmodule WebGib.Bus.Commanding.GetOys do
 
   import OK, only: ["~>>": 2]
   require Logger
-  require OK
 
   alias IbGib.Common
   import IbGib.{Expression, Helper, QueryOptionsFactory}

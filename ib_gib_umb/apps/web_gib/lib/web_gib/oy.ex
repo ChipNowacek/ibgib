@@ -58,6 +58,63 @@ defmodule WebGib.Oy do
     invalid_args([oy_kind, oy_details])
   end
   
+  def update_oy(identity_ib_gibs, oy_kind, update_details)
+  def update_oy(identity_ib_gibs,
+                oy_kind = :adjunct, 
+                update_details = %{
+                  "action" => action,
+                  "adjunct" => adjunct
+                })
+    when is_bitstring(action) and action != "" do
+    OK.with do
+      # Get the oy associated with the adjunct (if the oy exists)
+      oy <- find_oy(identity_ib_gibs, adjunct)
+      
+      new_oy_ib_gib <- 
+        oy |> mut8(identity_ib_gibs, %{"action" => action})
+      
+      OK.success new_oy_ib_gib
+    else
+      # Not an error if no associated oy is found. (for backwards compatibility)
+      :oy_not_found -> OK.success nil
+      
+      reason -> OK.failure handle_ok_error(reason, log: true)
+    end 
+  end
+
+  defp find_oy(identity_ib_gibs, adjunct) do
+    OK.with do
+      email_identities <- 
+        Authz.get_identities_of_type(identity_ib_gibs, "email")
+      
+      adjunct_ib_gib <-
+        {:ok, adjunct}
+        ~>> get_info() 
+        ~>> get_ib_gib()
+      
+      
+    else
+      
+    end
+  end
+  
+  defp build_find_oy_query_opts(oy_kind = :adjunct, 
+                                find_details = %{
+                                  "email_identity_ib_gibs" => email_identity_ib_gibs,
+                                  "adjunct_ib_gib" => adjunct_ib_gib
+                                }) do
+    _ = Logger.debug("oy_kind: #{oy_kind}\nfind_details: #{inspect find_details}" |> ExChalk.bg_green |> ExChalk.white)
+    query_opts = 
+      do_query()
+      |> where_rel8ns("ancestor", "with", "ibgib", "oy#{@delim}gib")
+      |> where_rel8ns("target_identity", "withany", "ibgib", query_identity_ib_gibs)
+    {:ok, query_opts}
+  end
+  defp build_find_oy_query_opts(oy_kind, find_details) do
+    invalid_args([oy_kind, find_details])
+  end
+
+  
   defp instance_oy(oy_gib, identity_ib_gibs, oy_kind, oy_name) do
     oy_gib 
     |> instance(identity_ib_gibs, "oy #{oy_kind} #{oy_name}")
