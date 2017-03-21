@@ -936,4 +936,39 @@ defmodule IbGib.Helper do
     |> Enum.into(%{})
   end
 
+  def extract_result_ib_gibs(query_result_info, opts \\ [prune_root: true]) do
+    raw_result_ib_gibs = query_result_info[:rel8ns]["result"]
+    result_count = Enum.count(raw_result_ib_gibs)
+    case result_count do
+      0 ->
+        # 0 results is unexpected. Should at least return the root (1 result)
+        emsg = emsg_query_result_count(0)
+        _ = Logger.error emsg
+        {:error, emsg}
+
+      1 ->
+        # 1 result should be the root, but I don't explicitly ensure that here.
+        if opts[:prune_root] do
+          {:ok, []}
+        else
+          if Enum.at(raw_result_ib_gibs, 0) !== @root_ib_gib do
+            Logger.warn "Query result has only one ib_gib that isn't the root. It is expected to always return the root in addition to the other query ib_gibs."
+          end
+          {:ok, raw_result_ib_gibs}
+        end
+
+      _ ->
+        # At least one non-root result found
+        result_ib_gibs = 
+          if opts[:prune_root] do
+            raw_result_ib_gibs -- [@root_ib_gib]
+          else
+            raw_result_ib_gibs
+          end
+        
+        _ = Logger.debug("foonkie result_ib_gibs: #{inspect result_ib_gibs}" |> ExChalk.bg_blue |> ExChalk.white)
+        {:ok, result_ib_gibs}
+    end
+  end
+
 end

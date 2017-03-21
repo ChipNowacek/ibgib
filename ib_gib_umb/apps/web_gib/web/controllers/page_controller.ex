@@ -1,8 +1,9 @@
 defmodule WebGib.PageController do
+  use IbGib.Constants, :ib_gib
+
   use WebGib.Web, :controller
   require Logger
 
-  use IbGib.Constants, :ib_gib
   use WebGib.Constants, :keys
   import IbGib.Helper
 
@@ -32,12 +33,13 @@ defmodule WebGib.PageController do
     conn
   end
 
+  # I'm not using this right now?
   defp add_ib_node_identity_if_needed(conn) do
     _ = Logger.debug "node id key: #{@ib_node_id_key}"
     ib_node_id = conn |> get_session(@ib_node_id_key)
     conn =
       if ib_node_id == nil do
-        ib_node_id = WebGib.Node.get_identity()
+        ib_node_id = WebGib.Node.get_current_node_id()
         _ = Logger.debug "Session did not exist. Putting new node id: #{ib_node_id}"
         conn = put_session(conn, @ib_node_id_key, ib_node_id)
 

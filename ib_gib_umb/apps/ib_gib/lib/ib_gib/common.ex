@@ -235,4 +235,45 @@ defmodule IbGib.Common do
     #     {:ok, @root_ib_gib}
     # end
   end
+
+  @doc """
+  Convenience method to get the past and present ib^gibs from an info.
+  
+  ## Examples
+    iex> info = %{ib: "ib yo", gib: "gibyo", data: %{}, rel8ns: %{"past" => ["ib^gib", "old^oldgib"], "ib^gib" => ["ib^gib", "yada^yadagib"]}}
+    ...> Logger.disable(self())
+    ...> result = IbGib.Common.get_past_and_present_ib_gibs(info)
+    ...> Logger.enable(self())
+    ...> result
+    {:ok, ["ib^gib", "old^oldgib", "ib yo^gibyo"]}
+
+    iex> info = :wrong_arg
+    ...> Logger.disable(self())
+    ...> {result_tag, _} = IbGib.Common.get_past_and_present_ib_gibs(info)
+    ...> Logger.enable(self())
+    ...> result_tag
+    :error
+  """
+  def get_past_and_present_ib_gibs(ib_gib_info) when is_map(ib_gib_info) do
+    info = %{
+      ib: "ib yo", 
+      gib: "gibyo", 
+      data: %{}, 
+      rel8ns: %{
+        "past" => ["ib^gib", "old^oldgib"], 
+        "ib^gib" => ["ib^gib", "yada^yadagib"] 
+      }
+    }
+    OK.with do
+      past_ib_gibs <- ib_gib_info |> get_rel8ns("past")
+      present_ib_gib <- ib_gib_info |> get_ib_gib()
+
+      OK.success past_ib_gibs ++ [present_ib_gib]
+    else
+      reason -> OK.failure handle_ok_error(reason, log: true)
+    end
+  end
+  def get_past_and_present_ib_gibs(ib_gib_info) do
+    invalid_args(ib_gib_info)
+  end
 end

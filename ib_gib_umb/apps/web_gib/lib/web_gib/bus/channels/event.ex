@@ -191,12 +191,9 @@ defmodule WebGib.Bus.Channels.Event do
                              {oy_kind = :adjunct, 
                               oy_name, 
                               oy_ib_gib, 
-                              identity_ib_gibs} = msg_info) do
+                              adjunct_identities,
+                              target_email_identities} = msg_info) do
     OK.with do
-      # We only broadcast to email identity event channels
-      email_identity_ib_gibs <- 
-        Authz.get_identities_of_type(identity_ib_gibs, "email")
-        
       # Get the msg. The same message will be broadcasted on all email channels.
       # So if the user is logged in with multiple emails, then the user will
       # get multiple oys for that device. (They could only have one or the other
@@ -205,11 +202,12 @@ defmodule WebGib.Bus.Channels.Event do
         get_broadcast_msg(msg_type, {oy_kind, 
                                      oy_name, 
                                      oy_ib_gib, 
-                                     identity_ib_gibs})
+                                     adjunct_identities,
+                                     target_email_identities})
         
       # Broadcast to each email identity event channel.
       :ok <-
-        email_identity_ib_gibs
+        target_email_identities
         |> Enum.reduce({:ok, :ok}, fn(identity_ib_gib, _acc) -> 
              # Not interested if the broadcast errors. It is possible that the
              # topic doesn't even exist (no one is signed up to hear it).
@@ -343,22 +341,24 @@ defmodule WebGib.Bus.Channels.Event do
                          {oy_kind = :adjunct, 
                           oy_name, 
                           oy_ib_gib, 
-                          identity_ib_gibs} = msg_info) do
-  #
-  msg = %{
-    "data" => %{
-      "oy_ib_gib" => oy_ib_gib,
-      "identity_ib_gibs" => identity_ib_gibs
-    },
-    "metadata" => %{
-      "name" => Atom.to_string(msg_type),
-      "oy_name" => oy_name,
-      "oy_kind" => oy_kind,
-      "src" => "server",
-      "timestamp" => "#{:erlang.system_time(:milli_seconds)}"
+                          adjunct_identities,
+                          target_email_identities} = msg_info) do
+    #
+    msg = %{
+      "data" => %{
+        "oy_ib_gib" => oy_ib_gib,
+        "adjunct_identities" => adjunct_identities,
+        "target_email_identities" => target_email_identities
+      },
+      "metadata" => %{
+        "name" => Atom.to_string(msg_type),
+        "oy_name" => oy_name,
+        "oy_kind" => oy_kind,
+        "src" => "server",
+        "timestamp" => "#{:erlang.system_time(:milli_seconds)}"
+      }
     }
-  }
-  {:ok, msg}
+    {:ok, msg}
   end
   defp get_broadcast_msg(msg_type, msg_info) do
     invalid_args([msg_type, msg_info])
