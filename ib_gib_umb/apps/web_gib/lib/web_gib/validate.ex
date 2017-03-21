@@ -157,4 +157,28 @@ defmodule WebGib.Validate do
     _ = Logger.warn "Invalid tag_icons_text: #{inspect tag_icons_text}"
     false
   end
+  def validate(:oy_kind, oy_kind) 
+    when is_bitstring(oy_kind) and oy_kind !== "" do
+    _ = Logger.debug "oy_kind: #{oy_kind}"
+    _ = Logger.debug "string length oy_kind: #{String.length(oy_kind)}"
+    _ = Logger.debug "@max_text_size_oy_kind: #{@max_text_size_oy_kind}"
+
+    String.length(oy_kind) < @max_text_size_oy_kind
+  end
+  def validate(:oy_kind, oy_kind) do
+    _ = Logger.warn "Invalid oy_kind: #{inspect oy_kind}"
+    false
+  end
+  def validate(:oy_filter, oy_filter) 
+    when is_bitstring(oy_filter) and oy_filter !== "" do
+    _ = Logger.debug "oy_filter: #{oy_filter}"
+    _ = Logger.debug "string length oy_filter: #{String.length(oy_filter)}"
+    _ = Logger.debug "@max_text_size_oy_filter: #{@max_text_size_oy_filter}"
+
+    String.length(oy_filter) < @max_text_size_oy_filter
+  end
+  def validate(:oy_filter, oy_filter) do
+    _ = Logger.warn "Invalid oy_filter: #{inspect oy_filter}"
+    false
+  end
 end

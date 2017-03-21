@@ -1852,6 +1852,8 @@ export class GetOysCommand extends CommandBase {
     let t = this;
 
     return {
+      oy_kind: t.d.oy_kind,
+      oy_filter: t.d.oy_filter,
     };
   }
 

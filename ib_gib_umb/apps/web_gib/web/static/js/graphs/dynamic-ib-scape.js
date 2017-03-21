@@ -1327,7 +1327,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.clearFadeTimeout(rel8nNode);
     
     t.setBusy(rel8nNode);
-    t.getOys(oyIbGibs => {
+    t.getOys(/*oyKind*/ "adjunct", /*oyFilter*/ "new", oyIbGibs => {
       let adjunctOyIbGibs = 
         oyIbGibs.filter(oyIbGib => ibHelper.getIbAndGib(oyIbGib).ib.includes("adjunct"));
       t.getIbGibJsons(adjunctOyIbGibs, oyIbGibJsons => {
@@ -1405,11 +1405,16 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     //   if (callback) { callback(); }
     });
   }
-  getOys(callback) {
-    let t = this, lc = `getOys`;
+  getOys(oyKind, oyFilter, callback) {
+    let t = this, lc = `getOys(${oyKind}, ${oyFilter})`;
     
-    // let data = { ibGibs: [tempJuncIbGib] };
-    let cmdGetOys = new commands.GetOysCommand(t, /*d*/ null, successMsg => {
+    console.log(`${lc} called...`)
+    let data = { 
+      oy_kind: oyKind,
+      oy_filter: oyFilter,
+    };
+
+    let cmdGetOys = new commands.GetOysCommand(t, /*d*/ data, successMsg => {
       if (successMsg && successMsg.data && successMsg.data.oy_ib_gibs) {
         if (callback) { callback(successMsg.data.oy_ib_gibs); }
       } else {
@@ -2921,18 +2926,28 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   handleEventBusMsg_Identity(identityIbGib, msg) {
     let t = this, lc = `handleEventBusMsg_Identity(${identityIbGib})`;
 
-    if (msg.metadata.name === "ident_email") {
-      console.log(`ident_email msg: ${JSON.stringify(msg)}`)
-    } else if (msg.metadata.name === "unident_email") {
-      console.log(`unident_email msg: ${JSON.stringify(msg)}`)
+    let msgName = msg && msg.metadata && msg.metadata.name ? msg.metadata.name : "unknownMsgName";
+
+    console.log(`${msgName} msg: ${JSON.stringify(msg)}`);
+
+    let reloadApp = () => {
+      // reload the entire app to ensure that we start fresh from the current
+      // identities in the connection cookie.
+
+      // Thanks SO! http://stackoverflow.com/a/28171425/4275029
+      setTimeout(() => window.location.reload());
+    }
+
+    if (msgName === "ident_email") {
+      reloadApp();
+    } else if (msgName === "unident_email") {
+      reloadApp();
+    } else if (msgName === "oy") {
+      debugger;
+      // notify user of new oy
     } else {
       console.error(`Unknown identity msg. identityIbGib: ${identityIbGib}. msg: ${JSON.stringify(msg)}`)
     }
-
-    // reload the entire app to ensure that we start fresh from the current
-    // identities in the connection cookie.
-    
-    // Thanks SO! http://stackoverflow.com/a/28171425/4275029
-    setTimeout(() => window.location.reload());
   }
+  
 }

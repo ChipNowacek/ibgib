@@ -2,15 +2,24 @@ defmodule WebGib.Bus.Commanding.Ack do
   @moduledoc """
   Command-related code for the bus being implemented on Phoenix channels.
 
-  (Naming things is hard oy)
+  Ack is how to acknowledge an adjunct ibGib, allowing it to be rel8d to the
+  user's own ibGib. So if user A has ibGib a, and user B makes comment b on it,
+  then it will be an adjunct and will *not* be automatically rel8d to a 
+  (ATOW 2017/03/21 This is true now, but in the future there is the possibility
+  of an "auto-ack" preference). If user A acks b, then we will rel8 b
+  **directly** to a via the rel8n specified in the adjunct. 
+  
+  The user will also have other options, currently the only one being to
+  "trash" the adjunct.
   """
 
   import OK, only: ["~>>": 2]
   require Logger
 
+  alias IbGib.Auth.Authz
   alias IbGib.Transform.Plan.Factory, as: PlanFactory
   alias WebGib.Bus.Channels.Event, as: EventChannel
-  alias IbGib.Auth.Authz
+  alias WebGib.Oy
   import IbGib.{Expression, Helper}
   import IbGib.Macros, only: [handle_ok_error: 2]
   import WebGib.Bus.Commanding.Helper
@@ -33,10 +42,16 @@ defmodule WebGib.Bus.Commanding.Ack do
       true <- validate_input({:ok, :adjunct_ib_gib},
                               {:simple, adjunct_ib_gib != @root_ib_gib},
                               "The root ib not an adjunct ibGib.")
-      
+
       # Execute
       {old_target_ib_gib, new_target_ib_gib} <-
         exec_impl(identity_ib_gibs, adjunct_ib_gib)
+
+      # update oy
+      _ <- Oy.update_oy(identity_ib_gibs, 
+                        :adjunct, 
+                        %{"action" => "ack", 
+                          "adjunct_ib_gib" => adjunct_ib_gib})
 
       # Broadcast
       _ = broadcast(adjunct_ib_gib, old_target_ib_gib, new_target_ib_gib)

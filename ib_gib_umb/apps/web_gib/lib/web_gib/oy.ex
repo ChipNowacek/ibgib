@@ -28,6 +28,10 @@ defmodule WebGib.Oy do
   use IbGib.Constants, :ib_gib
   use IbGib.Constants, :error_msgs
 
+# -----------------------------------------------------------
+# create_and_publish_oy
+# -----------------------------------------------------------
+
   @doc """
   Creates an oy of a given `oy_kind` with the given `details`
   
@@ -48,7 +52,7 @@ defmodule WebGib.Oy do
                               "target_email_identities" => target_email_identities
                             }) 
     when is_list(target_email_identities) and length(target_email_identities) > 0 do
-      _ = Logger.debug("creating oy. oy_kind: #{oy_kind}\noy_details: #{inspect oy_details}")
+    _ = Logger.debug("creating oy. oy_kind: #{oy_kind}\noy_details: #{inspect oy_details}")
     OK.with do
       oy <- 
         {:ok, "oy#{@delim}gib"}
@@ -79,7 +83,48 @@ defmodule WebGib.Oy do
   def create_and_publish_oy(oy_kind, oy_details) do
     invalid_args([oy_kind, oy_details])
   end
+
+  defp instance_oy(oy_gib, identity_ib_gibs, oy_kind, oy_name) do
+    oy_gib 
+    |> instance(identity_ib_gibs, "oy #{oy_kind} #{oy_name}")
+  end
   
+  # We need to rel8 the oy to each and every email identity
+  defp rel8_oy_to_all_target_email_identities(oy, 
+                                              target_email_identities,
+                                              adjunct_identities) do
+    target_email_identities
+    |> Enum.reduce_while({:ok, oy}, fn(email_identity_ib_gib, {:ok, acc_oy}) -> 
+        case rel8_to_email(acc_oy, email_identity_ib_gib, adjunct_identities) do
+          {:ok, new_oy} -> {:cont, {:ok, new_oy}}
+          {:error, reason} -> {:halt, {:error, reason}}
+        end
+      end)
+  end
+  
+  # Individual iteration of above rel8 to all func
+  defp rel8_to_email(oy, email_identity_ib_gib, adjunct_identities) 
+    when email_identity_ib_gib != nil do
+    OK.with do
+      email_identity <-
+        IbGib.Expression.Supervisor.start_expression(email_identity_ib_gib) 
+      
+      new_oy <- 
+        oy |> rel8(email_identity, adjunct_identities, ["target_identity"])
+      
+      OK.success new_oy
+    else
+      reason -> OK.failure handle_ok_error(reason, log: true)
+    end
+  end
+  defp rel8_to_email(oy, email_identity_ib_gib, adjunct_identities) do
+    invalid_args([oy, email_identity_ib_gib, adjunct_identities])
+  end
+
+# -----------------------------------------------------------
+# update_oy
+# -----------------------------------------------------------
+
   @doc """
   Updates a user's oy, depending on the given `oy_kind` and `update_details`.
   
@@ -95,7 +140,7 @@ defmodule WebGib.Oy do
                 oy_kind = :adjunct, 
                 update_details = %{
                   "action" => action,
-                  "adjunct" => adjunct
+                  "adjunct_ib_gib" => adjunct_ib_gib
                 })
     when is_bitstring(action) and action != "" do
     _ = Logger.debug("oy_kind: #{oy_kind}\nupdate_details: #{inspect update_details}")
@@ -106,7 +151,7 @@ defmodule WebGib.Oy do
       #   but this is an assumption.
       new_oy_ib_gib <- 
         {:ok, identity_ib_gibs}
-        ~>> find_oy(adjunct)
+        ~>> find_oy(adjunct_ib_gib)
         ~>> ensure_no_action_yet_taken()
         ~>> mut8(identity_ib_gibs, %{"action" => action})
         ~>> get_info()
@@ -126,40 +171,10 @@ defmodule WebGib.Oy do
     end 
   end
 
-  # Prepare is just corralling data without much logic.
-  defp prepare(identity_ib_gibs, adjunct) do
+  defp find_oy(identity_ib_gibs, adjunct_ib_gib) do
     OK.with do
-      # email identities are used for the query contents
-      email_identity_ib_gibs <- 
-        Authz.get_identities_of_type(identity_ib_gibs, "email")
-      :ok <- 
-        if length(email_identity_ib_gibs) > 0, do: {:ok, :ok}, else: {:error, :no_email_id}
-
-      # identity ib^gib & process used to exec the query
-      query_identity_ib_gib = email_identity_ib_gibs |> Enum.at(0)
-      query_identity <- 
-        IbGib.Expression.Supervisor.start_expression(query_identity_ib_gib)
-
-      # adjunct to query for
-      adjunct_ib_gib <-
-        {:ok, adjunct}
-        ~>> get_info() 
-        ~>> get_ib_gib()
-
-      OK.success {email_identity_ib_gibs, query_identity, adjunct_ib_gib}
-    else
-      :no_email_id -> 
-        emsg = "Current identity has no email identities, and so no oys."
-        OK.failure handle_ok_error(emsg, log: true)
-      reason -> 
-        OK.failure handle_ok_error(reason, log: true)
-    end
-  end
-
-  defp find_oy(identity_ib_gibs, adjunct) do
-    OK.with do
-      {email_identity_ib_gibs, query_identity, adjunct_ib_gib} <-
-        prepare(identity_ib_gibs, adjunct)
+      {email_identity_ib_gibs, query_identity} <-
+        prepare(identity_ib_gibs)
         
       query_opts <- 
         build_find_oy_query_opts(:adjunct, 
@@ -182,7 +197,37 @@ defmodule WebGib.Oy do
       reason -> OK.failure handle_ok_error(reason, log: true)
     end
   end
-  
+
+  # Prepare is just corralling data without much logic.
+  defp prepare(identity_ib_gibs) do
+    OK.with do
+      # email identities are used for the query contents
+      email_identity_ib_gibs <- 
+        Authz.get_identities_of_type(identity_ib_gibs, "email")
+      :ok <- 
+        if length(email_identity_ib_gibs) > 0, do: {:ok, :ok}, else: {:error, :no_email_id}
+
+      # identity ib^gib & process used to exec the query
+      query_identity_ib_gib = email_identity_ib_gibs |> Enum.at(0)
+      query_identity <- 
+        IbGib.Expression.Supervisor.start_expression(query_identity_ib_gib)
+
+      # # adjunct to query for
+      # adjunct_ib_gib <-
+      #   {:ok, adjunct}
+      #   ~>> get_info() 
+      #   ~>> get_ib_gib()
+
+      OK.success {email_identity_ib_gibs, query_identity}
+    else
+      :no_email_id -> 
+        emsg = "Current identity has no email identities, and so no oys."
+        OK.failure handle_ok_error(emsg, log: true)
+      reason -> 
+        OK.failure handle_ok_error(reason, log: true)
+    end
+  end
+
   defp ensure_no_action_yet_taken(oy) do
     OK.with do
       oy_info <- oy |> get_info()
@@ -245,41 +290,4 @@ defmodule WebGib.Oy do
     invalid_args([oy_kind, find_details])
   end
 
-  
-  defp instance_oy(oy_gib, identity_ib_gibs, oy_kind, oy_name) do
-    oy_gib 
-    |> instance(identity_ib_gibs, "oy #{oy_kind} #{oy_name}")
-  end
-  
-  # We need to rel8 the oy to each and every email identity
-  defp rel8_oy_to_all_target_email_identities(oy, 
-                                              target_email_identities,
-                                              adjunct_identities) do
-    target_email_identities
-    |> Enum.reduce_while({:ok, oy}, fn(email_identity_ib_gib, {:ok, acc_oy}) -> 
-        case rel8_to_email(acc_oy, email_identity_ib_gib, adjunct_identities) do
-          {:ok, new_oy} -> {:cont, {:ok, new_oy}}
-          {:error, reason} -> {:halt, {:error, reason}}
-        end
-      end)
-  end
-  
-  # Individual iteration of above rel8 to all func
-  defp rel8_to_email(oy, email_identity_ib_gib, adjunct_identities) 
-    when email_identity_ib_gib != nil do
-    OK.with do
-      email_identity <-
-        IbGib.Expression.Supervisor.start_expression(email_identity_ib_gib) 
-      
-      new_oy <- 
-        oy |> rel8(email_identity, adjunct_identities, ["target_identity"])
-      
-      OK.success new_oy
-    else
-      reason -> OK.failure handle_ok_error(reason, log: true)
-    end
-  end
-  defp rel8_to_email(oy, email_identity_ib_gib, adjunct_identities) do
-    invalid_args([oy, email_identity_ib_gib, adjunct_identities])
-  end
 end

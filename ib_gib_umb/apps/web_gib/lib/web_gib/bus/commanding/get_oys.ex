@@ -32,16 +32,24 @@ defmodule WebGib.Bus.Commanding.GetOys do
   @doc """
   Handles the command for getting oy(!)s. See module doc for more info `WebGib.Bus.Commanding.GetOys`.
   """
-  def handle_cmd(_data,
+  def handle_cmd(data = %{"oy_kind" => oy_kind, "oy_filter" => oy_filter},
                  _metadata,
                  msg,
                  assigns_identity_ib_gibs_(...) = _socket) do
     OK.with do
       _ = Logger.debug("oyyy" |> ExChalk.blue |> ExChalk.bg_yellow)
-      # No validation ATOW (2017/03/08) for this command
+      # Validate
+      true <- validate_input({:ok, :oy_kind}, 
+                             oy_kind, 
+                             "Invalid oy_kind")
+      true <- validate_input({:ok, :oy_filter}, 
+                             oy_filter, 
+                             "Invalid oy_filter")
+
+     _ = Logger.debug("oyyy2" |> ExChalk.blue |> ExChalk.bg_yellow)
 
       # Execute
-      oy_ib_gibs <- exec_impl(identity_ib_gibs)
+      oy_ib_gibs <- exec_impl(identity_ib_gibs, data)
 
       # Reply
       reply_msg <- get_reply_msg(oy_ib_gibs)
@@ -49,20 +57,28 @@ defmodule WebGib.Bus.Commanding.GetOys do
       
       OK.success reply_msg
     else
-      reason -> OK.failure handle_ok_error(reason, log: true)
+      reason -> 
+        Logger.error("what up reason oy: #{inspect reason}")
+        OK.failure handle_ok_error(reason, log: true)
     end
   end
   def handle_cmd(_data, _metadata, msg, socket) do
     handle_cmd_error(:error, "No clause match.", msg, socket)
   end
 
-  defp exec_impl(identity_ib_gibs) do
+  defp exec_impl(identity_ib_gibs, 
+                 data = %{"oy_kind" => "adjunct", 
+                          "oy_filter" => "new"}) do
+    Logger.debug("data: #{inspect data}" |> ExChalk.bg_yellow |> ExChalk.blue)
     OK.with do
       {query_identity_ib_gibs, query_identity} <-
         prepare(identity_ib_gibs)
 
       oy_ib_gibs <- 
-        get_oy_ib_gibs(identity_ib_gibs, query_identity_ib_gibs, query_identity)
+        get_oy_ib_gibs(identity_ib_gibs, 
+                       query_identity_ib_gibs, 
+                       query_identity,
+                       [oy_kind: "adjunct", oy_filter: "new"])
 
       OK.success oy_ib_gibs
     else
@@ -93,10 +109,12 @@ defmodule WebGib.Bus.Commanding.GetOys do
   #     where identity in [query_identity_ib_gibs] (pseudo code)
   defp get_oy_ib_gibs(identity_ib_gibs, 
                       query_identity_ib_gibs, 
-                      query_identity) do
+                      query_identity,
+                      opts = [oy_kind: "adjunct", 
+                              oy_filter: "new"]) do
     OK.with do
       # Build the query options
-      query_opts <- build_query_opts(query_identity_ib_gibs)
+      query_opts <- build_query_opts(query_identity_ib_gibs, opts[:oy_kind])
 
       oy_ib_gibs <- 
         {:ok, query_identity} 
@@ -107,6 +125,7 @@ defmodule WebGib.Bus.Commanding.GetOys do
         ~>> extract_result_ib_gibs([prune_root: true])
         # Returns {:ok, []} if none found
         ~>> Common.filter_present_only(identity_ib_gibs)
+        ~>> filter_oy_ib_gibs(opts[:oy_filter])
 
       OK.success oy_ib_gibs
     else

@@ -95,6 +95,8 @@ defmodule IbGib.Constants do
       @max_link_text_size 255
       @min_query_data_text_size 0
       @max_query_data_text_size 255
+      @max_text_size_oy_kind 32
+      @max_text_size_oy_filter 1024
     end
   end
 

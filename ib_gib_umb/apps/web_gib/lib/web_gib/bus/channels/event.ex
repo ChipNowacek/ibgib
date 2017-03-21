@@ -169,7 +169,7 @@ defmodule WebGib.Bus.Channels.Event do
   def broadcast_ib_gib_event(:unident_email = msg_type,
                              {session_ib_gib,
                               ident_ib_gib} = msg_info) do
-    _ = Logger.debug("Broadcasting unident_email sir. session_ib_gib: #{session_ib_gib}\nident_ib_gib: #{ident_ib_gib}" |> ExChalk.yellow |> ExChalk.bg_blue)
+    _ = Logger.debug("Broadcasting #{msg_type} sir. msg_info: #{inspect msg_info}" |> ExChalk.yellow |> ExChalk.bg_blue)
     with(
       {:ok, msg} <- get_broadcast_msg(msg_type,
                                       {session_ib_gib,
@@ -193,6 +193,7 @@ defmodule WebGib.Bus.Channels.Event do
                               oy_ib_gib, 
                               adjunct_identities,
                               target_email_identities} = msg_info) do
+    _ = Logger.debug("Broadcasting #{msg_type} sir. msg_info: #{inspect msg_info}" |> ExChalk.yellow |> ExChalk.bg_blue)
     OK.with do
       # Get the msg. The same message will be broadcasted on all email channels.
       # So if the user is logged in with multiple emails, then the user will
