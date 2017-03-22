@@ -22,9 +22,9 @@ defmodule IbGib.Common do
   use IbGib.Constants, :ib_gib
   use IbGib.Constants, :error_msgs
 
-  # ------------------------------------------------------------------
-  # get_latest_ib_gib(identity_ib_gibs, src_ib_gib)
-  # ------------------------------------------------------------------
+# ------------------------------------------------------------------
+# get_latest_ib_gib(identity_ib_gibs, src_ib_gib)
+# ------------------------------------------------------------------
 
   @doc """
   Gets the latest of any timelines starting with `src_ib_gib`. Usually this
@@ -73,6 +73,47 @@ defmodule IbGib.Common do
   def get_latest_ib_gib(identity_ib_gibs, src_ib_gib) do
     invalid_args([identity_ib_gibs, src_ib_gib])
   end
+
+  defp build_query_opts_latest(identity_ib_gibs, ib_gib) do
+    with(
+      {:ok, identities_for_query} <-
+        get_identities_for_query(identity_ib_gibs),
+      query_opts = (
+        do_query()
+        |> where_rel8ns("identity", "withany", "ibgib", identities_for_query)
+        |> where_rel8ns("past", "withany", "ibgib", [ib_gib])
+        |> most_recent_only()
+      )
+    ) do
+      {:ok, query_opts}
+    end
+  end
+
+  defp extract_result_ib_gib(query_result_info, default_ib_gib) do
+    OK.with do
+      result_data <- 
+        get_rel8ns(query_result_info, "result", [error_on_not_found: true])
+      result_count = Enum.count(result_data)
+      case result_count do
+        1 ->
+          # Not found (1 result is root), so the "latest" is the one that we're
+          # search off of (has no past)
+          {:ok, default_ib_gib}
+
+        2 ->
+          # First is always root, so get second
+          {:ok, Enum.at(result_data, 1)}
+
+        _ ->
+          _ = Logger.error "unknown result count: #{result_count}"
+          {:ok, @root_ib_gib}
+      end
+    end
+  end
+
+# ------------------------------------------------------------------
+# filter_present_only(ib_gibs, identity_ib_gibs)
+# ------------------------------------------------------------------
 
   @doc """
   Takes a list of `ib_gibs`, and filters each ibGib timeline to its present
@@ -126,6 +167,7 @@ defmodule IbGib.Common do
   defp filter_present_iteration([ib_gib | rest], identity_ib_gibs, acc) 
     when is_list(acc) do
     OK.with do
+      _ = Logger.debug("jollly identity_ib_gibs: #{inspect identity_ib_gibs}")
       # Get the latest and add it to the accumulator
       latest_ib_gib <- get_latest_ib_gib(identity_ib_gibs, ib_gib)
       acc = acc ++ [latest_ib_gib]
@@ -146,6 +188,10 @@ defmodule IbGib.Common do
     invalid_args([identity_ib_gibs, ib_gibs, acc])
   end
 
+# ------------------------------------------------------------------
+# others
+# ------------------------------------------------------------------
+
   def get_identities_for_query(identity_ib_gibs) do
     possibles = 
       identity_ib_gibs
@@ -158,21 +204,6 @@ defmodule IbGib.Common do
     end
   end
   
-  defp build_query_opts_latest(identity_ib_gibs, ib_gib) do
-    with(
-      {:ok, identities_for_query} <-
-        get_identities_for_query(identity_ib_gibs),
-      query_opts = (
-        do_query()
-        |> where_rel8ns("identity", "withany", "ibgib", identities_for_query)
-        |> where_rel8ns("past", "withany", "ibgib", [ib_gib])
-        |> most_recent_only()
-      )
-    ) do
-      {:ok, query_opts}
-    end
-  end
-
   @doc """
   Gets the identity_ib_gibs out of the given `ib_gib_info` map.
   
@@ -196,44 +227,6 @@ defmodule IbGib.Common do
   end
   def get_identity_ib_gibs(ib_gib_info) do
     invalid_args(ib_gib_info)
-  end
-
-  defp extract_result_ib_gib(query_result_info, default_ib_gib) do
-    OK.with do
-      result_data <- 
-        get_rel8ns(query_result_info, "result", [error_on_not_found: true])
-      result_count = Enum.count(result_data)
-      case result_count do
-        1 ->
-          # Not found (1 result is root), so the "latest" is the one that we're
-          # search off of (has no past)
-          {:ok, default_ib_gib}
-
-        2 ->
-          # First is always root, so get second
-          {:ok, Enum.at(result_data, 1)}
-
-        _ ->
-          _ = Logger.error "unknown result count: #{result_count}"
-          {:ok, @root_ib_gib}
-      end
-    end
-    # result_data = query_result_info[:rel8ns]["result"]
-    # result_count = Enum.count(result_data)
-    # case result_count do
-    #   1 ->
-    #     # Not found (1 result is root), so the "latest" is the one that we're
-    #     # search off of (has no past)
-    #     {:ok, default_ib_gib}
-    # 
-    #   2 ->
-    #     # First is always root, so get second
-    #     {:ok, Enum.at(result_data, 1)}
-    # 
-    #   _ ->
-    #     _ = Logger.error "unknown result count: #{result_count}"
-    #     {:ok, @root_ib_gib}
-    # end
   end
 
   @doc """

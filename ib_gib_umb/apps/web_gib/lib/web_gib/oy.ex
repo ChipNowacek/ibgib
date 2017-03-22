@@ -19,7 +19,6 @@ defmodule WebGib.Oy do
 
   import OK, only: ["~>>": 2]
   require Logger
-  require OK
 
   alias IbGib.Auth.Authz
   alias IbGib.Common
@@ -54,13 +53,16 @@ defmodule WebGib.Oy do
     when is_list(target_email_identities) and length(target_email_identities) > 0 do
     _ = Logger.debug("creating oy. oy_kind: #{oy_kind}\noy_details: #{inspect oy_details}")
     OK.with do
+      node_identity_ib_gib <- 
+        WebGib.Node.get_current_node_identity_ib_gib()
+      
       oy <- 
         {:ok, "oy#{@delim}gib"}
         ~>> IbGib.Expression.Supervisor.start_expression()
-        ~>> instance_oy(adjunct_identities, oy_kind, oy_name)  
-        ~>> rel8(adjunct, adjunct_identities, ["adjunct"])
-        ~>> rel8(target, adjunct_identities, ["target"])
-        ~>> rel8_oy_to_all_target_email_identities(target_email_identities, adjunct_identities)
+        ~>> instance_oy([node_identity_ib_gib], oy_kind, oy_name)  
+        ~>> rel8(adjunct, [node_identity_ib_gib], ["adjunct"])
+        ~>> rel8(target, [node_identity_ib_gib], ["target"])
+        ~>> rel8_oy_to_all_target_email_identities(target_email_identities, node_identity_ib_gib)
       
       oy_ib_gib <-
         {:ok, oy}
@@ -73,7 +75,8 @@ defmodule WebGib.Oy do
                                              oy_name, 
                                              oy_ib_gib, 
                                              adjunct_identities,
-                                             target_email_identities})
+                                             target_email_identities,
+                                             node_identity_ib_gib})
       
       OK.success :ok
     else
@@ -92,10 +95,12 @@ defmodule WebGib.Oy do
   # We need to rel8 the oy to each and every email identity
   defp rel8_oy_to_all_target_email_identities(oy, 
                                               target_email_identities,
-                                              adjunct_identities) do
+                                              node_identity_ib_gib) do
     target_email_identities
     |> Enum.reduce_while({:ok, oy}, fn(email_identity_ib_gib, {:ok, acc_oy}) -> 
-        case rel8_to_email(acc_oy, email_identity_ib_gib, adjunct_identities) do
+        case rel8_to_email(acc_oy, 
+                           email_identity_ib_gib, 
+                           node_identity_ib_gib) do
           {:ok, new_oy} -> {:cont, {:ok, new_oy}}
           {:error, reason} -> {:halt, {:error, reason}}
         end
@@ -103,22 +108,22 @@ defmodule WebGib.Oy do
   end
   
   # Individual iteration of above rel8 to all func
-  defp rel8_to_email(oy, email_identity_ib_gib, adjunct_identities) 
+  defp rel8_to_email(oy, email_identity_ib_gib, node_identity_ib_gib) 
     when email_identity_ib_gib != nil do
     OK.with do
       email_identity <-
         IbGib.Expression.Supervisor.start_expression(email_identity_ib_gib) 
       
       new_oy <- 
-        oy |> rel8(email_identity, adjunct_identities, ["target_identity"])
+        oy |> rel8(email_identity, [node_identity_ib_gib], ["target_identity"])
       
       OK.success new_oy
     else
       reason -> OK.failure handle_ok_error(reason, log: true)
     end
   end
-  defp rel8_to_email(oy, email_identity_ib_gib, adjunct_identities) do
-    invalid_args([oy, email_identity_ib_gib, adjunct_identities])
+  defp rel8_to_email(oy, email_identity_ib_gib, node_identity_ib_gib) do
+    invalid_args([oy, email_identity_ib_gib, node_identity_ib_gib])
   end
 
 # -----------------------------------------------------------
@@ -145,6 +150,10 @@ defmodule WebGib.Oy do
     when is_bitstring(action) and action != "" do
     _ = Logger.debug("oy_kind: #{oy_kind}\nupdate_details: #{inspect update_details}")
     OK.with do
+      # Oys are created using the node's identity.
+      node_identity_ib_gib <- 
+        WebGib.Node.get_current_node_identity_ib_gib()
+
       # Get the oy associated with the adjunct (if the oy exists)
       #   This means that at most only **one** oy should exist.
       #   If more than one exists, I don't think it's the end of the world, 
@@ -153,7 +162,8 @@ defmodule WebGib.Oy do
         {:ok, identity_ib_gibs}
         ~>> find_oy(adjunct_ib_gib)
         ~>> ensure_no_action_yet_taken()
-        ~>> mut8(identity_ib_gibs, %{"action" => action})
+        ~>> ensure_authorized(identity_ib_gibs)
+        ~>> mut8([node_identity_ib_gib], %{"action" => action})
         ~>> get_info()
         ~>> get_ib_gib()
       
@@ -242,6 +252,37 @@ defmodule WebGib.Oy do
     end
   end
   
+  # The target must have the same email ibGibs.
+  # But we can't rely on the default authz mechanism, because we are going
+  # to mut8 the oy using the current node's identity.
+  # I suppose this will fail when we get distributed ibGib going and an oy
+  # is created on one node and attempted to do this on another.
+  # But perhaps this is because "node" is overloaded. ibGib as a whole is a 
+  # node in ibGib, but in a distributed architecture, there will be multiple
+  # "nodes" in the cluster. After all, ibGib is a nodal structure itself.
+  defp ensure_authorized(oy, identity_ib_gibs) do
+    OK.with do
+      oy_info <- oy |> get_info()
+
+      oy_target_identities <- get_rel8ns(oy_info, "target_identity")
+      
+      contains_all_of_oy_email_identities =
+        oy_target_identities
+        |> Enum.reduce(true, fn(ib_gib, acc) ->
+             acc and Enum.member?(identity_ib_gibs, ib_gib)
+           end)
+      
+      :ok <- 
+        if contains_all_of_oy_email_identities do
+          {:ok, :ok}
+        else
+          {:error, "The given identity_ib_gibs (#{inspect identity_ib_gibs}) are not authorized with all of the email target identities of the oy (#{inspect oy_target_identities})."}
+        end
+    else
+      reason -> OK.failure handle_ok_error(reason, log: true)
+    end
+  end
+  
   defp extract_single_oy_ib_gib(oy_ib_gibs) 
     when is_list(oy_ib_gibs) and length(oy_ib_gibs) == 0 do
     {:error, :oy_not_found}
@@ -288,6 +329,27 @@ defmodule WebGib.Oy do
   end
   defp build_find_oy_query_opts(oy_kind, find_details) do
     invalid_args([oy_kind, find_details])
+  end
+
+# -----------------------------------------------------------
+# is_new?
+# -----------------------------------------------------------
+
+  def is_new?(oy_ib_gib) do
+    _ = Logger.debug("oy_ib_gib: #{oy_ib_gib}")
+    OK.with do
+      oy_info <- 
+        {:ok, oy_ib_gib}
+        ~>> IbGib.Expression.Supervisor.start_expression()
+        ~>> get_info()
+      oy_data = oy_info[:data]
+      is_new? = !Map.has_key?(oy_data, "action")
+      
+      _ = Logger.debug "is_new?: #{is_new?}"
+      OK.success is_new?
+    else
+      reason -> OK.failure handle_ok_error(reason, log: true)
+    end 
   end
 
 end

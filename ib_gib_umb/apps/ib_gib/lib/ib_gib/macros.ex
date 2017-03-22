@@ -46,4 +46,11 @@ defmodule IbGib.Macros do
       handle_ok_error(unquote(untagged_reason), [])
     end
   end
+  
+  defmacro ok_pipe_logger(value, :debug, log_context) do
+    quote do
+      Logger.debug("#{unquote(log_context)}: #{inspect unquote(value)}")
+      {:ok, unquote(value)}
+    end
+  end
 end

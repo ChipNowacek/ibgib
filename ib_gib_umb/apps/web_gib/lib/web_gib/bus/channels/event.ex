@@ -192,7 +192,8 @@ defmodule WebGib.Bus.Channels.Event do
                               oy_name, 
                               oy_ib_gib, 
                               adjunct_identities,
-                              target_email_identities} = msg_info) do
+                              target_email_identities,
+                              node_identity_ib_gib} = msg_info) do
     _ = Logger.debug("Broadcasting #{msg_type} sir. msg_info: #{inspect msg_info}" |> ExChalk.yellow |> ExChalk.bg_blue)
     OK.with do
       # Get the msg. The same message will be broadcasted on all email channels.
@@ -204,7 +205,8 @@ defmodule WebGib.Bus.Channels.Event do
                                      oy_name, 
                                      oy_ib_gib, 
                                      adjunct_identities,
-                                     target_email_identities})
+                                     target_email_identities,
+                                     node_identity_ib_gib})
         
       # Broadcast to each email identity event channel.
       :ok <-
@@ -343,7 +345,8 @@ defmodule WebGib.Bus.Channels.Event do
                           oy_name, 
                           oy_ib_gib, 
                           adjunct_identities,
-                          target_email_identities} = msg_info) do
+                          target_email_identities,
+                          node_identity_ib_gib} = msg_info) do
     #
     msg = %{
       "data" => %{

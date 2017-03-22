@@ -48,7 +48,7 @@ defmodule WebGib.Bus.Commanding.Ack do
         exec_impl(identity_ib_gibs, adjunct_ib_gib)
 
       # update oy
-      _ <- Oy.update_oy(identity_ib_gibs, 
+      _ = Oy.update_oy(identity_ib_gibs, 
                         :adjunct, 
                         %{"action" => "ack", 
                           "adjunct_ib_gib" => adjunct_ib_gib})

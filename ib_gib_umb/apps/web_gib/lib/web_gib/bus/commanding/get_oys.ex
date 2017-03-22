@@ -22,8 +22,9 @@ defmodule WebGib.Bus.Commanding.GetOys do
   require Logger
 
   alias IbGib.Common
+  alias WebGib.Oy
   import IbGib.{Expression, Helper, QueryOptionsFactory}
-  import IbGib.Macros, only: [handle_ok_error: 2]
+  import IbGib.Macros, only: [handle_ok_error: 2, ok_pipe_logger: 3]
   import WebGib.Bus.Commanding.Helper
   import WebGib.Patterns
   use IbGib.Constants, :ib_gib
@@ -121,19 +122,50 @@ defmodule WebGib.Bus.Commanding.GetOys do
         # Execute the query itself, which creates the query_result ib_gib
         ~>> query(identity_ib_gibs, query_opts)
         ~>> get_info()
+        ~>> ok_pipe_logger(:debug, "get_oy_ib_gibs query_result_info")
         # Return the query_result result (non-root) ib^gibs, if any
         ~>> extract_result_ib_gibs([prune_root: true])
+        ~>> ok_pipe_logger(:debug, "get_oy_ib_gibs result_ib_gibs")
         # Returns {:ok, []} if none found
         ~>> Common.filter_present_only(identity_ib_gibs)
+        ~>> ok_pipe_logger(:debug, "get_oy_ib_gibs present only")
         ~>> filter_oy_ib_gibs(opts[:oy_filter])
+        ~>> ok_pipe_logger(:debug, "get_oy_ib_gibs filter_oy_ib_gibs")
 
       OK.success oy_ib_gibs
     else
       reason -> OK.failure handle_ok_error(reason, log: true)
     end
   end
+  
+  defp filter_oy_ib_gibs(oy_ib_gibs, oy_filter)
+  defp filter_oy_ib_gibs(oy_ib_gibs, nil) do
+    {:ok, oy_ib_gibs}
+  end
+  defp filter_oy_ib_gibs([], _oy_filter) do
+    {:ok, []}
+  end
+  defp filter_oy_ib_gibs([@root_ib_gib], _oy_filter) do
+    {:ok, [@root_ib_gib]}
+  end
+  defp filter_oy_ib_gibs(oy_ib_gibs, oy_filter = "new") do
+    initial = {:ok, []}
+    filtered_oy_ib_gibs = 
+      Enum.reduce_while(oy_ib_gibs, [], fn(oy_ib_gib, acc) -> 
+        case Oy.is_new?(oy_ib_gib) do
+          {:ok, true}  -> {:cont, acc ++ [oy_ib_gib]}
+          {:ok, false} -> {:cont, acc}
+          {:error, _}  -> {:halt, :error}
+        end
+      end)
+    if filtered_oy_ib_gibs == :error do
+      {:error, "There was a problem filtering the oy_ib_gibs."}
+    else
+      {:ok, filtered_oy_ib_gibs}
+    end
+  end
 
-  defp build_query_opts(query_identity_ib_gibs) do
+  defp build_query_opts(query_identity_ib_gibs, _oy_kind = "adjunct") do
     _ = Logger.debug("query_identity_ib_gibs: #{inspect query_identity_ib_gibs}" |> ExChalk.bg_green |> ExChalk.white)
     query_opts = 
       do_query()
