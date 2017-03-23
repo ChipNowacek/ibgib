@@ -119,15 +119,12 @@ defmodule WebGib.Bus.Commanding.GetOys do
 
       oy_ib_gibs <- 
         {:ok, query_identity} 
-        # Execute the query itself, which creates the query_result ib_gib
         ~>> query(identity_ib_gibs, query_opts)
         ~>> get_info()
         ~>> ok_pipe_logger(:debug, "get_oy_ib_gibs query_result_info")
-        # Return the query_result result (non-root) ib^gibs, if any
         ~>> extract_result_ib_gibs([prune_root: true])
         ~>> ok_pipe_logger(:debug, "get_oy_ib_gibs result_ib_gibs")
-        # Returns {:ok, []} if none found
-        ~>> Common.filter_present_only(identity_ib_gibs)
+        # ~>> Common.filter_present_only(identity_ib_gibs)
         ~>> ok_pipe_logger(:debug, "get_oy_ib_gibs present only")
         ~>> filter_oy_ib_gibs(opts[:oy_filter])
         ~>> ok_pipe_logger(:debug, "get_oy_ib_gibs filter_oy_ib_gibs")

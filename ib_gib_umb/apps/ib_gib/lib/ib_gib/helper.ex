@@ -861,16 +861,22 @@ defmodule IbGib.Helper do
     ...> Logger.enable(self())
     ...> result
     {:ok, %{"ib^gib" => ["b^gib"]}}
+    
+  NB: This does NOT go in the direction from b to a, meaning it doesn't check 
+  the opposite direction and go through b's rel8ns looking for refs to `a`.
   """
   def get_direct_rel8nships(how, a_info, b_info) 
   def get_direct_rel8nships(:a_now_b_anytime, a_info, b_info)
     when is_map(a_info) and is_map(b_info) do
-    # There is a rel8nship if the _current_ rel8ns of a match _either_ the 
+    # There is a rel8nship if the _current_ rel8ns of `a` match _either_ the 
     # current b_ib_gib _or_ any ib_gib in b's past.
-    with(
-      {:ok, b_ib_gib} <- get_ib_gib(b_info),
-      b_ib_gibs <- [b_ib_gib] ++ b_info[:rel8ns]["past"] -- ["ib^gib"],
-      rel8n_names <-
+    OK.with do
+      _ = Logger.debug("a_ib: #{a_info[:ib]}\nb_ib: #{b_info[:ib]}")
+      _ = Logger.debug("a_info: #{inspect a_info}\nb_info: #{inspect b_info}")
+      b_ib_gib <- get_ib_gib(b_info)
+      _ = Logger.debug("b_ib_gib: #{b_ib_gib}")
+      b_ib_gibs = [b_ib_gib] ++ b_info[:rel8ns]["past"] -- ["ib^gib"]
+      rel8nships =
         a_info[:rel8ns]
         |> Enum.reduce(%{}, fn({rel8n_name, rel8n_ib_gibs}, acc) -> 
              rel8d_b_ib_gibs = get_rel8d_ib_gibs(rel8n_ib_gibs, b_ib_gibs)
@@ -881,10 +887,10 @@ defmodule IbGib.Helper do
                Map.put(acc, rel8n_name, rel8d_b_ib_gibs)
              end
            end)
-    ) do 
-      {:ok, rel8n_names}
+      _ = Logger.debug("rel8nships: #{inspect rel8nships}")
+      OK.success rel8nships
     else
-      error -> default_handle_error(error)
+      reason -> OK.failure handle_ok_error(reason, log: true)
     end
   end
   def get_direct_rel8nships(a, b) do

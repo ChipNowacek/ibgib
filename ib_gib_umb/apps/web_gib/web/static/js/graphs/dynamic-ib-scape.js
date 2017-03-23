@@ -2943,7 +2943,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     } else if (msgName === "unident_email") {
       reloadApp();
     } else if (msgName === "oy") {
-      debugger;
+      // debugger;
       // notify user of new oy
     } else {
       console.error(`Unknown identity msg. identityIbGib: ${identityIbGib}. msg: ${JSON.stringify(msg)}`)

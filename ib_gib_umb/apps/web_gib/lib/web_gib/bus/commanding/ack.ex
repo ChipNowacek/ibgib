@@ -47,11 +47,11 @@ defmodule WebGib.Bus.Commanding.Ack do
       {old_target_ib_gib, new_target_ib_gib} <-
         exec_impl(identity_ib_gibs, adjunct_ib_gib)
 
-      # update oy
-      _ = Oy.update_oy(identity_ib_gibs, 
-                        :adjunct, 
-                        %{"action" => "ack", 
-                          "adjunct_ib_gib" => adjunct_ib_gib})
+      # # update oy
+      # _ = Oy.update_oy(identity_ib_gibs, 
+      #                   :adjunct, 
+      #                   %{"action" => "ack", 
+      #                     "adjunct_ib_gib" => adjunct_ib_gib})
 
       # Broadcast
       _ = broadcast(adjunct_ib_gib, old_target_ib_gib, new_target_ib_gib)
