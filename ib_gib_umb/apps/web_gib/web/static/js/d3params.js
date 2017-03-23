@@ -92,7 +92,13 @@ var d3BoringRel8ns = [
   "query",
   "ib^gib",
   "trash",
-  "identity"
+  "identity",
+  "target_identity",
+  "instance_of",
+  "comment_on",
+  "pic_",
+  "link_",
+  "adjunct_to"
 ];
 
 /** Rel8ns that should always be showing when user clicks node. */
@@ -393,6 +399,8 @@ let d3Rel8nIcons = {
   "adjunct": "\uf01c", // Font awesome inbox, unicode one is -> 📥
   "identity_session": "\uf21b",
   "trash": "\uf1f8",
+  "oy": "\uf0f3",
+  "target": "\uf140",
 };
 
 var d3RootUnicodeChar = "\uf10c";

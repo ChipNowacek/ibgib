@@ -10,9 +10,11 @@ defmodule IbGibTest do
   use IbGib.Constants, :ib_gib
 
   doctest IbGib
-  doctest IbGib.Helper
+  doctest IbGib.Auth.Authz
   doctest IbGib.Auth.Identity
+  doctest IbGib.Common
   doctest IbGib.Data.Schemas.ValidateHelper
+  doctest IbGib.Helper
   doctest IbGib.Transform.Factory
   doctest IbGib.Transform.Plan.Builder
 

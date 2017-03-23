@@ -4,10 +4,13 @@ defmodule IbGib.Helper do
   consuming apps, e.g. `web_gib`.
   """
 
+  require Logger
+  require OK
+
+  import IbGib.Macros
   use IbGib.Constants, :ib_gib
   use IbGib.Constants, :error_msgs
-  import IbGib.Macros
-  require Logger
+
   @hash_salt "ib_gib_salt_whaa"
 
   @doc """
@@ -639,7 +642,10 @@ defmodule IbGib.Helper do
     iex> past = ["ib^gib", "a^123", "a^456"]
     ...> ancestors = ["ib^gib","A^gib"]
     ...> info = %{ib: "a", gib: "XYZ", data: %{}, rel8ns: %{"past" => past, "ancestor" => ancestors}}
-    ...> IbGib.Helper.get_temporal_junction_ib_gib(info)
+    ...> Logger.disable(self())
+    ...> result = IbGib.Helper.get_temporal_junction_ib_gib(info)
+    ...> Logger.enable(self())
+    ...> result
     {:ok, "a^123"}
   
     # Some, e.g. links, skip the first past (link^123) and return the second
@@ -647,13 +653,19 @@ defmodule IbGib.Helper do
     iex> past = ["ib^gib", "link^123", "link^456"]
     ...> ancestors = ["ib^gib","text^gib","link^gib"]
     ...> info = %{ib: "ibyo", gib: "gibyo", data: %{}, rel8ns: %{"past" => past, "ancestor" => ancestors}}
-    ...> IbGib.Helper.get_temporal_junction_ib_gib(info)
+    ...> Logger.disable(self())
+    ...> result = IbGib.Helper.get_temporal_junction_ib_gib(info)
+    ...> Logger.enable(self())
+    ...> result
     {:ok, "link^456"}
 
     iex> past = ["ib^gib", "pic^5349835F0D03EEC0DFC13FC8777683331E613F4977EA55E663463C97FBC3936B", "pic^D6C742A8135841E23310C980EBAB3D341FB274D45A96BDD993DC70009EA37999"]
     ...> ancestors = ["ib^gib", "binary^gib", "pic^gib"]
     ...> info = %{ib: "ibyo", gib: "gibyo", data: %{}, rel8ns: %{"past" => past, "ancestor" => ancestors}}
-    ...> IbGib.Helper.get_temporal_junction_ib_gib(info)
+    ...> Logger.disable(self())
+    ...> result = IbGib.Helper.get_temporal_junction_ib_gib(info)
+    ...> Logger.enable(self())
+    ...> result
     {:ok, "pic^D6C742A8135841E23310C980EBAB3D341FB274D45A96BDD993DC70009EA37999"}
     
     # If an ibGib has no past (only the root), then the **current** ibGib _is_
@@ -661,7 +673,10 @@ defmodule IbGib.Helper do
     iex> past = ["ib^gib"]
     ...> ancestors = ["ib^gib","A^gib"]
     ...> info = %{ib: "a", gib: "XYZ", data: %{}, rel8ns: %{"past" => past, "ancestor" => ancestors}}
-    ...> IbGib.Helper.get_temporal_junction_ib_gib(info)
+    ...> Logger.disable(self())
+    ...> result = IbGib.Helper.get_temporal_junction_ib_gib(info)
+    ...> Logger.enable(self())
+    ...> result
     {:ok, "a^XYZ"}
   """
   def get_temporal_junction_ib_gib(ib_gib)
@@ -679,11 +694,13 @@ defmodule IbGib.Helper do
   end
   def get_temporal_junction_ib_gib(ib_gib_info) when is_map(ib_gib_info) do
     with(
-      {:ok, past} <- get_rel8ns(ib_gib_info, "past"),
+      {:ok, past} <- 
+        get_rel8ns(ib_gib_info, "past", [error_on_not_found: true]),
       # Remove the root, since the root is never the temporal junction point
       [@root_ib_gib | past_sans_root] = past,
       
-      {:ok, ancestors} <- get_rel8ns(ib_gib_info, "ancestor"),
+      {:ok, ancestors} <- 
+        get_rel8ns(ib_gib_info, "ancestor", [error_on_not_found: true]),
       {:ok, ib_gib} <- get_ib_gib(ib_gib_info),
       
       {:ok, temp_junc_ib_gib} <- 
@@ -741,26 +758,77 @@ defmodule IbGib.Helper do
   @doc """
   Gets the `rel8n_name` rel8ns for a given `info`.
   
+    # ok, Rel8ns found
     iex> info = %{rel8ns: %{"past" => ["ib^gib", "1^gib"]}}
-    ...> IbGib.Helper.get_rel8ns(info, "past")
+    ...> Logger.disable(self())
+    ...> result = IbGib.Helper.get_rel8ns(info, "past", [error_on_not_found: true])
+    ...> Logger.enable(self())
+    ...> result
     {:ok, ["ib^gib", "1^gib"]}
-    
+
+    # ok, Empty opts
     iex> info = %{rel8ns: %{"past" => ["ib^gib", "1^gib"]}}
-    ...> {:error, _} = IbGib.Helper.get_rel8ns(info, "x")
+    ...> Logger.disable(self())
+    ...> result = IbGib.Helper.get_rel8ns(info, "past", [])
+    ...> Logger.enable(self())
+    ...> result
+    {:ok, ["ib^gib", "1^gib"]}
+
+    # error - Invalid opts
+    iex> info = %{rel8ns: %{"past" => ["ib^gib", "1^gib"]}}
+    ...> Logger.disable(self())
+    ...> {:error, _} = IbGib.Helper.get_rel8ns(info, "past", nil)
+    ...> Logger.enable(self())
+    ...> :ok
+    :ok
+    
+    # error, not found, error_on_not_found: true
+    iex> info = %{rel8ns: %{"past" => ["ib^gib", "1^gib"]}}
+    ...> Logger.disable(self())
+    ...> {:error, _} = IbGib.Helper.get_rel8ns(info, "x", [error_on_not_found: true])
+    ...> Logger.enable(self())
+    ...> :ok
+    :ok
+
+    # ok, not found, error_on_not_found: false
+    iex> info = %{rel8ns: %{"past" => ["ib^gib", "1^gib"]}}
+    ...> Logger.disable(self())
+    ...> {:ok, []} = IbGib.Helper.get_rel8ns(info, "x", [error_on_not_found: false])
+    ...> Logger.enable(self())
     ...> :ok
     :ok
   """
-  def get_rel8ns(info, rel8n_name) 
-    when is_map(info) and is_bitstring(rel8n_name) do
-    rel8ns = info[:rel8ns][rel8n_name]
-    if rel8ns === nil do
-      {:error, "Rel8n #{rel8n_name} not found in info."}
-    else
-      {:ok, rel8ns}
+  def get_rel8ns(info, rel8n_name, opts \\ [error_on_not_found: true]) 
+  def get_rel8ns(info, rel8n_name, opts) 
+    when is_map(info) and is_bitstring(rel8n_name) and is_list(opts) do
+    OK.with do
+      _ = Logger.debug("info:\n#{inspect info}" |> ExChalk.magenta)
+      rel8ns <- 
+        if info[:rel8ns] do
+          {:ok, info[:rel8ns]}
+        else
+          {:error, "Invalid info. No info[:rel8ns] map found"}
+        end
+      _ = Logger.debug("rel8ns:\n#{inspect rel8ns}" |> ExChalk.magenta)
+
+      result_rel8ns <-
+        cond do
+          rel8ns[rel8n_name] != nil ->
+            {:ok, rel8ns[rel8n_name]}
+            
+          !opts[:error_on_not_found] ->
+            {:ok, []}
+            
+          opts[:error_on_not_found] ->
+            {:error, "Rel8n #{rel8n_name} not found."}
+        end 
+      _ = Logger.debug("result_rel8ns:\n#{inspect result_rel8ns}" |> ExChalk.magenta)
+        
+      OK.success result_rel8ns
     end
   end
-  def get_rel8n(info, rel8n_name) do
-    invalid_args([info, rel8n_name])
+  def get_rel8ns(info, rel8n_name, opts) do
+    invalid_args([info, rel8n_name, opts])
   end
 
   @doc """
@@ -793,16 +861,22 @@ defmodule IbGib.Helper do
     ...> Logger.enable(self())
     ...> result
     {:ok, %{"ib^gib" => ["b^gib"]}}
+    
+  NB: This does NOT go in the direction from b to a, meaning it doesn't check 
+  the opposite direction and go through b's rel8ns looking for refs to `a`.
   """
   def get_direct_rel8nships(how, a_info, b_info) 
   def get_direct_rel8nships(:a_now_b_anytime, a_info, b_info)
     when is_map(a_info) and is_map(b_info) do
-    # There is a rel8nship if the _current_ rel8ns of a match _either_ the 
+    # There is a rel8nship if the _current_ rel8ns of `a` match _either_ the 
     # current b_ib_gib _or_ any ib_gib in b's past.
-    with(
-      {:ok, b_ib_gib} <- get_ib_gib(b_info),
-      b_ib_gibs <- [b_ib_gib] ++ b_info[:rel8ns]["past"] -- ["ib^gib"],
-      rel8n_names <-
+    OK.with do
+      _ = Logger.debug("a_ib: #{a_info[:ib]}\nb_ib: #{b_info[:ib]}")
+      _ = Logger.debug("a_info: #{inspect a_info}\nb_info: #{inspect b_info}")
+      b_ib_gib <- get_ib_gib(b_info)
+      _ = Logger.debug("b_ib_gib: #{b_ib_gib}")
+      b_ib_gibs = [b_ib_gib] ++ b_info[:rel8ns]["past"] -- ["ib^gib"]
+      rel8nships =
         a_info[:rel8ns]
         |> Enum.reduce(%{}, fn({rel8n_name, rel8n_ib_gibs}, acc) -> 
              rel8d_b_ib_gibs = get_rel8d_ib_gibs(rel8n_ib_gibs, b_ib_gibs)
@@ -813,10 +887,10 @@ defmodule IbGib.Helper do
                Map.put(acc, rel8n_name, rel8d_b_ib_gibs)
              end
            end)
-    ) do 
-      {:ok, rel8n_names}
+      _ = Logger.debug("rel8nships: #{inspect rel8nships}")
+      OK.success rel8nships
     else
-      error -> default_handle_error(error)
+      reason -> OK.failure handle_ok_error(reason, log: true)
     end
   end
   def get_direct_rel8nships(a, b) do
@@ -866,6 +940,41 @@ defmodule IbGib.Helper do
                        |> Enum.into(%{}) 
                        |> Map.keys})) 
     |> Enum.into(%{})
+  end
+
+  def extract_result_ib_gibs(query_result_info, opts \\ [prune_root: true]) do
+    raw_result_ib_gibs = query_result_info[:rel8ns]["result"]
+    result_count = Enum.count(raw_result_ib_gibs)
+    case result_count do
+      0 ->
+        # 0 results is unexpected. Should at least return the root (1 result)
+        emsg = emsg_query_result_count(0)
+        _ = Logger.error emsg
+        {:error, emsg}
+
+      1 ->
+        # 1 result should be the root, but I don't explicitly ensure that here.
+        if opts[:prune_root] do
+          {:ok, []}
+        else
+          if Enum.at(raw_result_ib_gibs, 0) !== @root_ib_gib do
+            Logger.warn "Query result has only one ib_gib that isn't the root. It is expected to always return the root in addition to the other query ib_gibs."
+          end
+          {:ok, raw_result_ib_gibs}
+        end
+
+      _ ->
+        # At least one non-root result found
+        result_ib_gibs = 
+          if opts[:prune_root] do
+            raw_result_ib_gibs -- [@root_ib_gib]
+          else
+            raw_result_ib_gibs
+          end
+        
+        _ = Logger.debug("foonkie result_ib_gibs: #{inspect result_ib_gibs}" |> ExChalk.bg_blue |> ExChalk.white)
+        {:ok, result_ib_gibs}
+    end
   end
 
 end

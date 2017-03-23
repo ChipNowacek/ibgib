@@ -82,7 +82,7 @@ function _isAuthorizedForMut8OrRel8_Email(targetIdentityIbGibs, currentIdentityI
   // only email identityIbGibs matter at "email" auth tier
   let targetIdentityIbGibs_Email =
     targetIdentityIbGibs
-      .filter(identityIbGib => _getIdentityType(identityIbGib) === "email");
+      .filter(identityIbGib => getIdentityType(identityIbGib) === "email");
 
   // All target email identities must be present in the current identity ibGibs.
   let authorized =
@@ -110,7 +110,7 @@ function _getHighestAuthTier(identityIbGibs) {
   let lc = `_getHighestAuthTier`;
 
   let tierValue = identityIbGibs.reduce((highestTierValue, identityIbGib) => {
-    let identityType = _getIdentityType(identityIbGib);
+    let identityType = getIdentityType(identityIbGib);
     let tierValue = _tierValues[identityType];
     return tierValue > highestTierValue ? tierValue : highestTierValue;
   }, 0);
@@ -122,8 +122,8 @@ function _getHighestAuthTier(identityIbGibs) {
   return highestAuthTier;
 }
 
-function _getIdentityType(identityIbGib) {
-  let lc = `_getIdentityType(${identityIbGib})`;
+export function getIdentityType(identityIbGib) {
+  let lc = `getIdentityType(${identityIbGib})`;
 
   if (identityIbGib === "ib^gib") {
     return "ibgib";

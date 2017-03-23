@@ -72,3 +72,6 @@ Seeds.insert(:number)
 # Tag Related
 Seeds.insert(:tag)
 Seeds.insert({:keyword, :tag_child})
+
+# Oy Related
+Seeds.insert(:oy)

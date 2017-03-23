@@ -13,7 +13,7 @@ export class IbScapeMenu {
     // though they could be gotten at via the ibScape itself every time.
     this.graphDiv = ibScape.graphDiv;
     this.baseJsonPath = ibScape.baseJsonPath;
-    this.ibGibCache = ibScape.ibGibCache;
+    this.ibGibJsonCache = ibScape.ibGibJsonCache;
     this.ibGibImageProvider = ibScape.ibScapeibGibImageProvider;
   }
 
@@ -400,11 +400,11 @@ export class IbScapeMenu {
       } else if (dIbGib.cat === "pic") {
         text = `This is a picture that you have uploaded! Viewing it in fullscreen will open the image in a new window or tab, depending on your browser preferences. Navigating to it will take you to the pic's ibGib itself. (We're working on an improved experience with adding comments, pictures, etc.)`;
       } else if (dIbGib.cat === "comment") {
-        let ibGibJson = this.ibGibCache.get(dIbGib.ibgib);
+        let ibGibJson = this.ibGibJsonCache.get(dIbGib.ibgib);
         let commentText = ibHelper.getDataText(ibGibJson);
         text = `This is a comment. It contains text...umm...you can comment on just about anything. (We're working on an improved experience with adding comments, pictures, etc.) This particular comment's text is: "${commentText}"`;
       } else if (dIbGib.cat === "link") {
-        let ibGibJson = this.ibGibCache.get(dIbGib.ibgib);
+        let ibGibJson = this.ibGibJsonCache.get(dIbGib.ibgib);
         let linkText = ibHelper.getDataText(ibGibJson);
         text = `This is a hyperlink to somewhere outside of ibGib. If you want to navigate to the external link, then choose the open external link command. If you want to goto the link's ibGib, then click the goto navigation. (We're working on an improved experience with adding comments, pictures, etc.) \n\nLink: "${linkText}"`;
       } else {
@@ -454,7 +454,7 @@ export class IbScapeMenu {
   }
 
   execExternalLink(dIbGib) {
-    let ibGibJson = this.ibGibCache.get(dIbGib.ibgib);
+    let ibGibJson = this.ibGibJsonCache.get(dIbGib.ibgib);
     let url = ibHelper.getDataText(ibGibJson);
     if (url) {
       window.open(url,'_blank');

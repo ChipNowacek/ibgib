@@ -10,13 +10,49 @@ defmodule WebGib.Bus.Commanding do
 
   require Logger
 
-  alias WebGib.Bus.Commanding.{Fork, Comment, Refresh, BatchRefresh, Ack, GetAdjuncts, Mut8Comment, Link, Tag, Trash}
+  alias WebGib.Bus.Commanding.{Fork, Comment, Refresh, BatchRefresh, Ack, GetAdjuncts, Mut8Comment, Link, Tag, Trash, GetOys}
   import WebGib.Bus.Commanding.Helper
 
   def handle_cmd(cmd_name, data, metadata, msg, socket) do
     _ = Logger.debug("cmd_name: #{cmd_name}\ndata: #{inspect data}\nmetadata: #{inspect metadata}\nmsg: #{inspect msg}\nsocket: #{inspect socket}" |> ExChalk.bg_cyan |> ExChalk.red)
+    # Wrapping in `try` b/c we absolutely don't want to crash when handling cmd.
+    # We always want to return a response to the client.
+    try do
+      cmd_result = 
+        case handle_cmd_impl(cmd_name, data, metadata, msg, socket) do
+          {:ok, reply_msg} when is_map(reply_msg) -> 
+            {:ok, reply_msg}
+            
+          {:ok, improper_reply} -> 
+            emsg = "Reply msg must be a map. (ok)"
+            Logger.error emsg
+            {:error, %{"error" => emsg}}
+          
+          {:error, error_map} when is_map(error_map) ->
+            {:error, error_map}
+            
+          {:error, error} when is_bitstring(error) ->
+            {:error, %{"error" => error}}
 
-    handle_cmd_impl(cmd_name, data, metadata, msg, socket)
+          {:error, error} ->
+            {:error, %{"error" => inspect(error)}}
+          
+          other ->
+            emsg = "Reply msg must be an ok/error tuple. (other)"
+            Logger.error emsg
+            {:error, %{"error" => emsg}}
+        end
+        
+      {:reply, cmd_result, socket}
+    rescue
+      error ->  
+        emsg = "Exception raised. error: #{inspect error}"
+        {
+          :reply, 
+          {:error, %{"error" => emsg, "details" => inspect(error)}}, 
+          socket
+        }
+    end
   end
 
   defp handle_cmd_impl("fork", data,  metadata, msg, socket) do
@@ -48,6 +84,11 @@ defmodule WebGib.Bus.Commanding do
   end
   defp handle_cmd_impl("trash", data,  metadata, msg, socket) do
     Trash.handle_cmd(data, metadata, msg, socket)
+  end
+  defp handle_cmd_impl("getoys", data,  metadata, msg, socket) do
+    result = GetOys.handle_cmd(data, metadata, msg, socket)
+    Logger.debug "result: #{inspect result}"
+    result
   end
   defp handle_cmd_impl(cmd_name, data, metadata, msg, socket) do
     emsg = "Unknown command params. cmd_name: #{inspect cmd_name}"

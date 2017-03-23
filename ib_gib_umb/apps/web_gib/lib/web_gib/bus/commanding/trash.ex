@@ -58,7 +58,7 @@ defmodule WebGib.Bus.Commanding.Trash do
       {:ok, reply_msg} <-
         get_reply_msg(parent_temp_junc_ib_gib, parent_ib_gib, new_parent_ib_gib)
     ) do
-      {:reply, {:ok, reply_msg}, socket}
+      {:ok, reply_msg}
     else
       {:error, reason} when is_bitstring(reason) ->
         handle_cmd_error(:error, reason, msg, socket)

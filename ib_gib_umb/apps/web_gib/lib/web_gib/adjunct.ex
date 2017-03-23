@@ -15,10 +15,12 @@ defmodule WebGib.Adjunct do
   "adjunct" to a_ib.
   """
 
+  import OK, only: ["~>>": 2]
   require Logger
+  require OK
 
   alias IbGib.Auth.Authz
-  import IbGib.{Expression, Helper}
+  import IbGib.{Expression, Helper, Macros}
   use IbGib.Constants, :ib_gib
 
   @doc """
@@ -68,11 +70,11 @@ defmodule WebGib.Adjunct do
                              identity_ib_gibs,
                              adjunct_rel8n,
                              adjunct_target_rel8n) do
-    with(
+    OK.with do
       # We're going to mut8 an adjunct_rel8n of the given
       #   `adjunct_rel8n`, e.g. "comment_on".
       # It's useful to do this before the adjunct rel8 itself.
-      {:ok, adjunct} <-
+      adjunct <-
         adjunct
         |> mut8(identity_ib_gibs, %{
             # adjunct_rel8n is what the rel8n from the adjunct to the
@@ -87,25 +89,42 @@ defmodule WebGib.Adjunct do
             #   addition to the 'ib^gib' rel8n)."
             # For a comment, e.g., this would be "comment"
             "adjunct_target_rel8n" => adjunct_target_rel8n
-          }),
+          })
 
       # Back to the Future to the rescue...again!
       # See `IbGib.Helper.get_temporal_junction_ib_gib/1` for more info.
-      {:ok, target_temp_junc_ib_gib} <- get_temporal_junction_ib_gib(target),
-      {:ok, target_temporal_junction} <-
-        IbGib.Expression.Supervisor.start_expression(target_temp_junc_ib_gib),
+      target_temp_junc_ib_gib <- get_temporal_junction_ib_gib(target)
+      target_temporal_junction <-
+        IbGib.Expression.Supervisor.start_expression(target_temp_junc_ib_gib)
 
       # Execute the actual adjunct rel8.
-      {:ok, adjunct} <-
+      adjunct <-
         adjunct
         |> rel8(target_temporal_junction,
                 identity_ib_gibs,
                 ["adjunct_to"])
-    ) do
-      {:ok, {adjunct, target_temp_junc_ib_gib}}
+      adjunct_ib_gib <- adjunct |> get_info() ~>> get_ib_gib()
+      
+      target_info <- target |> get_info()
+      target_email_identities <- Authz.get_identities_of_type(target_info[:rel8ns]["identity"], "email")
+      
+      # Publish the corresponding Oy notification
+      _ <- 
+        if length(target_email_identities) > 0 do
+          WebGib.Oy.create_and_publish_oy(:adjunct, %{
+            "name" => adjunct_target_rel8n,
+            "adjunct" => adjunct,
+            "adjunct_identities" => identity_ib_gibs,
+            "target" => target,
+            "target_email_identities" => target_email_identities
+          })
+        else
+          {:ok, :ok}
+        end
+        
+      OK.success {adjunct, target_temp_junc_ib_gib}
     else
-      error -> default_handle_error(error)
+      reason -> OK.failure handle_ok_error(reason, log: true)
     end
   end
-
 end

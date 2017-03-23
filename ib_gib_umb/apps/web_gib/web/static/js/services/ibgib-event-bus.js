@@ -80,6 +80,7 @@ export class IbGibEventBus {
     channel.on("new_adjunct", msg => t.handleMsg(ibGib, msg));
     channel.on("ident_email", msg => t.handleMsg(ibGib, msg));
     channel.on("unident_email", msg => t.handleMsg(ibGib, msg));
+    channel.on("oy", msg => t.handleMsg(ibGib, msg));
 
     return channel;
   }

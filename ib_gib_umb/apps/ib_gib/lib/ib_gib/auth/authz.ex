@@ -25,23 +25,23 @@ defmodule IbGib.Auth.Authz do
   be met. This module governs that interaction.
   """
 
-  # ----------------------------------------------------------------------------
-  # alias, import, require, use
-  # ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+# alias, import, require, use
+# ----------------------------------------------------------------------------
 
   require Logger
 
   alias IbGib.{Helper, UnauthorizedError}
 
-  # import IbGib.Macros
+  import IbGib.Macros
 
   use IbGib.Constants, :ib_gib
   use IbGib.Constants, :error_msgs
 
 
-  # ----------------------------------------------------------------------------
-  # Functions
-  # ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+# Functions
+# ----------------------------------------------------------------------------
 
   # Check to make sure that our identities are valid (authorization)
   # The passed in identities must contain **all** of the existing identities.
@@ -144,9 +144,9 @@ defmodule IbGib.Auth.Authz do
     end
   end
 
-  # ----------------------------------------------------------------------------
-  # Private Impl Methods
-  # ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+# Private Impl Methods
+# ----------------------------------------------------------------------------
 
   defp ensure_a_and_b_have_identity(a_rel8ns, b_rel8ns) do
     case {has_identity(a_rel8ns), has_identity(b_rel8ns)} do
@@ -191,10 +191,11 @@ defmodule IbGib.Auth.Authz do
       Enum.member?(identity_types, "email")   -> {:ok, :email}
       Enum.member?(identity_types, "session") -> {:ok, :session}
       Enum.member?(identity_types, "ibgib")   -> {:ok, :ibgib}
+      Enum.member?(identity_types, "node")    -> {:ok, :node}
 
       # I don't know how this would get here, but would be a no-no.
       true ->
-        emsg = emsg_invalid_authorization(_expected = "email, session, or ibgib", "unknown")
+        emsg = emsg_invalid_authorization(_expected = "email, session, ibgib, or node", "unknown")
         Logger.error emsg
         {:error, emsg}
     end
@@ -267,10 +268,38 @@ defmodule IbGib.Auth.Authz do
       {:error, emsg_invalid_authorization(expected, actual)}
     end
   end
+  defp check_tier_authorized(:node, a_rel8ns, b_rel8ns)
+    when is_map(b_rel8ns) do
+    b_identities = b_rel8ns["identity"]
+    check_tier_authorized(:node, a_rel8ns, b_identities)
+  end
+  defp check_tier_authorized(:node, a_rel8ns, b_identities)
+    when is_list(b_identities) do
+    # `a` only has a node identity, so `b` must have at least that same
+    # node identity ib^gib.
+    # It's ok if `b` also has additional email identities.
 
-  # ----------------------------------------------------------------------------
-  # Helper
-  # ----------------------------------------------------------------------------
+    a_identities = a_rel8ns["identity"]
+    a_node_identities =
+      a_identities
+      |> Enum.filter(&(get_identity_type(&1) == "node"))
+
+    b_contains_a_node_identities =
+      Enum.all?(a_node_identities, &(Enum.member?(b_identities, &1)))
+
+    if b_contains_a_node_identities do
+      {:ok, :ok}
+    else
+      # unauthorized: a requires auth, b does not have any/all
+      expected = a_identities
+      actual = b_identities
+      {:error, emsg_invalid_authorization(expected, actual)}
+    end
+  end
+  
+# ----------------------------------------------------------------------------
+# Helper
+# ----------------------------------------------------------------------------
 
   defp has_identity(rel8ns) do
     Map.has_key?(rel8ns, "identity") and
@@ -278,12 +307,70 @@ defmodule IbGib.Auth.Authz do
       Enum.all?(rel8ns["identity"], &Helper.valid_identity?/1)
   end
 
-  defp get_identity_type(@root_ib_gib) do
+  @doc """
+  Gets the identity type of a given `identity_ib_gib`.
+  
+  ## Examples
+  
+    iex> IbGib.Auth.Authz.get_identity_type("ib^gib")
+    "ibgib"
+    
+    iex> IbGib.Auth.Authz.get_identity_type("session_abc^123gib")
+    "session"
+
+    iex> IbGib.Auth.Authz.get_identity_type("email_abc^123gib")
+    "email"
+  """
+  def get_identity_type(identity_ib_gib)
+  def get_identity_type(@root_ib_gib) do
     "ibgib"
   end
-  defp get_identity_type(identity_ib_gib) do
+  def get_identity_type(identity_ib_gib) do
     {ib, _gib} = Helper.separate_ib_gib!(identity_ib_gib)
     [identity_type, _] = String.split(ib, @identity_type_delim)
     identity_type
+  end
+  
+  @doc """
+  Gets a filtered list of identity_ib_gibs which are the given `identity_type`.
+  
+  ## Examples
+  
+    iex> IbGib.Auth.Authz.get_identities_of_type(["ib^gib", "session_abc^123"], "ibgib")
+    {:ok, ["ib^gib"]}
+
+    iex> IbGib.Auth.Authz.get_identities_of_type(["ib^gib", "session_abc^123"], "session")
+    {:ok, ["session_abc^123"]}
+
+    iex> IbGib.Auth.Authz.get_identities_of_type(["ib^gib", "session_abc^123", "email_abc^123", "email_def^456"], "email")
+    {:ok, ["email_abc^123", "email_def^456"]}
+  """
+  def get_identities_of_type(identity_ib_gibs, identity_type) 
+  def get_identities_of_type(identity_ib_gibs, identity_type) 
+    when is_list(identity_ib_gibs) and identity_ib_gibs !== [] and
+         is_bitstring(identity_type) do
+    identities =
+      identity_ib_gibs
+      |> Enum.filter(&(get_identity_type(&1) == identity_type))
+    {:ok, identities}
+  end
+  def get_identities_of_type(identity_ib_gibs, identity_type) do
+    invalid_args([identity_ib_gibs, identity_type])
+  end
+  
+  @doc """
+  Bang version of `get_identities_of_type/2`.
+
+  iex> IbGib.Auth.Authz.get_identities_of_type!(["ib^gib", "session_abc^123"], "ibgib")
+  ["ib^gib"]
+
+  iex> IbGib.Auth.Authz.get_identities_of_type!(["ib^gib", "session_abc^123"], "session")
+  ["session_abc^123"]
+
+  iex> IbGib.Auth.Authz.get_identities_of_type!(["ib^gib", "session_abc^123", "email_abc^123", "email_def^456"], "email")
+  ["email_abc^123", "email_def^456"]
+  """
+  def get_identities_of_type!(identity_ib_gibs, identity_type) do
+    bang(get_identities_of_type(identity_ib_gibs, identity_type))
   end
 end

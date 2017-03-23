@@ -25,4 +25,32 @@ defmodule IbGib.Macros do
       {:error, emsg}
     end
   end
+  
+  @doc """
+  Having this as a macro keeps the logged error line correct.
+  """
+  defmacro handle_ok_error(untagged_reason, opts) do
+    quote do
+      reason = case unquote(untagged_reason) do
+        reason when is_bitstring(reason) -> reason
+        reason when is_atom(reason) -> Atom.to_string(reason)
+        reason -> inspect reason
+      end
+      if unquote(opts[:log]), do: Logger.error reason
+      reason
+    end
+  end
+  
+  defmacro handle_ok_error(untagged_reason) do
+    quote do 
+      handle_ok_error(unquote(untagged_reason), [])
+    end
+  end
+  
+  defmacro ok_pipe_logger(value, :debug, log_context) do
+    quote do
+      Logger.debug("#{unquote(log_context)}: #{inspect unquote(value)}")
+      {:ok, unquote(value)}
+    end
+  end
 end

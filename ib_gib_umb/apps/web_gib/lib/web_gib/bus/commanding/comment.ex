@@ -24,6 +24,7 @@ defmodule WebGib.Bus.Commanding.Comment do
 
   import Expat # https://github.com/vic/expat
   require Logger
+  require OK
 
   alias IbGib.Auth.Authz
   alias WebGib.Bus.Channels.Event, as: EventChannel
@@ -42,42 +43,50 @@ defmodule WebGib.Bus.Commanding.Comment do
                  _metadata,
                  msg,
                  assigns_identity_ib_gibs_(...) = socket) do
-    _ = Logger.debug("yakker. src_ib_gib: #{src_ib_gib}" |> ExChalk.blue |> ExChalk.bg_white)
-    with(
+    OK.with do
+      _ = Logger.debug("yakker. src_ib_gib: #{src_ib_gib}" |> ExChalk.blue |> ExChalk.bg_white)
       # Validate
-      {:comment_text, true} <-
-        validate_input(:comment_text, comment_text, "Invalid comment text."),
-      {:src_ib_gib, true} <-
-        validate_input(:src_ib_gib, src_ib_gib, "Invalid source ibGib", :ib_gib),
-      {:src_ib_gib, true} <-
-        validate_input(:src_ib_gib,
-                       {:simple, src_ib_gib != @root_ib_gib},
-                       "Cannot comment on the root"),
+      true <- validate_input({:ok, :comment_text}, 
+                             comment_text, 
+                             "Invalid comment text.")
+      true <- validate_input({:ok, :src_ib_gib}, 
+                             src_ib_gib, 
+                             "Invalid source ibGib", 
+                             :ib_gib)
+      true <- validate_input({:ok, :src_ib_gib},
+                             {:simple, src_ib_gib != @root_ib_gib},
+                             "Cannot comment on the root")
 
       # Execute
-      {:ok, {comment_ib_gib, new_src_ib_gib_or_nil, src_temp_junc_ib_gib_or_nil}} <-
-        exec_impl(identity_ib_gibs, src_ib_gib, comment_text),
+      {comment_ib_gib, new_src_ib_gib_or_nil, src_temp_junc_ib_gib_or_nil} <-
+        exec_impl(identity_ib_gibs, src_ib_gib, comment_text)
 
       # Broadcast updates, depending on if we have directly rel8d to
       # the src or if we rel8d an adjunct indirectly to it.
-      {:ok, :ok} <-
-        broadcast(src_ib_gib,
-                  comment_ib_gib,
-                  new_src_ib_gib_or_nil,
-                  src_temp_junc_ib_gib_or_nil),
+      :ok <- broadcast(src_ib_gib,
+                       comment_ib_gib,
+                       new_src_ib_gib_or_nil,
+                       src_temp_junc_ib_gib_or_nil)
 
       # Reply
-      {:ok, reply_msg} <- get_reply_msg(comment_ib_gib, new_src_ib_gib_or_nil)
-    ) do
-      {:reply, {:ok, reply_msg}, socket}
+      reply_msg <- get_reply_msg(comment_ib_gib, new_src_ib_gib_or_nil)
+      
+      OK.success reply_msg
     else
-      {:error, reason} when is_bitstring(reason) ->
-        handle_cmd_error(:error, reason, msg, socket)
-      {:error, reason} ->
-        handle_cmd_error(:error, inspect(reason), msg, socket)
-      error ->
-        handle_cmd_error(:error, inspect(error), msg, socket)
+      reason -> handle_cmd_error(:error, reason, msg, socket)
     end
+    # with(
+    # 
+    # ) do
+    #   {:ok, reply_msg}
+    # else
+    #   {:error, reason} when is_bitstring(reason) ->
+    #     handle_cmd_error(:error, reason, msg, socket)
+    #   {:error, reason} ->
+    #     handle_cmd_error(:error, inspect(reason), msg, socket)
+    #   error ->
+    #     handle_cmd_error(:error, inspect(error), msg, socket)
+    # end
   end
 
   defp exec_impl(identity_ib_gibs, src_ib_gib, comment_text) do

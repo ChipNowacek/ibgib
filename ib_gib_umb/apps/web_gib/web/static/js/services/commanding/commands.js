@@ -1513,11 +1513,18 @@ export class AckCommand extends CommandBase {
 
     t.ibScape.removeVirtualCmdNodes();
     t.ibScape.setBusy(t.d);
+    
 
     let msg = t.getMessage();
     t.ibScape.commandMgr.bus.send(msg, (successMsg) => {
       console.log(`AckCommand successMsg: ${JSON.stringify(successMsg)}`)
       t.handleSubmitResponse(successMsg);
+      
+      if (t.d.isMeta) {
+        // when we're acking in meta menu, we need to do some things manually.
+        t.ibScape.removeNodeAndChildren(t.d);
+      }
+
     }, (errorMsg) => {
       let emsg = `${t.cmdName} command errored. Msg: ${JSON.stringify(errorMsg)}`;
       console.error(emsg);
@@ -1589,7 +1596,7 @@ export class TrashCommand extends CommandBase {
     if (t.d.isSource) {
       t.parent = t.ibScape.contextNode;
       t.parentRel8nName = "ib^gib";
-    } else {
+    } else if (t.d.parentNode.rel8nName) {
       t.parent = t.d.parentNode.parentNode;
       t.parentRel8nName = t.d.parentNode.rel8nName;
       if (!t.parent || t.parentRel8n) {
@@ -1599,6 +1606,12 @@ export class TrashCommand extends CommandBase {
         alert(emsg)
         return;
       }
+    } else if (t.d.parentNode.isMeta && t.d.parentNode.ibGib) {
+      console.log("trashing in meta menu.")
+      t.parent = t.d.parentNode;
+      t.parentRel8nName = "ib^gib"; // meh, see if it works.
+    } else {
+      console.error("what up, trying to trash something without parent rel8n node and the parent is not a meta node either.")
     }
 
     t.ibScape.setBusy(t.d);
@@ -1608,6 +1621,9 @@ export class TrashCommand extends CommandBase {
     t.ibScape.commandMgr.bus.send(msg, (successMsg) => {
       console.log(`TrashCommand successMsg: ${JSON.stringify(successMsg)}`)
       t.handleSubmitResponse(successMsg);
+      if (t.parent.isMeta) {
+        t.ibScape.removeNodeAndChildren(t.d);
+      }
     }, (errorMsg) => {
       console.error(`${t.cmdName} command errored. Msg: ${JSON.stringify(errorMsg)}`);
       t.ibScape.clearBusy(t.d);
@@ -1794,6 +1810,75 @@ export class GetAdjunctsCommand extends CommandBase {
       name: t.cmdName,
       type: "cmd",
       count: t.d.ibGibs.length,
+      local_time: new Date()
+    };
+  }
+}
+
+/**
+ * Gets the adjuncts for a given ibGib data `d` and returns the adjuncts
+ * in the given `successCallback` when executed.
+ *
+ * The data `d` is not the "normal" d3 node `d` variable, but just data
+ * that contains information for the command. IOW, it is not the data
+ * associated to a d3 node, since this command is executed on its own.
+ *
+ * (Probably will need to revisit exact command architecture for these
+ * non-menu command commands, i.e. refactor.)
+ */
+export class GetOysCommand extends CommandBase {
+  constructor(ibScape, d, successCallback, errorCallback) {
+    const cmdName = "getoys";
+    super(cmdName, ibScape, d);
+
+    let t = this;
+    t.successCallback = successCallback;
+    t.errorCallback = errorCallback;
+  }
+
+  exec() {
+    // Does NOT call super.exec() because this command is different. See class
+    // documentation for details.
+    // super.exec();
+
+    let t = this;
+    // console.log(`${t.cmdName} cmd exec`);
+
+    let msg = t.getMessage();
+    t.ibScape.commandMgr.bus.send(msg, (successMsg) => {
+      if (t.successCallback) {
+         t.successCallback(successMsg);
+       }
+    }, (errorMsg) => {
+      console.error(`${t.cmdName} command errored. Msg: ${JSON.stringify(errorMsg)}`);
+      if (t.errorCallback) { t.errorCallback(errorMsg); }
+    });
+  }
+
+  getMessage() {
+    let t = this;
+
+    return {
+      data: t.getMessageData(),
+      metadata: t.getMessageMetadata()
+    };
+  }
+
+  getMessageData() {
+    let t = this;
+
+    return {
+      oy_kind: t.d.oy_kind,
+      oy_filter: t.d.oy_filter,
+    };
+  }
+
+  getMessageMetadata() {
+    let t = this;
+
+    return {
+      name: t.cmdName,
+      type: "cmd",
       local_time: new Date()
     };
   }

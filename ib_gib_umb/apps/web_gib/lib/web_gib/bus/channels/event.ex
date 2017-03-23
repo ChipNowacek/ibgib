@@ -30,8 +30,10 @@ defmodule WebGib.Bus.Channels.Event do
   """
 
   require Logger
+  require OK
   use Phoenix.Channel
 
+  alias IbGib.Auth.Authz
   import IbGib.{Expression, Helper, Macros}
   use IbGib.Constants, :error_msgs
 
@@ -86,14 +88,28 @@ defmodule WebGib.Bus.Channels.Event do
   first ib^gib. We also don't have to unsubscribe and resubscribe every time
   that there is a change.
 
-  ## :adjuncts
 
-  Broadcasts a msg that states the given `adjunct_ib_gibs` are the **complete**
-  set of adjuncts for the given `ib_gib`.
+  ## :update
+  
+  An update to an ibGib has occurred. Broadcasts the old and new ib^gibs on
+  the corresponding `temp_junc_ib_gib` event channel.
 
-  ## :adjunct_rel8d
+  ## :new_adjunct
+  
+  A new adjunct has been created for the given target. 
+  This is broadcasted on the given `temp_junc_ib_gib` event channel.
 
-  Broadcasts a msg that states the given
+  ## :ident_email/unident_email
+
+  The user has added/removed identity. Broadcasts on the user's `session_ib_gib`
+  event channel.
+  
+  ## :oy
+  
+  A new oy! notification ibGib has been created. Broadcasts on each of the 
+  email identity channels. Does not broadcast on a node, session, or any other
+  channel. (ATOW 2017/03/14 email is the only non-anonymous identity 
+  authorization tier available to the user.)
 
   """
   def broadcast_ib_gib_event(:update = msg_type,
@@ -102,23 +118,6 @@ defmodule WebGib.Bus.Channels.Event do
       {:ok, temp_junc_ib_gib} <- get_temporal_junction_ib_gib(old_ib_gib),
       _ <- Logger.debug("update: old_ib_gib: #{old_ib_gib}\nnew_ib_gib: #{new_ib_gib}\ntemp_junc_ib_gib: #{temp_junc_ib_gib}"),
       {:ok, msg} <- get_broadcast_msg(msg_type, {temp_junc_ib_gib, old_ib_gib, new_ib_gib}),
-      # Not interested if the broadcast errors. It is possible that the topic
-      # doesn't even exist (no one is signed up to hear it).
-      _ <-
-        WebGib.Endpoint.broadcast("event:" <> temp_junc_ib_gib, Atom.to_string(msg_type), msg)
-    ) do
-      {:ok, :ok}
-    else
-      error -> default_handle_error(error)
-    end
-  end
-  def broadcast_ib_gib_event(:adjuncts = msg_type,
-                             {ib_gib, adjunct_ib_gibs} = msg_info) do
-    with(
-      # temp_junc_ib_gib _should_ be redundant, as the incoming ib_gib should be
-      # the temporal junction point.
-      {:ok, temp_junc_ib_gib} <- get_temporal_junction_ib_gib(ib_gib),
-      {:ok, msg} <- get_broadcast_msg(msg_type, {temp_junc_ib_gib, ib_gib, adjunct_ib_gibs}),
       # Not interested if the broadcast errors. It is possible that the topic
       # doesn't even exist (no one is signed up to hear it).
       _ <-
@@ -138,29 +137,6 @@ defmodule WebGib.Bus.Channels.Event do
                                       {temp_junc_ib_gib,
                                        adjunct_ib_gib,
                                        target_ib_gib}),
-      # Not interested if the broadcast errors. It is possible that the topic
-      # doesn't even exist (no one is signed up to hear it).
-      _ <-
-        WebGib.Endpoint.broadcast("event:" <> temp_junc_ib_gib, Atom.to_string(msg_type), msg)
-    ) do
-      {:ok, :ok}
-    else
-      error -> default_handle_error(error)
-    end
-  end
-  def broadcast_ib_gib_event(:adjunct_rel8d = msg_type,
-                             {adjunct_ib_gib,
-                              old_target_ib_gib,
-                              new_target_ib_gib} = msg_info) do
-    with(
-      # temp_junc_ib_gib _should_ be redundant, as the incoming ib_gib should be
-      # the temporal junction point.
-      {:ok, temp_junc_ib_gib} <- get_temporal_junction_ib_gib(old_target_ib_gib),
-      {:ok, msg} <- get_broadcast_msg(msg_type,
-                                      {temp_junc_ib_gib,
-                                       adjunct_ib_gib,
-                                       old_target_ib_gib,
-                                       new_target_ib_gib}),
       # Not interested if the broadcast errors. It is possible that the topic
       # doesn't even exist (no one is signed up to hear it).
       _ <-
@@ -193,7 +169,7 @@ defmodule WebGib.Bus.Channels.Event do
   def broadcast_ib_gib_event(:unident_email = msg_type,
                              {session_ib_gib,
                               ident_ib_gib} = msg_info) do
-    _ = Logger.debug("Broadcasting unident_email sir. session_ib_gib: #{session_ib_gib}\nident_ib_gib: #{ident_ib_gib}" |> ExChalk.yellow |> ExChalk.bg_blue)
+    _ = Logger.debug("Broadcasting #{msg_type} sir. msg_info: #{inspect msg_info}" |> ExChalk.yellow |> ExChalk.bg_blue)
     with(
       {:ok, msg} <- get_broadcast_msg(msg_type,
                                       {session_ib_gib,
@@ -211,7 +187,42 @@ defmodule WebGib.Bus.Channels.Event do
         default_handle_error(error)
     end
   end
-
+  def broadcast_ib_gib_event(:oy = msg_type,
+                             {oy_kind = :adjunct, 
+                              oy_name, 
+                              oy_ib_gib, 
+                              adjunct_identities,
+                              target_email_identities} = msg_info) do
+    _ = Logger.debug("Broadcasting #{msg_type} sir. msg_info: #{inspect msg_info}" |> ExChalk.yellow |> ExChalk.bg_blue)
+    OK.with do
+      # Get the msg. The same message will be broadcasted on all email channels.
+      # So if the user is logged in with multiple emails, then the user will
+      # get multiple oys for that device. (They could only have one or the other
+      # on any given device at a time, so must "spam" all of them.)
+      msg <- 
+        get_broadcast_msg(msg_type, {oy_kind, 
+                                     oy_name, 
+                                     oy_ib_gib, 
+                                     adjunct_identities,
+                                     target_email_identities})
+        
+      # Broadcast to each email identity event channel.
+      :ok <-
+        target_email_identities
+        |> Enum.reduce({:ok, :ok}, fn(identity_ib_gib, _acc) -> 
+             # Not interested if the broadcast errors. It is possible that the
+             # topic doesn't even exist (no one is signed up to hear it).
+             _ = WebGib.Endpoint.broadcast("event:" <> identity_ib_gib,
+                                           Atom.to_string(msg_type), 
+                                           msg)
+             {:ok, :ok}
+           end)
+           
+      OK.success :ok
+    else
+      reason -> OK.failure handle_ok_error(reason, log: true)
+    end
+  end
 
   defp get_broadcast_msg(:update = msg_type,
                          {temp_junc_ib_gib,
@@ -321,6 +332,29 @@ defmodule WebGib.Bus.Channels.Event do
       "metadata" => %{
         "name" => Atom.to_string(msg_type),
         "session_ib_gib" => session_ib_gib,
+        "src" => "server",
+        "timestamp" => "#{:erlang.system_time(:milli_seconds)}"
+      }
+    }
+    {:ok, msg}
+  end
+  defp get_broadcast_msg(:oy = msg_type,
+                         {oy_kind = :adjunct, 
+                          oy_name, 
+                          oy_ib_gib, 
+                          adjunct_identities,
+                          target_email_identities} = msg_info) do
+    #
+    msg = %{
+      "data" => %{
+        "oy_ib_gib" => oy_ib_gib,
+        "adjunct_identities" => adjunct_identities,
+        "target_email_identities" => target_email_identities
+      },
+      "metadata" => %{
+        "name" => Atom.to_string(msg_type),
+        "oy_name" => oy_name,
+        "oy_kind" => oy_kind,
         "src" => "server",
         "timestamp" => "#{:erlang.system_time(:milli_seconds)}"
       }

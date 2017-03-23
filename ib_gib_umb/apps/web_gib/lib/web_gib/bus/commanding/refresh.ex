@@ -48,7 +48,7 @@ defmodule WebGib.Bus.Commanding.Refresh do
       # Reply
       {:ok, reply_msg} <- get_reply_msg(refresh_kind, src_ib_gib, result_ib_gib)
     ) do
-      {:reply, {:ok, reply_msg}, socket}
+      {:ok, reply_msg}
     else
       {:error, reason} when is_bitstring(reason) ->
         handle_cmd_error(:error, reason, msg, socket)
@@ -117,13 +117,17 @@ defmodule WebGib.Bus.Commanding.Refresh do
   defp refresh(:query, identity_ib_gibs, query_ib_gib, query, query_info) do
     # Rerun the query
     OK.with do
+      # Authz
       _ <- Authz.authorize_apply_b(:rel8, query_info[:rel8ns], identity_ib_gibs)
-      # Contact the query with itself to rerun it.
+
+      # Prepare
       query_identity_ib_gibs <-
         Common.get_identities_for_query(identity_ib_gibs)
       query_identity_ib_gib = query_identity_ib_gibs |> Enum.at(0)
       query_identity <-
         IbGib.Expression.Supervisor.start_expression(query_identity_ib_gib)
+
+      # Run the query
       query_result <- contact(query_identity, query)
       query_result_ib_gib <- query_result |> get_info() ~>> get_ib_gib()
       
