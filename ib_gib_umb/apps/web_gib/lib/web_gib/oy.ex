@@ -53,9 +53,6 @@ defmodule WebGib.Oy do
     when is_list(target_email_identities) and length(target_email_identities) > 0 do
     _ = Logger.debug("creating oy. oy_kind: #{oy_kind}\noy_details: #{inspect oy_details}")
     OK.with do
-      # node_identity_ib_gib <- 
-      #   WebGib.Node.get_current_node_identity_ib_gib()
-      
       oy <- 
         {:ok, "oy#{@delim}gib"}
         ~>> IbGib.Expression.Supervisor.start_expression()
@@ -126,212 +123,6 @@ defmodule WebGib.Oy do
   end
 
 # -----------------------------------------------------------
-# update_oy
-# -----------------------------------------------------------
-
-  # @doc """
-  # Updates a user's oy, depending on the given `oy_kind` and `update_details`.
-  # 
-  # This is expected to be run with `identity_ib_gibs` of the current user, which
-  # should be the owner of the oy. This is because the current use case is for
-  # when the owner either acks or trashes another user's adjunct.
-  # 
-  # ATOW (2017/03/21), it is assumed that only one update can occur to an oy.
-  # But this may just be for the current use case, which is ack/trash an adjunct.
-  # """
-  # def update_oy(identity_ib_gibs, oy_kind, update_details)
-  # def update_oy(identity_ib_gibs,
-  #               oy_kind = :adjunct, 
-  #               update_details = %{
-  #                 "action" => action,
-  #                 "adjunct_ib_gib" => adjunct_ib_gib
-  #               })
-  #   when is_bitstring(action) and action != "" do
-  #   _ = Logger.debug("oy_kind: #{oy_kind}\nupdate_details: #{inspect update_details}")
-  #   OK.with do
-  #     # in flux oyyyyyyyy sigh
-  #     # Oys are created using the node's identity.
-  #     node_identity_ib_gib <- 
-  #       WebGib.Node.get_current_node_identity_ib_gib()
-  # 
-  #     # Get the oy associated with the adjunct (if the oy exists)
-  #     #   This means that at most only **one** oy should exist.
-  #     #   If more than one exists, I don't think it's the end of the world, 
-  #     #   but this is an assumption.
-  #     new_oy_ib_gib <- 
-  #       {:ok, identity_ib_gibs}
-  #       ~>> find_oy(adjunct_ib_gib)
-  #       ~>> ensure_no_action_yet_taken()
-  #       ~>> ensure_authorized(identity_ib_gibs)
-  #       ~>> mut8(adjunct_identities, %{"action" => action})
-  #       ~>> get_info()
-  #       ~>> get_ib_gib()
-  #     
-  #     OK.success new_oy_ib_gib
-  #   else
-  #     # Not an error if no associated oy is found. (for backwards compatibility)
-  #     :oy_not_found -> 
-  #       OK.success nil
-  # 
-  #     :already ->
-  #       emsg = "Action has already been taken."
-  #       OK.failure handle_ok_error(emsg, log: true)
-  #     
-  #     reason -> OK.failure handle_ok_error(reason, log: true)
-  #   end 
-  # end
-  # 
-  # defp find_oy(identity_ib_gibs, adjunct_ib_gib) do
-  #   OK.with do
-  #     {email_identity_ib_gibs, query_identity} <-
-  #       prepare(identity_ib_gibs)
-  #       
-  #     query_opts <- 
-  #       build_find_oy_query_opts(:adjunct, 
-  #                                %{"email_identity_ib_gibs" =>
-  #                                    email_identity_ib_gibs, 
-  #                                  "adjunct_ib_gib" => 
-  #                                    adjunct_ib_gib})
-  # 
-  #     oy <- 
-  #       {:ok, query_identity} 
-  #       ~>> query(identity_ib_gibs, query_opts)
-  #       ~>> get_info()
-  #       ~>> extract_result_ib_gibs([prune_root: true])
-  #       ~>> Common.filter_present_only(identity_ib_gibs)
-  #       ~>> extract_single_oy_ib_gib()
-  #       ~>> IbGib.Expression.Supervisor.start_expression()
-  # 
-  #     OK.success oy
-  #   else
-  #     reason -> OK.failure handle_ok_error(reason, log: true)
-  #   end
-  # end
-  # 
-  # # Prepare is just corralling data without much logic.
-  # defp prepare(identity_ib_gibs) do
-  #   OK.with do
-  #     # email identities are used for the query contents
-  #     email_identity_ib_gibs <- 
-  #       Authz.get_identities_of_type(identity_ib_gibs, "email")
-  #     :ok <- 
-  #       if length(email_identity_ib_gibs) > 0, do: {:ok, :ok}, else: {:error, :no_email_id}
-  # 
-  #     # identity ib^gib & process used to exec the query
-  #     query_identity_ib_gib = email_identity_ib_gibs |> Enum.at(0)
-  #     query_identity <- 
-  #       IbGib.Expression.Supervisor.start_expression(query_identity_ib_gib)
-  # 
-  #     # # adjunct to query for
-  #     # adjunct_ib_gib <-
-  #     #   {:ok, adjunct}
-  #     #   ~>> get_info() 
-  #     #   ~>> get_ib_gib()
-  # 
-  #     OK.success {email_identity_ib_gibs, query_identity}
-  #   else
-  #     :no_email_id -> 
-  #       emsg = "Current identity has no email identities, and so no oys."
-  #       OK.failure handle_ok_error(emsg, log: true)
-  #     reason -> 
-  #       OK.failure handle_ok_error(reason, log: true)
-  #   end
-  # end
-  # 
-  # defp ensure_no_action_yet_taken(oy) do
-  #   OK.with do
-  #     oy_info <- oy |> get_info()
-  #     oy_data = oy_info[:data]
-  #     :ok <- 
-  #       if Map.has_key?(oy_data, "action") do
-  #         {:error, :already}
-  #       else
-  #         {:ok, :ok}
-  #       end
-  #     OK.success oy
-  #   end
-  # end
-  # 
-  # # The target must have the same email ibGibs.
-  # # But we can't rely on the default authz mechanism, because we are going
-  # # to mut8 the oy using the current node's identity.
-  # # I suppose this will fail when we get distributed ibGib going and an oy
-  # # is created on one node and attempted to do this on another.
-  # # But perhaps this is because "node" is overloaded. ibGib as a whole is a 
-  # # node in ibGib, but in a distributed architecture, there will be multiple
-  # # "nodes" in the cluster. After all, ibGib is a nodal structure itself.
-  # defp ensure_authorized(oy, identity_ib_gibs) do
-  #   OK.with do
-  #     oy_info <- oy |> get_info()
-  # 
-  #     oy_target_identities <- get_rel8ns(oy_info, "target_identity")
-  #     
-  #     contains_all_of_oy_email_identities =
-  #       oy_target_identities
-  #       |> Enum.reduce(true, fn(ib_gib, acc) ->
-  #            acc and Enum.member?(identity_ib_gibs, ib_gib)
-  #          end)
-  #     
-  #     :ok <- 
-  #       if contains_all_of_oy_email_identities do
-  #         {:ok, :ok}
-  #       else
-  #         {:error, "The given identity_ib_gibs (#{inspect identity_ib_gibs}) are not authorized with all of the email target identities of the oy (#{inspect oy_target_identities})."}
-  #       end
-  #   else
-  #     reason -> OK.failure handle_ok_error(reason, log: true)
-  #   end
-  # end
-  # 
-  # defp extract_single_oy_ib_gib(oy_ib_gibs) 
-  #   when is_list(oy_ib_gibs) and length(oy_ib_gibs) == 0 do
-  #   {:error, :oy_not_found}
-  # end
-  # defp extract_single_oy_ib_gib(oy_ib_gibs) 
-  #   when is_list(oy_ib_gibs) and length(oy_ib_gibs) == 1 do
-  #   oy_ib_gib = Enum.at(oy_ib_gibs, 0)
-  #   if oy_ib_gib === @root_ib_gib do
-  #     {:error, :oy_not_found}
-  #   else
-  #     {:ok, oy_ib_gib}
-  #   end
-  # end
-  # defp extract_single_oy_ib_gib(oy_ib_gibs) 
-  #   when is_list(oy_ib_gibs) and length(oy_ib_gibs) > 1 do
-  #   oy_ib_gibs = oy_ib_gibs -- [@root_ib_gib]
-  #   cond do
-  #     length(oy_ib_gibs) == 1 ->
-  #       {:ok, Enum.at(oy_ib_gibs, 0)}
-  #       
-  #     length(oy_ib_gibs) > 1 ->
-  #       Logger.info("Multiple oys found in oy_ib_gibs. oy_ib_gibs: #{inspect oy_ib_gibs}")
-  #       {:ok, Enum.at(oy_ib_gibs, 0)}
-  #       
-  #     true ->
-  #       Logger.error "oy_ib_gibs length is 0? I dunno. oy_ib_gibs: #{inspect oy_ib_gibs}"
-  #       {:error, :oy_not_found}
-  #   end
-  # end
-  # 
-  # defp build_find_oy_query_opts(oy_kind = :adjunct, 
-  #                               find_details = %{
-  #                                 "email_identity_ib_gibs" => email_identity_ib_gibs,
-  #                                 "adjunct_ib_gib" => adjunct_ib_gib
-  #                               }) do
-  #   _ = Logger.debug("oy_kind: #{oy_kind}\nfind_details: #{inspect find_details}" |> ExChalk.bg_green |> ExChalk.white)
-  #   query_opts = 
-  #     do_query()
-  #     |> where_rel8ns("ancestor", "with", "ibgib", "oy#{@delim}gib")
-  #     |> where_rel8ns("adjunct", "with", "ibgib", adjunct_ib_gib)
-  #     |> where_rel8ns("target_identity", "withany", "ibgib",
-  #                     email_identity_ib_gibs)
-  #   {:ok, query_opts}
-  # end
-  # defp build_find_oy_query_opts(oy_kind, find_details) do
-  #   invalid_args([oy_kind, find_details])
-  # end
-
-# -----------------------------------------------------------
 # is_new?
 # -----------------------------------------------------------
 
@@ -389,7 +180,11 @@ defmodule WebGib.Oy do
       reason -> OK.failure handle_ok_error(reason, log: true)
     end 
   end
-  
+
+# -----------------------------------------------------------
+# get_oy_kind
+# -----------------------------------------------------------
+    
   @doc """
   Determines the oy_kind from the given argument. It can be either 
   an ib_gib, an info, or the oy pid (reference) itself.
@@ -427,4 +222,116 @@ defmodule WebGib.Oy do
   def get_oy_kind(oy_ib_gib_or_info_or_pid) do
     invalid_args(oy_ib_gib_or_info_or_pid)
   end
+
+# -----------------------------------------------------------
+# other helpers that I could very well need later. meh. 
+# keeping it around. (took out the other stuff not needed)
+# -----------------------------------------------------------
+
+  # defp find_oy(identity_ib_gibs, adjunct_ib_gib) do
+  #   OK.with do
+  #     {email_identity_ib_gibs, query_identity} <-
+  #       prepare(identity_ib_gibs)
+  #       
+  #     query_opts <- 
+  #       build_find_oy_query_opts(:adjunct, 
+  #                                %{"email_identity_ib_gibs" =>
+  #                                    email_identity_ib_gibs, 
+  #                                  "adjunct_ib_gib" => 
+  #                                    adjunct_ib_gib})
+  # 
+  #     oy <- 
+  #       {:ok, query_identity} 
+  #       ~>> query(identity_ib_gibs, query_opts)
+  #       ~>> get_info()
+  #       ~>> extract_result_ib_gibs([prune_root: true])
+  #       ~>> Common.filter_present_only(identity_ib_gibs)
+  #       ~>> extract_single_oy_ib_gib()
+  #       ~>> IbGib.Expression.Supervisor.start_expression()
+  # 
+  #     OK.success oy
+  #   else
+  #     reason -> OK.failure handle_ok_error(reason, log: true)
+  #   end
+  # end
+  # 
+  # # Prepare is just corralling data without much logic.
+  # defp prepare(identity_ib_gibs) do
+  #   OK.with do
+  #     # email identities are used for the query contents
+  #     email_identity_ib_gibs <- 
+  #       Authz.get_identities_of_type(identity_ib_gibs, "email")
+  #     :ok <- 
+  #       if length(email_identity_ib_gibs) > 0, do: {:ok, :ok}, else: {:error, :no_email_id}
+  # 
+  #     # identity ib^gib & process used to exec the query
+  #     query_identity_ib_gib = email_identity_ib_gibs |> Enum.at(0)
+  #     query_identity <- 
+  #       IbGib.Expression.Supervisor.start_expression(query_identity_ib_gib)
+  # 
+  #     # # adjunct to query for
+  #     # adjunct_ib_gib <-
+  #     #   {:ok, adjunct}
+  #     #   ~>> get_info() 
+  #     #   ~>> get_ib_gib()
+  # 
+  #     OK.success {email_identity_ib_gibs, query_identity}
+  #   else
+  #     :no_email_id -> 
+  #       emsg = "Current identity has no email identities, and so no oys."
+  #       OK.failure handle_ok_error(emsg, log: true)
+  #     reason -> 
+  #       OK.failure handle_ok_error(reason, log: true)
+  #   end
+  # end
+  # 
+  # 
+  # defp extract_single_oy_ib_gib(oy_ib_gibs) 
+  #   when is_list(oy_ib_gibs) and length(oy_ib_gibs) == 0 do
+  #   {:error, :oy_not_found}
+  # end
+  # defp extract_single_oy_ib_gib(oy_ib_gibs) 
+  #   when is_list(oy_ib_gibs) and length(oy_ib_gibs) == 1 do
+  #   oy_ib_gib = Enum.at(oy_ib_gibs, 0)
+  #   if oy_ib_gib === @root_ib_gib do
+  #     {:error, :oy_not_found}
+  #   else
+  #     {:ok, oy_ib_gib}
+  #   end
+  # end
+  # defp extract_single_oy_ib_gib(oy_ib_gibs) 
+  #   when is_list(oy_ib_gibs) and length(oy_ib_gibs) > 1 do
+  #   oy_ib_gibs = oy_ib_gibs -- [@root_ib_gib]
+  #   cond do
+  #     length(oy_ib_gibs) == 1 ->
+  #       {:ok, Enum.at(oy_ib_gibs, 0)}
+  #       
+  #     length(oy_ib_gibs) > 1 ->
+  #       Logger.info("Multiple oys found in oy_ib_gibs. oy_ib_gibs: #{inspect oy_ib_gibs}")
+  #       {:ok, Enum.at(oy_ib_gibs, 0)}
+  #       
+  #     true ->
+  #       Logger.error "oy_ib_gibs length is 0? I dunno. oy_ib_gibs: #{inspect oy_ib_gibs}"
+  #       {:error, :oy_not_found}
+  #   end
+  # end
+  # 
+  # defp build_find_oy_query_opts(oy_kind = :adjunct, 
+  #                               find_details = %{
+  #                                 "email_identity_ib_gibs" => email_identity_ib_gibs,
+  #                                 "adjunct_ib_gib" => adjunct_ib_gib
+  #                               }) do
+  #   _ = Logger.debug("oy_kind: #{oy_kind}\nfind_details: #{inspect find_details}" |> ExChalk.bg_green |> ExChalk.white)
+  #   query_opts = 
+  #     do_query()
+  #     |> where_rel8ns("ancestor", "with", "ibgib", "oy#{@delim}gib")
+  #     |> where_rel8ns("adjunct", "with", "ibgib", adjunct_ib_gib)
+  #     |> where_rel8ns("target_identity", "withany", "ibgib",
+  #                     email_identity_ib_gibs)
+  #   {:ok, query_opts}
+  # end
+  # defp build_find_oy_query_opts(oy_kind, find_details) do
+  #   invalid_args([oy_kind, find_details])
+  # end
+
 end

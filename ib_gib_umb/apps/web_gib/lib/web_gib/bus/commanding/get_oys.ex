@@ -125,7 +125,7 @@ defmodule WebGib.Bus.Commanding.GetOys do
         ~>> extract_result_ib_gibs([prune_root: true])
         ~>> ok_pipe_logger(:debug, "get_oy_ib_gibs result_ib_gibs")
         # ~>> Common.filter_present_only(identity_ib_gibs)
-        ~>> ok_pipe_logger(:debug, "get_oy_ib_gibs present only")
+        # ~>> ok_pipe_logger(:debug, "get_oy_ib_gibs present only")
         ~>> filter_oy_ib_gibs(opts[:oy_filter])
         ~>> ok_pipe_logger(:debug, "get_oy_ib_gibs filter_oy_ib_gibs")
 

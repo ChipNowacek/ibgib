@@ -1513,11 +1513,18 @@ export class AckCommand extends CommandBase {
 
     t.ibScape.removeVirtualCmdNodes();
     t.ibScape.setBusy(t.d);
+    
 
     let msg = t.getMessage();
     t.ibScape.commandMgr.bus.send(msg, (successMsg) => {
       console.log(`AckCommand successMsg: ${JSON.stringify(successMsg)}`)
       t.handleSubmitResponse(successMsg);
+      
+      if (t.d.isMeta) {
+        // when we're acking in meta menu, we need to do some things manually.
+        t.ibScape.removeNodeAndChildren(t.d);
+      }
+
     }, (errorMsg) => {
       let emsg = `${t.cmdName} command errored. Msg: ${JSON.stringify(errorMsg)}`;
       console.error(emsg);
@@ -1589,7 +1596,7 @@ export class TrashCommand extends CommandBase {
     if (t.d.isSource) {
       t.parent = t.ibScape.contextNode;
       t.parentRel8nName = "ib^gib";
-    } else {
+    } else if (t.d.parentNode.rel8nName) {
       t.parent = t.d.parentNode.parentNode;
       t.parentRel8nName = t.d.parentNode.rel8nName;
       if (!t.parent || t.parentRel8n) {
@@ -1599,6 +1606,12 @@ export class TrashCommand extends CommandBase {
         alert(emsg)
         return;
       }
+    } else if (t.d.parentNode.isMeta && t.d.parentNode.ibGib) {
+      console.log("trashing in meta menu.")
+      t.parent = t.d.parentNode;
+      t.parentRel8nName = "ib^gib"; // meh, see if it works.
+    } else {
+      console.error("what up, trying to trash something without parent rel8n node and the parent is not a meta node either.")
     }
 
     t.ibScape.setBusy(t.d);
@@ -1608,6 +1621,9 @@ export class TrashCommand extends CommandBase {
     t.ibScape.commandMgr.bus.send(msg, (successMsg) => {
       console.log(`TrashCommand successMsg: ${JSON.stringify(successMsg)}`)
       t.handleSubmitResponse(successMsg);
+      if (t.parent.isMeta) {
+        t.ibScape.removeNodeAndChildren(t.d);
+      }
     }, (errorMsg) => {
       console.error(`${t.cmdName} command errored. Msg: ${JSON.stringify(errorMsg)}`);
       t.ibScape.clearBusy(t.d);

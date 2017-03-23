@@ -1331,78 +1331,15 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       let adjunctOyIbGibs = 
         oyIbGibs.filter(oyIbGib => ibHelper.getIbAndGib(oyIbGib).ib.includes("adjunct"));
       t.getIbGibJsons(adjunctOyIbGibs, oyIbGibJsons => {
-        // Group the 
-        let oyIbGibsByTarget = 
-          oyIbGibs
-            .reduce((acc, oyIbGib) => {
-              let oyIbGibJson = oyIbGibJsons[oyIbGib];
-              let targetIbGib = ibHelper.getRel8dIbGibs(oyIbGibJson, "target")[0];
-              
-              if (targetIbGib in acc) {
-                acc[targetIbGib].push(oyIbGibJson);
-              } else {
-                if (oyIbGib === "ib^gib") {
-                  acc[targetIbGib] = [];
-                } else {
-                  acc[targetIbGib] = [oyIbGibJson];
-                }
-              }
-              
-              return acc;
-            }, {});
-            
-        Object.keys(oyIbGibsByTarget)
-          .forEach(targetIbGib => {
-            let targetNode = 
-              t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", 
-                               /*nameOrIbGib*/ targetIbGib, 
-                               /*srcNode*/ rel8nNode, /*shape*/ "circle",
-                               /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null,
-                               /*title*/ "...", /*label*/ "", 
-                               /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y},
-                               /*isAdjunct*/ false);
-            
-            // Only take the first few. The user should navigate to the 
-            // target to take care of things.
-            const take_first = 5;
-            let targetOyIbGibJsons = oyIbGibsByTarget[targetIbGib].slice(0, take_first);
-            targetOyIbGibJsons.forEach(targetOyIbGibJson => {
-              let oyAdjunctIbGib = ibHelper.getRel8dIbGibs(targetOyIbGibJson, "adjunct")[0];
-              // let oyNode = 
-              t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", 
-                               /*nameOrIbGib*/ oyAdjunctIbGib, 
-                               /*srcNode*/ targetNode, /*shape*/ "circle",
-                               /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null,
-                               /*title*/ "...", /*label*/ "", 
-                               /*startPos*/ {x: targetNode.x, y: targetNode.y},
-                               /*isAdjunct*/ false);
-            });
-          });
+        // Group the ibGibOys by target so we only have a single node for every
+        // target, even though there may be multiple oys for that target.
+        let oyIbGibsByTarget = t.getOyIbGibsByTarget(oyIbGibs, oyIbGibJsons);
+
+        t.addOyNodes(rel8nNode, oyIbGibsByTarget);
         
         t.clearBusy(rel8nNode);
         if (callback) { callback(); }
       });
-    //   oyIbGibs.forEach(oyIbGib => {
-    //     
-    //     // debugger;
-    //     if (oyIbGib === "ib^gib") { return; }
-    //     let oyNode = 
-    //       t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", 
-    //                        /*nameOrIbGib*/ oyIbGib, 
-    //                        /*srcNode*/ rel8nNode, /*shape*/ "circle",
-    //                        /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null,
-    //                        /*title*/ "...", /*label*/ "", 
-    //                        /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y},
-    //                        /*isAdjunct*/ false);
-    //     oyNode.isMeta = true;
-    //     // isExpandable means that expand it, even though it's meta.
-    //     // oyNode.isExpandable = true; 
-    //     // oyNode.isPaused = true;
-    //     oyNode.parentNode = rel8nNode;
-    //   });
-    // 
-    //   t.clearBusy(rel8nNode);
-    //   if (callback) { callback(); }
     });
   }
   getOys(oyKind, oyFilter, callback) {
@@ -1434,6 +1371,58 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     //   sender
     //   adjunct
     //   target
+  }
+  getOyIbGibsByTarget(oyIbGibs, oyIbGibJsons) {
+    let result =
+      oyIbGibs
+        .reduce((acc, oyIbGib) => {
+          let oyIbGibJson = oyIbGibJsons[oyIbGib];
+          let targetIbGib = ibHelper.getRel8dIbGibs(oyIbGibJson, "target")[0];
+          
+          if (targetIbGib in acc) {
+            acc[targetIbGib].push(oyIbGibJson);
+          } else {
+            if (oyIbGib === "ib^gib") {
+              acc[targetIbGib] = [];
+            } else {
+              acc[targetIbGib] = [oyIbGibJson];
+            }
+          }
+          
+          return acc;
+        }, {});
+    return result;
+  }
+  addOyNodes(rel8nNode, oyIbGibsByTarget) {
+    let t = this;
+    Object.keys(oyIbGibsByTarget)
+      .forEach(targetIbGib => {
+        let targetNode = 
+          t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", 
+                           /*nameOrIbGib*/ targetIbGib, 
+                           /*srcNode*/ rel8nNode, /*shape*/ "circle",
+                           /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null,
+                           /*title*/ "...", /*label*/ "", 
+                           /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y},
+                           /*isAdjunct*/ false);
+        // targetNode.isPaused = true;
+        
+        // Only take the first few. The user should navigate to the 
+        // target to take care of things.
+        const take_first = 10;
+        let targetOyIbGibJsons = oyIbGibsByTarget[targetIbGib].slice(0, take_first);
+        targetOyIbGibJsons.forEach(targetOyIbGibJson => {
+          let oyAdjunctIbGib = ibHelper.getRel8dIbGibs(targetOyIbGibJson, "adjunct")[0];
+          // let oyNode = 
+          t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", 
+                           /*nameOrIbGib*/ oyAdjunctIbGib, 
+                           /*srcNode*/ targetNode, /*shape*/ "circle",
+                           /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null,
+                           /*title*/ "...", /*label*/ "", 
+                           /*startPos*/ {x: targetNode.x, y: targetNode.y},
+                           /*isAdjunct*/ true);
+        });
+      });
   }
   removeRootNode() {
     let t = this;
@@ -2348,16 +2337,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       return 5 * this.config.simulation.chargeStrength;
     }
   }
-  // getForceSourceOutwards() {
-  //   let t = this;
-  //   return d3.forceManyBody()
-  //     .strength((a,b,c) => {
-  //       debugger;
-  //     })
-  //     .distanceMin(this.config.simulation.chargeDistanceMin)
-  //     .distanceMax(this.config.simulation.chargeDistanceMax);
-  //     
-  // }
   // Other get functions ------------------------------------
 
   getBackgroundFill() {
