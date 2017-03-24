@@ -59,7 +59,8 @@ function _isAuthorizedForMut8OrRel8_Session(targetIdentityIbGibs, currentIdentit
   // authorized.
   let authorized =
     targetIdentityIbGibs
-      .filter(targetIdentityIbGib => targetIdentityIbGib !== "ib^gib")
+      // .filter(targetIdentityIbGib => targetIdentityIbGib !== "ib^gib")
+      .filter(targetIdentityIbGib => getIdentityType(targetIdentityIbGib) === "session")
       .reduce((authorized, targetIdentityIbGib) => {
         if (authorized) {
           // bypass further checking since we know we're authorized
