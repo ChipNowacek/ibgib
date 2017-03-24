@@ -232,6 +232,7 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
         cmdNames.push("view");
 
         if (ibAuthz.isAuthorizedForMut8OrRel8(d.ibGibJson, t.ibScape.currentIdentityIbGibs)) {
+          // debugger;
           cmdNames.push("mut8comment");
         }
       }

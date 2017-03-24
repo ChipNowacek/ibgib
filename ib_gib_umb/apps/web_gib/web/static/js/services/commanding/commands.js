@@ -223,6 +223,7 @@ export class FormDetailsCommandBase extends DetailsCommandBase {
     let form = document.getElementById(t.getFormId());
     if (form.checkValidity()) {
       console.log("form is valid");
+      t.submitted = true;
       t.addVirtualNode(() => {
         t.ibScape.setBusy(t.virtualNode);
 
@@ -604,6 +605,18 @@ export class CommentDetailsCommand extends FormDetailsCommandBase {
     $("#comment_form_data_text").val("").focus();
   }
 
+  close() {
+    let t = this;
+    
+    let commentText = $("#comment_form_data_text").val();
+    if (!t.submitted && commentText) {
+      let confirmMsg = `Lose unsaved changes?\n\nPress OK to close and lose unsaved changes.\nPress Cancel to return to editing your text.`;
+      if (!confirm(confirmMsg)) { return; }
+    }
+
+    super.close();
+  }
+  
   /** Currently just trims whitespace of comment. */
   sanitizeFormFields() {
     let commentText = $("#comment_form_data_text").val();
@@ -697,6 +710,16 @@ export class Mut8CommentDetailsCommand extends FormDetailsCommandBase {
 
   close() {
     let t = this;
+
+    if (!t.submitted) {
+      let commentText = $("#comment_form_data_text").val();
+      
+      if (commentText !== t.initialCommentText) {
+        let confirmMsg = `Lose unsaved changes?\n\nPress OK to close and lose unsaved changes.\nPress Cancel to return to editing your text.`;
+        if (!confirm(confirmMsg)) { return; }
+      }
+    } 
+    
     if (!t.submitted && t.srcNode) {
       t.ibScape.clearBusy(t.srcNode);
     }
