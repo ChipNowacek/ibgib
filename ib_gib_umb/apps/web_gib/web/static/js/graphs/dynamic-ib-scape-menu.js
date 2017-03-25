@@ -215,7 +215,8 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
         }
       }
 
-      if (d.ibGib && !d.isContext && d.ibGib !== "ib^gib") {
+      
+      if (t.canTrash(d)) {
         cmdNames.push("trash");
       }
 
@@ -253,6 +254,30 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
     return {
       "nodes": nodes
     };
+  }
+  
+  canTrash(d) {
+    let t = this;
+    if (d.isRoot || 
+        ibHelper.getIbAndGib(d.ibGib).gib === "gib" ||
+        d.isContext) {
+      return false;
+    } else if (d.isSource) {
+      // d is a source node, so only the owner of the context can trash it.
+      return ibAuthz.isAuthorizedForMut8OrRel8(t.ibScape.contextNode.ibGibJson, t.ibScape.currentIdentityIbGibs);      
+    } else {
+      // d is not a source, so only the owner of the parent node can trash it.
+      // (the direct parent is the rel8n node.)
+      return ibAuthz.isAuthorizedForMut8OrRel8(d.parentNode.parentNode.ibGibJson, t.ibScape.currentIdentityIbGibs);
+    }
+    if (d.ibGib && !d.isContext && 
+        d.ibGib !== "ib^gib" && 
+        t.ibScape.contextNode && 
+        ibAuthz.isAuthorizedForTrash(d.ibGibJson,
+                                     t.ibScape.contextNode.ibGibJson,
+                                     t.ibScape.currentIdentityIbGibs)) {
+    }
+
   }
 
   moveTo(position) {

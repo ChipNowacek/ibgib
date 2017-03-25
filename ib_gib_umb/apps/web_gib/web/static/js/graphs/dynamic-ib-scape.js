@@ -1303,6 +1303,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     
     t.currentIdentityIbGibs.forEach(identityIbGib => {
       if (identityIbGib === "ib^gib") { return; }
+      debugger;
       let identityNode = t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ identityIbGib, /*srcNode*/ rel8nNode, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y}, /*isAdjunct*/ false);
       identityNode.isMeta = true;
       identityNode.isPaused = true;
@@ -1710,7 +1711,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           delete node.virtualId;
           t.swap(node, node, /*updateParentOrChild*/ true);
 
-          if (node.ibGib !== "ib^gib") {
+          if (node.ibGib !== "ib^gib" && !node.isMeta) {
             t.connectToEventBus_IbGibNode(node)
           }
 
@@ -1725,11 +1726,17 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
             }
           }
           
-          t.syncChildren_IbGib(node, () => {
+          if (!node.isMeta) {
+            t.syncChildren_IbGib(node, () => {
+              t.clearBusy(node);
+              t.animateNodeBorder(node, /*nodeShape*/ null);
+              if (callback) { callback(); }
+            });
+          } else {
             t.clearBusy(node);
             t.animateNodeBorder(node, /*nodeShape*/ null);
             if (callback) { callback(); }
-          });
+          }
         });
       });
     }
@@ -1872,18 +1879,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   }
   _expandNode_Rel8n(rel8nNode, callback) {
     let t = this;
-    // add the Add cmd if it's an addable rel8n
-    // if (d3AddableRel8ns.includes(rel8nNode.rel8nName)) {
-    //   t.addCmdVirtualNode(rel8nNode, "add", t.config.other.cmdFadeTimeoutMs_Specialized);
-    //   rel8nNode.showingAdd = true;
-    //   if (rel8nNode.toggleExpandTimer) {
-    //     clearTimeout(rel8nNode.toggleExpandTimer);
-    //   }
-    //   rel8nNode.toggleExpandTimer = setTimeout(() => {
-    //     // console.log("clearing rel8nNode.showingAdd")
-    //     delete rel8nNode.showingAdd;
-    //   }, t.config.other.cmdFadeTimeoutMs_Specialized);
-    // }
 
     let existingChildrenIbGibs =
       t.getChildren(rel8nNode)
@@ -2379,8 +2374,12 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         // console.log(`No adjunctInfos in cache. Getting from server...`);
         
         t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib] = [callback];
-
-        if (ibHelper.getIbAndGib(tempJuncIbGib).gib === "gib") {
+        
+        let {ib, gib} = ibHelper.getIbAndGib(tempJuncIbGib);
+        if (gib === "gib" || 
+            ib.startsWith("session_") || 
+            ib.startsWith("email_") || 
+            ib.startsWith("node_")) {
           callback([]);
         } else {
           let data = { ibGibs: [tempJuncIbGib] };
