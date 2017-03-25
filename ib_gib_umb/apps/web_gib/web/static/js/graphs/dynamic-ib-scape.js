@@ -775,6 +775,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
             // or past ibGib in the given ibGibs.
             return !ibGibs.some(ibGib => ibGib === sourceNode.ibGib || ibHelper.isInPast(sourceNode.ibGibJson, ibGib))
           })
+          .filter(node => !node.isAdjunct) // adjuncts synced elsewhere
           .forEach(nodeNotFound => {
             console.log(`removing nodeNotFound.id & ibGib: ${nodeNotFound.id} ${nodeNotFound.ibGib}`)
             t.removeNodeAndChildren(nodeNotFound);
@@ -1196,7 +1197,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     let removed = super.remove(dToRemove, updateParentOrChild);
     
-    if (!removed) {
+    if (!removed && dToRemove.ibGib !== "ib^gib") {
       console.warn(`remove not found. ibGib: ${dToRemove.ibGib}`)
     }
 
@@ -1303,7 +1304,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     
     t.currentIdentityIbGibs.forEach(identityIbGib => {
       if (identityIbGib === "ib^gib") { return; }
-      debugger;
       let identityNode = t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ identityIbGib, /*srcNode*/ rel8nNode, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y}, /*isAdjunct*/ false);
       identityNode.isMeta = true;
       identityNode.isPaused = true;
@@ -1414,22 +1414,27 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         let targetOyIbGibJsons = oyIbGibsByTarget[targetIbGib].slice(0, take_first);
         targetOyIbGibJsons.forEach(targetOyIbGibJson => {
           let oyAdjunctIbGib = ibHelper.getRel8dIbGibs(targetOyIbGibJson, "adjunct")[0];
-          // let oyNode = 
-          t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", 
-                           /*nameOrIbGib*/ oyAdjunctIbGib, 
-                           /*srcNode*/ targetNode, /*shape*/ "circle",
-                           /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null,
-                           /*title*/ "...", /*label*/ "", 
-                           /*startPos*/ {x: targetNode.x, y: targetNode.y},
-                           /*isAdjunct*/ true);
+          let oyAdjunctNode = 
+            t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", 
+                             /*nameOrIbGib*/ oyAdjunctIbGib, 
+                             /*srcNode*/ targetNode, /*shape*/ "circle",
+                             /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null,
+                             /*title*/ "...", /*label*/ "", 
+                             /*startPos*/ {x: targetNode.x, y: targetNode.y},
+                             /*isAdjunct*/ true);
+          oyAdjunctNode.isOyAdjunctNode = true;
+          oyAdjunctNode.oyTargetNode = targetNode;
         });
       });
   }
   removeRootNode() {
     let t = this;
+
     t.graphData.nodes
-      .filter(n => n.isMeta)
-      .forEach(n => t.fadeOutNode(n, t.config.other.rootFadeTimeoutMs_Fast));
+      .filter(n => n.isMeta && !n.isRoot)
+      // .forEach(n => t.fadeOutNode(n, t.config.other.rootFadeTimeoutMs_Fast));
+      .forEach(n => t.remove(n, /*updateParentOrChild*/ true));
+    
       
     if (t.rootRel8nNode_Identity) { 
       t.clearFadeTimeout(t.rootRel8nNode_Identity);
@@ -1438,6 +1443,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     if (t.rootRel8nNode_Oy) { 
       t.clearFadeTimeout(t.rootRel8nNode_Oy);
       delete t.rootRel8nNode_Oy; 
+    }
+
+    if (t.rootNode) {
+      t.remove(t.rootNode, /*updateParentOrChild*/ true);
     }
   }
   addContextNode() {
@@ -2748,6 +2757,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   handleResize() {
     let t = this;
 
+    if (t.currentCmd && t.currentCmd.dontResize) {
+      return;
+    }
+    
+    t.removeRootNode();
     super.handleResize();
 
     if (t.menu) {

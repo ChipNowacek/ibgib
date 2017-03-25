@@ -607,7 +607,7 @@ export class CommentDetailsCommand extends FormDetailsCommandBase {
 
   close() {
     let t = this;
-    
+
     let commentText = $("#comment_form_data_text").val();
     if (!t.submitted && commentText) {
       let confirmMsg = `Lose unsaved changes?\n\nPress OK to close and lose unsaved changes.\nPress Cancel to return to editing your text.`;

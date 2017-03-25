@@ -78,6 +78,7 @@ defmodule WebGib.Bus.Commanding.Trash do
              {child_ib_gib, child, child_info}}} <-
         prepare(identity_ib_gibs, parent_ib_gib, child_ib_gib),
 
+
       # Is the user authorized to to rel8 to/unrel8 from the parent?
       {:ok, _} <- 
         Authz.authorize_apply_b(:rel8, parent_info[:rel8ns], identity_ib_gibs),
@@ -177,7 +178,8 @@ defmodule WebGib.Bus.Commanding.Trash do
         |> Enum.reduce_while(parent, fn({ib_gib, rel8n_names}, acc) ->
              # unrel8 via -rel8n, and rel8 to "trash"
                if rel8n_names === ["trash"] do
-                 {:halt, nil}
+                #  {:halt, nil}
+                 {:cont, acc}
                else 
                  rel8ns = (rel8n_names |> Enum.map(&("-" <> &1))) ++ ["trash"]
                  _ = Logger.debug("rel8ns: #{inspect rel8ns}" |> ExChalk.bg_green |> ExChalk.blue)

@@ -14,7 +14,7 @@ import * as ibHelper from './ibgib-helper';
  * can interoperate with.)
  */
 export function isAuthorizedForMut8OrRel8(targetIbGibJson, currentIdentityIbGibs) {
-  let t = this;
+  let t = this, lc = `isAuthorizedForMut8OrRel8`;
 
   let targetIdentityIbGibs = ibHelper.getIdentityIbGibs(targetIbGibJson);
   let targetAuthTier = _getHighestAuthTier(targetIdentityIbGibs);
