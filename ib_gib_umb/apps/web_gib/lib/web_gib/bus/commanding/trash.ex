@@ -178,8 +178,8 @@ defmodule WebGib.Bus.Commanding.Trash do
         |> Enum.reduce_while(parent, fn({ib_gib, rel8n_names}, acc) ->
              # unrel8 via -rel8n, and rel8 to "trash"
                if rel8n_names === ["trash"] do
-                #  {:halt, nil}
-                 {:cont, acc}
+                 {:halt, nil}
+                #  {:cont, acc}
                else 
                  rel8ns = (rel8n_names |> Enum.map(&("-" <> &1))) ++ ["trash"]
                  _ = Logger.debug("rel8ns: #{inspect rel8ns}" |> ExChalk.bg_green |> ExChalk.blue)

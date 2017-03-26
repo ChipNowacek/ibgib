@@ -1057,58 +1057,60 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
    * For example, adds "comment", "pic", etc. rel8ns, but not "dna", "past"
    */
   addSpiffyRel8ns(node) {
-    let t = this;
+    let t = this, lc = `addSpiffyRel8ns`;
 
-    // Don't add for root node.
-    if (node.ibGib === "ib^gib") { return; }
+    try {
+      // Don't add for root node.
+      if (node.ibGib === "ib^gib") { return; }
 
-    // For checking existing rel8ns
-    let childrenRel8nNames = t.getChildren_Rel8ns(node).map(child => child.rel8nName);
+      // For checking existing rel8ns
+      let childrenRel8nNames = t.getChildren_Rel8ns(node).map(child => child.rel8nName);
 
-    let fadeTimeoutMs = t.config.other.rel8nFadeTimeoutMs_Spiffy;
-    Object.keys(node.ibGibJson.rel8ns)
-      .filter(rel8nName => !d3BoringRel8ns.includes(rel8nName))
-      .filter(rel8nName => !childrenRel8nNames.includes(rel8nName))
-      .forEach(rel8nName => t.addRel8nVirtualNode(node, rel8nName, fadeTimeoutMs));
+      let fadeTimeoutMs = t.config.other.rel8nFadeTimeoutMs_Spiffy;
+      Object.keys(node.ibGibJson.rel8ns)
+        .filter(rel8nName => !d3BoringRel8ns.includes(rel8nName))
+        .filter(rel8nName => !childrenRel8nNames.includes(rel8nName))
+        .forEach(rel8nName => t.addRel8nVirtualNode(node, rel8nName, fadeTimeoutMs));
 
-    // Update children for next call (horribly non-optimized, but doesn't matter at this scale).
-    childrenRel8nNames = t.getChildren_Rel8ns(node).map(child => child.rel8nName);
-    // Add any rel8ns that should always be added.
-    d3AlwaysRel8ns
-      .filter(rel8nName => !childrenRel8nNames.includes(rel8nName))
-      .forEach(rel8nName => {
-        t.addRel8nVirtualNode(node, rel8nName, fadeTimeoutMs);
-      });
-
-    // Update children again
-    // childrenRel8nNames = t.getChildren_Rel8ns(node).map(child => child.rel8nName);
-    // d3AddableRel8ns
-    //   .filter(rel8nName => !childrenRel8nNames.includes(rel8nName))
-    //   .forEach(rel8nName => t.addRel8nVirtualNode(node, rel8nName, fadeTimeoutMs));
+      // Update children for next call (horribly non-optimized, but doesn't matter at this scale).
+      childrenRel8nNames = t.getChildren_Rel8ns(node).map(child => child.rel8nName);
+      // Add any rel8ns that should always be added.
+      d3AlwaysRel8ns
+        .filter(rel8nName => !childrenRel8nNames.includes(rel8nName))
+        .forEach(rel8nName => {
+          t.addRel8nVirtualNode(node, rel8nName, fadeTimeoutMs);
+        });
+    } catch (e) {
+      console.error(`${lc} error: ${JSON.stringify(e)}`)
+    }
   }
   /**
    * Adds "boring" rel8ns that are not collapsed by default.
    * For example, adds "dna", "past", etc., but not "comment", "pic"
    */
   addBoringRel8ns(node) {
-    let t = this;
+    let t = this, lc = `addBoringRel8ns`;
 
-    // Don't add for root node.
-    if (node.ibGib === "ib^gib") { return; }
+    try {
+      // Don't add for root node.
+      if (node.ibGib === "ib^gib") { return; }
 
-    let fadeTimeoutMs = t.config.other.rel8nFadeTimeoutMs_Boring;
-    Object.keys(node.ibGibJson.rel8ns)
-      .filter(rel8nName => d3BoringRel8ns.includes(rel8nName))
-      .filter(rel8nName => !t.getChildren_Rel8ns(node)
-                             .map(n => n.rel8nName)
-                             .includes(rel8nName))
-      .forEach(rel8nName => {
-        // Don't add the ib^gib rel8n for the context node, because these
-        // children are shown in the environment as free-floating ibGib.
-        if (!(node.isContext && rel8nName === "ib^gib")) {
-          t.addRel8nVirtualNode(node, rel8nName, fadeTimeoutMs);
-        }
-      });
+      let fadeTimeoutMs = t.config.other.rel8nFadeTimeoutMs_Boring;
+      Object.keys(node.ibGibJson.rel8ns)
+        .filter(rel8nName => d3BoringRel8ns.includes(rel8nName))
+        .filter(rel8nName => !t.getChildren_Rel8ns(node)
+                               .map(n => n.rel8nName)
+                               .includes(rel8nName))
+        .forEach(rel8nName => {
+          // Don't add the ib^gib rel8n for the context node, because these
+          // children are shown in the environment as free-floating ibGib.
+          if (!(node.isContext && rel8nName === "ib^gib")) {
+            t.addRel8nVirtualNode(node, rel8nName, fadeTimeoutMs);
+          }
+        });
+    } catch (e) {
+      console.error(`${lc} error: ${JSON.stringify(e)}`)
+    }
   }
   removeAllRel8ns(node) {
     let t = this;
@@ -1949,30 +1951,31 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
   }
   _refreshIbGibsForAutoExpansion(node, autoExpandRel8ns, callback) {
-    let t = this;
-    
-    // callback();
-    
-    let ibGibsToRefresh = [];
-    if (node.type === "ibGib") {
-      ibGibsToRefresh.push(node.ibGib);
-      let rel8ns = node.ibGibJson.rel8ns;
-      let rel8nNames = Object.keys(rel8ns);
-      rel8nNames.forEach(rel8nName => {
-        if (!d3BoringRel8ns.includes(rel8nName)) { 
-          let rel8dIbGibs = rel8ns[rel8nName];
-          rel8dIbGibs.forEach(rel8dIbGib => {
-            if (rel8dIbGib !== "ib^gib" && !ibGibsToRefresh.includes(rel8dIbGib)) {
-              ibGibsToRefresh.push(rel8dIbGib);
-            }
-          });
-        }
-      });
-      
-      t.backgroundRefresher.enqueue(ibGibsToRefresh);
-      callback();
-      // t.refreshIbGibs(ibGibsToRefresh, callback);
-    } else {
+    let t = this, lc = `_refreshIbGibsForAutoExpansion`;
+
+    try {
+      let ibGibsToRefresh = [];
+      if (node.type === "ibGib") {
+        ibGibsToRefresh.push(node.ibGib);
+        let rel8ns = node.ibGibJson.rel8ns;
+        let rel8nNames = Object.keys(rel8ns);
+        rel8nNames.forEach(rel8nName => {
+          if (!d3BoringRel8ns.includes(rel8nName)) { 
+            let rel8dIbGibs = rel8ns[rel8nName];
+            rel8dIbGibs.forEach(rel8dIbGib => {
+              if (rel8dIbGib !== "ib^gib" && !ibGibsToRefresh.includes(rel8dIbGib)) {
+                ibGibsToRefresh.push(rel8dIbGib);
+              }
+            });
+          }
+        });
+        
+        t.backgroundRefresher.enqueue(ibGibsToRefresh);
+        // t.refreshIbGibs(ibGibsToRefresh, callback);
+      }
+    } catch (e) {
+      console.error(`${lc} error: ${JSON.stringify(e)}.`)
+    } finally {
       callback();
     }
   }
