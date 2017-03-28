@@ -36,6 +36,7 @@ defmodule WebGib.Bus.Channels.Event do
   alias IbGib.Auth.Authz
   import IbGib.{Expression, Helper, Macros}
   use IbGib.Constants, :error_msgs
+  use WebGib.Constants, :keys
 
   # intercept ["user_cmd", "user_cmd2"]
 
@@ -114,18 +115,26 @@ defmodule WebGib.Bus.Channels.Event do
   """
   def broadcast_ib_gib_event(:update = msg_type,
                              {old_ib_gib, new_ib_gib} = msg_info) do
-    with(
-      {:ok, temp_junc_ib_gib} <- get_temporal_junction_ib_gib(old_ib_gib),
-      _ <- Logger.debug("update: old_ib_gib: #{old_ib_gib}\nnew_ib_gib: #{new_ib_gib}\ntemp_junc_ib_gib: #{temp_junc_ib_gib}"),
-      {:ok, msg} <- get_broadcast_msg(msg_type, {temp_junc_ib_gib, old_ib_gib, new_ib_gib}),
+    OK.with do
+      temp_junc_ib_gib <- get_temporal_junction_ib_gib(old_ib_gib)
+      _ = Logger.debug("update: old_ib_gib: #{old_ib_gib}\nnew_ib_gib: #{new_ib_gib}\ntemp_junc_ib_gib: #{temp_junc_ib_gib}")
+      msg <- get_broadcast_msg(msg_type, 
+                               {temp_junc_ib_gib, old_ib_gib, new_ib_gib})
+      
+      # Store in cache with timestamp
+      :ok <- 
+        IbGib.Data.Cache.put(@query_cache_prefix_key <> old_ib_gib,
+                             %{latest: new_ib_gib, 
+                               timestamp: :erlang.system_time(:milli_seconds)})
+
       # Not interested if the broadcast errors. It is possible that the topic
       # doesn't even exist (no one is signed up to hear it).
-      _ <-
-        WebGib.Endpoint.broadcast("event:" <> temp_junc_ib_gib, Atom.to_string(msg_type), msg)
-    ) do
-      {:ok, :ok}
+      _ = WebGib.Endpoint.broadcast("event:" <> temp_junc_ib_gib,
+                                    Atom.to_string(msg_type), msg)
+
+      OK.success :ok
     else
-      error -> default_handle_error(error)
+      reason -> OK.failure handle_ok_error(reason, log: true)
     end
   end
   def broadcast_ib_gib_event(:new_adjunct = msg_type,

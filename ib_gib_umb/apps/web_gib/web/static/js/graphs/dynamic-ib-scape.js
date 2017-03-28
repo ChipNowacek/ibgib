@@ -589,7 +589,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     });
   }
   syncContextChildren() {
-    let t = this;
+    let t = this, lc = `syncContextChildren`;
     t.setBusy(t.contextNode);
     t.getIbGibJson(t.contextNode.ibGib, ibGibJson => {
       // console.log(`got context's json: ${JSON.stringify(ibGibJson)}`);
@@ -606,14 +606,21 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         // Iterate rel8ns
         rel8nNames
           .forEach(rel8nName => {
+            console.log(`${lc} rel8nName: ${rel8nName}`)
             let rel8nIbGibs = ibGibJson.rel8ns[rel8nName];
             if (rel8nName === "ib^gib") {
               t.syncContextSourceNodes(rel8nIbGibs);
+            } else {
+              t.syncContextRel8nNode(rel8nName, rel8nNodes, rel8nIbGibs);
             }
 
-            t.syncContextRel8nNode(rel8nName, rel8nNodes, rel8nIbGibs);
-            t.syncContextAdjuncts();
+            // t.syncContextRel8nNode(rel8nName, rel8nNodes, rel8nIbGibs);
+            // t.syncContextAdjuncts();
+            // https://localhost:4443/ibgib/ib%5E4BA7757C7CC5C8076DB97CD3A12CE1A539474B320996567D01C43725B2FDF774
+            // https://192.168.99.100/ibgib/Meta%5EEF7CB0C1E64BFBF3C8F0F3784EB8C09C4CFCE7D650FE59258D33DB27465E5802
           });
+
+        t.syncContextAdjuncts();
 
         // If we've just gone back in history and there are no rel8ns via
         // ib^gib, then we should sync with an empty array.
@@ -1953,7 +1960,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   _refreshIbGibsForAutoExpansion(node, autoExpandRel8ns, callback) {
     let t = this, lc = `_refreshIbGibsForAutoExpansion`;
 
-    try {
+    // try {
       let ibGibsToRefresh = [];
       if (node.type === "ibGib") {
         ibGibsToRefresh.push(node.ibGib);
@@ -1971,13 +1978,17 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         });
         
         t.backgroundRefresher.enqueue(ibGibsToRefresh);
+        callback();
         // t.refreshIbGibs(ibGibsToRefresh, callback);
+      } else {
+        callback();
       }
-    } catch (e) {
-      console.error(`${lc} error: ${JSON.stringify(e)}.`)
-    } finally {
-      callback();
-    }
+      
+    // } catch (e) {
+    //   console.error(`${lc} error: ${JSON.stringify(e)}.`)
+    // } finally {
+    //   callback();
+    // }
   }
   _expandNodeFully(node, autoExpandRel8ns, callback, isCancelledFunc) {
     let t = this, lc = `_expandNodeFully(${node.id})`

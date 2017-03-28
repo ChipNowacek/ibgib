@@ -6,7 +6,7 @@ config :web_gib, WebGib.Endpoint,
           keyfile: System.get_env("SSL_KEY_PATH") || "${SSL_KEY_PATH}",
           certfile: System.get_env("SSL_CERT_PATH") || "${SSL_CERT_PATH}"],
   force_ssl: [hsts: false],
-  debug_errors: false,
+  debug_errors: true,
   code_reloader: false,
 
   url: [host: "www.ibgib.com"],
