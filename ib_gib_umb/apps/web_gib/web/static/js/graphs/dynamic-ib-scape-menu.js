@@ -108,25 +108,9 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
     let t = this;
     
     if (t.d.isAdjunct) {
-      let adjunctInfo = t.ibScape.ibGibProvider.getAdjunctInfo_ByAdjunctIbGib(t.d.ibGib);
-      if (adjunctInfo) {
-        t.ibScape.ibGibProvider.getIbGibJson(adjunctInfo.adjunctToTemporalJunction, adjunctTargetIbGibJson => {
-          if (!adjunctTargetIbGibJson) {
-            // This should be truthy
-            // (I'm programming this function very defensively, gauntlet-style...)
-            console.error(`t.d is expected to be adjunct, but adjunctInfo is falsy?.`);
-            return;
-          }
-
-          if (ibAuthz.isAuthorizedForMut8OrRel8(adjunctTargetIbGibJson, t.ibScape.currentIdentityIbGibs)) {
-            let cmd = d3MenuCommands.filter(c => c.name === "ack")[0]
-            t.addMenuButton("ack_id", cmd, ibHelper.getRandomString());
-          }
-        });
-  
-      } else {
-        // Where's our adjunct info?
-        console.error(`t.d is expected to be adjunct, but adjunctInfo is falsy?.`);
+      if (t.authzAckOrTrash(t.d)) {
+        let cmd = d3MenuCommands.filter(c => c.name === "ack")[0]
+        t.addMenuButton("ack_id", cmd, ibHelper.getRandomString());
       }
     }  
   }
@@ -215,7 +199,7 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
         }
       }
 
-      if (d.ibGib && !d.isContext && d.ibGib !== "ib^gib") {
+      if (t.authzAckOrTrash(d)) {
         cmdNames.push("trash");
       }
 
@@ -237,12 +221,6 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
         }
       }
       
-      // if (ibHelper.isTag(d.ibGibJson)) {
-      //   if (ibAuthz.isAuthorizedForMut8OrRel8(d.ibGibJson, t.ibScape.currentIdentityIbGibs)) {
-      //     cmdNames.push("untag"); // to be implemented
-      //   }
-      // }
-      
       if (t.ibScape.currentIdentityIbGibs.includes(d.ibGib) &&
           ibAuthz.isEmailIdentity(d.ibGibJson)) {
         cmdNames.push("unidentemail");
@@ -253,6 +231,30 @@ export class DynamicIbScapeMenu extends DynamicD3ForceGraph {
     return {
       "nodes": nodes
     };
+  }
+
+  authzAckOrTrash(d) {
+    let t = this;
+    if (d.isRoot || 
+        ibHelper.getIbAndGib(d.ibGib).gib === "gib" ||
+        d.isContext) {
+      return false;
+    } else if (d.isSource) {
+      // d is a source node, so only the owner of the context can trash it.
+      return ibAuthz.isAuthorizedForMut8OrRel8(t.ibScape.contextNode.ibGibJson, t.ibScape.currentIdentityIbGibs);
+    } else if (d.isMeta) {
+      if (d.isOyAdjunctNode) {
+        return ibAuthz.isAuthorizedForMut8OrRel8(d.oyTargetNode.ibGibJson, t.ibScape.currentIdentityIbGibs);
+      } else {
+        // It's a meta node and not an adjunct, which is the only use case 
+        // that could possibly return true (ATOW 2017/03/25).
+        return false;
+      }
+    } else {
+      // d is not a source, so only the owner of the parent node can trash it.
+      // (the direct parent is the rel8n node.)
+      return ibAuthz.isAuthorizedForMut8OrRel8(d.parentNode.parentNode.ibGibJson, t.ibScape.currentIdentityIbGibs);
+    }
   }
 
   moveTo(position) {

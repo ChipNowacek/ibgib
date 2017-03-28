@@ -589,7 +589,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     });
   }
   syncContextChildren() {
-    let t = this;
+    let t = this, lc = `syncContextChildren`;
     t.setBusy(t.contextNode);
     t.getIbGibJson(t.contextNode.ibGib, ibGibJson => {
       // console.log(`got context's json: ${JSON.stringify(ibGibJson)}`);
@@ -606,14 +606,21 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         // Iterate rel8ns
         rel8nNames
           .forEach(rel8nName => {
+            console.log(`${lc} rel8nName: ${rel8nName}`)
             let rel8nIbGibs = ibGibJson.rel8ns[rel8nName];
             if (rel8nName === "ib^gib") {
               t.syncContextSourceNodes(rel8nIbGibs);
+            } else {
+              t.syncContextRel8nNode(rel8nName, rel8nNodes, rel8nIbGibs);
             }
 
-            t.syncContextRel8nNode(rel8nName, rel8nNodes, rel8nIbGibs);
-            t.syncContextAdjuncts();
+            // t.syncContextRel8nNode(rel8nName, rel8nNodes, rel8nIbGibs);
+            // t.syncContextAdjuncts();
+            // https://localhost:4443/ibgib/ib%5E4BA7757C7CC5C8076DB97CD3A12CE1A539474B320996567D01C43725B2FDF774
+            // https://192.168.99.100/ibgib/Meta%5EEF7CB0C1E64BFBF3C8F0F3784EB8C09C4CFCE7D650FE59258D33DB27465E5802
           });
+
+        t.syncContextAdjuncts();
 
         // If we've just gone back in history and there are no rel8ns via
         // ib^gib, then we should sync with an empty array.
@@ -775,6 +782,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
             // or past ibGib in the given ibGibs.
             return !ibGibs.some(ibGib => ibGib === sourceNode.ibGib || ibHelper.isInPast(sourceNode.ibGibJson, ibGib))
           })
+          .filter(node => !node.isAdjunct) // adjuncts synced elsewhere
           .forEach(nodeNotFound => {
             console.log(`removing nodeNotFound.id & ibGib: ${nodeNotFound.id} ${nodeNotFound.ibGib}`)
             t.removeNodeAndChildren(nodeNotFound);
@@ -1056,58 +1064,60 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
    * For example, adds "comment", "pic", etc. rel8ns, but not "dna", "past"
    */
   addSpiffyRel8ns(node) {
-    let t = this;
+    let t = this, lc = `addSpiffyRel8ns`;
 
-    // Don't add for root node.
-    if (node.ibGib === "ib^gib") { return; }
+    try {
+      // Don't add for root node.
+      if (node.ibGib === "ib^gib") { return; }
 
-    // For checking existing rel8ns
-    let childrenRel8nNames = t.getChildren_Rel8ns(node).map(child => child.rel8nName);
+      // For checking existing rel8ns
+      let childrenRel8nNames = t.getChildren_Rel8ns(node).map(child => child.rel8nName);
 
-    let fadeTimeoutMs = t.config.other.rel8nFadeTimeoutMs_Spiffy;
-    Object.keys(node.ibGibJson.rel8ns)
-      .filter(rel8nName => !d3BoringRel8ns.includes(rel8nName))
-      .filter(rel8nName => !childrenRel8nNames.includes(rel8nName))
-      .forEach(rel8nName => t.addRel8nVirtualNode(node, rel8nName, fadeTimeoutMs));
+      let fadeTimeoutMs = t.config.other.rel8nFadeTimeoutMs_Spiffy;
+      Object.keys(node.ibGibJson.rel8ns)
+        .filter(rel8nName => !d3BoringRel8ns.includes(rel8nName))
+        .filter(rel8nName => !childrenRel8nNames.includes(rel8nName))
+        .forEach(rel8nName => t.addRel8nVirtualNode(node, rel8nName, fadeTimeoutMs));
 
-    // Update children for next call (horribly non-optimized, but doesn't matter at this scale).
-    childrenRel8nNames = t.getChildren_Rel8ns(node).map(child => child.rel8nName);
-    // Add any rel8ns that should always be added.
-    d3AlwaysRel8ns
-      .filter(rel8nName => !childrenRel8nNames.includes(rel8nName))
-      .forEach(rel8nName => {
-        t.addRel8nVirtualNode(node, rel8nName, fadeTimeoutMs);
-      });
-
-    // Update children again
-    // childrenRel8nNames = t.getChildren_Rel8ns(node).map(child => child.rel8nName);
-    // d3AddableRel8ns
-    //   .filter(rel8nName => !childrenRel8nNames.includes(rel8nName))
-    //   .forEach(rel8nName => t.addRel8nVirtualNode(node, rel8nName, fadeTimeoutMs));
+      // Update children for next call (horribly non-optimized, but doesn't matter at this scale).
+      childrenRel8nNames = t.getChildren_Rel8ns(node).map(child => child.rel8nName);
+      // Add any rel8ns that should always be added.
+      d3AlwaysRel8ns
+        .filter(rel8nName => !childrenRel8nNames.includes(rel8nName))
+        .forEach(rel8nName => {
+          t.addRel8nVirtualNode(node, rel8nName, fadeTimeoutMs);
+        });
+    } catch (e) {
+      console.error(`${lc} error: ${JSON.stringify(e)}`)
+    }
   }
   /**
    * Adds "boring" rel8ns that are not collapsed by default.
    * For example, adds "dna", "past", etc., but not "comment", "pic"
    */
   addBoringRel8ns(node) {
-    let t = this;
+    let t = this, lc = `addBoringRel8ns`;
 
-    // Don't add for root node.
-    if (node.ibGib === "ib^gib") { return; }
+    try {
+      // Don't add for root node.
+      if (node.ibGib === "ib^gib") { return; }
 
-    let fadeTimeoutMs = t.config.other.rel8nFadeTimeoutMs_Boring;
-    Object.keys(node.ibGibJson.rel8ns)
-      .filter(rel8nName => d3BoringRel8ns.includes(rel8nName))
-      .filter(rel8nName => !t.getChildren_Rel8ns(node)
-                             .map(n => n.rel8nName)
-                             .includes(rel8nName))
-      .forEach(rel8nName => {
-        // Don't add the ib^gib rel8n for the context node, because these
-        // children are shown in the environment as free-floating ibGib.
-        if (!(node.isContext && rel8nName === "ib^gib")) {
-          t.addRel8nVirtualNode(node, rel8nName, fadeTimeoutMs);
-        }
-      });
+      let fadeTimeoutMs = t.config.other.rel8nFadeTimeoutMs_Boring;
+      Object.keys(node.ibGibJson.rel8ns)
+        .filter(rel8nName => d3BoringRel8ns.includes(rel8nName))
+        .filter(rel8nName => !t.getChildren_Rel8ns(node)
+                               .map(n => n.rel8nName)
+                               .includes(rel8nName))
+        .forEach(rel8nName => {
+          // Don't add the ib^gib rel8n for the context node, because these
+          // children are shown in the environment as free-floating ibGib.
+          if (!(node.isContext && rel8nName === "ib^gib")) {
+            t.addRel8nVirtualNode(node, rel8nName, fadeTimeoutMs);
+          }
+        });
+    } catch (e) {
+      console.error(`${lc} error: ${JSON.stringify(e)}`)
+    }
   }
   removeAllRel8ns(node) {
     let t = this;
@@ -1196,7 +1206,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     let removed = super.remove(dToRemove, updateParentOrChild);
     
-    if (!removed) {
+    if (!removed && dToRemove.ibGib !== "ib^gib") {
       console.warn(`remove not found. ibGib: ${dToRemove.ibGib}`)
     }
 
@@ -1413,22 +1423,27 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         let targetOyIbGibJsons = oyIbGibsByTarget[targetIbGib].slice(0, take_first);
         targetOyIbGibJsons.forEach(targetOyIbGibJson => {
           let oyAdjunctIbGib = ibHelper.getRel8dIbGibs(targetOyIbGibJson, "adjunct")[0];
-          // let oyNode = 
-          t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", 
-                           /*nameOrIbGib*/ oyAdjunctIbGib, 
-                           /*srcNode*/ targetNode, /*shape*/ "circle",
-                           /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null,
-                           /*title*/ "...", /*label*/ "", 
-                           /*startPos*/ {x: targetNode.x, y: targetNode.y},
-                           /*isAdjunct*/ true);
+          let oyAdjunctNode = 
+            t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", 
+                             /*nameOrIbGib*/ oyAdjunctIbGib, 
+                             /*srcNode*/ targetNode, /*shape*/ "circle",
+                             /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null,
+                             /*title*/ "...", /*label*/ "", 
+                             /*startPos*/ {x: targetNode.x, y: targetNode.y},
+                             /*isAdjunct*/ true);
+          oyAdjunctNode.isOyAdjunctNode = true;
+          oyAdjunctNode.oyTargetNode = targetNode;
         });
       });
   }
   removeRootNode() {
     let t = this;
+
     t.graphData.nodes
-      .filter(n => n.isMeta)
-      .forEach(n => t.fadeOutNode(n, t.config.other.rootFadeTimeoutMs_Fast));
+      .filter(n => n.isMeta && !n.isRoot)
+      // .forEach(n => t.fadeOutNode(n, t.config.other.rootFadeTimeoutMs_Fast));
+      .forEach(n => t.remove(n, /*updateParentOrChild*/ true));
+    
       
     if (t.rootRel8nNode_Identity) { 
       t.clearFadeTimeout(t.rootRel8nNode_Identity);
@@ -1437,6 +1452,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     if (t.rootRel8nNode_Oy) { 
       t.clearFadeTimeout(t.rootRel8nNode_Oy);
       delete t.rootRel8nNode_Oy; 
+    }
+
+    if (t.rootNode) {
+      t.remove(t.rootNode, /*updateParentOrChild*/ true);
     }
   }
   addContextNode() {
@@ -1710,7 +1729,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           delete node.virtualId;
           t.swap(node, node, /*updateParentOrChild*/ true);
 
-          if (node.ibGib !== "ib^gib") {
+          if (node.ibGib !== "ib^gib" && !node.isMeta) {
             t.connectToEventBus_IbGibNode(node)
           }
 
@@ -1725,11 +1744,17 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
             }
           }
           
-          t.syncChildren_IbGib(node, () => {
+          if (!node.isMeta) {
+            t.syncChildren_IbGib(node, () => {
+              t.clearBusy(node);
+              t.animateNodeBorder(node, /*nodeShape*/ null);
+              if (callback) { callback(); }
+            });
+          } else {
             t.clearBusy(node);
             t.animateNodeBorder(node, /*nodeShape*/ null);
             if (callback) { callback(); }
-          });
+          }
         });
       });
     }
@@ -1872,18 +1897,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   }
   _expandNode_Rel8n(rel8nNode, callback) {
     let t = this;
-    // add the Add cmd if it's an addable rel8n
-    // if (d3AddableRel8ns.includes(rel8nNode.rel8nName)) {
-    //   t.addCmdVirtualNode(rel8nNode, "add", t.config.other.cmdFadeTimeoutMs_Specialized);
-    //   rel8nNode.showingAdd = true;
-    //   if (rel8nNode.toggleExpandTimer) {
-    //     clearTimeout(rel8nNode.toggleExpandTimer);
-    //   }
-    //   rel8nNode.toggleExpandTimer = setTimeout(() => {
-    //     // console.log("clearing rel8nNode.showingAdd")
-    //     delete rel8nNode.showingAdd;
-    //   }, t.config.other.cmdFadeTimeoutMs_Specialized);
-    // }
 
     let existingChildrenIbGibs =
       t.getChildren(rel8nNode)
@@ -1945,32 +1958,37 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
   }
   _refreshIbGibsForAutoExpansion(node, autoExpandRel8ns, callback) {
-    let t = this;
-    
-    // callback();
-    
-    let ibGibsToRefresh = [];
-    if (node.type === "ibGib") {
-      ibGibsToRefresh.push(node.ibGib);
-      let rel8ns = node.ibGibJson.rel8ns;
-      let rel8nNames = Object.keys(rel8ns);
-      rel8nNames.forEach(rel8nName => {
-        if (!d3BoringRel8ns.includes(rel8nName)) { 
-          let rel8dIbGibs = rel8ns[rel8nName];
-          rel8dIbGibs.forEach(rel8dIbGib => {
-            if (rel8dIbGib !== "ib^gib" && !ibGibsToRefresh.includes(rel8dIbGib)) {
-              ibGibsToRefresh.push(rel8dIbGib);
-            }
-          });
-        }
-      });
+    let t = this, lc = `_refreshIbGibsForAutoExpansion`;
+
+    // try {
+      let ibGibsToRefresh = [];
+      if (node.type === "ibGib") {
+        ibGibsToRefresh.push(node.ibGib);
+        let rel8ns = node.ibGibJson.rel8ns;
+        let rel8nNames = Object.keys(rel8ns);
+        rel8nNames.forEach(rel8nName => {
+          if (!d3BoringRel8ns.includes(rel8nName)) { 
+            let rel8dIbGibs = rel8ns[rel8nName];
+            rel8dIbGibs.forEach(rel8dIbGib => {
+              if (rel8dIbGib !== "ib^gib" && !ibGibsToRefresh.includes(rel8dIbGib)) {
+                ibGibsToRefresh.push(rel8dIbGib);
+              }
+            });
+          }
+        });
+        
+        t.backgroundRefresher.enqueue(ibGibsToRefresh);
+        callback();
+        // t.refreshIbGibs(ibGibsToRefresh, callback);
+      } else {
+        callback();
+      }
       
-      t.backgroundRefresher.enqueue(ibGibsToRefresh);
-      callback();
-      // t.refreshIbGibs(ibGibsToRefresh, callback);
-    } else {
-      callback();
-    }
+    // } catch (e) {
+    //   console.error(`${lc} error: ${JSON.stringify(e)}.`)
+    // } finally {
+    //   callback();
+    // }
   }
   _expandNodeFully(node, autoExpandRel8ns, callback, isCancelledFunc) {
     let t = this, lc = `_expandNodeFully(${node.id})`
@@ -2379,8 +2397,12 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         // console.log(`No adjunctInfos in cache. Getting from server...`);
         
         t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib] = [callback];
-
-        if (ibHelper.getIbAndGib(tempJuncIbGib).gib === "gib") {
+        
+        let {ib, gib} = ibHelper.getIbAndGib(tempJuncIbGib);
+        if (gib === "gib" || 
+            ib.startsWith("session_") || 
+            ib.startsWith("email_") || 
+            ib.startsWith("node_")) {
           callback([]);
         } else {
           let data = { ibGibs: [tempJuncIbGib] };
@@ -2749,6 +2771,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   handleResize() {
     let t = this;
 
+    if (t.currentCmd && t.currentCmd.dontResize) {
+      return;
+    }
+    
+    t.removeRootNode();
     super.handleResize();
 
     if (t.menu) {

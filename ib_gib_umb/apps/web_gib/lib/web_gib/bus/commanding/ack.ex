@@ -72,6 +72,13 @@ defmodule WebGib.Bus.Commanding.Ack do
       {adjunct, adjunct_target_rel8n, target} <-
         prepare(identity_ib_gibs, adjunct_ib_gib)
 
+      # I'm changing this so that when we ack something, to always use the 
+      # temp_junc. I dunno...goodness :-/
+      adjunct_temp_junc <-
+        {:ok, adjunct_ib_gib}
+        ~>> get_temporal_junction_ib_gib()
+        ~>> IbGib.Expression.Supervisor.start_expression()
+
       target_ib_gib <- 
         {:ok, target}
         ~>> get_info()
@@ -80,7 +87,7 @@ defmodule WebGib.Bus.Commanding.Ack do
       # If authorized, rel8 the adjunct directly to the target
       new_target_ib_gib <-
         {:ok, target}
-        ~>> rel8_to_target_if_authorized(adjunct,
+        ~>> rel8_to_target_if_authorized(adjunct_temp_junc,
                                          adjunct_target_rel8n,
                                          identity_ib_gibs)
         ~>> get_info()

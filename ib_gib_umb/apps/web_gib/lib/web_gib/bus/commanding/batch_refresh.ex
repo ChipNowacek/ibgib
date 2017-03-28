@@ -134,21 +134,24 @@ defmodule WebGib.Bus.Commanding.BatchRefresh do
     with(
       key <- @query_cache_prefix_key <> ib_gib,
       {:ok, %{latest: latest_ib_gib, timestamp: timestamp_ms}} <- IbGib.Data.Cache.get(key),
-      # _ = Logger.debug("Fizzley latest_ib_gib: #{latest_ib_gib}\ntimestamp_ms: #{timestamp_ms}" |> ExChalk.bg_green |> ExChalk.blue),
+      _ = Logger.debug("fizzley latest_ib_gib: #{latest_ib_gib}\ntimestamp_ms: #{timestamp_ms}\nquery_cache_expiry_ms: #{@query_cache_expiry_ms}" |> ExChalk.bg_green |> ExChalk.blue),
       now <- :erlang.system_time(:milli_seconds),
       latest_ib_gib <- 
         (if now - (timestamp_ms || 0) < @query_cache_expiry_ms do
-          _ = Logger.debug("Using cached query. fizzdoodle latest_ib_gib: #{latest_ib_gib}" |> ExChalk.bg_green |> ExChalk.blue)
+          _ = Logger.debug("fizzley Using cached query. fizzdoodle latest_ib_gib: #{latest_ib_gib}" |> ExChalk.bg_green |> ExChalk.blue)
           latest_ib_gib
          else
-           _ = Logger.debug("Cached query expired. Doing new query." |> ExChalk.bg_green |> ExChalk.blue)
+           _ = Logger.debug("fizzley Cached query expired. Doing new query." |> ExChalk.bg_green |> ExChalk.blue)
            _ = IbGib.Data.Cache.delete(key)
            nil
          end)
     ) do
       {:ok, latest_ib_gib}
     else
-      _not_found -> {:ok, nil}
+      _not_found -> 
+        _ = Logger.debug("fizzley get latest not found in cache. Doing new query." |> ExChalk.bg_green |> ExChalk.blue)
+        
+        {:ok, nil}
     end
   end
   

@@ -49,11 +49,17 @@ export class CommandBus {
   }
 
   send(msg, successCallback, errorCallback) {
-    this.channel.push(msg.metadata.name, msg)
+    this.channel.push(msg.metadata.name, msg, /*timeout msg*/ 120000)
       .receive("ok", (successMsg) => {
         if (successCallback) { successCallback(successMsg); }
       })
       .receive("error", (errorMsg) => {
+        console.error(`send error: ${errorMsg}`)
+        if (errorCallback) { errorCallback(errorMsg); }
+      })
+      .receive("timeout", () => {
+        let errorMsg = `send timeout reached.`;
+        console.error(errorMsg)
         if (errorCallback) { errorCallback(errorMsg); }
       });
   }

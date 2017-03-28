@@ -6,7 +6,7 @@ defmodule WebGib.Mixfile do
 
   def project() do
     [app: :web_gib,
-     version: "0.2.3",
+     version: "0.3.0",
      build_path: "../../_build",
      config_path: "../../config/config.exs",
      deps_path: "../../deps",
@@ -26,7 +26,7 @@ defmodule WebGib.Mixfile do
   def application() do
     [mod: {WebGib, []},
      applications: [:phoenix, :phoenix_pubsub, :phoenix_html, :cowboy, :logger,
-      :gettext, :phoenix_ecto, :postgrex, :random_gib, :ib_gib, :mailgun, :exchalk, :marker, :ssl, :expat]]
+      :gettext, :phoenix_ecto, :postgrex, :random_gib, :ib_gib, :mailgun, :exchalk, :marker, :ssl, :expat, :ok]]
   end
 
   # Specifies which paths to compile per environment.

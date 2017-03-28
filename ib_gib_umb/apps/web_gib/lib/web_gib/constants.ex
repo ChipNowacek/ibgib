@@ -75,7 +75,7 @@ defmodule WebGib.Constants do
       @ib_identity_token_salt "8eymmTYgMlKzeGH0JmThq0tJ56uBBPS6"
       @ib_identity_token_max_age 604_800 # seconds in 1 week
       
-      @query_cache_expiry_ms 60_000
+      @query_cache_expiry_ms 300_000
     end
   end
   

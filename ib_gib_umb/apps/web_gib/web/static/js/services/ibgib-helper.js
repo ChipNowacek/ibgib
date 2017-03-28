@@ -49,18 +49,29 @@ export function isInPast(ibGibJson, ibGib) {
 }
 
 export function isDirectlyRel8d(ibGibJson, ibGib) {
-  return Object.keys(ibGibJson.rel8ns)
-               .map(key => ibGibJson.rel8ns[key])
-               .some(rel8nIbGibs => rel8nIbGibs.includes(ibGib));
+  let lc = `isDirectlyRel8d`;
+  if (ibGibJson && ibGibJson.rel8ns) {
+    return Object.keys(ibGibJson.rel8ns)
+                 .map(key => ibGibJson.rel8ns[key])
+                 .some(rel8nIbGibs => rel8nIbGibs.includes(ibGib));
+  } else {
+    console.error(`${lc} error: ibGibJson and its rel8ns must be truthy. ibGibJson: ${JSON.stringify(ibGibJson)}`)
+    return false;
+  }
 }
 
 export function isDirectlyRel8dToAny(ibGibJson, ibGibs) {
+  let lc = `isDirectlyRel8dToAny`;
   return ibGibs.some(ibGib => {
-    
-    return ibGib !== "ib^gib" &&
-           Object.keys(ibGibJson.rel8ns)
-                 .map(key => ibGibJson.rel8ns[key])
-                 .some(rel8nIbGibs => rel8nIbGibs.includes(ibGib));
+    if (ibGibJson && ibGibJson.rel8ns) {
+      return ibGib !== "ib^gib" &&
+             Object.keys(ibGibJson.rel8ns)
+                   .map(key => ibGibJson.rel8ns[key])
+                   .some(rel8nIbGibs => rel8nIbGibs.includes(ibGib));
+    } else {
+      console.error(`${lc} error: ibGibJson and its rel8ns must be truthy. ibGibJson: ${JSON.stringify(ibGibJson)}`)
+      return false;
+    }
   })
 }
 
