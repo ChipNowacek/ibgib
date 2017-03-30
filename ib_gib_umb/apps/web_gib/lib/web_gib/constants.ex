@@ -44,9 +44,6 @@ defmodule WebGib.Constants do
       # @ib_identity_agg_id_hash_key "ib_identity_agg_id_hash"
       @ib_identity_token_key "ib_identity_token"
 
-      @meta_query_ib_gib_key "meta_query_ib_gib"
-      @meta_query_result_ib_gib_key "meta_query_result_ib_gib"
-
       @ident_email_email_addr_key "ident_email_email_addr"
       @ident_email_timestamp_key "ident_email_timestamp"
       @ident_email_token_key "ident_email_token"

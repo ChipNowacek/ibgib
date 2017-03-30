@@ -56,24 +56,8 @@ defmodule WebGib.IbGibController do
     |> assign(:ib, "ib")
     |> assign(:gib, "gib")
     |> assign(:ib_gib, target)
-    # |> add_meta_query
-    # |> redirect(to: ib_gib_path(WebGib.Endpoint, :show, get_session(conn, @meta_query_result_ib_gib_key)))
     |> redirect(to: ib_gib_path(WebGib.Endpoint, :show, target))
   end
-
-  # defp add_meta_query(conn) do
-  #   _ = Logger.debug "meta_query_ib_gib: #{@meta_query_ib_gib_key}"
-  #   _ = Logger.debug "meta_query_result_ib_gib: #{@meta_query_result_ib_gib_key}"
-  # 
-  #   meta_query_ib_gib =
-  #     conn |> get_session(@meta_query_ib_gib_key)
-  #   meta_query_result_ib_gib =
-  #     conn |> get_session(@meta_query_result_ib_gib_key)
-  # 
-  #   conn
-  #   |> assign(:meta_query_ib_gib, meta_query_ib_gib)
-  #   |> assign(:meta_query_result_ib_gib, meta_query_result_ib_gib)
-  # end
 
   @doc """
   This should show the given `ib^gib`. If only the `ib` is given, then this
@@ -120,7 +104,6 @@ defmodule WebGib.IbGibController do
         _ = Logger.debug "thing_relations: #{inspect thing_relations}"
         conn =
           conn
-          # |> add_meta_query
           |> assign(:ib, ib)
           |> assign(:gib, gib)
           |> assign(:ib_gib, ib_gib)

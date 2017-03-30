@@ -95,8 +95,7 @@ export class DynamicD3ForceGraph {
 
     t.initGraphDiv();
     t.initSvg();
-    // Needs to be just after the svg itself.
-    t.initBackground();
+    t.initBackground(); // Needs to be just after the svg itself.
     // Holds child components (nodes, links), i.e. all but the background
     t.initSvgGroup();
     t.initBackgroundZoom();
@@ -126,8 +125,6 @@ export class DynamicD3ForceGraph {
       .attr('id', t.svgId)
       .attr("width", "100%")
       .attr("height", "100%")
-      // .attr('width', t.width)
-      // .attr('height', t.height);
   }
   initBackground(svg) {
     let t = this;
@@ -158,16 +155,10 @@ export class DynamicD3ForceGraph {
         .attr("y", 0)
         .attr("width", "100%")
         .attr("height", "100%")
-        // .attr("width", t.width)
-        // .attr("height", t.height)
         .attr("border-style", "solid")
         .attr("border-width", "1px")
         .attr("stroke", "pink")
         .attr("stroke-width", "3px")
-        // .attr("x", 0.5)
-        // .attr("y", 0.5)
-        // .attr("width", t.width - 1)
-        // .attr("height", t.height - 1)
         .on("click", () => t.handleBackgroundClicked())
         .on("contextmenu", () => t.handleBackgroundContextMenu());
     }

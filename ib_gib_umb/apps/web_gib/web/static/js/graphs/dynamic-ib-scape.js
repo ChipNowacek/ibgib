@@ -286,13 +286,62 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           .velocityDecay(t.getVelocityDecay())
           .alphaTarget(0)
           .force("link", t.getForceLink())
-          .force("charge", t.getForceCharge())
+          // .force("link", d3.forceLink(t.graphData.links).distance(l => {
+          //   if (l && l.target && l.target.type && l.source && l.source.type) {
+          //     return l.target.type && l.target.type === "rel8n" ? 100 : 500;
+          //   } else {
+          //     return 10000; // default
+          //   }
+          // }).strength(1).id(d => t.getForceLinkId(d)))
+          // .force("link", d3.forceLink(t.graphData.links))
+          // .force("charge", t.getForceCharge())
+          // .force("rel8ns_repel", {
+          //   
+          // })
           .force("collide", t.getForceCollide())
-          .force("center", t.getForceCenter())
+          // .force("x", d3.forceX())
+          // .force("y", d3.forceY())
+          // .force("center", t.getForceCenter())
+          .force("left", 
+                 t.isolate(d3.forceX(0.75 * t.width).strength(15), d => t.groupFilter_IsComment(d)))
+          .force("right", t.isolate(d3.forceX(0.25 * t.width).strength(15), d =>  t.groupFilter_IsLink(d)))
+          
+          // .force("middle", t.isolate(d3.forceX(0), d => t.groupFilter_Default(d)))
           // .force("sourceOutwards", t.getForceSourceOutwards())
           ;
   }
-  
+  // Thanks https://bl.ocks.org/mbostock/b1f0ee970299756bc12d60aedf53c13b
+  isolate(force, filter) {
+    let t = this;
+    try {
+      let initialize = force.initialize;
+      force.initialize = function() {
+        try {
+          initialize.call(force, t.graphData.nodes.filter(filter));
+        } catch (e) {
+          debugger;
+        } finally {
+          
+        }
+      };
+    } catch (e) {
+      debugger;
+      
+    } finally {
+      return force;
+    }
+  }
+  groupFilter_Default(d) {
+    let t = this;
+    return !(t.groupFilter_IsComment(d) || t.groupFilter_IsLink(d))
+  }
+  groupFilter_IsComment(d) {
+    return d.ibGibJson && ibHelper.isComment(d.ibGibJson);
+  }
+  groupFilter_IsLink(d) {
+    return d.ibGibJson && ibHelper.isLink(d.ibGibJson);
+  }
+
   refreshContextNode() {
     let t = this, lc = `refreshContextNode`;
 
@@ -1193,7 +1242,14 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     let t= this, lc = `add`;
     
     // console.log(`${lc} start. nodesToAdd: ${JSON.stringify(nodesToAdd.map(n => { return {id: n.id, ibGib: n.ibGib} }))}`)
-    super.add(nodesToAdd, linksToAdd, updateParentOrChild);
+    try {
+      super.add(nodesToAdd, linksToAdd, updateParentOrChild);
+    } catch (e) {
+      debugger;
+      console.error(e.message)
+    } finally {
+      
+    }
   }
   remove(dToRemove, updateParentOrChild) {
     let t = this, lc = `remove`;
@@ -1837,7 +1893,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       node.expanding = true;
     }
 
-    if (node.isSource) { t.pin(node); }
+    // if (node.isSource) { t.pin(node); }
 
     if (!node.expandLevel) {
       t.addSpiffyRel8ns(node);
@@ -2320,7 +2376,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   getForceCenter() { return null; }
   // getForceLink() {
   //   let t = this;
-  //
+  //   
+  //   // return d3.forceLink(t.graphData.links).distance(20).strength(1);
+  // 
   //   return super.getForceLink()
   //               .strength(l => t.getForceLinkStrength(l));
   // }
@@ -2348,12 +2406,13 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
   }
   getForceChargeStrength(d) {
+    return d3.forceManyBody();
     // return super.getForceChargeStrength(d);
-    if (d.isSource || (d.type && d.type === "rel8n")) {
-      return this.config.simulation.chargeStrength;
-    } else {
-      return 5 * this.config.simulation.chargeStrength;
-    }
+    // if (d.isSource || (d.type && d.type === "rel8n")) {
+    //   return this.config.simulation.chargeStrength;
+    // } else {
+    //   return 5 * this.config.simulation.chargeStrength;
+    // }
   }
   // Other get functions ------------------------------------
 
@@ -2676,7 +2735,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     let t = this;
     console.log(`node clicked: ${JSON.stringify(d)}`);
 
-    t.pin(d);
+    // t.pin(d);
     // t.freezeNode(d, 1000);
     t.clearSelectedNode();
     t.animateNodeBorder(d, /*nodeShape*/ null);
@@ -2712,7 +2771,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       if (d.expanding) { delete d.expanding; }
       t.unpin(d);
     } else {
-      t.pin(d);
+      // t.pin(d);
 
       d.fullyExpanding = true;
       t._expandNodeFully(d, ["pic", "comment", "link"], () => {
@@ -2726,7 +2785,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
             // if (c.type === "rel8n") { t.pin(c); }
             t.clearBusy(c);
             // always pin the node, source or no?
-            setTimeout(() => t.pin(c), 5000);
+            
+            // setTimeout(() => t.pin(c), 5000);
+            
           });
           t.fadeOutChildlessRel8ns(2000);
           if (d.fullyExpanding) { delete d.fullyExpanding; }
