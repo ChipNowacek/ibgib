@@ -299,19 +299,33 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           //   
           // })
           .force("collide", t.getForceCollide())
-          // .force("x", d3.forceX())
-          // .force("y", d3.forceY())
           // .force("center", t.getForceCenter())
+          .force("right", 
+                 t.isolateForce(d3.forceX(d => t.getForceXPos_ByRel8nIndex(d)).strength(15), 
+                                d => t.groupFilter_IsComment(d)))
           .force("left", 
-                 t.isolate(d3.forceX(0.75 * t.width).strength(15), d => t.groupFilter_IsComment(d)))
-          .force("right", t.isolate(d3.forceX(0.25 * t.width).strength(15), d =>  t.groupFilter_IsLink(d)))
+                 t.isolateForce(d3.forceX(0.25 * t.width).strength(15), 
+                                d =>  t.groupFilter_IsLink(d)))
+          .force("past", 
+                 t.isolateForce(
+                   d3.forceX(d => t.getForceXPos_ByRel8nIndex(d)).strength(15),
+                   d =>  t.groupFilter_IsPast(d)))
           
-          // .force("middle", t.isolate(d3.forceX(0), d => t.groupFilter_Default(d)))
+          // .force("middle", t.isolateForce(d3.forceX(0), d => t.groupFilter_Default(d)))
           // .force("sourceOutwards", t.getForceSourceOutwards())
           ;
   }
+  getForceXPos_ByRel8nIndex(d) {
+    let t = this;
+    let origin = d.isSource ? t.contextNode.x : d.parentNode.parentNode.x;
+    let unitX = 2.2 * d.r;
+    if (!d.rel8nIndex) { d.rel8nIndex = t.getRel8nIndex(d) || 0; }
+    console.log(`d.rel8nIndex: ${d.rel8nIndex}`)
+    let deltaX = unitX * (d.rel8nIndex + 1);
+    return origin + deltaX;
+  }
   // Thanks https://bl.ocks.org/mbostock/b1f0ee970299756bc12d60aedf53c13b
-  isolate(force, filter) {
+  isolateForce(force, filter) {
     let t = this;
     try {
       let initialize = force.initialize;
@@ -340,6 +354,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   }
   groupFilter_IsLink(d) {
     return d.ibGibJson && ibHelper.isLink(d.ibGibJson);
+  }
+  groupFilter_IsPast(d) {
+    return d.parentNode && d.parentNode.rel8nName && d.parentNode.rel8nName === "past";
   }
 
   refreshContextNode() {
@@ -866,6 +883,27 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         t.syncingContextSourceNodes = false;
       }
     }
+  }
+  getRel8nIndex(node) {
+    let t = this;
+    let parent, rel8nName;
+    if (node.isSource) {
+      parent = t.contextNode;
+      rel8nName = "ib^gib";
+    } else {
+      if (!node.parentNode || !node.parentNode.parentNode || !node.parentNode.rel8nName) {
+        debugger;
+      }
+      parent = node.parentNode.parentNode;
+      rel8nName = node.parentNode.rel8nName;
+    }
+    
+    if (parent.ibGibJson) {
+      
+    }
+    return parent.ibGibJson ? 
+      ibHelper.getRel8dIbGibs(parent.ibGibJson, rel8nName).indexOf(node.ibGib) :
+      0;
   }
   /**
    * Each rel8n of this.contextNode that is not ib^gib or ib will have a
@@ -1971,30 +2009,33 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       } else {
         let rel8dIbGibs = rel8nSrc.ibGibJson.rel8ns[rel8nName] || [];
         let rel8dIbGibNodes = [];
-        rel8dIbGibs
-          .forEach(rel8dIbGib => {
-            let ibGibToUse = rel8nSrc.isPaused ? rel8dIbGib : t.ibGibProvider.getLatestIbGib(rel8dIbGib);
-            let rel8dIbGibNode = t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ ibGibToUse, /*srcNode*/ rel8nNode, /*shape*/ "circle", /*autoZap*/ true, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y}, /*isAdjunct*/ false);
-            rel8dIbGibNodes.push(rel8dIbGibNode);
-            rel8dIbGibNode.parentNode = rel8nNode;
-          });
+        let markPaused = 
+          d3PausedRel8ns.includes(rel8nName) || 
+          rel8nSrc.isPaused || 
+          rel8nSrc.ibGibJson.ib !== "query_result";
+        for (var i = 0; i < rel8dIbGibs.length; i++) {
+          let rel8dIbGib = rel8dIbGibs[i];
+          let ibGibToUse = 
+            markPaused || rel8dIbGib === "ib^gib" ? 
+              rel8dIbGib : 
+              t.ibGibProvider.getLatestIbGib(rel8dIbGib);
+          let rel8dIbGibNode = t.addVirtualNode(/*id*/ null, /*type*/ "ibGib", /*nameOrIbGib*/ ibGibToUse, /*srcNode*/ rel8nNode, /*shape*/ "circle", /*autoZap*/ false, /*fadeTimeoutMs*/ 0, /*cmd*/ null, /*title*/ "...", /*label*/ "", /*startPos*/ {x: rel8nNode.x, y: rel8nNode.y}, /*isAdjunct*/ false);
+          rel8dIbGibNode.isPaused = markPaused;
+          rel8dIbGibNode.rel8nIndex = i;
+          rel8dIbGibNodes.push(rel8dIbGibNode);
+          rel8dIbGibNode.parentNode = rel8nNode;
+          t.zap(rel8dIbGibNode, /*callback*/ null); // just spin it off
+        }
 
-        if (d3PausedRel8ns.includes(rel8nNode.rel8nName)) {
-          // Mark all children as paused.
-          rel8dIbGibNodes.forEach(n => {
-            n.isPaused = true;
-          });
-        } else {
+        if (!markPaused) {
           // Refresh children ibGibs.
-          if (rel8nSrc.ibGibJson.ib !== "query_result") {
-            let ibGibsToRefresh = rel8dIbGibs.concat([rel8nSrc.ibGib]);
-            t.backgroundRefresher.enqueue(ibGibsToRefresh);
+          let ibGibsToRefresh = rel8dIbGibs.concat([rel8nSrc.ibGib]);
+          t.backgroundRefresher.enqueue(ibGibsToRefresh);
 
-            // Sync adjuncts, passing callback.
-            t.syncAdjuncts(rel8nNode.rel8nSrc.tempJuncIbGib, () => {
-              if (callback) { callback(); }
-            });
-          }
+          // Sync adjuncts, passing callback.
+          t.syncAdjuncts(rel8nNode.rel8nSrc.tempJuncIbGib, () => {
+            if (callback) { callback(); }
+          });
         }
       }
     }
@@ -2939,7 +2980,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           .forEach(n => {
             // console.log(`updating ibGib node`)
             t.clearBusy(n);
-
             t.updateIbGib(n, msg.data.new_ib_gib, /*skipUpdateUrl*/ false, /*callback*/ null);
           });
       }
