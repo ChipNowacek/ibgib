@@ -13,7 +13,7 @@ md.renderer.rules.emoji = function(token, idx) {
   return twemoji.parse(token[idx].content);
 };
 
-import { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3BoringRel8ns, d3AlwaysRel8ns, d3RequireExpandLevel2, d3MenuCommands, d3Rel8nIcons, d3RootUnicodeChar, /*d3AddableRel8ns,*/ d3PausedRel8ns } from '../d3params';
+import { d3CircleRadius, d3LongPressMs, d3DblClickMs, d3LinkDistances, d3Scales, d3Colors, d3BoringRel8ns, d3AlwaysRel8ns, d3RequireExpandLevel2, d3MenuCommands, d3Rel8nIcons, d3RootUnicodeChar, /*d3AddableRel8ns,*/ d3PausedRel8ns, d3ForceNames } from '../d3params';
 
 import { DynamicD3ForceGraph } from './dynamic-d3-force-graph';
 import { DynamicIbScapeMenu } from './dynamic-ib-scape-menu';
@@ -44,6 +44,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.ibGibProvider = ibGibProvider;
     t.currentIdentityIbGibs = currentIdentityIbGibs;
     t.getAdjunctInfosCallbacksInProgress = {};
+    t.currentForces = {};
 
     let defaults = {
       background: {
@@ -101,8 +102,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   }
 
   init() {
-    super.init();
     let t = this;
+    t.initPositionalForces();
+    super.init();
 
     console.log("init");
     t.commandMgr.init();
@@ -114,6 +116,53 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.initBackgroundRefresher();
     t.initContext();
     t.initIdentities();
+  }
+  initPositionalForces() {
+    let t = this;
+
+    //
+    t.addPositionForce(/*id*/ "pastLinear", 
+                       /*name*/ "past", 
+                       /*xFunc*/ d => t.getForcePos_LinearByRel8nIndex(d), 
+                       /*xStrength*/ 15, 
+                       /*yFunc*/ d => t.getForcePos_Valence(d), 
+                       /*yStrength*/ 15, 
+                       /*filter*/ d => t.groupFilter_IsPast(d));
+    //
+    t.addPositionForce(/*id*/ "linkLinear", 
+                       /*name*/ "linkLinear", 
+                       /*xFunc*/ d => t.getForcePos_LinearByRel8nIndex(d), 
+                       /*xStrength*/ 15, 
+                       /*yFunc*/ d => t.getForcePos_Valence(d), 
+                       /*yStrength*/ 15, 
+                       /*filter*/ d => t.groupFilter_IsLink(d));
+
+    //
+    t.addPositionForce(/*id*/ "commentLinear", 
+                       /*name*/ "commentLinear", 
+                       /*xFunc*/ d => t.getForcePos_LinearByRel8nIndex(d), 
+                       /*xStrength*/ 15, 
+                       /*yFunc*/ d => t.getForcePos_Valence(d), 
+                       /*yStrength*/ 15, 
+                       /*filter*/ d => t.groupFilter_IsComment(d));
+
+    //
+
+    // .force("right", 
+    //        t.filterForce(d3.forceX(d => t.getForcePos_LinearByRel8nIndex(d)).strength(15), 
+    //                       d => t.groupFilter_IsComment(d)))
+    // .force("left", 
+    //        t.filterForce(d3.forceX(0.25 * t.width).strength(15), 
+    //                       d =>  t.groupFilter_IsLink(d)))
+    // .force("past", 
+    //        t.filterForce(
+    //          d3.forceX(d => t.getForcePos_LinearByRel8nIndex(d)).strength(15),
+    //          d =>  t.groupFilter_IsPast(d)))
+    // .force("pastY", 
+    //        t.filterForce(
+    //          d3.forceY(d => t.getForcePos_LinearByRel8nIndex(d)).strength(15),
+    //          d =>  t.groupFilter_IsPast(d)))
+
   }
   initSvg() {
     super.initSvg();
@@ -286,61 +335,92 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           .velocityDecay(t.getVelocityDecay())
           .alphaTarget(0)
           .force("link", t.getForceLink())
-          // .force("link", d3.forceLink(t.graphData.links).distance(l => {
-          //   if (l && l.target && l.target.type && l.source && l.source.type) {
-          //     return l.target.type && l.target.type === "rel8n" ? 100 : 500;
-          //   } else {
-          //     return 10000; // default
-          //   }
-          // }).strength(1).id(d => t.getForceLinkId(d)))
-          // .force("link", d3.forceLink(t.graphData.links))
-          // .force("charge", t.getForceCharge())
-          // .force("rel8ns_repel", {
-          //   
-          // })
+          .force("charge", t.getForceCharge())
           .force("collide", t.getForceCollide())
-          // .force("center", t.getForceCenter())
-          .force("right", 
-                 t.isolateForce(d3.forceX(d => t.getForceXPos_ByRel8nIndex(d)).strength(15), 
-                                d => t.groupFilter_IsComment(d)))
-          .force("left", 
-                 t.isolateForce(d3.forceX(0.25 * t.width).strength(15), 
-                                d =>  t.groupFilter_IsLink(d)))
-          .force("past", 
-                 t.isolateForce(
-                   d3.forceX(d => t.getForceXPos_ByRel8nIndex(d)).strength(15),
-                   d =>  t.groupFilter_IsPast(d)))
-          
-          // .force("middle", t.isolateForce(d3.forceX(0), d => t.groupFilter_Default(d)))
-          // .force("sourceOutwards", t.getForceSourceOutwards())
           ;
+          
+    Object.keys(t.currentForces)
+      .forEach(forceId => {
+        // debugger;
+        t.applyPositionForce(forceId, t.simulation)
+      });
   }
-  getForceXPos_ByRel8nIndex(d) {
+  addPositionForce(id, forceName, xFunc, xStrength, yFunc, yStrength, filter) {
     let t = this;
+    if (id in t.currentForces) {
+      console.warn(`force id already exists in currentForces`);
+    } else {
+      let info = {
+        id: id,
+        name: name,
+        xFunc: xFunc,
+        xStrength: xStrength,
+        yFunc: yFunc,
+        yStrength: yStrength,
+        filter: filter
+      }
+      t.currentForces[id] = info;
+    }
+  }
+  applyPositionForce(id, simulation) {
+    let t = this;
+    
+    let { name, xFunc, xStrength, yFunc, yStrength, filter } = t.currentForces[id];
+    
+    if (!filter) { filter = d => id in d && d[id] === true; }
+    
+    if (xFunc && xStrength) {
+      simulation
+        .force(name + "X", 
+               t.filterForce(
+                 d3.forceX(d => xFunc(d)).strength(xStrength), 
+                 filter
+               ))
+    }
+    
+    if (yFunc && yStrength) {
+      simulation
+        .force(name + "Y", 
+               t.filterForce(
+                 d3.forceY(d => yFunc(d)).strength(yStrength), 
+                 filter
+               ))
+    }
+  }
+  getForcePos_LinearByRel8nIndex(d) {
+    let t = this, lc = `filterForce`;
     let origin = d.isSource ? t.contextNode.x : d.parentNode.parentNode.x;
     let unitX = 2.2 * d.r;
     if (!d.rel8nIndex) { d.rel8nIndex = t.getRel8nIndex(d) || 0; }
-    console.log(`d.rel8nIndex: ${d.rel8nIndex}`)
+    // console.log(`${lc} d.rel8nIndex: ${d.rel8nIndex}`)
     let deltaX = unitX * (d.rel8nIndex + 1);
     return origin + deltaX;
   }
+  getForcePos_Valence(d) {
+    let t = this, lc = `filterForce`;
+    let parent = d.isSource ? t.contextNode : d.parentNode.parentNode;
+    let origin = d.isSource ? parent.x : parent.x;
+    let rel8nName = d.isSource ? "ib^gib" : d.parentNode.rel8nName;
+    if (!parent.valences) { 
+      parent.valences = [rel8nName]; 
+    }
+    
+    let valence = parent.valences.indexOf(rel8nName) + 1;
+
+    let unit = 2.2 * d.r;
+    let delta = unit * valence;
+    return origin + delta;
+  }
   // Thanks https://bl.ocks.org/mbostock/b1f0ee970299756bc12d60aedf53c13b
-  isolateForce(force, filter) {
-    let t = this;
+  filterForce(force, filter) {
+    let t = this, lc = `filterForce`;
     try {
       let initialize = force.initialize;
-      force.initialize = function() {
-        try {
+      force.initialize = () => {
           initialize.call(force, t.graphData.nodes.filter(filter));
-        } catch (e) {
-          debugger;
-        } finally {
-          
-        }
       };
     } catch (e) {
-      debugger;
-      
+      console.error(`${lc} error: ${e.message}`)
     } finally {
       return force;
     }
