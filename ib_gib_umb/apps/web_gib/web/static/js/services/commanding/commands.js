@@ -1623,7 +1623,6 @@ export class TrashCommand extends CommandBase {
       t.parent = t.d.parentNode.parentNode;
       t.parentRel8nName = t.d.parentNode.rel8nName;
       if (!t.parent || t.parentRel8n) {
-        debugger;
         let emsg = `${lc} no parent/parentRel8n?`;
         console.error(emsg);
         alert(emsg)

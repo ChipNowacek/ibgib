@@ -118,35 +118,51 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.initIdentities();
   }
   initPositionalForces() {
-    let t = this;
+    let t = this, lc = `initPositionalForces`;
+
+    console.log(`${lc} starting...`)
 
     //
+    console.log(`${lc} adding source valence...`)
+    t.addPositionForce(/*id*/ "sourceValence", 
+                       /*name*/ "source", 
+                       /*xFunc*/ d => t.getForcePos_ValenceRadial(d, "x", 2 * d.r), 
+                       /*xStrength*/ 10, 
+                       /*yFunc*/ d => t.getForcePos_ValenceRadial(d, "y", 2 * d.r), 
+                       /*yStrength*/ 10, 
+                       /*filter*/ d => d.isSource && !d.isRoot);
+
+    //
+    console.log(`${lc} adding pastLinear...`)
     t.addPositionForce(/*id*/ "pastLinear", 
                        /*name*/ "past", 
                        /*xFunc*/ d => t.getForcePos_LinearByRel8nIndex(d), 
-                       /*xStrength*/ 15, 
-                       /*yFunc*/ d => t.getForcePos_Valence(d), 
-                       /*yStrength*/ 15, 
+                       /*xStrength*/ 10, 
+                       /*yFunc*/ d => t.getForcePos_Valence(d, "y"), 
+                       /*yStrength*/ 0, 
                        /*filter*/ d => t.groupFilter_IsPast(d));
     //
-    t.addPositionForce(/*id*/ "linkLinear", 
-                       /*name*/ "linkLinear", 
-                       /*xFunc*/ d => t.getForcePos_LinearByRel8nIndex(d), 
-                       /*xStrength*/ 15, 
-                       /*yFunc*/ d => t.getForcePos_Valence(d), 
-                       /*yStrength*/ 15, 
-                       /*filter*/ d => t.groupFilter_IsLink(d));
+    // console.log(`${lc} adding linkLinear...`)
+    // t.addPositionForce(/*id*/ "linkLinear", 
+    //                    /*name*/ "linkLinear", 
+    //                    /*xFunc*/ d => t.getForcePos_Valence(d, "x"), 
+    //                    /*xStrength*/ 10, 
+    //                    /*yFunc*/ d => t.getForcePos_LinearByRel8nIndex(d), 
+    //                    /*yStrength*/ 1, 
+    //                    /*filter*/ d => !d.isSource && t.groupFilter_IsLink(d));
 
     //
-    t.addPositionForce(/*id*/ "commentLinear", 
-                       /*name*/ "commentLinear", 
-                       /*xFunc*/ d => t.getForcePos_LinearByRel8nIndex(d), 
-                       /*xStrength*/ 15, 
-                       /*yFunc*/ d => t.getForcePos_Valence(d), 
-                       /*yStrength*/ 15, 
-                       /*filter*/ d => t.groupFilter_IsComment(d));
-
+    console.log(`${lc} adding commentLinear...`)
+    // t.addPositionForce(/*id*/ "commentLinear", 
+    //                    /*name*/ "commentLinear", 
+    //                    /*xFunc*/ d => t.getForcePos_Valence(d, "y"), 
+    //                    /*xStrength*/ 10, 
+    //                    /*yFunc*/ d => t.getForcePos_LinearByRel8nIndex(d), 
+    //                    /*yStrength*/ 1, 
+    //                    /*filter*/ d => !d.isSource && t.groupFilter_IsComment(d));
+    // 
     //
+    console.log(`${lc} complete.`)
 
     // .force("right", 
     //        t.filterForce(d3.forceX(d => t.getForcePos_LinearByRel8nIndex(d)).strength(15), 
@@ -160,9 +176,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     //          d =>  t.groupFilter_IsPast(d)))
     // .force("pastY", 
     //        t.filterForce(
-    //          d3.forceY(d => t.getForcePos_LinearByRel8nIndex(d)).strength(15),
+    //          d3.forceY(
+    //            d => t.getForcePos_LinearByRel8nIndex(d)
+    //          ).strength(15),
     //          d =>  t.groupFilter_IsPast(d)))
-
   }
   initSvg() {
     super.initSvg();
@@ -306,6 +323,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       // Trim /ibgib/ or ibgib/ to get the ib^gib from the pathname
       let leadingTrimLength = window.location.pathname[0] === "/" ? 7 : 6;
       let newContextIbGib = window.location.pathname;
+      if (!newContextIbGib) { debugger; }
       newContextIbGib = newContextIbGib.replace("%5E", "^");
       newContextIbGib = removeSpaces(newContextIbGib);
       newContextIbGib = newContextIbGib.substring(leadingTrimLength);
@@ -342,10 +360,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     Object.keys(t.currentForces)
       .forEach(forceId => {
         // debugger;
-        t.applyPositionForce(forceId, t.simulation)
+        t.applyPositionForce(forceId)
       });
   }
-  addPositionForce(id, forceName, xFunc, xStrength, yFunc, yStrength, filter) {
+  addPositionForce(id, name, xFunc, xStrength, yFunc, yStrength, filter) {
     let t = this;
     if (id in t.currentForces) {
       console.warn(`force id already exists in currentForces`);
@@ -362,54 +380,125 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       t.currentForces[id] = info;
     }
   }
-  applyPositionForce(id, simulation) {
-    let t = this;
-    
+  applyPositionForce(id) {
+    let t = this, lc = `applyPositionForce(${id})`;
+
+    // console.log(`${lc} applying...`)
+
     let { name, xFunc, xStrength, yFunc, yStrength, filter } = t.currentForces[id];
-    
+
     if (!filter) { filter = d => id in d && d[id] === true; }
     
     if (xFunc && xStrength) {
-      simulation
+      t.simulation
         .force(name + "X", 
-               t.filterForce(
-                 d3.forceX(d => xFunc(d)).strength(xStrength), 
-                 filter
-               ))
+               t.filterForce(d3.forceX(d => xFunc(d)).strength(xStrength), 
+                             d => filter(d)))
     }
-    
+
     if (yFunc && yStrength) {
-      simulation
+      t.simulation
         .force(name + "Y", 
-               t.filterForce(
-                 d3.forceY(d => yFunc(d)).strength(yStrength), 
-                 filter
-               ))
+               t.filterForce(d3.forceY(d => yFunc(d)).strength(yStrength), 
+                             d => filter(d)))
     }
+
+    // console.log(`${lc} complete.`)
   }
   getForcePos_LinearByRel8nIndex(d) {
-    let t = this, lc = `filterForce`;
+    let t = this, lc = `getForcePos_LinearByRel8nIndex`;
+    if (!t.contextNode) { debugger; }
     let origin = d.isSource ? t.contextNode.x : d.parentNode.parentNode.x;
     let unitX = 2.2 * d.r;
-    if (!d.rel8nIndex) { d.rel8nIndex = t.getRel8nIndex(d) || 0; }
+    if (!d.rel8nIndex) { d.rel8nIndex = t.getRel8nIndex(d); }
     // console.log(`${lc} d.rel8nIndex: ${d.rel8nIndex}`)
-    let deltaX = unitX * (d.rel8nIndex + 1);
+    let workingRel8nIndex = d.rel8nIndex || 0;
+    let deltaX = unitX * (workingRel8nIndex + 1);
     return origin + deltaX;
   }
-  getForcePos_Valence(d) {
-    let t = this, lc = `filterForce`;
+  getForcePos_Valence(d, x_or_y, initialOffset = 0) {
+    let t = this, lc = `getForcePos_Valence`;
+    if (!t.contextNode) { debugger; }
     let parent = d.isSource ? t.contextNode : d.parentNode.parentNode;
-    let origin = d.isSource ? parent.x : parent.x;
+    let origin = x_or_y.toLowerCase() === "x" ? parent.x : parent.y;
     let rel8nName = d.isSource ? "ib^gib" : d.parentNode.rel8nName;
-    if (!parent.valences) { 
-      parent.valences = [rel8nName]; 
+    
+    let valenceInfo;
+    if (parent.valences) {
+      if (rel8nName in parent.valences) {
+        valenceInfo = parent.valences[rel8nName];
+      } else {
+        valenceInfo = {
+          rel8nName: rel8nName,
+          r: d.r,
+          valence: Object.keys(parent.valences).length + 1,
+          offset: initialOffset + Object.keys(parent.valences).map(key => parent.valences[key]).map(v => 2.2 * v.r).reduce((a,b) => a + b, 0)
+        };
+        parent.valences[rel8nName] = valenceInfo;
+      }
+    } else {
+      valenceInfo = {
+        rel8nName: rel8nName,
+        r: d.r,
+        valence: 0,
+        offset: initialOffset
+      };
+      parent.valences = {};
+      parent.valences[rel8nName] = valenceInfo;
+    }
+
+    return origin + valenceInfo.offset;
+  }
+  getForcePos_ValenceRadial(d, x_or_y, initialOffset = 0) {
+    let t = this, lc = `getForcePos_ValenceRadial`;
+    if (!t.contextNode) {
+      return null;
     }
     
-    let valence = parent.valences.indexOf(rel8nName) + 1;
+    let parent = d.isSource ? t.contextNode : d.parentNode.parentNode;
+    let origin = x_or_y.toLowerCase() === "x" ? parent.x : parent.y;
+    let rel8nName = d.isSource ? "ib^gib" : d.parentNode.rel8nName;
+    
+    if (!parent.ibGibJson) {
+      console.error(`parent.IbGibJson is falsy.`)
+      return null;
+    }
+    
+    let valenceInfo;
+    if (parent.valenceRadials) {
+      if (rel8nName in parent.valenceRadials) {
+        valenceInfo = parent.valenceRadials[rel8nName];
+      } else {
+        valenceInfo = {
+          rel8nName: rel8nName,
+          r: d.r,
+          valence: Object.keys(parent.valenceRadials).length + 1,
+          offset: initialOffset + Object.keys(parent.valenceRadials).map(key => parent.valenceRadials[key]).map(v => 2.2 * v.r).reduce((a,b) => a + b, 0)
+        };
+        parent.valenceRadials[rel8nName] = valenceInfo;
+      }
+    } else {
+      valenceInfo = {
+        rel8nName: rel8nName,
+        r: d.r,
+        valence: 1,
+        offset: initialOffset
+      };
+      parent.valenceRadials = {};
+      parent.valenceRadials[rel8nName] = valenceInfo;
+    }
 
-    let unit = 2.2 * d.r;
-    let delta = unit * valence;
-    return origin + delta;
+    let rel8dIbGibs = ibHelper.getRel8dIbGibs(parent.ibGibJson, rel8nName);
+    let count = rel8dIbGibs.length;
+    let rel8nIndex = t.getRel8nIndex(d) || 0;
+    
+    let theta = 2 * Math.PI / count * rel8nIndex;
+    let delta = 
+      x_or_y.toLowerCase() === "x" ? Math.cos(theta) : Math.sin(theta);
+      
+    let result = origin + (valenceInfo.offset * delta) + (3.2 * delta * valenceInfo.valence * valenceInfo.r);
+    
+    return result;
   }
   // Thanks https://bl.ocks.org/mbostock/b1f0ee970299756bc12d60aedf53c13b
   filterForce(force, filter) {
@@ -417,7 +506,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     try {
       let initialize = force.initialize;
       force.initialize = () => {
-          initialize.call(force, t.graphData.nodes.filter(filter));
+        initialize.call(force, t.graphData.nodes.filter(d => {
+          return filter(d);
+        }));
       };
     } catch (e) {
       console.error(`${lc} error: ${e.message}`)
@@ -551,16 +642,18 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
               let text = "", html = "";
               if (d.render === "comment") {
                 text = ibHelper.getDataText(d.ibGibJson);
-                html = md.render(text);
+                html = text && text.length > 0 ? md.render(text) : "";
               } else if (d.render === "link") {
                 text = ibHelper.getDataText(d.ibGibJson);
                 html = `<a href="${text}" target="_blank">${text}</a>`;
               } else if (d.render === "tag") {
                 text = ibHelper.getTagIconsText(d.ibGibJson);
-                html = md.render(text);
+                html = text && text.length > 0 ? md.render(text) : "";
+                // html = md.render(text);
               } else {
                 text = ibHelper.getDataText(d.ibGibJson);
-                html = md.render(text);
+                html = text && text.length > 0 ? md.render(text) : "";
+                // html = md.render(text);
               }
 
               if (html) {
@@ -965,7 +1058,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
   }
   getRel8nIndex(node) {
-    let t = this;
+    let t = this, lc = `getRel8nIndex`;
     let parent, rel8nName;
     if (node.isSource) {
       parent = t.contextNode;
@@ -979,11 +1072,35 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
     
     if (parent.ibGibJson) {
+      let rel8dIbGibs = ibHelper.getRel8dIbGibs(parent.ibGibJson, rel8nName);
       
+      let index = rel8dIbGibs.indexOf(node.ibGib);
+      if (index >= 0) {
+        return index;
+      } else {
+        // ibGib has been updated, so look in the node's past.
+        if (node.ibGibJson) {
+          for (var i = 0; i < rel8dIbGibs.length; i++) {
+            let rel8dIbGib = rel8dIbGibs[i];
+            if (ibHelper.isInPast(node.ibGibJson, rel8dIbGib)) {
+              index = i;
+              break;
+            }
+          }
+          return index;
+        } else {
+          console.warn(`${lc} node.ibGibJson falsy. loading async...`)
+          // Set ibGibJson for next time this is called. 
+          // In the meantime, it will not be positioned correctly.
+          t.getIbGibJson(node.ibGib, ibGibJson => {
+            node.ibGibJson = ibGibJson; 
+          })
+        }
+      }
+    } else {
+      console.error(`${lc} parent without ibGibJson.`)
+      return null;
     }
-    return parent.ibGibJson ? 
-      ibHelper.getRel8dIbGibs(parent.ibGibJson, rel8nName).indexOf(node.ibGib) :
-      0;
   }
   /**
    * Each rel8n of this.contextNode that is not ib^gib or ib will have a
@@ -1647,9 +1764,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           fadeTimeoutMs = 0;
 
       t.contextNode = t.addVirtualNode(srcId, srcType, t.contextIbGib, /*srcNode*/ null, srcShape, autoZap, fadeTimeoutMs, /*cmd*/ null, /*title*/ null, /*label*/ null, /*startPos*/ {x: t.rootNode.x, y: t.rootNode.y}, /*isAdjunct*/ false);
-      setTimeout(() => {
+      // setTimeout(() => {
         t.pin(t.contextNode);
-      }, 200)
+      // }, 200)
 
       t.syncContextChildren();
     } else {
@@ -2011,7 +2128,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       node.expanding = true;
     }
 
-    // if (node.isSource) { t.pin(node); }
+    if (node.isSource) { t.pin(node); }
 
     if (!node.expandLevel) {
       t.addSpiffyRel8ns(node);
@@ -2092,7 +2209,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         let markPaused = 
           d3PausedRel8ns.includes(rel8nName) || 
           rel8nSrc.isPaused || 
-          rel8nSrc.ibGibJson.ib !== "query_result";
+          rel8nSrc.ibGibJson.ib === "query_result";
         for (var i = 0; i < rel8dIbGibs.length; i++) {
           let rel8dIbGib = rel8dIbGibs[i];
           let ibGibToUse = 
@@ -2856,6 +2973,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     let t = this;
     console.log(`node clicked: ${JSON.stringify(d)}`);
 
+    if (d.type && d.type === "rel8n") { t.pin(d); }
     // t.pin(d);
     // t.freezeNode(d, 1000);
     t.clearSelectedNode();
@@ -2890,7 +3008,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       let durationMs = 150;
       t.removeChildren(d, durationMs);
       if (d.expanding) { delete d.expanding; }
-      t.unpin(d);
+      if (!d.isContext) { t.unpin(d); }
     } else {
       // t.pin(d);
 
