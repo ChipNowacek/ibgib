@@ -13,7 +13,7 @@ export class IbGibIbScapeBackgroundRefresher {
     t.ibScape = ibScape;
     t.queue = [];
     t.cachedRefreshes = {};
-    t.cachedRefreshExpiryMs = cachedRefreshExpiryMs || 30000;
+    t.cachedRefreshExpiryMs = cachedRefreshExpiryMs || 600000;
   }
   destroy() {
     this.stop();
