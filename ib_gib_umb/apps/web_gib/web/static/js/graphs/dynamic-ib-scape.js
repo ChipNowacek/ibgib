@@ -124,7 +124,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     //
     console.log(`${lc} adding source valence1...`)
-    t.addPositionForce(/*id*/ "sourceValence1", 
+    t.addPositionalForce(/*id*/ "sourceValence1", 
                        /*name*/ "sourceValence1", 
                        /*xFunc*/ d => t.getForcePos_ValenceSpiral(d, "x", 0.2 * d.r), 
                        /*xStrength*/ 10, 
@@ -134,7 +134,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     //
     // console.log(`${lc} adding sourceValenceAdjuncts...`)
-    // t.addPositionForce(/*id*/ "sourceValenceAdjuncts", 
+    // t.addPositionalForce(/*id*/ "sourceValenceAdjuncts", 
     //                    /*name*/ "sourceValenceAdjuncts", 
     //                    /*xFunc*/ d => t.getForcePos_ValenceRadial(d, "x", 0.2 * d.r), 
     //                    /*xStrength*/ 10, 
@@ -144,7 +144,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     //
     console.log(`${lc} adding pastLinear...`)
-    t.addPositionForce(/*id*/ "pastLinear", 
+    t.addPositionalForce(/*id*/ "pastLinear", 
                        /*name*/ "past", 
                        /*xFunc*/ d => t.getForcePos_LinearByRel8nIndex(d), 
                        /*xStrength*/ 10, 
@@ -153,7 +153,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
                        /*filter*/ d => d.ibGibJson && d.parentNode && d.parentNode.rel8nName === "past");
 
     //
-    t.addPositionForce(/*id*/ "childValence", 
+    t.addPositionalForce(/*id*/ "childValence", 
                        /*name*/ "childValence", 
                        /*xFunc*/ d => t.getForcePos_ValenceSpiral(d, "x", 2.3 * d.r), 
                        /*xStrength*/ 4, 
@@ -289,12 +289,14 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         // are no ibGibs in the queue.
   }
   initContext() {
-    let t = this;
+    let t = this, lc = `initContext`;
+    console.log(`${lc} starting...`)
 
     t.addContextNode();
 
     window.onpopstate = (event) => {
-      console.warn("pop state triggered");
+      let lc2 = `initContext window.onpopstate`;
+      console.log(`${lc2} starting...`);
       delete t.contextNode.ibGibJson;
       
       let removeSpaces = (ibGib) => {
@@ -307,19 +309,24 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       // Trim /ibgib/ or ibgib/ to get the ib^gib from the pathname
       let leadingTrimLength = window.location.pathname[0] === "/" ? 7 : 6;
       let newContextIbGib = window.location.pathname;
-      if (!newContextIbGib) { debugger; }
+      if (!newContextIbGib) { 
+        console.error(`{lc} `)
+      }
       newContextIbGib = newContextIbGib.replace("%5E", "^");
       newContextIbGib = removeSpaces(newContextIbGib);
       newContextIbGib = newContextIbGib.substring(leadingTrimLength);
 
       t.updateIbGib(t.contextNode, newContextIbGib, /*skipUpdateUrl*/ true,
-        /*callback*/ () => {
-        t.syncContextChildren();
-        t.syncAdjuncts(t.contextNode.tempJuncIbGib, /*callback*/ null);
-      });
+        () => {
+          t.syncContextChildren();
+          t.syncAdjuncts(t.contextNode.tempJuncIbGib, () => {
+            console.log(`${lc2} complete.`);
+          });
+        });
     }
 
     t.refreshContextNode();
+    console.log(`${lc} complete.`)
   }
   initIdentities() {
     let t = this;
@@ -330,7 +337,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       );
   }
   initSimulation() {
-    let t = this;
+    let t = this, lc = `initSimulation`;
+    console.log(`${lc} starting...`)
 
     t.simulation =
         d3.forceSimulation()
@@ -340,14 +348,15 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           .force("charge", t.getForceCharge())
           .force("collide", t.getForceCollide())
           ;
-          
+
     Object.keys(t.currentForces)
       .forEach(forceId => {
-        // debugger;
-        t.applyPositionForce(forceId)
+        t.applyPositionalForce(forceId)
       });
+      
+    console.log(`${lc} complete.`)
   }
-  addPositionForce(id, name, xFunc, xStrength, yFunc, yStrength, filter) {
+  addPositionalForce(id, name, xFunc, xStrength, yFunc, yStrength, filter) {
     let t = this;
     if (id in t.currentForces) {
       console.warn(`force id already exists in currentForces`);
@@ -364,8 +373,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       t.currentForces[id] = info;
     }
   }
-  applyPositionForce(id) {
-    let t = this, lc = `applyPositionForce(${id})`;
+  applyPositionalForce(id) {
+    let t = this, lc = `applyPositionalForce(${id})`;
 
     // console.log(`${lc} applying...`)
 
@@ -389,9 +398,56 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     // console.log(`${lc} complete.`)
   }
-  clearPositionalForces() {
-    let t = this;
+  clearAllPositionalForces() {
+    let t = this, lc = `clearAllPositionalForces`;
+    console.log(`${lc} starting...`)
+    
+    Object.keys(t.currentForces).forEach(id => t.clearPositionalForce(id));
+    
     t.currentForces = {};
+    
+    console.log(`${lc} complete.`)
+    
+    // let info = {
+    //   id: id,
+    //   name: name,
+    //   xFunc: xFunc,
+    //   xStrength: xStrength,
+    //   yFunc: yFunc,
+    //   yStrength: yStrength,
+    //   filter: filter
+    // }
+  }
+  clearPositionalForce(id) {
+    let t = this, lc = `clearPositionalForce(id: ${id})`;
+    console.log(`${lc} starting...`)
+
+    try {
+      if (!(id in t.currentForces)) {
+        console.error(`${lc} id not in current forces.`)
+        return;
+      }
+
+      let { name, xFunc, xStrength, yFunc, yStrength } = t.currentForces[id];
+
+      if (xFunc && xStrength) {
+        let forceX = t.simulation.force(name + "X");
+        t.simulation.force(name + "X", null);
+        forceX = t.simulation.force(name + "X");
+      }
+
+      if (yFunc && yStrength) {
+        let forceY = t.simulation.force(name + "Y");
+        t.simulation.force(name + "Y", null);
+        forceY = t.simulation.force(name + "Y");
+      }
+      
+      delete t.currentForces[id];
+    } catch (e) {
+      console.error(`${lc} e.message: ${e.message}`)
+    } finally {
+      console.log(`${lc} complete.`)
+    }
   }
   getForcePos_LinearByRel8nIndex(d) {
     let t = this, lc = `getForcePos_LinearByRel8nIndex`;
@@ -1122,7 +1178,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       rel8nName = "ib^gib";
     } else {
       if (!node.parentNode || !node.parentNode.parentNode || !node.parentNode.rel8nName) {
-        debugger;
+        console.error(`${lc} parent node issues.`)
       }
       parent = node.parentNode.parentNode;
       rel8nName = node.parentNode.rel8nName;
@@ -1537,10 +1593,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     try {
       super.add(nodesToAdd, linksToAdd, updateParentOrChild);
     } catch (e) {
-      debugger;
       console.error(e.message)
-    } finally {
-      
     }
   }
   remove(dToRemove, updateParentOrChild) {
@@ -2046,7 +2099,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     if (callback) { callback(); }
   }
   zapVirtualNode_IbGib(node, callback) {
-    let t = this;
+    let t = this, lc = `zapVirtualNode_IbGib`;
 
     t.clearFadeTimeout(node);
 
@@ -2085,7 +2138,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           // this will let it be 
           if (!node.isSource && !node.isContext) {
             if (!node.parentNode) {
-              debugger;
+              console.error(`{lc} node.parentNode falsy`)
             }
             if (node.parentNode.isGreen && !node.isPaused) {
               node.isGreen = true;
@@ -3014,11 +3067,13 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         t.parent.simulation.alphaTarget(0);
       }
     }
-    
   }
   handleSimulationEnd() {
     let t = this;
-    t.clearPositionalForces();
+    if (t.currentForces && Object.keys(t.currentForces).length > 0) {
+      t.clearAllPositionalForces();
+      t.simulation.restart();
+    }
     super.handleSimulationEnd();
   }
   handleBackgroundClicked() {
@@ -3318,8 +3373,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     } else if (msgName === "unident_email") {
       reloadApp();
     } else if (msgName === "oy") {
-      // debugger;
       // notify user of new oy
+      console.warn(`new oy. no handler for it here...`)
     } else {
       console.error(`Unknown identity msg. identityIbGib: ${identityIbGib}. msg: ${JSON.stringify(msg)}`)
     }
