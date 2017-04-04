@@ -130,17 +130,17 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
                        /*xStrength*/ 10, 
                        /*yFunc*/ d => t.getForcePos_ValenceRadial(d, "y", 0.2 * d.r), 
                        /*yStrength*/ 10, 
-                       /*filter*/ d => d.isSource && !d.isRoot && !d.isAdjunct);
+                       /*filter*/ d => d.isSource && !d.isRoot && !d.isContext);
 
     //
-    console.log(`${lc} adding sourceValenceAdjuncts...`)
-    t.addPositionForce(/*id*/ "sourceValenceAdjuncts", 
-                       /*name*/ "sourceValenceAdjuncts", 
-                       /*xFunc*/ d => t.getForcePos_ValenceRadial(d, "x", 0.2 * d.r), 
-                       /*xStrength*/ 10, 
-                       /*yFunc*/ d => t.getForcePos_ValenceRadial(d, "y", 0.2 * d.r), 
-                       /*yStrength*/ 10, 
-                       /*filter*/ d => d.isSource && !d.isRoot && d.isAdjunct);
+    // console.log(`${lc} adding sourceValenceAdjuncts...`)
+    // t.addPositionForce(/*id*/ "sourceValenceAdjuncts", 
+    //                    /*name*/ "sourceValenceAdjuncts", 
+    //                    /*xFunc*/ d => t.getForcePos_ValenceRadial(d, "x", 0.2 * d.r), 
+    //                    /*xStrength*/ 10, 
+    //                    /*yFunc*/ d => t.getForcePos_ValenceRadial(d, "y", 0.2 * d.r), 
+    //                    /*yStrength*/ 10, 
+    //                    /*filter*/ d => d.isSource && !d.isRoot && d.isAdjunct && !d.isContext);
 
     //
     console.log(`${lc} adding pastLinear...`)
@@ -159,7 +159,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
                        /*xStrength*/ 4, 
                        /*yFunc*/ d => t.getForcePos_ValenceRadial(d, "y", 2.3 * d.r), 
                        /*yStrength*/ 4, 
-                       /*filter*/ d => d.ibGibJson && d.parentNode && d.parentNode.rel8nName !== "past" && !d.isAdjunct);
+                       /*filter*/ d => d.ibGibJson && d.parentNode && d.parentNode.rel8nName !== "past");
+
                       //  /*filter*/ d => !d.isSource && d.ibGibJson && (ibHelper.isComment(d.ibGibJson) || ibHelper.isLink(d.ibGibJson) || ibHelper.isPic(d.ibGibJson)));
 
     console.log(`${lc} complete.`)
@@ -443,8 +444,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     let rel8nName = d.isSource ? "ib^gib" : d.parentNode.rel8nName;
     
     if (!parentIbGibNode.ibGibJson) {
-      console.error(`parent.IbGibJson is falsy.`)
-      return null;
+      // console.error(`parent.IbGibJson is falsy.`)
+      // This happens when adding/removing ibGib dynamically (e.g. commenting),
+      // so it's not really an error.
+      return x_or_y.toLowerCase() === "x" ? d.x : d.y;
     }
     
     let valenceInfo;
@@ -472,24 +475,27 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
 
     let rel8dIbGibs = ibHelper.getRel8dIbGibs(parentIbGibNode.ibGibJson, rel8nName);
-    let children = t.getChildren(parentRel8nNode);
-    let count = siblings.length + 1;
+    let children = 
+      parentRel8nNode.isContext ? 
+      t.graphData.nodes.filter(n => n.isSource && !n.isRoot && !n.isContext) :
+      t.getChildren(parentRel8nNode);
+    let count = children.length;
     let rel8nIndex;
     if (d.isAdjunct) {
-      siblingAdjuncts = 
+      // The adjunct index is per its order among other adjuncts.
+      rel8nIndex = count + children.filter(c => c.isAdjunct).indexOf(d) - 1;
     } else {
+      // The rel8nIndex in the direct rel8ns is its order in those rel8ns.
       rel8nIndex = t.getRel8nIndex(d) || 0;
     }
-     = d.isAdjunct ? t.getRel8nIndex(d) || 0;
-    
+
+    // converting polar coordinates to rectilinear here
     let theta = (2 * Math.PI / count * rel8nIndex) - Math.PI;
     let delta = 
       x_or_y.toLowerCase() === "x" ? Math.cos(theta) : Math.sin(theta);
-    
-      
-    let result = origin + (valenceInfo.offset * delta) + (3.2 * delta * valenceInfo.valence * valenceInfo.r);
-    
-    return result;
+    return origin + 
+          (valenceInfo.offset * delta) + 
+          (3.2 * delta * valenceInfo.valence * valenceInfo.r);
   }
   // Thanks https://bl.ocks.org/mbostock/b1f0ee970299756bc12d60aedf53c13b
   filterForce(force, filter) {
@@ -2921,16 +2927,14 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   handleDragEnded(d) {
     let t = this;
     super.handleDragEnded(d);
-    if (d.isRoot) {
-      t.fadeOutNode(d, t.config.other.rootFadeTimeoutMs);
-    }
+    // if (d.isRoot) {
+    //   t.fadeOutNode(d, t.config.other.rootFadeTimeoutMs);
+    // }
     if (d.isPinned) {
       d.fx = d.x;
       d.fy = d.y;
     }
-    
-    
-    
+
     if (!d3.event.active) {
       t.simulation.alphaTarget(0);
       t.children.filter(child => child.shareDataReference).forEach(child => child.simulation.alphaTarget(0));
@@ -2938,7 +2942,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         t.parent.simulation.alphaTarget(0);
       }
     }
-
   }
   handleBackgroundClicked() {
     let t = this;
