@@ -732,6 +732,19 @@ export class Mut8CommentDetailsCommand extends FormDetailsCommandBase {
    */
   getFormId() { return `ib-comment-details-form`; }
 
+  disableForm() {
+    super.disableForm();
+    $("#comment_form_data_text")
+      .prop('disabled', true)
+      .prop('readonly', true);
+  }
+  enableForm() {
+    super.enableForm();
+    $("#comment_form_data_text")
+      .prop('disabled', false)
+      .prop('readonly', false);
+  }
+
   getDetailsViewId() { return `ib-comment-details`; }
 
   close() {
