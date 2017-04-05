@@ -60,7 +60,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         velocityDecay: 0.85,
         chargeStrength: -1000,
         chargeDistanceMin: 10,
-        chargeDistanceMax: 300,
+        chargeDistanceMax: 10000,
         linkDistance: 65,
         linkDistance_Src_Rel8n: 25,
       },
@@ -117,51 +117,108 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.initContext();
     t.initIdentities();
   }
+  getForcePos(d, x_or_y) {
+    let t = this, lc = `getForcePos`;
+    // console.log(`${lc} starting...`)
+    try {
+      const scale = d.isSource ? 0.2 : 0.4;
+      if (!d.layoutRadius) { d.layoutRadius = scale * d.r; }
+      
+      if (d.layoutType) {
+        switch (d.layoutType) {
+          case "spiral":
+            let scale = d.isSource ? 0.2 : 0.4;
+            return t.getForcePos_ValenceSpiral(d, x_or_y, /*initialOffset*/ scale * d.r)
+            break;
+          case "linear":
+            return t.getForcePos_LinearByRel8nIndex(d);
+            break;
+          case "none":
+            return null;
+          default:
+            console.warn(`${lc} unknown layoutType: ${d.layoutType}`)
+            return null
+        }
+      } else {
+        let scale = d.isSource ? 0.2 : 2.4;
+        return t.getForcePos_ValenceSpiral(d, x_or_y, scale * d.r)
+      }
+    } catch (e) {
+      console.error(`${lc} e.message: ${e.message}`)
+    } finally {
+      // console.log(`${lc} complete.`)
+    }
+  }
+  getForcePosStrength(d, x_or_y) {
+    let t = this, lc = `getForcePosStrength`;
+    if (d.layoutType) {
+      switch (d.layoutType) {
+        case "spiral":
+          return d.isSource ? 10 : 1;
+          break;
+        case "linear":
+          return 10;
+        case "none":
+          return 0;
+        default:
+          console.warn(`${lc} unknown layoutType: ${d.layoutType}`)
+          return 0;
+      }
+    } else {
+      return 10;
+    }
+  }
   initPositionalForces() {
     let t = this, lc = `initPositionalForces`;
 
     console.log(`${lc} starting...`)
 
     //
-    console.log(`${lc} adding source valence1...`)
-    t.addPositionalForce(/*id*/ "sourceValence1", 
-                       /*name*/ "sourceValence1", 
-                       /*xFunc*/ d => t.getForcePos_ValenceSpiral(d, "x", 0.2 * d.r), 
-                       /*xStrength*/ 10, 
-                       /*yFunc*/ d => t.getForcePos_ValenceSpiral(d, "y", 0.2 * d.r), 
-                       /*yStrength*/ 10, 
-                       /*filter*/ d => d.isSource && !d.isRoot && !d.isContext);
+    console.log(`${lc} adding dynamic getForcePos...`)
+    t.addPositionalForce(
+      /*id*/        "dynamicForcePos", 
+      /*name*/      "dynamicForcePos", 
+      /*xFunc*/     d => t.getForcePos(d, "x"), 
+      /*xStrength*/ d => t.getForcePosStrength(d, "x"), 
+      /*yFunc*/     d => t.getForcePos(d, "y"), 
+      /*yStrength*/ d => t.getForcePosStrength(d, "y"), 
+      /*filter*/    d => d.type === "ibGib" &&
+                         !d.isContext && 
+                         !d.isMeta && 
+                         !d.virtualId);
 
-    //
-    // console.log(`${lc} adding sourceValenceAdjuncts...`)
-    // t.addPositionalForce(/*id*/ "sourceValenceAdjuncts", 
-    //                    /*name*/ "sourceValenceAdjuncts", 
-    //                    /*xFunc*/ d => t.getForcePos_ValenceRadial(d, "x", 0.2 * d.r), 
+    // //
+    // console.log(`${lc} adding non-source ...`)
+    // t.addPositionalForce(/*id*/ "sourceValence1", 
+    //                    /*name*/ "sourceValence1", 
+    //                    /*xFunc*/ d => t.getForcePos_ValenceSpiral(d, "x", 0.2 * d.r), 
     //                    /*xStrength*/ 10, 
-    //                    /*yFunc*/ d => t.getForcePos_ValenceRadial(d, "y", 0.2 * d.r), 
+    //                    /*yFunc*/ d => t.getForcePos_ValenceSpiral(d, "y", 0.2 * d.r), 
     //                    /*yStrength*/ 10, 
-    //                    /*filter*/ d => d.isSource && !d.isRoot && d.isAdjunct && !d.isContext);
+    //                    /*filter*/ d => d.isSource && !d.isRoot && !d.isContext);
+
+
+
+    // //
+    // console.log(`${lc} adding pastLinear...`)
+    // t.addPositionalForce(/*id*/ "pastLinear", 
+    //                    /*name*/ "past", 
+    //                    /*xFunc*/ d => t.getForcePos_LinearByRel8nIndex(d), 
+    //                    /*xStrength*/ 10, 
+    //                    /*yFunc*/ d => t.getForcePos_Valence(d, "y"), 
+    //                    /*yStrength*/ 5, 
+    //                    /*filter*/ d => d.ibGibJson && d.parentNode && d.parentNode.rel8nName === "past");
 
     //
-    console.log(`${lc} adding pastLinear...`)
-    t.addPositionalForce(/*id*/ "pastLinear", 
-                       /*name*/ "past", 
-                       /*xFunc*/ d => t.getForcePos_LinearByRel8nIndex(d), 
-                       /*xStrength*/ 10, 
-                       /*yFunc*/ d => t.getForcePos_Valence(d, "y"), 
-                       /*yStrength*/ 5, 
-                       /*filter*/ d => d.ibGibJson && d.parentNode && d.parentNode.rel8nName === "past");
-
-    //
-    t.addPositionalForce(/*id*/ "childValence", 
-                       /*name*/ "childValence", 
-                       /*xFunc*/ d => t.getForcePos_ValenceSpiral(d, "x", 2.3 * d.r), 
-                       /*xStrength*/ 4, 
-                       /*yFunc*/ d => t.getForcePos_ValenceSpiral(d, "y", 2.3 * d.r), 
-                       /*yStrength*/ 4, 
-                       /*filter*/ d => d.ibGibJson && d.parentNode && d.parentNode.rel8nName !== "past");
-
-                      //  /*filter*/ d => !d.isSource && d.ibGibJson && (ibHelper.isComment(d.ibGibJson) || ibHelper.isLink(d.ibGibJson) || ibHelper.isPic(d.ibGibJson)));
+    // t.addPositionalForce(/*id*/ "childValence", 
+    //                    /*name*/ "childValence", 
+    //                    /*xFunc*/ d => t.getForcePos_ValenceSpiral(d, "x", 2.3 * d.r), 
+    //                    /*xStrength*/ 4, 
+    //                    /*yFunc*/ d => t.getForcePos_ValenceSpiral(d, "y", 2.3 * d.r), 
+    //                    /*yStrength*/ 4, 
+    //                    /*filter*/ d => d.ibGibJson && d.parentNode && d.parentNode.rel8nName !== "past");
+    // 
+    //                   //  /*filter*/ d => !d.isSource && d.ibGibJson && (ibHelper.isComment(d.ibGibJson) || ibHelper.isLink(d.ibGibJson) || ibHelper.isPic(d.ibGibJson)));
 
     console.log(`${lc} complete.`)
   }
@@ -340,6 +397,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     let t = this, lc = `initSimulation`;
     console.log(`${lc} starting...`)
 
+
     t.simulation =
         d3.forceSimulation()
           .velocityDecay(t.getVelocityDecay())
@@ -451,7 +509,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   }
   getForcePos_LinearByRel8nIndex(d) {
     let t = this, lc = `getForcePos_LinearByRel8nIndex`;
-    if (!t.contextNode || d.isAdjunct) { return null; }
+    if (!t.contextNode || (!d.isSource && !d.parentNode)) { return null; }
+
     let origin = d.isSource ? t.contextNode.x : d.parentNode.x;
     let unitX = 2.2 * d.r;
     if (!d.rel8nIndex) { d.rel8nIndex = t.getRel8nIndex(d); }
@@ -462,7 +521,8 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   }
   getForcePos_Valence(d, x_or_y, initialOffset = 0) {
     let t = this, lc = `getForcePos_Valence`;
-    if (!t.contextNode || d.isAdjunct) { return null; }
+    if (!t.contextNode || (!d.isSource && !d.parentNode)) { return null; }
+
     let parentRel8nNode = d.isSource ? t.contextNode : d.parentNode;
     let parentIbGibNode = d.isSource ? t.contextNode : d.parentNode.parentNode;
     let origin = x_or_y.toLowerCase() === "x" ? parentRel8nNode.x : parentRel8nNode.y;
@@ -496,8 +556,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   }
   getForcePos_ValenceRadial(d, x_or_y, initialOffset = 0) {
     let t = this, lc = `getForcePos_ValenceRadial`;
-    if (!t.contextNode) { return null; }
+    if (!t.contextNode || (!d.isSource && !d.parentNode)) { return null; }
     
+    if (!d.isSource && !d.parentNode) { debugger; }
+
     let parentRel8nNode = d.isSource ? t.contextNode : d.parentNode;
     let parentIbGibNode = d.isSource ? t.contextNode : d.parentNode.parentNode;
     let origin = x_or_y.toLowerCase() === "x" ? parentRel8nNode.x : parentRel8nNode.y;
@@ -560,8 +622,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   }
   getForcePos_ValenceSpiral(d, x_or_y, initialOffset = 0) {
     let t = this, lc = `getForcePos_ValenceRadial`;
-    if (!t.contextNode) { return null; }
-    
+    if (!t.contextNode || (!d.isSource && !d.parentNode)) { return null; }
+
+    // Going to do calculations based on parent, siblings, source, etc.
     let parentRel8nNode = d.isSource ? t.contextNode : d.parentNode;
     let parentIbGibNode = d.isSource ? t.contextNode : d.parentNode.parentNode;
     let origin = x_or_y.toLowerCase() === "x" ? parentRel8nNode.x : parentRel8nNode.y;
@@ -574,28 +637,16 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       return x_or_y.toLowerCase() === "x" ? d.x : d.y;
     }
     
-    let valenceInfo;
-    if (parentRel8nNode.valenceRadials) {
-      if (rel8nName in parentRel8nNode.valenceRadials) {
-        valenceInfo = parentRel8nNode.valenceRadials[rel8nName];
-      } else {
-        valenceInfo = {
-          rel8nName: rel8nName,
-          r: d.r,
-          valence: Object.keys(parentRel8nNode.valenceRadials).length + 1,
-          offset: initialOffset + Object.keys(parentRel8nNode.valenceRadials).map(key => parentRel8nNode.valenceRadials[key]).map(v => 2.2 * v.r).reduce((a,b) => a + b, 0)
-        };
-        parentRel8nNode.valenceRadials[rel8nName] = valenceInfo;
-      }
+    let spiralInfo;
+    if (parentRel8nNode.spiralInfo) {
+      spiralInfo = parentRel8nNode.spiralInfo;
     } else {
-      valenceInfo = {
+      spiralInfo = {
         rel8nName: rel8nName,
         r: d.r,
-        valence: 1,
         offset: initialOffset
       };
-      parentRel8nNode.valenceRadials = {};
-      parentRel8nNode.valenceRadials[rel8nName] = valenceInfo;
+      parentRel8nNode.spiralInfo = spiralInfo;
     }
 
     let rel8dIbGibs = ibHelper.getRel8dIbGibs(parentIbGibNode.ibGibJson, rel8nName);
@@ -616,14 +667,34 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
     // converting polar coordinates to rectilinear here
     let theta = (2 * Math.PI / count * rel8nIndex) - Math.PI;
-    let spiral = (count + rel8nIndex)/count;
+    if (d.isSource) {
+      theta += Math.PI / 6;
+    }
+    // Only spiral if we're over arbitrary threshold, otherwise just do a circle
+    const spiralThreshold = 6;
+    let spiral = count > spiralThreshold ? (count + rel8nIndex)/count : 1.0;
+    
+    // if the parent is the context, then we want an adjustment depending on if
+    // it is expanded or not.
+    // if (d.isSource && t.contextNode.expandLevel) {
+    //   debugger;
+    // }
+    let contextAdjust = d.isSource && t.contextNode.expandLevel ? 5.0 : 1.0;
+    let hasChildrenAdjust = 
+      !d.isSource && t.getAllChildrenRecursively(d).some(c => c.type === "ibGib") ? 6.0 : 1.0;
+    
+    // total hack here, since I'm basically calculating this twice with the offset also.
+    let isNotSourceAdjust = 
+      !d.isSource ? 0.2 : 1.0;
+      
     let delta = 
       x_or_y.toLowerCase() === "x" ? 
         spiral * Math.cos(theta) : 
         spiral * Math.sin(theta);
+        
     return origin + 
-          (valenceInfo.offset * delta) + 
-          (3.2 * delta * valenceInfo.valence * valenceInfo.r);
+          (spiralInfo.offset * delta) + 
+          (3.2 * delta * spiralInfo.r * contextAdjust * hasChildrenAdjust * isNotSourceAdjust);
   }
   // Thanks https://bl.ocks.org/mbostock/b1f0ee970299756bc12d60aedf53c13b
   filterForce(force, filter) {
@@ -1443,7 +1514,11 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     node.rel8nSrc = dSrc;
     node.parentNode = dSrc;
     
-    if (dSrc.isMeta) { node.isMeta = true; }
+    if (dSrc.isMeta) { 
+      node.isMeta = true; 
+    } else {
+      node.sourceNode = dSrc.isSource ? dSrc : dSrc.sourceNode;
+    }
     // if (dSrc.isExpandable) { node.isExpandable = true; }
 
     return node;
@@ -1635,6 +1710,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         rootType = "ibGib",
         rootIbGib = "ib^gib",
         rootShape = "circle";
+    t.rootId = rootId;
     let autoZap,
         fadeTimeoutMs,
         rootPulseMs;
@@ -2331,6 +2407,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           rel8dIbGibNode.rel8nIndex = i;
           rel8dIbGibNodes.push(rel8dIbGibNode);
           rel8dIbGibNode.parentNode = rel8nNode;
+          rel8dIbGibNode.sourceNode = rel8nNode.sourceNode;
           t.zap(rel8dIbGibNode, /*callback*/ null); // just spin it off
         }
 
@@ -2754,7 +2831,10 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
   }
   getForceChargeStrength(d) {
-    return d3.forceManyBody();
+    // return d3.forceManyBody();
+    return d.isContext ? 
+      5 * this.config.simulation.chargeStrength :
+      this.config.simulation.chargeStrength;
     // return super.getForceChargeStrength(d);
     // if (d.isSource || (d.type && d.type === "rel8n")) {
     //   return this.config.simulation.chargeStrength;
@@ -3068,14 +3148,14 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       }
     }
   }
-  handleSimulationEnd() {
-    let t = this;
-    if (t.currentForces && Object.keys(t.currentForces).length > 0) {
-      t.clearAllPositionalForces();
-      t.simulation.restart();
-    }
-    super.handleSimulationEnd();
-  }
+  // handleSimulationEnd() {
+  //   let t = this;
+  //   if (t.currentForces && Object.keys(t.currentForces).length > 0) {
+  //     t.clearAllPositionalForces();
+  //     t.simulation.restart();
+  //   }
+  //   super.handleSimulationEnd();
+  // }
   handleBackgroundClicked() {
     let t = this;
     if (t.selectedNode) {
@@ -3134,8 +3214,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       t.removeChildren(d, durationMs);
       if (d.expanding) { delete d.expanding; }
       if (!d.isContext) { t.unpin(d); }
+      d.expandLevel = 0;
     } else {
-      // t.pin(d);
+      t.pin(d);
 
       d.fullyExpanding = true;
       t._expandNodeFully(d, ["pic", "comment", "link"], () => {

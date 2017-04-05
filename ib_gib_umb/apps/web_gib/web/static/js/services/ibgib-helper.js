@@ -279,13 +279,21 @@ export function verifyIbGibJson(ibGibJson) {
     let ibGib = getFull_ibGib(ibGibJson);
     // console.warn(`${lc} ${ibGib}`)
     if (gib === "gib") {
-      console.error(`${lc} Auto-verifying special gib case. Need to address this yo! ibGibJson: ${JSON.stringify(ibGibJson)}`);
-      return true;
+      console.warn(`${lc} Auto-verifying special gib case. Need to address this yo! ibGibJson: ${JSON.stringify(ibGibJson)}`);
+      switch (ibGib) {
+        case "ib^gib":
+          let allHash = hashIbGibFields(ib, data, rel8ns);
+          return allHash === "CCB8153A37ECC8312E7687D954D691526E6A9058E8EC0EA73728578831AF915A";
+        default:
+          console.warn(`${lc} Special gib case not found: ${ibGib}`);
+          return true;
+      }
     } else {
-      let ibHash = sha256(salt + ib).toUpperCase();
-      let rel8nsHash = sha256(salt + poisonify(rel8ns)).toUpperCase();
-      let dataHash = sha256(salt + poisonify(data)).toUpperCase();
-      let allHash = sha256(salt + ibHash + rel8nsHash + dataHash).toUpperCase();
+      let allHash = hashIbGibFields(ib, data, rel8ns);
+      // let ibHash = sha256(salt + ib).toUpperCase();
+      // let rel8nsHash = sha256(salt + poisonify(rel8ns)).toUpperCase();
+      // let dataHash = sha256(salt + poisonify(data)).toUpperCase();
+      // let allHash = sha256(salt + ibHash + rel8nsHash + dataHash).toUpperCase();
 
       if (gib.startsWith("ibGib_") && gib.endsWith("_ibGib")) {
         // gib is stamped, e.g. "ibGib_abc123_ibGib". Slightly lame, yes...
@@ -305,6 +313,14 @@ export function verifyIbGibJson(ibGibJson) {
     console.error(`${lc} Invalid ibGibJson: ${JSON.stringify(ibGibJson)}`)
     return null;
   }
+}
+
+function hashIbGibFields(ib, data, rel8ns) {
+  let ibHash = sha256(salt + ib).toUpperCase();
+  let rel8nsHash = sha256(salt + poisonify(rel8ns)).toUpperCase();
+  let dataHash = sha256(salt + poisonify(data)).toUpperCase();
+  let allHash = sha256(salt + ibHash + rel8nsHash + dataHash).toUpperCase();
+  return allHash;
 }
 
 /** Poison encodes json object with escaping double-quotes. */
