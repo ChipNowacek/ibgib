@@ -30,7 +30,7 @@ let d3LinkDistances = {
 }
 
 let d3Scales = {
-  "context": 5,
+  "context": 6,
   "root": 3,
   "cmd": 1.5,
   "virtual": 1,

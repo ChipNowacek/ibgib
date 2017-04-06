@@ -1,12 +1,14 @@
 defmodule WebGib.IbGibView do
   use WebGib.Web, :view
 
-  require WebGib.Web.Components.IbScape
+  import WebGib.Web.Components.IbScape
 
   template :show do
     div [class: "ib-height-100"] do
       div [class: "ib-info-border ib-height-100"] do
-        WebGib.Web.Components.IbScape.ib_scape([conn: @conn, canvas_div_name: "ib-div-meta-query", class: "ib-height-100"])
+        ib_scape([conn: @conn, 
+                  canvas_div_name: "ib-div-ibscape", 
+                  class: "ib-height-100"])
         span [
           id: "ibgib-data",
           "ibgib": "#{@ib_gib}",

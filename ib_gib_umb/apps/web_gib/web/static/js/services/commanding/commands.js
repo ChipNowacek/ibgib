@@ -179,6 +179,15 @@ export class FormDetailsCommandBase extends DetailsCommandBase {
   /** By default, this looks for id ib-cmdName-details-form. */
   getFormId() { return `ib-${this.cmdName}-details-form`; }
 
+  enableForm() {
+    let t = this;
+    t.$submitBtn.prop('disabled', false);
+  }
+  disableForm() {
+    let t = this;
+    t.$submitBtn.prop('disabled', true);
+  }
+  
   /**
    * By default, this sets this command's details form to NOT submit when
    * submit input is pressed. Rather, it executes the `submitFunc` function.
@@ -191,6 +200,9 @@ export class FormDetailsCommandBase extends DetailsCommandBase {
     let t = this;
 
     t.$form = $("#" + t.getFormId());
+    t.$submitBtn = t.$form.find(':submit');
+    t.enableForm();
+
     t.$form.submit((event) => {
       // Does not submit via POST
       event.preventDefault();
@@ -223,6 +235,7 @@ export class FormDetailsCommandBase extends DetailsCommandBase {
     let form = document.getElementById(t.getFormId());
     if (form.checkValidity()) {
       console.log("form is valid");
+      t.disableForm();
       t.submitted = true;
       t.addVirtualNode(() => {
         t.ibScape.setBusy(t.virtualNode);
@@ -617,6 +630,19 @@ export class CommentDetailsCommand extends FormDetailsCommandBase {
     super.close();
   }
   
+  disableForm() {
+    super.disableForm();
+    $("#comment_form_data_text")
+      .prop('disabled', true)
+      .prop('readonly', true);
+  }
+  enableForm() {
+    super.enableForm();
+    $("#comment_form_data_text")
+      .prop('disabled', false)
+      .prop('readonly', false);
+  }
+
   /** Currently just trims whitespace of comment. */
   sanitizeFormFields() {
     let commentText = $("#comment_form_data_text").val();
@@ -705,6 +731,19 @@ export class Mut8CommentDetailsCommand extends FormDetailsCommandBase {
    * Overriding this because we will reuse the comment details form.
    */
   getFormId() { return `ib-comment-details-form`; }
+
+  disableForm() {
+    super.disableForm();
+    $("#comment_form_data_text")
+      .prop('disabled', true)
+      .prop('readonly', true);
+  }
+  enableForm() {
+    super.enableForm();
+    $("#comment_form_data_text")
+      .prop('disabled', false)
+      .prop('readonly', false);
+  }
 
   getDetailsViewId() { return `ib-comment-details`; }
 
@@ -1623,7 +1662,6 @@ export class TrashCommand extends CommandBase {
       t.parent = t.d.parentNode.parentNode;
       t.parentRel8nName = t.d.parentNode.rel8nName;
       if (!t.parent || t.parentRel8n) {
-        debugger;
         let emsg = `${lc} no parent/parentRel8n?`;
         console.error(emsg);
         alert(emsg)
