@@ -58,9 +58,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       },
       simulation: {
         velocityDecay: 0.85,
-        chargeStrength: -1000,
+        chargeStrength: -500,
         chargeDistanceMin: 10,
-        chargeDistanceMax: 10000,
+        chargeDistanceMax: 5000,
         linkDistance: 65,
         linkDistance_Src_Rel8n: 25,
       },
@@ -2485,9 +2485,15 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   }
   getForceChargeStrength(d) {
     // return d3.forceManyBody();
-    return d.isContext ? 
-      5 * this.config.simulation.chargeStrength :
-      this.config.simulation.chargeStrength;
+    if (d.isContext) {
+      return 5 * this.config.simulation.chargeStrength;
+    } else if (d.type === "ibGib") {
+      return this.config.simulation.chargeStrength;
+    } else if (d.type === "rel8n") {
+      return 0;
+    } else {
+      return this.config.simulation.chargeStrength;
+    }
     // return super.getForceChargeStrength(d);
     // if (d.isSource || (d.type && d.type === "rel8n")) {
     //   return this.config.simulation.chargeStrength;
@@ -2726,13 +2732,42 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     }
 
     // converting polar coordinates to rectilinear here
-    let theta = (2 * Math.PI / count * rel8nIndex) - Math.PI;
-    if (d.isSource) {
-      theta += Math.PI / 6;
+    
+    // spiral has at most one revolution (doesn't circle around itself)
+    // let theta = (2 * Math.PI / count * rel8nIndex) - Math.PI;  
+    let theta = (2 * Math.PI / count * rel8nIndex) - Math.PI;  
+    
+    // spiral has multiple revolutions
+    // let theta = (2 * Math.PI / (3*d.r / count) * rel8nIndex) - Math.PI;
+    
+    // shift theta slightly if its a source, to stagger when children expand.
+    if (d.isSource && t.contextNode.expandLevel) {
+      theta += Math.PI / 16;
     }
-    // Only spiral if we're over arbitrary threshold, otherwise just do a circle
-    const spiralThreshold = 6;
-    let spiral = count > spiralThreshold ? (count + rel8nIndex)/count : 1.0;
+    
+    // Only spiral and adjust radius if we're over arbitrary threshold,
+    // otherwise just do a circle with constant radius.
+    const spiralThreshold = 5;
+    let spiral;
+    let countAdjust_Radius = 1.0;
+    if (count > spiralThreshold) {
+      spiral = 1.4 * (count + rel8nIndex)/count;
+      // If they're source nodes, we need to space them out a little more.
+      if (d.isSource) {
+        spiral *= Math.log10((count - 1) ^ 0.5) + 0.5;
+      }
+      
+      if (d.isSource) {
+        countAdjust_Radius = Math.log10(((count + rel8nIndex - 0.2)/count) + 0.2) + 0.5;
+      } else {
+        // This takes into account the count of total children. The higher the
+        // count, the larger the radius should be.
+        // countAdjust_Radius = Math.log10(((count + rel8nIndex - 0.2)/count) + 0.2) + 0.2;
+        countAdjust_Radius = Math.log10(count ^ 0.5) + 0.4;
+      }
+    } else {
+      spiral = 1.0;
+    }
     
     // if the parent is the context, then we want an adjustment depending on if
     // it is expanded or not.
@@ -2740,14 +2775,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     let hasChildrenAdjust = 
       !d.isSource && t.getAllChildrenRecursively(d).some(c => c.type === "ibGib") ? Math.log10(count ^ 0.5) + 2 : 1.0;
     
-    let countAdjust;
-    if (d.isSource) {
-      countAdjust = 0.7;
-    } else {
-      // This takes into account the count of total children. The higher the
-      // count, the larger the radius should be.
-      countAdjust = Math.log10(count ^ 0.5) + 0.2;
-    }
     
     let delta = 
       x_or_y.toLowerCase() === "x" ? 
@@ -2756,7 +2783,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         
     return origin + 
           (spiralInfo.offset * delta) + 
-          (3.2 * delta * spiralInfo.r * contextAdjust * hasChildrenAdjust * countAdjust);
+          (3.2 * delta * spiralInfo.r * contextAdjust * hasChildrenAdjust * countAdjust_Radius);
   }
   // Thanks https://bl.ocks.org/mbostock/b1f0ee970299756bc12d60aedf53c13b
   filterForce(force, filter) {
@@ -3053,6 +3080,37 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
 
   // handle functions ------------------------------------
 
+  
+  handleTicked() {
+    let t = this;
+    const maxLinkDistance = 300;
+
+    t.graphData.nodes
+      .filter(n => n.type === "rel8n" && !n.isPinned && !n.isMeta && n.parentNode && n.parentNode.isContext)
+      .filter(n => {
+        let result = false;
+        try {
+          let distance = Math.sqrt(Math.pow(n.x - n.parentNode.x, 2) + Math.pow(n.y - n.parentNode.y, 2));
+          if (distance > maxLinkDistance) {
+            console.log(`distance: ${distance}`)
+          }
+          result = n.parentNode && distance > maxLinkDistance;
+        } catch (e) {
+          console.error(`e.message: ${e.message}`)
+        } finally {
+          return result;
+        }
+      })
+      .forEach(n => {
+        t.pin(n);
+        // console.log(`n too long: ${n.id}`)
+        // n.fx = n.x;
+        // n.fy = n.y;
+        // n.isPinned = true;
+      });
+    
+    super.handleTicked();
+  }
   handleDragged(d) {
     super.handleDragged(d);
     let t = this;
