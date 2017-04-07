@@ -40,7 +40,7 @@ end
 # will be used by default
 
 release :ib_gib_umb do
-  set version: "0.3.1"
+  set version: "0.3.2"
   set applications: [
     ib_gib: :permanent,
     random_gib: :permanent,
