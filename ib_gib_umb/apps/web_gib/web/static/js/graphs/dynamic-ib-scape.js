@@ -22,6 +22,7 @@ import * as ibAuthz from '../services/ibgib-authz';
 import { CommandManager } from '../services/commanding/command-manager';
 import * as commands from '../services/commanding/commands';
 import { IbGibIbScapeBackgroundRefresher } from '../services/ibgib-ib-scape-background-refresher';
+import { IbGibSyncAdjunctsQueue } from '../services/ibgib-sync-adjuncts-queue';
 
 /**
  * This is the ibGib d3 graph that contains all the stuff for our IbGib
@@ -43,7 +44,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.isPrimaryIbScape = isPrimaryIbScape;
     t.ibGibProvider = ibGibProvider;
     t.currentIdentityIbGibs = currentIdentityIbGibs;
-    t.getAdjunctInfosCallbacksInProgress = {};
     t.currentForces = {};
 
     let defaults = {
@@ -114,6 +114,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     t.initResize();
     t.initRoot();
     t.initBackgroundRefresher();
+    t.initSyncAdjunctsQueue();
     t.initContext();
     t.initIdentities();
   }
@@ -292,9 +293,26 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         errorMsg => {
           console.error(`Error background refresher: ${JSON.stringify(errorMsg)}`);
         },
-        /*intervalMs*/ 5000);
         // It checks on this interval, but does not necessarily execute if there
         // are no ibGibs in the queue.
+        /*intervalMs*/ 5000);
+  }
+  initSyncAdjunctsQueue() {
+    let t = this;
+    // only init if we don't already have a refresher.
+    if (t.syncAdjunctsQueue) { return; }
+
+    t.syncAdjunctsQueue = new IbGibSyncAdjunctsQueue(t);
+
+    t.syncAdjunctsQueue
+      .start(
+        successMsg => { t.handleSyncAdjunctsQueueSuccess(successMsg); },
+        errorMsg => {
+          console.error(`Error syncing adjuncts: ${JSON.stringify(errorMsg)}`);
+        },
+        // It checks on this interval, but does not necessarily execute if there
+        // are no ibGibs in the queue.
+        /*intervalMs*/ 7777);
   }
   initContext() {
     let t = this, lc = `initContext`;
@@ -327,9 +345,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       t.updateIbGib(t.contextNode, newContextIbGib, /*skipUpdateUrl*/ true,
         () => {
           t.syncContextChildren();
-          t.syncAdjuncts(t.contextNode.tempJuncIbGib, () => {
-            console.log(`${lc2} complete.`);
-          });
         });
     }
 
@@ -598,7 +613,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     let t = this, lc = `syncChildren_IbGib(${node.ibGib})`;
     // console.log(`${lc} starting...`);
 
-    t.getAdjunctInfos(node.tempJuncIbGib, nodeAdjunctInfos => {
+    let adjunctInfos = t.ibGibAdjunctCache.getAdjunctInfos(node.tempJuncIbGib);
+    
+    // t.getAdjunctInfos(node.tempJuncIbGib, nodeAdjunctInfos => {
       try {
         let nodeChildren = t.getChildren(node);
         if (nodeChildren.length > 0) {
@@ -660,7 +677,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           console.warn(`${lc} no callback?`)
         }
       }
-    });
+    // });
   }
   syncContextChildren() {
     let t = this, lc = `syncContextChildren`;
@@ -694,7 +711,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
             // https://192.168.99.100/ibgib/Meta%5EEF7CB0C1E64BFBF3C8F0F3784EB8C09C4CFCE7D650FE59258D33DB27465E5802
           });
 
-        t.syncContextAdjuncts();
+        t.syncAdjunctsQueue.enqueue([t.contextNode.tempJuncIbGib]);
 
         // If we've just gone back in history and there are no rel8ns via
         // ib^gib, then we should sync with an empty array.
@@ -715,9 +732,13 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
   syncAdjuncts(tempJuncIbGib, callback) {
     let t = this;
 
-    t.getAdjunctInfos(tempJuncIbGib, adjunctInfos => {
-      // console.log(`syncAdjuncts: adjunctInfos: ${JSON.stringify(adjunctInfos)}`);
-
+    // This just adds it to a queue. It does not necessarily mean it will be
+    // available after this line executes. Rather, the first time, it will
+    // actually go and get the adjuncts and the upcoming adjunctInfos will be
+    // empty.
+    t.syncAdjunctsQueue.enqueue([tempJuncIbGib]);
+    let adjunctInfos = t.ibGibAdjunctCache.getAdjunctInfos(tempJuncIbGib);
+    if (adjunctInfos && adjunctInfos.length > 0) { 
       if (t.contextNode && t.contextNode.tempJuncIbGib === tempJuncIbGib) {
         // console.log(`syncAdjuncts: calling syncContextAdjuncts...`);
         t.syncContextAdjuncts(adjunctInfos);
@@ -766,7 +787,9 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       if (callback) {
         callback();
       }
-    });
+    } else {
+      if (callback) { callback(); }
+    }
   }
   /**
    * Syncs the adjuncts for the contextNode only. We need separate code for
@@ -2069,7 +2092,7 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
           let ibGibsToRefresh = rel8dIbGibs.concat([rel8nSrc.ibGib]);
           t.backgroundRefresher.enqueue(ibGibsToRefresh);
 
-          // Sync adjuncts, passing callback.
+          // // Sync adjuncts, passing callback.
           t.syncAdjuncts(rel8nNode.rel8nSrc.tempJuncIbGib, () => {
             if (callback) { callback(); }
           });
@@ -2809,80 +2832,6 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
     return `url(#${t.svgGradientId_Background})`;
     // return this.config.background.fill;
   }
-  _dispatchGetAdjunctInfosCallbacksInProgress(tempJuncIbGib, adjunctInfos) {
-    let t = this;
-    let callbacksCount = 0;
-    do {
-      let callbacks = t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib];
-      t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib] = callbacks.splice(1);
-      let callback = callbacks[0];
-      callback(adjunctInfos);
-      callbacksCount = t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib].length;
-    } while (callbacksCount > 0);
-    delete t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib];
-  }
-  /**
-   * The first init of adjunct infos will talk to the server and get all
-   * of the adjuncts for the given `tempJuncIbGib`. Any subsequent
-   * additional adjuncts will need to come down the event bus and be
-   * added to the cache and added to the ibScape.
-   */
-  getAdjunctInfos(tempJuncIbGib, callback) {
-    let t = this;
-    
-    if (tempJuncIbGib === "ib^gib") {
-      callback([]);
-    } else {
-      let adjunctInfos = t.ibGibAdjunctCache.getAdjunctInfos(tempJuncIbGib);
-      if (adjunctInfos) {
-        // console.log(`adjunctInfos gotten from cache: ${adjunctInfos.length}`);
-        // console.log(`adjunctInfos gotten from cache: ${JSON.stringify(adjunctInfos)}`);
-        callback(adjunctInfos);
-      } else if (t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib]) {
-        t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib].push(callback);
-      } else {
-        // console.log(`No adjunctInfos in cache. Getting from server...`);
-        
-        t.getAdjunctInfosCallbacksInProgress[tempJuncIbGib] = [callback];
-        
-        let {ib, gib} = ibHelper.getIbAndGib(tempJuncIbGib);
-        if (gib === "gib" || 
-            ib.startsWith("session_") || 
-            ib.startsWith("email_") || 
-            ib.startsWith("node_")) {
-          callback([]);
-        } else {
-          let data = { ibGibs: [tempJuncIbGib] };
-          let cmdGetAdjuncts = new commands.GetAdjunctsCommand(t, data, successMsg => {
-            t.ibGibAdjunctCache.clearAdjunctInfos(tempJuncIbGib);
-            if (successMsg.data && successMsg.data.adjunct_ib_gibs) {
-              let adjunctIbGibs = successMsg.data.adjunct_ib_gibs[tempJuncIbGib];
-              t.getIbGibJsons(adjunctIbGibs, adjunctIbGibJsons => {
-                Object.keys(adjunctIbGibJsons)
-                  .map(key => adjunctIbGibJsons[key])
-                  .forEach(adjunctIbGibJson => {
-                    let adjunctIbGib = ibHelper.getFull_ibGib(adjunctIbGibJson);
-                    t.ibGibAdjunctCache.addAdjunctInfo(tempJuncIbGib, tempJuncIbGib, adjunctIbGib, adjunctIbGibJson);
-                  });
-                adjunctInfos = t.ibGibAdjunctCache.getAdjunctInfos(tempJuncIbGib);
-
-                t._dispatchGetAdjunctInfosCallbacksInProgress(tempJuncIbGib, adjunctInfos);
-                // callback(adjunctInfos);
-              });
-            } else {
-              // console.log(`GetAdjunctsCommand did not have successMsg.data && successMsg.data.adjunct_ib_gibs. Probably has no adjuncts.)`);
-              t._dispatchGetAdjunctInfosCallbacksInProgress(tempJuncIbGib, []);
-                // callback([]);
-            }
-          }, errorMsg => {
-            console.error(`getAdjuncts error: ${JSON.stringify(errorMsg)}`);
-            t._dispatchGetAdjunctInfosCallbacksInProgress(tempJuncIbGib, []);
-          });
-          cmdGetAdjuncts.exec();
-        }
-      }
-    }
-  }
   /** wrapper that calls ibGibProvider (refactoring) */
   getIbGibJson(ibgib, callback) {
     let t = this;
@@ -3356,6 +3305,47 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
         });
     }
   }
+  handleSyncAdjunctsQueueSuccess(successMsg) {
+    let t = this, lc = `handleSyncAdjunctsQueueSuccess`;
+    if (successMsg && successMsg.data && successMsg.data.adjunct_ib_gibs) {
+      console.log(`${lc} successMsg.data.adjunct_ib_gibs:  ${JSON.stringify(successMsg.data.adjunct_ib_gibs)}`);
+      
+      // adjunct_ib_gibs is a map in the form of {ibGib1: [adjunct1, adjunct2,...], ibGib2: [adjunct3, adjunct4], ...}
+      // We're going to populate the adjunct cache with all of the 
+      // adjunct ibGibs and then fire off a syncAdjuncts call that now has
+      // information to work with.
+      Object.keys(successMsg.data.adjunct_ib_gibs)
+        .forEach(ibGib => {
+          t.getIbGibJson(ibGib, ibGibJson => {
+            let tempJuncIbGib = ibHelper.getTemporalJunctionIbGib(ibGibJson);
+
+            // We're going to replace the information completely, so clear.
+            t.ibGibAdjunctCache.clearAdjunctInfos(ibGib);
+
+            
+            let adjunctIbGibs = successMsg.data.adjunct_ib_gibs[ibGib];
+            t.getIbGibJsons(adjunctIbGibs, adjunctIbGibJsons => {
+              Object.keys(adjunctIbGibJsons)
+                .map(key => adjunctIbGibJsons[key])
+                .forEach(adjunctIbGibJson => {
+                  let adjunctIbGib = ibHelper.getFull_ibGib(adjunctIbGibJson);
+                  t.ibGibAdjunctCache.addAdjunctInfo(tempJuncIbGib, ibGib, adjunctIbGib, adjunctIbGibJson);
+                });
+              t.syncAdjuncts(ibGib, /*callback*/ () => {
+                console.log(`${lc} sync adjuncts completed. ibGib: ${ibGib}`);
+              });
+            });
+          });
+        });
+      
+      let skippedIbGibs = successMsg.data.skippedIbGibs || [];
+      skippedIbGibs.forEach(ibGib => {
+        t.syncAdjuncts(ibGib, /*callback*/ () => {
+          console.log(`${lc} skipped ibGib sync adjuncts completed. ibGib: ${ibGib}`);
+        });
+      })
+    }
+  }
   handleEventBusMsg_Update(tempJuncIbGib, ibGib, msg) {
     let t = this;
     // console.log(`handleEventBusMsg_Update msg:\n${JSON.stringify(msg)}`)
@@ -3382,30 +3372,30 @@ export class DynamicIbScape extends DynamicD3ForceGraph {
       console.warn(`Unused msg(?): ${JSON.stringify(msg)}`);
     }
   }
-  handleEventBusMsg_Adjuncts(tempJuncIbGib, ibGib, msg) {
-    let t = this;
-    console.log(`handleEventBusMsg_Adjuncts msg:\n${JSON.stringify(msg)}`)
-    if (msg && msg.metadata && msg.metadata.temp_junc_ib_gib === tempJuncIbGib) {
-      console.log(`handleEventBusMsg_Adjuncts: calling getIbGibJsons...`)
-      t.getIbGibJsons(msg.data.adjunct_ib_gibs, adjunctIbGibJsons => {
-        console.log(`handleEventBusMsg_Adjuncts: adjunctIbGibJsons: ${JSON.stringify(adjunctIbGibJsons)}`)
-
-        msg.data.adjunct_ib_gibs
-          .forEach(adjunctIbGib => {
-            let adjunctIbGibJson = adjunctIbGibJsons[adjunctIbGib];
-            t.ibGibAdjunctCache.addAdjunctInfo(tempJuncIbGib, ibGib, adjunctIbGib, adjunctIbGibJson);
-          });
-        // At this point, we have loaded all adjunctInfos and are ready to sync
-        // the tempJuncIbGib
-        console.log(`handleEventBusMsg_Adjuncts: calling syncAdjuncts...`)
-        t.syncAdjuncts(tempJuncIbGib, /*callback*/ () => {
-          console.log(`handleEventBusMsg_Adjuncts: completed syncAdjuncts.`)
-        });
-      });
-    } else {
-      console.warn(`Unused msg(?): ${JSON.stringify(msg)}`);
-    }
-  }
+  // handleEventBusMsg_Adjuncts(tempJuncIbGib, ibGib, msg) {
+  //   let t = this;
+  //   console.log(`handleEventBusMsg_Adjuncts msg:\n${JSON.stringify(msg)}`)
+  //   if (msg && msg.metadata && msg.metadata.temp_junc_ib_gib === tempJuncIbGib) {
+  //     console.log(`handleEventBusMsg_Adjuncts: calling getIbGibJsons...`)
+  //     t.getIbGibJsons(msg.data.adjunct_ib_gibs, adjunctIbGibJsons => {
+  //       console.log(`handleEventBusMsg_Adjuncts: adjunctIbGibJsons: ${JSON.stringify(adjunctIbGibJsons)}`)
+  // 
+  //       msg.data.adjunct_ib_gibs
+  //         .forEach(adjunctIbGib => {
+  //           let adjunctIbGibJson = adjunctIbGibJsons[adjunctIbGib];
+  //           t.ibGibAdjunctCache.addAdjunctInfo(tempJuncIbGib, ibGib, adjunctIbGib, adjunctIbGibJson);
+  //         });
+  //       // At this point, we have loaded all adjunctInfos and are ready to sync
+  //       // the tempJuncIbGib
+  //       console.log(`handleEventBusMsg_Adjuncts: calling syncAdjuncts...`)
+  //       t.syncAdjuncts(tempJuncIbGib, /*callback*/ () => {
+  //         console.log(`handleEventBusMsg_Adjuncts: completed syncAdjuncts.`)
+  //       });
+  //     });
+  //   } else {
+  //     console.warn(`Unused msg(?): ${JSON.stringify(msg)}`);
+  //   }
+  // }
   handleEventBusMsg_NewAdjunct(tempJuncIbGib, ibGib, msg) {
     let t = this; let lc = `handleEventBusMsg_NewAdjunct(${tempJuncIbGib})`;
     console.log(`${lc} msg:\n${JSON.stringify(msg)}`)
