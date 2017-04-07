@@ -254,25 +254,25 @@ defmodule WebGib.Bus.Channels.Event do
     }
     {:ok, msg}
   end
-  defp get_broadcast_msg(:adjuncts = msg_type,
-                         {temp_junc_ib_gib,
-                          ib_gib,
-                          adjunct_ib_gibs} = _msg_info)
-    when is_list(adjunct_ib_gibs) and length(adjunct_ib_gibs) > 0 do
-    msg = %{
-      "data" => %{
-        "ib_gib" => ib_gib,
-        "adjunct_ib_gibs" => adjunct_ib_gibs
-      },
-      "metadata" => %{
-        "name" => Atom.to_string(msg_type),
-        "temp_junc_ib_gib" => temp_junc_ib_gib,
-        "src" => "server",
-        "timestamp" => "#{:erlang.system_time(:milli_seconds)}"
-      }
-    }
-    {:ok, msg}
-  end
+  # defp get_broadcast_msg(:adjuncts = msg_type,
+  #                        {temp_junc_ib_gib,
+  #                         ib_gib,
+  #                         adjunct_ib_gibs} = _msg_info)
+  #   when is_list(adjunct_ib_gibs) and length(adjunct_ib_gibs) > 0 do
+  #   msg = %{
+  #     "data" => %{
+  #       "ib_gib" => ib_gib,
+  #       "adjunct_ib_gibs" => adjunct_ib_gibs
+  #     },
+  #     "metadata" => %{
+  #       "name" => Atom.to_string(msg_type),
+  #       "temp_junc_ib_gib" => temp_junc_ib_gib,
+  #       "src" => "server",
+  #       "timestamp" => "#{:erlang.system_time(:milli_seconds)}"
+  #     }
+  #   }
+  #   {:ok, msg}
+  # end
   # A new adjunct has just been added to a target
   defp get_broadcast_msg(:new_adjunct = msg_type,
                          {temp_junc_ib_gib,

@@ -51,7 +51,7 @@ export class IbGibAdjunctCache {
 
   getAdjunctInfos(tempJuncIbGib) {
     let t = this;
-    return t.adjunctNaiveCache[tempJuncIbGib];
+    return t.adjunctNaiveCache[tempJuncIbGib] || [];
   }
 
   clearAdjunctInfos(tempJuncIbGib) {

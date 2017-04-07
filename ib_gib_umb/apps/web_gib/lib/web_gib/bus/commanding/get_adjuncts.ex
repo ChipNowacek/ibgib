@@ -116,6 +116,7 @@ defmodule WebGib.Bus.Commanding.GetAdjuncts do
     with(
       # Need to get the latest ib_gib in order to ensure that we get the 
       # proper temporal junction point.
+      # Question for myself: Why? Why did I add this step? Doesn't seem right...
       {:ok, latest_ib_gib} <-
         IbGib.Common.get_latest_ib_gib(identity_ib_gibs, ib_gib),
 
